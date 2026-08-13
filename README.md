@@ -36,11 +36,24 @@ multistart.
 
 100 mg TiO2, 25 mL, 1 atm, 500-1500 C.
 
-| feed | Ti(3+) at 900 C | Ti(3+) at 1500 C | phases that appear |
+| feed | Ti(3+) at 900 C | Ti(3+) at 1500 C | deepest phase |
 |---|---|---|---|
-| CO2/H2 = 1:1 | 0.000% | 0.000% | TiO2 only |
-| pure H2 | 0.39% | 8.0% | TiO2 + Ti4O7 |
-| pure CH4 | 41.2% | 46.2% | TiO2 + Ti4O7 |
+| CO2/H2 = 1:1 | 0.000% | 0.000% | none - rutile throughout |
+| pure H2 | 0.17% | 6.4% | Ti10O19 |
+| pure CH4 | 33.3% | 33.0% | Ti5O9 / Ti6O11 |
+| sealed N2 | 0.000% | 0.000% | none |
+
+Both solvers were run on the pure-H2 case and agree to the printed digit.
+An apparent disagreement at first turned out to be only that one phase list
+carried Ti20O39 and the other did not, which is worth more than the agreement:
+truncating the series at Ti10O19 gives 6.4% at 1500 C and including Ti20O39
+gives 9.8%, and that spread is the line-compound model reaching its limit
+rather than a numerical problem.
+
+Sealed inert gas does nothing, and not because the temperature is too low: the
+oxide has nowhere to put the oxygen. At 1500 C the boundary sits at
+pO2 = 1.6e-10 atm, and 25 mL at that pressure holds 2.7e-14 mol of O2 while
+converting even 1% of the charge would release 6.3e-7 mol.
 
 Under RWGS the gas equilibrates to ordinary shift behaviour, 25% to 66% CO2
 conversion, and the solid never enters. Kp from standard potentials and Q from
@@ -94,8 +107,10 @@ solidgas/
   potential.py    oxygen-potential route: gas-only solve + critical potentials
 run_Ti4O7_RWGS.py       CO2/H2 sweep, writes Ti4O7_RWGS.png + results_rwgs.json
 run_Ti4O7_reducing.py   pure-H2 and pure-CH4 sweeps, writes results_reducing.json
-build_site.py           renders index.html for GitHub Pages (see note below)
-tests/                  data checks and solver checks
+solver.js               the same thermodynamics for the browser
+export_thermo.py        dumps the coefficients as thermo_data.json
+site_template.html      page shell; build_site.py inlines the two into index.html
+tests/                  data checks, solver checks, export-drift checks
 ```
 
 ```bash
@@ -170,10 +185,29 @@ Notes on the two added this round:
   rutile non-stoichiometry.
 - **Equilibrium only.** Nothing here says how fast any of it happens.
 
-## The GitHub Pages site
+## The interactive page
 
-`build_site.py` renders `index.html` from the solvers' JSON output - static,
-no backend, charts drawn client-side from embedded data. It is **not built
-yet**, deliberately: the numbers move once the shallow Magneli phases and
-graphite are in, and publishing the current CH4 figures would put an artefact
-on the web. Run it after the species list is settled.
+**<https://robin-yk.github.io/Solid-gas-thermosolver/>**
+
+Pick an atmosphere and conditions; the page equilibrates the C-H-O gas, reads
+off its oxygen potential, and compares it against every member of the series.
+Nothing is a stored answer - the whole calculation runs in the browser, which
+is only possible because the oxygen-potential route has no optimiser in it.
+
+```bash
+python3 export_thermo.py   # thermo_data.json, straight from the package
+python3 build_site.py      # inlines solver.js + the data into index.html
+```
+
+The coefficients are exported rather than retyped, and `tests/test_export.py`
+fails if `thermo_data.json` or `index.html` goes stale against the package -
+a drifted page would keep working and quietly answer with old numbers.
+
+`solver.js` reimplements the thermodynamics in the browser and agrees with the
+Python package to the printed digit on every case. It is in one respect
+better: the gas equilibrium is solved by nested bisection rather than SLSQP,
+which holds the RWGS quotient to machine precision against Kp where SLSQP
+manages 4e-5.
+
+The CH4 case carries a visible caveat in the page itself, since graphite is
+still missing.
