@@ -54,20 +54,42 @@ saturation.
 
 ### How far RWGS sits from reduction
 
-Margin above the TiO2 -> Ti4O7 threshold, in kJ per mole of oxygen removed.
-Positive means no reduction.
+Margin in kJ per mole of oxygen removed, above the phase that forms most
+easily out of untouched rutile. Positive means nothing reduces.
 
-| T (C) | 500 | 900 | 1100 | 1300 | 1500 |
-|---|---|---|---|---|---|
-| margin | +69.2 | +45.9 | +35.4 | +24.4 | **+22.7** |
+| T (C) | 500 | 700 | 900 | 1100 | 1300 | 1500 |
+|---|---|---|---|---|---|---|
+| vs Ti4O7 only (NIST) | +69.2 | +47.1 | +45.9 | +35.4 | +24.4 | +22.7 |
+| vs Ti4O7 only (Waldner) | +85.0 | +71.0 | +64.3 | +57.2 | +49.5 | +41.2 |
+| **vs the full series (Waldner)** | **+74.7** | **+58.2** | **+48.9** | **+39.3** | **+29.1** | **+18.3** |
 
-The conclusion is robust at the cold end and thin at the hot end.
+The last row is the answer. It is measured against Ti20O39, the highest-n
+member assessed and the easiest phase to form; against the more conventional
+Ti10O19 the 1500 C figure is +27.3.
+
+Two corrections cancel in part, and both matter:
+
+- Bringing in the shallow Magneli members costs about 14 kJ/mol-O at 1500 C.
+  They form more easily than Ti4O7, so any margin measured against Ti4O7
+  alone is an overestimate.
+- Moving the condensed phases from NIST to Waldner *gains* about 18 kJ/mol-O.
+  The two assessments put rutile 6.0 kJ/mol apart and Ti4O7 12.0 kJ/mol apart,
+  and the difference does not cancel in the reduction reaction.
+
+Taking the NIST margin and applying a Waldner-derived shift would give 8.7 at
+1500 C, which is not a number this repository produces: it mixes the two
+bases in exactly the way that the offsets above make invalid. On a single
+consistent basis the answer is +18.3.
+
+**RWGS does not reduce rutile anywhere in 500-1500 C**, and the margin at the
+hot end is now measured rather than assumed.
 
 ## Layout
 
 ```
 solidgas/
   shomate.py      NIST-JANAF coefficients; H, S, Cp, mu0, Kp
+  waldner.py      Waldner & Eriksson Ti-O assessment: the Magneli series
   equilibrium.py  species, element matrix, G_total, constrained solve
   potential.py    oxygen-potential route: gas-only solve + critical potentials
 run_Ti4O7_RWGS.py       CO2/H2 sweep, writes Ti4O7_RWGS.png + results_rwgs.json
@@ -83,8 +105,22 @@ python3 -m pytest tests/ -q
 
 ## Thermodynamic data
 
-All condensed-phase entries are NIST-JANAF 4th ed. (Chase, 1998), verified
-against the published tables before use.
+Two sources, kept strictly apart. **Gases** are NIST-JANAF 4th ed. (Chase,
+1998). **Titanium-bearing condensed phases** are Waldner & Eriksson, Calphad 23
+(1999) 189-218, Appendix pp. 216-218, which carries the whole Magneli series
+where NIST stops at Ti4O7.
+
+They are not interchangeable: the assessments put rutile 6.0 kJ/mol apart,
+Ti4O7 12.0 kJ/mol apart and Ti2O3 5.3 kJ/mol apart, all comparable to the
+margins being measured. `solid_mu0(name, T, source=...)` makes the choice
+explicit and a test pins the offsets so the two can never quietly merge.
+
+Heat capacity, which is measured rather than assessed, agrees between them to
+under 1% across the working range for every phase both carry - that is the
+check that the Waldner integration is right.
+
+The NIST entries below are still used for the `equilibrium.py` route and
+verified against the published tables.
 
 | phase | O/Ti | dHf298 (kJ/mol) | fit range (K) |
 |---|---|---|---|
@@ -107,16 +143,21 @@ Notes on the two added this round:
 
 ## Where this is soft
 
-- **The shallow half of the Magneli series is missing, and that is where the
-  conclusion is thinnest.** Ti5O9 through Ti10O19 sit *between* rutile and
-  Ti4O7 and form more easily than Ti4O7 does, so every margin quoted above is
-  measured against too hard a step and is an upper bound. At 500 C there is
-  69 kJ/mol of room and no plausible correction closes it; at 1500 C there is
-  22.7 kJ/mol and the correction is not obviously smaller than that. **Treat
-  the high-temperature end as untested.** These phases are not in NIST-JANAF;
-  they need a CALPHAD assessment, and mixing that source with NIST for the
-  Ti-O condensed phases would put the answer on top of a data inconsistency,
-  so the whole condensed set should move together when they are added.
+- **The series does not converge in n, and that is physics rather than a
+  gap.** Each higher member forms more easily than the last, all the way to
+  Ti20O39. That is not a hint that another line compound is missing: the
+  n -> infinity limit is oxygen-deficient rutile TiO2-x, which no set of line
+  compounds can represent. Waldner models rutile as a solution,
+  (Ti4+)(O2-,Va2-)2 with two interaction parameters, and that solution is not
+  implemented here. Ti20O39 should be read as a bound on how far the margin
+  can move, not as the phase that would actually appear.
+- **Ti7O13 cannot be placed.** Its formation enthalpy is misprinted in the
+  paper as -3415327 J/mol, which is Ti4O7's value to four figures; the series
+  is linear in n to under 600 J and gives -6251260 instead. That repair is
+  good enough to keep Ti7O13 out of the way but not to seat it exactly - the
+  residual is the same size as the gaps between neighbouring steps, and it
+  shows up as a small reversal in the stepwise ladder. It does not touch any
+  margin quoted here, all of which are measured straight from rutile.
 - **No carbon deposition.** Graphite is not a species, so the CH4 results
   assume all carbon leaves as CO. The equilibrium gas comes out at H2:CO = 2:1
   exactly, which is what you get when carbon has nowhere else to go - that

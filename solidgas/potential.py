@@ -23,6 +23,39 @@ from scipy.optimize import minimize
 
 from .shomate import mu0, R_KJ
 from .equilibrium import ACTIVE_TI_PHASES, FORMULAS, GASES
+from . import waldner
+
+# Which dataset supplies the titanium-bearing condensed phases. NIST-JANAF has
+# no Magneli member between rutile and Ti4O7, and those are the ones that
+# decide the hot end, so 'waldner' is the default. The two must never be mixed
+# within one comparison: they put rutile 6.0 kJ/mol apart and Ti4O7 12.0
+# kJ/mol apart, which is the same size as the margins being measured.
+SOURCES = {
+    'waldner': waldner.mu0,
+    'nist': mu0,
+}
+DEFAULT_SOURCE = 'waldner'
+
+
+def solid_mu0(name, T, source=DEFAULT_SOURCE):
+    return SOURCES[source](name, T)
+
+
+def ti_phases(source=DEFAULT_SOURCE):
+    """Titanium phases available from a given source, most oxidised first."""
+    if source == 'waldner':
+        names = list(waldner.WALDNER)
+    else:
+        names = [p for p in ACTIVE_TI_PHASES]
+    return sorted(names, key=lambda p: -_ratio(p))
+
+
+def _ratio(name):
+    if name in FORMULAS:
+        f = FORMULAS[name]
+        return f['O'] / f['Ti']
+    n, o = waldner._stoich(name)
+    return o / n
 
 # Redox couples that can report the gas oxygen potential. Both must agree at
 # equilibrium; the disagreement is a useful check on the gas solution.
@@ -45,27 +78,55 @@ def mu_O_from_gas(y, T):
     return float(np.mean(vals)), float(max(vals) - min(vals))
 
 
-def mu_O_critical(lower, higher, T):
+def _stoich(name):
+    if name in FORMULAS:
+        return FORMULAS[name]['Ti'], FORMULAS[name]['O']
+    return waldner._stoich(name)
+
+
+def mu_O_critical(lower, higher, T, source=DEFAULT_SOURCE):
     """Critical oxygen potential for `higher` -> `lower`, per mole of O removed.
 
     `higher` is the more oxidised phase. Below this potential the reduced phase
     is the stable one. Both are line compounds, so this is a pure function of T.
+
+    Note this is an absolute oxygen potential on the elemental reference, not a
+    pressure. Converting to pO2 needs mu0(O2) = -T*S(O2), which is not carried
+    here; differences of two potentials - which is all any margin is - do not
+    need it, since the O2 term cancels.
     """
-    fh, fl = FORMULAS[higher], FORMULAS[lower]
-    # scale so both sides carry the same titanium
-    n_hi = fl['Ti'] / fh['Ti']
-    dO = n_hi * fh['O'] - fl['O']
+    th, oh = _stoich(higher)
+    tl, ol = _stoich(lower)
+    n_hi = tl / th                      # scale so both sides carry the same Ti
+    dO = n_hi * oh - ol
     if dO <= 0:
         raise ValueError(f'{lower} is not more reduced than {higher}')
-    return (n_hi * mu0(higher, T) - mu0(lower, T)) / dO
+    return (n_hi * solid_mu0(higher, T, source) - solid_mu0(lower, T, source)) / dO
 
 
-def phase_ladder(T, phases=None):
+def phase_ladder(T, phases=None, source=DEFAULT_SOURCE):
     """Critical potentials down the series, most oxidised first."""
-    ph = list(phases or ACTIVE_TI_PHASES)
-    ph.sort(key=lambda p: -FORMULAS[p]['O'] / FORMULAS[p]['Ti'])
-    return [(ph[i], ph[i + 1], mu_O_critical(ph[i + 1], ph[i], T))
+    ph = list(phases) if phases else ti_phases(source)
+    ph.sort(key=lambda p: -_ratio(p))
+    return [(ph[i], ph[i + 1], mu_O_critical(ph[i + 1], ph[i], T, source))
             for i in range(len(ph) - 1)]
+
+
+def first_phase_margin(mu_O, T, source=DEFAULT_SOURCE, phases=None):
+    """Margin against whichever reduced phase forms most easily from rutile.
+
+    Every reduced phase is compared straight to rutile rather than down a
+    chain, because the question is which one appears first out of untouched
+    rutile. Returns (phase, margin) with margin in kJ per mole of oxygen:
+    positive means nothing reduces.
+    """
+    ph = [p for p in (phases or ti_phases(source)) if _ratio(p) < 2.0]
+    best, best_margin = None, float('inf')
+    for p in ph:
+        m = mu_O - mu_O_critical(p, 'TiO2', T, source)
+        if m < best_margin:
+            best, best_margin = p, m
+    return best, best_margin
 
 
 def stable_phase(mu_O, T, phases=None):
@@ -124,6 +185,8 @@ def survey(b_CHO, T, P_tot=1.0, phases=None):
     tot = sum(n.values())
     y = {k: v / tot for k, v in n.items()}
     mu_O, spread = mu_O_from_gas(y, T)
-    phase, margin = stable_phase(mu_O, T, phases)
+    phase, margin = stable_phase(mu_O, T, phases or ACTIVE_TI_PHASES)
+    first, first_m = first_phase_margin(mu_O, T)
     return {'y': y, 'mu_O': mu_O, 'couple_spread': spread,
-            'phase': phase, 'margin': margin}
+            'phase': phase, 'margin': margin,
+            'first_phase': first, 'first_margin': first_m}
