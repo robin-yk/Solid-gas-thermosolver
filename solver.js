@@ -287,7 +287,7 @@ E.prototype.buffered = function (feed, T, P, V, nTi, phases, source) {
     var mLo = gasMuO(xLo + (xHi - xLo) * 1e-12);
     if (mLo !== null && mLo > crit) {           /* cannot even start this step */
       hiPhase = lad[k - 1]; loPhase = lad[k]; x = xLo;
-      return { phase: lad[k], hiPhase: hiPhase, crit: crit, x: x,
+      return { phase: label(stateAt(x)), assemblage: stateAt(x), crit: crit, x: x,
                ti3: ti3At(x), conv: 0, O_fraction: x / (2 * nTi),
                muO: mLo, margin: mLo - crit, reduces: k > 1,
                solidLimited: false, gas: self.gasEquilibrium(bC, bH, bO + x, T, P) };
@@ -302,7 +302,10 @@ E.prototype.buffered = function (feed, T, P, V, nTi, phases, source) {
 
   /* Ti(3+) from the oxygen actually removed. Along a two-phase segment the mix
      is linear in x, and every Magneli member carries two Ti(3+) per formula. */
-  function ti3At(xx) {
+  /* Where x sits on the ladder: which two phases coexist, in what proportion,
+     and the Ti(3+) that follows. The mix is linear in x along a segment, and
+     every Magneli member carries two Ti(3+) per formula unit. */
+  function stateAt(xx) {
     var i, prev = 0, prevPhase = lad[0];
     for (i = 1; i < lad.length; i++) {
       var lim = totalRemoved(i);
@@ -310,16 +313,29 @@ E.prototype.buffered = function (feed, T, P, V, nTi, phases, source) {
         var st = self.stoich(lad[i]), stp = self.stoich(prevPhase);
         var f = (lim - prev) > 0 ? (xx - prev) / (lim - prev) : 1;
         var ti3lo = 2 / st.Ti, ti3hi = prevPhase === 'TiO2' ? 0 : 2 / stp.Ti;
-        return (ti3hi + f * (ti3lo - ti3hi)) * 100;
+        return { ti3: (ti3hi + f * (ti3lo - ti3hi)) * 100,
+                 upper: prevPhase, lower: lad[i], fraction: f };
       }
       prev = lim; prevPhase = lad[i];
     }
-    return 2 / self.stoich(lad[lad.length - 1]).Ti * 100;
+    var lastP = lad[lad.length - 1];
+    return { ti3: 2 / self.stoich(lastP).Ti * 100, upper: lastP, lower: lastP, fraction: 1 };
+  }
+  function ti3At(xx) { return stateAt(xx).ti3; }
+
+  /* Name the assemblage the way a phase diagram would: the dominant phase,
+     with its partner when the two genuinely coexist. */
+  function label(stt) {
+    if (stt.fraction >= 1 - 1e-9) return stt.lower;
+    if (stt.fraction <= 1e-9) return stt.upper;
+    return stt.fraction < 0.5 ? stt.upper + ' + ' + stt.lower
+                              : stt.lower + ' + ' + stt.upper;
   }
 
   var gas = self.gasEquilibrium(bC, bH, bO + x, T, P);
-  return { phase: loPhase || hiPhase, hiPhase: hiPhase, crit: crit, x: x,
-           ti3: ti3At(x), O_fraction: x / (2 * nTi),
+  var stt = stateAt(x);
+  return { phase: label(stt), assemblage: stt, crit: crit, x: x,
+           ti3: stt.ti3, O_fraction: x / (2 * nTi),
            conv: 0,
            muO: gas && gas.y.H2 > 1e-25 && gas.y.H2O > 1e-25
                 ? self.muOFromRatio(T, gas.y.H2O / gas.y.H2) : crit,

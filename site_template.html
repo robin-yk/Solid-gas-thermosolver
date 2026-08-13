@@ -321,7 +321,7 @@ function render(){
   const anyRed=rows.some(r=>r.reduces);
   const v=$('verdict'); v.className='verdict '+(anyRed?'yes':'no');
   v.innerHTML = anyRed
-    ? `<b>Reduces.</b> <span>First phase ${at.phase}. At ${at.TC.toFixed(0)} °C, ${at.ti3.toFixed(2)}% of the titanium is Ti(3+).</span>`
+    ? `<b>Reduces.</b> <span>At ${at.TC.toFixed(0)} °C the solid is ${at.phase}, with ${at.ti3.toFixed(2)}% of the titanium as Ti(3+).</span>`
     : `<b>No reduction.</b> <span>Rutile survives the whole range. Closest approach ${Math.min(...rows.map(r=>r.margin)).toFixed(1)} kJ/mol&#8209;O, against ${at.phase}.</span>`;
 
   const cards=[
