@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Can RWGS reduce TiO2?</title>
+<meta name="description" content="Gibbs-energy minimisation over CO2/H2/CO/H2O/CH4 in contact with rutile TiO2, Ti4O7, Ti3O5 and Ti2O3, using NIST-JANAF data.">
+<style>
+:root{
+  --bg:#fbfbfa; --panel:#ffffff; --ink:#16181d; --soft:#4a5058; --muted:#767c85;
+  --rule:#e2e5ea; --accent:#1f4e79; --accent2:#b4531f;
+  --ok:#1f6f43; --no:#a3341f;
+  --c1:#7b3fa0; --c2:#2f6fb5; --c3:#c8452b; --c4:#c98a1e; --c5:#6b4a2f;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101216; --panel:#171a20; --ink:#e8eaee; --soft:#b0b6bf; --muted:#868d97;
+    --rule:#2a2f38; --accent:#7fb2e5; --accent2:#e59a5f;
+    --ok:#5fc38c; --no:#e8806a;
+    --c1:#c08ae0; --c2:#6fa8e0; --c3:#e8806a; --c4:#e0b656; --c5:#b08a63;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101216; --panel:#171a20; --ink:#e8eaee; --soft:#b0b6bf; --muted:#868d97;
+  --rule:#2a2f38; --accent:#7fb2e5; --accent2:#e59a5f;
+  --ok:#5fc38c; --no:#e8806a;
+  --c1:#c08ae0; --c2:#6fa8e0; --c3:#e8806a; --c4:#e0b656; --c5:#b08a63;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:0 20px 80px}
+header{padding:64px 0 40px;border-bottom:1px solid var(--rule);margin-bottom:40px}
+h1{font-size:clamp(1.9rem,4.5vw,2.7rem);line-height:1.15;margin:0 0 14px;letter-spacing:-.02em}
+.lede{font-size:1.1rem;color:var(--soft);max-width:64ch;margin:0}
+.verdict{
+  display:inline-block;margin-top:22px;padding:7px 15px;border-radius:999px;
+  background:color-mix(in srgb,var(--no) 12%,transparent);
+  color:var(--no);font-weight:600;font-size:.92rem;
+  border:1px solid color-mix(in srgb,var(--no) 32%,transparent);
+}
+h2{font-size:1.35rem;margin:52px 0 6px;letter-spacing:-.01em}
+h2:first-of-type{margin-top:0}
+.sub{color:var(--muted);font-size:.94rem;margin:0 0 20px}
+p{max-width:70ch}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:26px 0 8px}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:18px 20px}
+.card .k{font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.card .v{font-size:2rem;font-weight:650;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.card .n{font-size:.88rem;color:var(--soft)}
+figure{margin:0 0 8px}
+.chart{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:16px 14px 8px;overflow-x:auto}
+svg{display:block;width:100%;height:auto;min-width:520px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;padding:10px 4px 6px;font-size:.86rem;color:var(--soft)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:16px;height:3px;border-radius:2px;display:inline-block}
+figcaption{font-size:.9rem;color:var(--muted);margin-top:10px;max-width:70ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:9px 14px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+tbody tr:last-child td{border-bottom:0}
+code,.mono{font-family:var(--mono);font-size:.88em}
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 16px;margin:22px 0;color:var(--soft)}
+.note strong{color:var(--ink)}
+ul{max-width:70ch;padding-left:20px}
+li{margin:8px 0;color:var(--soft)}
+li strong{color:var(--ink);font-weight:600}
+footer{margin-top:70px;padding-top:24px;border-top:1px solid var(--rule);font-size:.88rem;color:var(--muted)}
+a{color:var(--accent)}
+.pill{font-family:var(--mono);font-size:.8rem;padding:2px 7px;border-radius:5px;background:color-mix(in srgb,var(--ink) 7%,transparent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Can a reverse water-gas-shift feed reduce rutile TiO<sub>2</sub>?</h1>
+  <p class="lede">Constrained Gibbs-energy minimisation over CO<sub>2</sub>, H<sub>2</sub>, CO, H<sub>2</sub>O and CH<sub>4</sub>
+  in contact with four titanium oxides &mdash; rutile TiO<sub>2</sub>, Ti<sub>4</sub>O<sub>7</sub>, Ti<sub>3</sub>O<sub>5</sub>
+  and Ti<sub>2</sub>O<sub>3</sub> &mdash; on NIST-JANAF data.</p>
+  <div class="verdict" id="verdict">No &mdash; and not close</div>
+</header>
+
+<h2>What the sweep finds</h2>
+<p class="sub">100 mg TiO<sub>2</sub>, 25 mL, 1 atm, 500&ndash;1500 &deg;C.</p>
+<div class="cards" id="cards"></div>
+
+<h2>The gas under an RWGS feed</h2>
+<p class="sub">CO<sub>2</sub>/H<sub>2</sub> = 1:1. The solid never enters &mdash; this is ordinary shift chemistry.</p>
+<figure>
+  <div class="chart"><svg id="chart-gas" viewBox="0 0 900 420" role="img" aria-label="Gas composition versus temperature"></svg></div>
+  <div class="legend" id="legend-gas"></div>
+  <figcaption>Equilibrium constant from standard potentials and reaction quotient from the converged
+  mole fractions agree to three decimals at every temperature, which is what confirms the minimiser
+  reached equilibrium rather than a nearby point.</figcaption>
+</figure>
+
+<h2>How far each feed reduces the solid</h2>
+<p class="sub">Percentage of total titanium present as Ti(3+).</p>
+<figure>
+  <div class="chart"><svg id="chart-ti3" viewBox="0 0 900 420" role="img" aria-label="Ti(3+) percentage versus temperature"></svg></div>
+  <div class="legend" id="legend-ti3"></div>
+  <figcaption>Methane opens the Magneli branch roughly 500 &deg;C below hydrogen, because carbon leaves
+  as CO rather than H<sub>2</sub>O and removing oxygen that way gets easier the hotter it runs.</figcaption>
+</figure>
+
+<h2>Why it stops at Ti<sub>4</sub>O<sub>7</sub></h2>
+<p>Each reduction step needs the gas to fall below a threshold H<sub>2</sub>O/H<sub>2</sub> ratio. The steps get
+harder as the oxide gets more reduced, and the gas an actual feed settles at sits well above the
+second rung &mdash; so the solid parks on the TiO<sub>2</sub>/Ti<sub>4</sub>O<sub>7</sub> two-phase buffer and stays there.</p>
+<figure>
+  <div class="chart"><svg id="chart-ladder" viewBox="0 0 900 440" role="img" aria-label="Reduction thresholds versus temperature"></svg></div>
+  <div class="legend" id="legend-ladder"></div>
+  <figcaption>Log scale. Solid lines are the threshold ratio for each step; dashed lines are what the
+  RWGS and CH<sub>4</sub> feeds actually deliver. A feed reduces the oxide only where its dashed line drops
+  <em>below</em> a solid one.</figcaption>
+</figure>
+
+<div class="note" id="note-margin"></div>
+
+<h2>Stepwise reduction thermodynamics</h2>
+<p class="sub">&Delta;G per mole of oxygen removed, kJ.</p>
+<div class="tablewrap"><table id="table-ladder"></table></div>
+
+<h2>Is Ti<sub>3</sub>O<sub>5</sub> even a real phase here?</h2>
+<p>A phase that sits between two others is only stable if it does not disproportionate into them.
+For <span class="mono">Ti4O7 + Ti2O3 &harr; 2 Ti3O5</span>, negative &Delta;G means Ti<sub>3</sub>O<sub>5</sub> holds together.</p>
+<div class="tablewrap"><table id="table-dispro"></table></div>
+
+<h2>Phases in the calculation</h2>
+<div class="tablewrap"><table id="table-phases"></table></div>
+
+<h2>Where this is soft</h2>
+<ul>
+  <li><strong>The Magneli series is truncated.</strong> Ti<sub>5</sub>O<sub>9</sub> through Ti<sub>10</sub>O<sub>19</sub> sit
+  <em>between</em> rutile and Ti<sub>4</sub>O<sub>7</sub> and are absent. They form more easily than Ti<sub>4</sub>O<sub>7</sub>,
+  so they are the phases that could still overturn the RWGS null result at the high-temperature end.</li>
+  <li><strong>Condensed phases are pure and immiscible.</strong> Real Magneli formation runs through a
+  homologous series with mutual solubility, so the true onset is gradual where this model puts a sharp branch.</li>
+  <li><strong>No carbon deposition.</strong> Graphite is not a species, so the CH<sub>4</sub> results assume all
+  carbon leaves as CO. Adding C(graphite) opens Boudouard and cracking equilibria that could shift them.</li>
+  <li><strong>Equilibrium only.</strong> Nothing here says how fast any of it happens, or whether a real
+  surface passivates first.</li>
+</ul>
+
+<footer>
+  Computed with <a href="https://github.com/robin-yk/Solid-gas-thermosolver">robin-yk/Solid-gas-thermosolver</a>.
+  Thermodynamic data: NIST-JANAF Thermochemical Tables, 4th ed. (Chase, 1998).
+  This page is generated by <code>build_site.py</code> from the solver's JSON output.
+</footer>
+
+</div>
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById('payload').textContent);
+const cv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const SVGNS = 'http://www.w3.org/2000/svg';
+const el = (t, a) => { const e = document.createElementNS(SVGNS, t);
+  for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+function chart(svgId, legendId, series, opt) {
+  const svg = document.getElementById(svgId);
+  svg.textContent = '';
+  const W = 900, H = svg.viewBox.baseVal.height;
+  const M = { l: 62, r: 18, t: 16, b: 46 };
+  const iw = W - M.l - M.r, ih = H - M.t - M.b;
+  const log = !!opt.log;
+  const xs = series.flatMap(s => s.x), ys = series.flatMap(s => s.y).filter(v => log ? v > 0 : true);
+  const x0 = opt.x0 ?? Math.min(...xs), x1 = opt.x1 ?? Math.max(...xs);
+  let y0 = opt.y0 ?? Math.min(...ys), y1 = opt.y1 ?? Math.max(...ys);
+  const X = v => M.l + (v - x0) / (x1 - x0) * iw;
+  const Y = log
+    ? v => M.t + ih - (Math.log10(Math.max(v, y0)) - Math.log10(y0)) / (Math.log10(y1) - Math.log10(y0)) * ih
+    : v => M.t + ih - (v - y0) / (y1 - y0) * ih;
+
+  const rule = cv('--rule'), muted = cv('--muted');
+  const yticks = log
+    ? Array.from({ length: Math.round(Math.log10(y1) - Math.log10(y0)) + 1 },
+                 (_, i) => Math.pow(10, Math.log10(y0) + i))
+    : Array.from({ length: 6 }, (_, i) => y0 + (y1 - y0) * i / 5);
+  yticks.forEach(t => {
+    svg.appendChild(el('line', { x1: M.l, x2: W - M.r, y1: Y(t), y2: Y(t), stroke: rule, 'stroke-width': 1 }));
+    const lab = log ? (t >= 0.01 ? String(+t.toPrecision(2)) : '1e' + Math.round(Math.log10(t)))
+                    : String(+t.toFixed(opt.yfix ?? 0));
+    const tx = el('text', { x: M.l - 9, y: Y(t) + 4, 'text-anchor': 'end', fill: muted, 'font-size': 12 });
+    tx.textContent = lab; svg.appendChild(tx);
+  });
+  for (let t = x0; t <= x1 + 1; t += opt.xstep ?? 200) {
+    svg.appendChild(el('line', { x1: X(t), x2: X(t), y1: M.t, y2: M.t + ih, stroke: rule, 'stroke-width': 1 }));
+    const tx = el('text', { x: X(t), y: H - 20, 'text-anchor': 'middle', fill: muted, 'font-size': 12 });
+    tx.textContent = t; svg.appendChild(tx);
+  }
+  const ax = el('text', { x: M.l + iw / 2, y: H - 3, 'text-anchor': 'middle', fill: muted, 'font-size': 12 });
+  ax.textContent = 'Temperature (°C)'; svg.appendChild(ax);
+  const ay = el('text', { x: 14, y: M.t + ih / 2, fill: muted, 'font-size': 12, 'text-anchor': 'middle',
+                          transform: `rotate(-90 14 ${M.t + ih / 2})` });
+  ay.textContent = opt.ylabel; svg.appendChild(ay);
+
+  series.forEach(s => {
+    const pts = s.x.map((v, i) => [v, s.y[i]]).filter(p => p[1] != null && (!log || p[1] > 0));
+    if (!pts.length) return;
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
+    svg.appendChild(el('path', { d, fill: 'none', stroke: cv(s.color), 'stroke-width': s.dash ? 2 : 2.4,
+                                 'stroke-dasharray': s.dash || '', 'stroke-linejoin': 'round' }));
+  });
+
+  const lg = document.getElementById(legendId);
+  lg.textContent = '';
+  series.forEach(s => {
+    const sp = document.createElement('span');
+    const i = document.createElement('i');
+    i.style.background = cv(s.color);
+    if (s.dash) i.style.background = `repeating-linear-gradient(90deg,${cv(s.color)} 0 5px,transparent 5px 9px)`;
+    sp.appendChild(i);
+    sp.appendChild(document.createTextNode(s.label));
+    lg.appendChild(sp);
+  });
+}
+
+function table(id, cols, rows) {
+  const t = document.getElementById(id);
+  t.textContent = '';
+  const th = document.createElement('thead'), tr = document.createElement('tr');
+  cols.forEach(c => { const e = document.createElement('th'); e.innerHTML = c; tr.appendChild(e); });
+  th.appendChild(tr); t.appendChild(th);
+  const tb = document.createElement('tbody');
+  rows.forEach(r => { const e = document.createElement('tr');
+    r.forEach(c => { const d = document.createElement('td'); d.innerHTML = c; e.appendChild(d); });
+    tb.appendChild(e); });
+  t.appendChild(tb);
+}
+
+function build() {
+  const rw = D.rwgs, h2 = D.reducing.H2, ch4 = D.reducing.CH4;
+  const mx = a => Math.max(...a.map(r => r.Ti3));
+
+  document.getElementById('cards').innerHTML = [
+    ['CO<sub>2</sub>/H<sub>2</sub> = 1:1', mx(rw).toFixed(3) + '%', 'Ti(3+) at every temperature'],
+    ['pure H<sub>2</sub>', mx(h2).toFixed(1) + '%', 'peak Ti(3+), at 1500 &deg;C'],
+    ['pure CH<sub>4</sub>', mx(ch4).toFixed(1) + '%', 'peak Ti(3+), at 1500 &deg;C'],
+    ['CO<sub>2</sub> conversion', rw[rw.length - 1].conv.toFixed(0) + '%', 'RWGS at 1500 &deg;C'],
+  ].map(c => `<div class="card"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="n">${c[2]}</div></div>`).join('');
+
+  const T = rw.map(r => r.T_C);
+  chart('chart-gas', 'legend-gas', [
+    { x: T, y: rw.map(r => r.y_CO2), color: '--c1', label: 'CO₂' },
+    { x: T, y: rw.map(r => r.y_H2), color: '--c2', label: 'H₂' },
+    { x: T, y: rw.map(r => r.y_CO), color: '--c3', label: 'CO' },
+    { x: T, y: rw.map(r => r.y_H2O), color: '--c4', label: 'H₂O' },
+    { x: T, y: rw.map(r => r.y_CH4), color: '--c5', label: 'CH₄' },
+  ], { ylabel: 'gas mol %', y0: 0, y1: 50 });
+
+  chart('chart-ti3', 'legend-ti3', [
+    { x: T, y: rw.map(r => r.Ti3), color: '--c1', label: 'CO₂/H₂ = 1:1' },
+    { x: h2.map(r => r.T_C), y: h2.map(r => r.Ti3), color: '--c2', label: 'pure H₂' },
+    { x: ch4.map(r => r.T_C), y: ch4.map(r => r.Ti3), color: '--c3', label: 'pure CH₄' },
+  ], { ylabel: 'Ti(3+) % of total Ti', y0: 0, y1: 50 });
+
+  const ratio = rows => ({ x: rows.map(r => r.T_C), y: rows.map(r => r.y_H2 > 0 ? r.y_H2O / r.y_H2 : null) });
+  const rr = ratio(rw), rc = ratio(ch4);
+  chart('chart-ladder', 'legend-ladder', [
+    { x: D.ladder[0].T_C, y: D.ladder[0].threshold, color: '--c1', label: 'threshold: TiO₂ → Ti₄O₇' },
+    { x: D.ladder[1].T_C, y: D.ladder[1].threshold, color: '--c3', label: 'threshold: Ti₄O₇ → Ti₃O₅' },
+    { x: D.ladder[2].T_C, y: D.ladder[2].threshold, color: '--c4', label: 'threshold: Ti₃O₅ → Ti₂O₃' },
+    { x: rr.x, y: rr.y, color: '--c2', label: 'RWGS gas', dash: '6 4' },
+    { x: rc.x, y: rc.y, color: '--c5', label: 'CH₄ gas', dash: '6 4' },
+  ], { ylabel: 'H₂O / H₂', log: true, y0: 1e-8, y1: 10 });
+
+  const last = ch4[ch4.length - 1];
+  const thr2 = D.ladder[1].threshold[D.ladder[1].threshold.length - 1];
+  const act2 = last.y_H2O / last.y_H2;
+  document.getElementById('note-margin').innerHTML =
+    `<strong>The margin, at 1500 &deg;C.</strong> The CH<sub>4</sub> equilibrium gas sits at
+     H<sub>2</sub>O/H<sub>2</sub> = ${act2.toExponential(2)}, while the Ti<sub>4</sub>O<sub>7</sub> &rarr; Ti<sub>3</sub>O<sub>5</sub>
+     step needs ${thr2.toExponential(2)}. That is ${(act2 / thr2).toFixed(0)}&times; too oxidising &mdash; the
+     reason widening the phase set changed nothing.`;
+
+  const pick = [500, 900, 1300, 1500];
+  const idx = pick.map(t => D.ladder[0].T_C.indexOf(t));
+  table('table-ladder', ['reaction', ...pick.map(t => t + ' &deg;C')],
+    D.ladder.map(s => [`<span class="mono">${s.label}</span>`, ...idx.map(i => s.dG[i].toFixed(1))]));
+
+  table('table-dispro', ['T (&deg;C)', '&Delta;G (kJ/mol)', 'Ti<sub>3</sub>O<sub>5</sub>'],
+    D.dispro.T_C.map((t, i) => [t, D.dispro.dG[i].toFixed(2),
+      D.dispro.dG[i] < 0 ? '<span style="color:var(--ok)">stable</span>'
+                         : '<span style="color:var(--no)">disproportionates</span>'])
+      .filter((_, i) => i % 2 === 0));
+
+  table('table-phases', ['phase', 'O / Ti', '&Delta;<sub>f</sub>H&deg;<sub>298</sub> (kJ/mol)', 'fit range (K)', 'appears?'],
+    D.phases.map(p => {
+      const seen = rw.some(r => r[p.name] > 0.01) || h2.some(r => r[p.name] > 0.01) || ch4.some(r => r[p.name] > 0.01);
+      return [`<span class="mono">${p.name}</span>`, p.O_per_Ti.toFixed(4), p.dHf.toFixed(3),
+              `${p.range_K[0]}–${p.range_K[1]}`,
+              seen ? '<span style="color:var(--ok)">yes</span>' : '<span style="color:var(--muted)">no</span>'];
+    }));
+}
+build();
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change', build);
+</script>
+</body>
+</html>

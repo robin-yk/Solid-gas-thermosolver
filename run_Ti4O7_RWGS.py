@@ -1,16 +1,20 @@
-"""RWGS over TiO2/Ti4O7: CO2/H2 = 1:1 across 500-1500 C.
+"""RWGS over the TiO2-Ti4O7-Ti3O5-Ti2O3 series: CO2/H2 = 1:1, 500-1500 C.
 
-Asks whether a stoichiometric RWGS feed can pull rutile TiO2 down to the
-Magneli phase Ti4O7. It cannot -- the CO/CO2 and H2O/H2 ratios the gas
-settles at are nowhere near reducing enough. See README.
+Asks whether a stoichiometric RWGS feed can pull rutile TiO2 down to any of
+the reduced titanium oxides. It cannot -- the CO/CO2 and H2O/H2 ratios the gas
+settles at are nowhere near reducing enough, and widening the phase set from
+Ti4O7 alone to the whole series does not change that. See README.
 """
+
+import json
 
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from solidgas import (ELEM, gas_idx, mu0, R_KJ, moles_of_gas, solve,
+from solidgas import (ACTIVE_TI_PHASES, SPECIES, gas_idx, mu0, R_KJ,
+                      moles_of_gas, phase_seeds, phase_split, solve,
                       ti3_percent, gas_fractions)
 
 matplotlib.rcParams.update({'figure.dpi': 120, 'font.size': 11})
@@ -23,6 +27,7 @@ n0_TiO2 = m / MW
 
 T_C_arr = np.linspace(500, 1500, 80)
 results = []
+previous = None
 for T_C in T_C_arr:
     T = T_C + 273.15
     n0g = moles_of_gas(P_tot, V, T)
@@ -30,14 +35,21 @@ for T_C in T_C_arr:
     #           C     H          O                Ti
     b = np.array([n0, 2 * n0, 2 * n0 + 2 * n0_TiO2, n0_TiO2])
 
-    inits = [np.array([n0 * fCO2, n0 * fH2, n0 * fCO, n0 * fH2O,
-                       n0 * 1e-6, n0_TiO2 * 0.99, n0_TiO2 * 0.0025])
-             for fCO2, fH2, fCO, fH2O in [(0.5, 0.5, 0.01, 0.01),
-                                          (0.1, 0.1, 0.4, 0.4),
-                                          (0.01, 0.01, 0.48, 0.48)]]
+    # Three gas guesses over untouched rutile pin down the gas equilibrium;
+    # one gas guess per reduced-phase basin is enough to rule those in or out.
+    # The previous temperature's answer is carried forward as a warm start.
+    gas_guesses = [(0.5, 0.5, 0.01, 0.01), (0.1, 0.1, 0.4, 0.4), (0.01, 0.01, 0.48, 0.48)]
+    solid_seeds = phase_seeds(n0_TiO2)
+    rutile, reduced = solid_seeds[0], solid_seeds[1:]
+    inits = [] if previous is None else [previous.copy()]
+    inits += [np.array([n0 * a, n0 * b_, n0 * c, n0 * d, n0 * 1e-6] + list(rutile))
+              for a, b_, c, d in gas_guesses]
+    inits += [np.array([n0 * 0.1, n0 * 0.1, n0 * 0.4, n0 * 0.4, n0 * 1e-6] + list(sv))
+              for sv in reduced]
     n = solve(b, T, inits, P_tot)
     if n is None:
         continue
+    previous = n
 
     y = gas_fractions(n)[:5]
     conv = (n0 - n[0]) / n0 * 100 if n0 > 0 else 0
@@ -45,9 +57,10 @@ for T_C in T_C_arr:
     Kp_rw = np.exp(-(mu0('CO', T) + mu0('H2O', T)
                      - mu0('CO2', T) - mu0('H2', T)) / (R_KJ * T))
     Q_rw = (y[2] * y[3]) / (y[0] * y[1]) if y[0] > 0 and y[1] > 0 else float('nan')
-    results.append(dict(T_C=T_C, y_CO2=y[0], y_H2=y[1], y_CO=y[2], y_H2O=y[3], y_CH4=y[4],
-                        Ti3=Ti3, conv=conv, Kp_rw=Kp_rw, Q_rw=Q_rw,
-                        n_Ti4O7=n[6], n_TiO2=n[5]))
+    rec = dict(T_C=T_C, y_CO2=y[0], y_H2=y[1], y_CO=y[2], y_H2O=y[3], y_CH4=y[4],
+               Ti3=Ti3, conv=conv, Kp_rw=Kp_rw, Q_rw=Q_rw)
+    rec.update(phase_split(n, n0_TiO2))
+    results.append(rec)
 
 # -- table --
 print(f"n0_TiO2 = {n0_TiO2:.4e} mol (100 mg / 79.87)")
@@ -59,11 +72,13 @@ for r in results:
               f"{r['y_CH4']:7.3f} {r['conv']:6.1f} {r['Ti3']:7.3f} {r['Kp_rw']:6.3f} {r['Q_rw']:6.3f}")
 
 print(f"\nTi3+ max over range = {max(r['Ti3'] for r in results):.4f}%")
+seen = [p for p in ACTIVE_TI_PHASES if any(r[p] > 0.01 for r in results)]
+print(f"phases that actually appear: {', '.join(seen)}")
 
 # -- figure --
 T_p = np.array([r['T_C'] for r in results])
 fig, axes = plt.subplots(2, 1, figsize=(8, 8))
-fig.suptitle('CO2/H2=1:1 + TiO2/Ti4O7 (RWGS) - Gibbs Minimization\n'
+fig.suptitle('CO2/H2=1:1 + TiO2/Ti4O7/Ti3O5/Ti2O3 (RWGS) - Gibbs Minimization\n'
              '100 mg TiO2 | 25 mL | 1 atm | NIST-JANAF', fontsize=11)
 ax2 = axes[0]
 for key, col, lab in [('y_CO2', 'purple', 'CO2'), ('y_H2', 'steelblue', 'H2'),
@@ -75,10 +90,16 @@ ax2.legend(fontsize=9, ncol=2); ax2.grid(True, alpha=0.3)
 ax3 = axes[1]
 Ti3p = np.array([r['Ti3'] for r in results])
 ax3.plot(T_p, 100 - Ti3p, 'darkgreen', lw=2.5, label='Ti4+ %')
-ax3.plot(T_p, Ti3p, 'darkorange', lw=2.5, label='Ti3+ % (via Ti4O7)')
+ax3.plot(T_p, Ti3p, 'darkorange', lw=2.5, label='Ti3+ % (reduced phases)')
 ax3.set_ylim([-2, 102]); ax3.legend(fontsize=9)
 ax3.set_ylabel('Ti oxidation state (%)'); ax3.set_xlabel('T (C)')
 ax3.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.savefig('Ti4O7_RWGS.png', dpi=120)
 print("\nfigure saved -> Ti4O7_RWGS.png")
+
+with open('results_rwgs.json', 'w') as fh:
+    json.dump({'conditions': {'P_atm': P_tot, 'V_cm3': V, 'm_TiO2_g': m,
+                              'n0_TiO2_mol': n0_TiO2, 'phases': ACTIVE_TI_PHASES},
+               'rows': results}, fh, indent=1)
+print("data saved -> results_rwgs.json")

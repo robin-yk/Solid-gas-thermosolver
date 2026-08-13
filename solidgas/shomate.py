@@ -31,6 +31,22 @@ SHOMATE = {
     # Ti4O7 (Magneli) - NIST-JANAF 4th ed (298-1950 K)
     'Ti4O7': ([248.9442, 81.06458, -36.39967, 6.641765, -5.509993, -3500.652, 446.0018, -3404.525],
               [248.9442, 81.06458, -36.39967, 6.641765, -5.509993, -3500.652, 446.0018, -3404.525], -3404.525),
+    # Ti3O5 beta - NIST-JANAF 4th ed (298-2050 K). This is the polymorph that
+    # matters here: beta overtakes alpha at 450 K, far below the 773 K floor.
+    'Ti3O5': ([158.9933, 50.20633, 0.001071, -0.000225, -0.000037, -2495.827, 335.0547, -2446.192],
+              [158.9933, 50.20633, 0.001071, -0.000225, -0.000037, -2495.827, 335.0547, -2446.192], -2446.192),
+    # Ti2O3 solid - NIST-JANAF 4th ed. The 470-2115 K fit is used across the
+    # board: the whole working range sits inside it, and G is continuous with
+    # the 298-470 K fit at the join (Cp, S and H each jump there, across the
+    # metal-insulator transition, but the free energy does not).
+    # Note the liquid entry in the same NIST page is a different phase
+    # (dHf = -1418.46) and must not be used here.
+    'Ti2O3': ([147.5509, 3.649536, -0.081337, 0.011812, -4.774029, -1579.849, 230.2715, -1520.884],
+              [147.5509, 3.649536, -0.081337, 0.011812, -4.774029, -1579.849, 230.2715, -1520.884], -1520.884),
+    # Ti3O5 alpha (298-1500 K), kept for reference and for the polymorph test.
+    # Not a member of SPECIES - it is never the stable form in this range.
+    'Ti3O5_alpha': ([233.4149, -59.35757, 68.20422, -20.59934, -5.901490, -2546.516, 393.3579, -2459.150],
+                    [233.4149, -59.35757, 68.20422, -20.59934, -5.901490, -2546.516, 393.3579, -2459.150], -2459.150),
 }
 
 # Temperature window each entry is fitted over, in K. Ti4O7 is the binding one:
@@ -39,6 +55,8 @@ VALID_RANGE = {
     'CH4': (298.0, 6000.0), 'CO2': (298.0, 6000.0), 'CO': (298.0, 6000.0),
     'H2': (298.0, 2500.0), 'H2O': (500.0, 1700.0),
     'TiO2': (298.0, 2000.0), 'Ti4O7': (298.0, 1950.0),
+    'Ti3O5': (298.0, 2050.0), 'Ti3O5_alpha': (298.0, 1500.0),
+    'Ti2O3': (470.0, 2115.0),
 }
 
 

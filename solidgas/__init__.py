@@ -6,14 +6,24 @@ rutile TiO2 and the Magneli phase Ti4O7, using NIST-JANAF Shomate data.
 
 from .shomate import (SHOMATE, VALID_RANGE, R_KJ, R_ATM, mu0, enthalpy, entropy,
                       heat_capacity, Kp)
+from .potential import (
+    mu_O_from_gas, mu_O_critical, phase_ladder, stable_phase,
+    gas_equilibrium, survey,
+)
 from .equilibrium import (
+    GASES, TI_PHASES, ACTIVE_TI_PHASES, FORMULAS,
     SPECIES, ELEMENTS, ELEM, SOLIDS, gas_idx, sol_idx,
-    G_total, solve, residual, gas_fractions, ti3_percent, moles_of_gas,
+    G_total, solve, residual, phase_seeds, gas_fractions, ti3_percent, phase_split,
+    mean_valence, moles_of_gas,
 )
 
 __all__ = [
     'SHOMATE', 'VALID_RANGE', 'R_KJ', 'R_ATM', 'mu0', 'enthalpy', 'entropy',
     'heat_capacity', 'Kp',
+    'GASES', 'TI_PHASES', 'ACTIVE_TI_PHASES', 'FORMULAS',
     'SPECIES', 'ELEMENTS', 'ELEM', 'SOLIDS', 'gas_idx', 'sol_idx',
-    'G_total', 'solve', 'residual', 'gas_fractions', 'ti3_percent', 'moles_of_gas',
+    'G_total', 'solve', 'residual', 'phase_seeds', 'gas_fractions', 'ti3_percent',
+    'phase_split', 'mean_valence', 'moles_of_gas',
+    'mu_O_from_gas', 'mu_O_critical', 'phase_ladder', 'stable_phase',
+    'gas_equilibrium', 'survey',
 ]

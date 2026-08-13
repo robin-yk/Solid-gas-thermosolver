@@ -2,112 +2,137 @@
 
 Equilibrium solver for a gas phase in contact with a reducible oxide, built to
 answer one question: **can a reverse water-gas-shift feed reduce rutile TiO2 to
-the Magneli phase Ti4O7?**
+a Magneli phase?**
 
-The answer is no, and the margin is not close. Getting there needs methane.
+The answer is no across 500-1500 C, but the margin is not uniform, and the
+place where it is thinnest is not yet fully tested. See *Where this is soft*.
 
-## What it does
+## Two routes to the same answer
 
-Total Gibbs energy is minimised over the mole vector of
+**Full Gibbs minimisation** (`solidgas/equilibrium.py`). Total Gibbs energy is
+minimised over the mole vector, gases ideal and mixing, condensed phases pure
+at unit activity, subject to elemental balance on C, H, O and Ti. Multiple
+starts per temperature, because each solid sits in its own basin.
 
-| phase | species |
-|---|---|
-| gas (ideal, mixing) | CO2, H2, CO, H2O, CH4 |
-| condensed (pure, unit activity) | TiO2 (rutile), Ti4O7 (Magneli) |
+**Oxygen potential** (`solidgas/potential.py`). Titanium does not enter the gas
+below about 2000 K, so the solid exchanges nothing with the gas but oxygen.
+That splits the problem: equilibrate the C-H-O gas alone, read off its oxygen
+potential, and compare against each condensed phase's critical potential, which
+is a plain function of temperature with no optimisation in it at all.
 
-subject to elemental balance on C, H, O and Ti. SLSQP is run from several
-starting points at each temperature, because the reduced-solid branch and the
-untouched-rutile branch are separate local minima and a single start lands in
-whichever one it was seeded near.
+The second route is **238x faster** (1.35 s versus 321 s for an 80-point sweep)
+and **more accurate** - it holds the RWGS quotient to 4e-5 against Kp, where the
+full nine-species minimisation manages 1e-3. Both are kept: the fast route is
+the one to use, and `test_potential_route_matches_the_full_minimisation`
+pins them to each other so the fast one cannot drift.
 
-Thermodynamic data is NIST-JANAF (4th ed.) Shomate polynomials throughout.
+The speed is not the interesting part. Line compounds are present or absent,
+not continuous unknowns, so making them variables forces the optimiser to walk
+an absent phase's mole number down to its bound through a log singularity that
+never needed to exist. Removing the solids as unknowns removes the reason for
+multistart.
 
 ## Results
 
-Conditions in both runs: 100 mg TiO2, 25 mL, 1 atm, 500-1500 C.
+100 mg TiO2, 25 mL, 1 atm, 500-1500 C.
 
-### RWGS feed, CO2/H2 = 1:1
+| feed | Ti(3+) at 900 C | Ti(3+) at 1500 C | phases that appear |
+|---|---|---|---|
+| CO2/H2 = 1:1 | 0.000% | 0.000% | TiO2 only |
+| pure H2 | 0.39% | 8.0% | TiO2 + Ti4O7 |
+| pure CH4 | 41.2% | 46.2% | TiO2 + Ti4O7 |
 
-Ti(3+) is **0.0000% at every temperature**. Rutile is untouched across the whole
-range. The gas equilibrates to ordinary RWGS behaviour — CO2 conversion climbs
-from 25% at 500 C to 66% at 1500 C, with CH4 significant only below ~600 C.
+Under RWGS the gas equilibrates to ordinary shift behaviour, 25% to 66% CO2
+conversion, and the solid never enters. Kp from standard potentials and Q from
+the converged mole fractions agree at every temperature.
 
-```
-  T(C)   CO2%    H2%    CO%   H2O%    CH4%  conv%   Ti3+%     Kp      Q
-   500  44.39  15.92   5.61  24.59   9.492   25.4   0.000  0.195  0.195
-   804  25.43  25.40  24.57  24.59   0.009   49.2   0.000  0.936  0.936
-  1006  21.78  21.78  28.22  28.22   0.000   56.4   0.000  1.680  1.680
-  1500  17.10  17.10  32.90  32.90   0.000   65.8   0.000  3.703  3.703
-```
+**Ti3O5 and Ti2O3 never appear.** They were added to test whether the phase set
+was limiting the answer. It was not: under CH4 the solid parks on the
+TiO2/Ti4O7 two-phase buffer, and the gas there is 12 to 74 times too oxidising
+to carry the next step. The 92% Ti4O7 reached at 1500 C is a buffer, not
+saturation.
 
-`Kp` is computed from standard potentials and `Q` from the converged mole
-fractions. They agree to three decimals at every temperature, which is the
-check that the minimiser actually found equilibrium rather than a nearby point.
+### How far RWGS sits from reduction
 
-### Reducing feeds
+Margin above the TiO2 -> Ti4O7 threshold, in kJ per mole of oxygen removed.
+Positive means no reduction.
 
-| feed | Ti(3+) at 900 C | Ti(3+) at 1500 C |
-|---|---|---|
-| CO2/H2 = 1:1 | 0.000% | 0.000% |
-| pure H2 | 0.386% | 8.01% |
-| pure CH4 | 41.2% | 46.2% |
+| T (C) | 500 | 900 | 1100 | 1300 | 1500 |
+|---|---|---|---|---|---|
+| margin | +69.2 | +45.9 | +35.4 | +24.4 | **+22.7** |
 
-Methane opens the Magneli branch roughly 500 C below hydrogen. The reason is
-visible in the product gas: CH4 cracks and the carbon leaves as **CO**, not CO2,
-and removing oxygen as CO becomes more favourable the hotter it gets, while
-removing it as H2O does not. Under CH4 the equilibrium gas at 900 C is 65% H2 /
-33% CO — the reduction is being driven by carbon, with hydrogen along for the
-ride.
-
-The CH4 curve is not monotonic: Ti(3+) peaks at 41.2% near 905 C, dips to 39.2%
-by 1108 C, then climbs again to 46.2% at 1500 C. The dip is where CH4 runs out
-(0.92% remaining at 905 C, 0.06% at 1006 C); past that point the reduction is
-limited by the CO/CO2 ratio the residual gas can sustain rather than by
-available carbon.
+The conclusion is robust at the cold end and thin at the hot end.
 
 ## Layout
 
 ```
 solidgas/
   shomate.py      NIST-JANAF coefficients; H, S, Cp, mu0, Kp
-  equilibrium.py  species and element matrix, G_total, constrained solve
-run_Ti4O7_RWGS.py       the CO2/H2 sweep, writes Ti4O7_RWGS.png
-run_Ti4O7_reducing.py   the pure-H2 and pure-CH4 sweeps
+  equilibrium.py  species, element matrix, G_total, constrained solve
+  potential.py    oxygen-potential route: gas-only solve + critical potentials
+run_Ti4O7_RWGS.py       CO2/H2 sweep, writes Ti4O7_RWGS.png + results_rwgs.json
+run_Ti4O7_reducing.py   pure-H2 and pure-CH4 sweeps, writes results_reducing.json
+build_site.py           renders index.html for GitHub Pages (see note below)
 tests/                  data checks and solver checks
 ```
 
-## Running
-
 ```bash
 pip install -r requirements.txt
-python3 run_Ti4O7_RWGS.py        # ~40 s
-python3 run_Ti4O7_reducing.py    # ~7 min
 python3 -m pytest tests/ -q
 ```
 
-The reducing sweep is the slow one: 80 temperatures x 4 starting points x 2
-feeds, each an SLSQP solve.
+## Thermodynamic data
 
-## Assumptions, and where they bite
+All condensed-phase entries are NIST-JANAF 4th ed. (Chase, 1998), verified
+against the published tables before use.
 
-- **Condensed phases are pure and immiscible.** TiO2 and Ti4O7 are treated as
-  separate stoichiometric solids with unit activity. Real Magneli formation goes
-  through a homologous series (Ti_nO_2n-1, n = 4..10) with mutual solubility, so
-  the true reduction onset is gradual where this model puts a sharp branch.
-- **Only Ti4O7 represents the reduced phase.** Ti3O5, Ti2O3 and the other
-  Magneli members are absent from the species list. Their inclusion would lower
-  the onset temperature further.
-- **Equilibrium only.** Nothing here says how fast any of it happens. The CH4
-  results in particular assume carbon deposition equilibrates rather than
-  passivating the surface, which is not what happens in a real reactor.
-- **The Shomate branch switches at 1000 K for every species**, while the JANAF
-  breakpoints differ per species (CO2 at 1200 K, CH4 and CO at 1300 K). The
-  resulting discontinuity in mu0 is at most 0.027 kJ/mol, on CH4 — three orders
-  of magnitude below RT at that temperature, so it does not move any result.
-- **Range.** The Ti4O7 fit is valid to 1950 K (1677 C), so the 1500 C ceiling is
-  inside it. The H2O entry uses the 500-1700 K fit and should not be evaluated
-  at room temperature.
-- **Data note.** The rutile fit reproduces Cp(298) = 55.20 J/mol/K against a
-  literature 55.06, but its S(298) comes out 49.86 against a literature
-  ~50.3-50.6. That offset is at the very bottom of the fitted range and well
-  below the 773 K floor used here.
+| phase | O/Ti | dHf298 (kJ/mol) | fit range (K) |
+|---|---|---|---|
+| TiO2 rutile | 2.000 | -938.722 | 298-2000 |
+| Ti4O7 | 1.750 | -3404.525 | 298-1950 |
+| Ti3O5 (beta) | 1.667 | -2446.192 | 298-2050 |
+| Ti2O3 (solid) | 1.500 | -1520.884 | 470-2115 |
+
+Notes on the two added this round:
+
+- **Ti3O5** has two polymorphs in NIST. Beta overtakes alpha at 450 K, far
+  below the 773 K floor here, so beta is the one in `SPECIES`; alpha is kept as
+  `Ti3O5_alpha` for the polymorph test only.
+- **Ti2O3** is listed twice: a solid (dHf = -1520.884) and a liquid/glass
+  (dHf = -1418.46). Only the solid belongs in a solid-gas equilibrium. The
+  liquid value is 102 kJ/mol less stable and would keep Ti2O3 from ever
+  appearing. The solid's 470-2115 K fit covers the whole working range; Cp, S
+  and H each jump at the 470 K join across the metal-insulator transition, but
+  G is continuous there to 0.0006 kJ/mol, which is what equilibrium uses.
+
+## Where this is soft
+
+- **The shallow half of the Magneli series is missing, and that is where the
+  conclusion is thinnest.** Ti5O9 through Ti10O19 sit *between* rutile and
+  Ti4O7 and form more easily than Ti4O7 does, so every margin quoted above is
+  measured against too hard a step and is an upper bound. At 500 C there is
+  69 kJ/mol of room and no plausible correction closes it; at 1500 C there is
+  22.7 kJ/mol and the correction is not obviously smaller than that. **Treat
+  the high-temperature end as untested.** These phases are not in NIST-JANAF;
+  they need a CALPHAD assessment, and mixing that source with NIST for the
+  Ti-O condensed phases would put the answer on top of a data inconsistency,
+  so the whole condensed set should move together when they are added.
+- **No carbon deposition.** Graphite is not a species, so the CH4 results
+  assume all carbon leaves as CO. The equilibrium gas comes out at H2:CO = 2:1
+  exactly, which is what you get when carbon has nowhere else to go - that
+  ratio may be an artefact of the species list rather than a result. The CH4
+  numbers should not be quoted until graphite is in.
+- **Condensed phases are pure and immiscible.** Real Magneli formation runs
+  through a homologous series with mutual solubility, and at the reduced end
+  through oxygen-deficient rutile TiO2-x, which no line-compound set can
+  represent. The n -> infinity limit of the series is not another phase, it is
+  rutile non-stoichiometry.
+- **Equilibrium only.** Nothing here says how fast any of it happens.
+
+## The GitHub Pages site
+
+`build_site.py` renders `index.html` from the solvers' JSON output - static,
+no backend, charts drawn client-side from embedded data. It is **not built
+yet**, deliberately: the numbers move once the shallow Magneli phases and
+graphite are in, and publishing the current CH4 figures would put an artefact
+on the web. Run it after the species list is settled.
