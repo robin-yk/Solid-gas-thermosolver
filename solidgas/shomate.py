@@ -25,6 +25,11 @@ SHOMATE = {
              [18.563083, 12.257357, -2.859786, 0.268238, 1.977990, -1.147438, 156.2881, 0.0], 0.0),
     'H2O':  ([30.09200, 6.832514, 6.793435, -2.534480, 0.082139, -250.8810, 223.3967, -241.8264],
              [30.09200, 6.832514, 6.793435, -2.534480, 0.082139, -250.8810, 223.3967, -241.8264], -241.826),
+    # O2 splits at 700 K, not 1000 - see BREAKPOINT.
+    'O2':   ([31.32234, -20.23531, 57.86644, -36.50624, -0.007374, -8.903471, 246.7945, 0.0],
+             [30.03235, 8.772972, -3.988133, 0.788313, -0.741599, -11.32468, 236.1663, 0.0], 0.0),
+    'N2':   ([28.98641, 1.853978, -9.647459, 16.63537, 0.000117, -8.671914, 226.4168, 0.0],
+             [19.50583, 19.88705, -8.598535, 1.369784, 0.527601, -4.935202, 212.3900, 0.0], 0.0),
     # rutile TiO2 - NIST-JANAF 4th ed (298-2000 K)
     'TiO2': ([67.29830, 18.70940, -11.57900, 2.449561, -1.485471, -964.5140, 117.8630, -938.7220],
              [67.29830, 18.70940, -11.57900, 2.449561, -1.485471, -964.5140, 117.8630, -938.7220], -938.722),
@@ -49,11 +54,23 @@ SHOMATE = {
                     [233.4149, -59.35757, 68.20422, -20.59934, -5.901490, -2546.516, 393.3579, -2459.150], -2459.150),
 }
 
+# Where each entry switches from its low- to its high-temperature coefficients.
+# NIST does not use one breakpoint for everything; 1000 K is the common case.
+BREAKPOINT = {'O2': 700.0, 'N2': 500.0}
+DEFAULT_BREAKPOINT = 1000.0
+
+
+def _coeffs(name, T):
+    lo, hi, _dHf = SHOMATE[name]
+    return lo if T <= BREAKPOINT.get(name, DEFAULT_BREAKPOINT) else hi
+
+
 # Temperature window each entry is fitted over, in K. Ti4O7 is the binding one:
 # it stops at 1950 K, i.e. 1677 C.
 VALID_RANGE = {
     'CH4': (298.0, 6000.0), 'CO2': (298.0, 6000.0), 'CO': (298.0, 6000.0),
     'H2': (298.0, 2500.0), 'H2O': (500.0, 1700.0),
+    'O2': (100.0, 2000.0), 'N2': (100.0, 2000.0),
     'TiO2': (298.0, 2000.0), 'Ti4O7': (298.0, 1950.0),
     'Ti3O5': (298.0, 2050.0), 'Ti3O5_alpha': (298.0, 1500.0),
     'Ti2O3': (470.0, 2115.0),
@@ -62,33 +79,30 @@ VALID_RANGE = {
 
 def enthalpy(name, T):
     """Standard molar enthalpy in kJ/mol, referenced to the elements."""
-    lo, hi, dHf = SHOMATE[name]
-    A, B, C, D, E, F, _G, H = lo if T <= 1000 else hi
+    _lo, _hi, dHf = SHOMATE[name]
+    A, B, C, D, E, F, _G, H = _coeffs(name, T)
     t = T / 1000.0
     return dHf + (A * t + B * t**2 / 2 + C * t**3 / 3 + D * t**4 / 4 - E / t + F - H)
 
 
 def heat_capacity(name, T):
     """Standard molar heat capacity in J/mol/K."""
-    lo, hi, _dHf = SHOMATE[name]
-    A, B, C, D, E, _F, _G, _H = lo if T <= 1000 else hi
+    A, B, C, D, E, _F, _G, _H = _coeffs(name, T)
     t = T / 1000.0
     return A + B * t + C * t**2 + D * t**3 + E / t**2
 
 
 def entropy(name, T):
     """Standard molar entropy in J/mol/K."""
-    lo, hi, _dHf = SHOMATE[name]
-    A, B, C, D, E, _F, G, _H = lo if T <= 1000 else hi
+    A, B, C, D, E, _F, G, _H = _coeffs(name, T)
     t = T / 1000.0
     return A * np.log(t) + B * t + C * t**2 / 2 + D * t**3 / 3 - E / (2 * t**2) + G
 
 
 def mu0(name, T):
     """Standard chemical potential G = H - T*S in kJ/mol."""
-    lo, hi, dHf = SHOMATE[name]
-    c = lo if T <= 1000 else hi
-    A, B, C, D, E, F, G, H = c
+    _lo, _hi, dHf = SHOMATE[name]
+    A, B, C, D, E, F, G, H = _coeffs(name, T)
     t = T / 1000.0
     Ht = dHf + (A * t + B * t**2 / 2 + C * t**3 / 3 + D * t**4 / 4 - E / t + F - H)
     St = A * np.log(t) + B * t + C * t**2 / 2 + D * t**3 / 3 - E / (2 * t**2) + G

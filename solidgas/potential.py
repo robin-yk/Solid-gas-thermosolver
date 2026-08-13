@@ -21,7 +21,7 @@ mu_O is quoted per mole of atomic oxygen, referenced to 1/2 O2, in kJ.
 import numpy as np
 from scipy.optimize import minimize
 
-from .shomate import mu0, R_KJ
+from .shomate import mu0, R_KJ, R_ATM
 from .equilibrium import ACTIVE_TI_PHASES, FORMULAS, GASES
 from . import waldner
 
@@ -42,11 +42,17 @@ def solid_mu0(name, T, source=DEFAULT_SOURCE):
 
 
 def ti_phases(source=DEFAULT_SOURCE):
-    """Titanium phases available from a given source, most oxidised first."""
+    """Titanium phases the given source actually carries, most oxidised first.
+
+    NIST-JANAF stops at Ti4O7, so asking it for the shallow Magneli members
+    returns a shorter list rather than a KeyError. That difference is the whole
+    reason the Waldner assessment is here.
+    """
     if source == 'waldner':
         names = list(waldner.WALDNER)
     else:
-        names = [p for p in ACTIVE_TI_PHASES]
+        from .shomate import SHOMATE
+        names = [p for p in ACTIVE_TI_PHASES if p in SHOMATE]
     return sorted(names, key=lambda p: -_ratio(p))
 
 
@@ -82,6 +88,60 @@ def _stoich(name):
     if name in FORMULAS:
         return FORMULAS[name]['Ti'], FORMULAS[name]['O']
     return waldner._stoich(name)
+
+
+def mu_O_to_pO2(mu_O, T):
+    """Oxygen partial pressure, in atm, that carries a given oxygen potential.
+
+    mu_O = 0.5 * [mu0(O2, T) + R T ln pO2]. The mu0(O2) term is the one that is
+    easy to drop, and dropping it moves the answer by fourteen orders of
+    magnitude in pressure - though never by anything at all in a margin, since
+    margins are differences of two potentials and it cancels.
+    """
+    return float(np.exp((2.0 * mu_O - mu0('O2', T)) / (R_KJ * T)))
+
+
+def pO2_to_mu_O(pO2, T):
+    """Inverse of mu_O_to_pO2."""
+    return 0.5 * (mu0('O2', T) + R_KJ * T * np.log(pO2))
+
+
+def inert_atmosphere(T, V_cm3, n_Ti_total, pO2_initial=0.0, P_tot=1.0,
+                     source=DEFAULT_SOURCE, phases=None):
+    """Equilibrium under a gas that carries no oxygen of its own, such as N2.
+
+    With nothing to accept oxygen but the gas phase itself, the oxide gives up
+    oxygen as O2 until the potential it sets matches the phase boundary. The
+    amount is set by the vessel: a bigger headspace holds more O2 at the same
+    pressure and so pulls the solid further.
+
+    `pO2_initial` is the oxygen already in the carrier gas. It matters more
+    than the temperature does, which is the real answer to 'what does pure N2
+    do' - the number comes off the cylinder's purity spec, not a table.
+    """
+    ph = [p for p in (phases or ti_phases(source)) if _ratio(p) < 2.0]
+    best, best_crit = None, -np.inf
+    for p in ph:
+        c = mu_O_critical(p, 'TiO2', T, source)
+        if c > best_crit:
+            best, best_crit = p, c
+
+    pO2_eq = mu_O_to_pO2(best_crit, T)
+    n_O2_released = max(pO2_eq - pO2_initial, 0.0) * V_cm3 / (R_ATM * T)
+
+    n_ti, n_o = _stoich(best)
+    dO = 2 * n_ti - n_o                      # oxygen atoms freed per formula
+    n_phase = 2.0 * n_O2_released / dO       # O2 carries two oxygen atoms
+    capped = n_phase * n_ti > n_Ti_total
+    if capped:
+        n_phase = n_Ti_total / n_ti
+
+    return {'phase': best, 'mu_O_boundary': best_crit, 'pO2_eq': pO2_eq,
+            'n_O2': n_O2_released, 'n_phase': n_phase,
+            'ti3_percent': min(2.0 * n_phase / n_Ti_total, 1.0) * 100.0,
+            'O_removed_fraction': n_phase * dO / (2.0 * n_Ti_total),
+            'solid_limited': capped,
+            'reducing': pO2_initial < pO2_eq}
 
 
 def mu_O_critical(lower, higher, T, source=DEFAULT_SOURCE):

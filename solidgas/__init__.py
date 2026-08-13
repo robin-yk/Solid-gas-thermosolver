@@ -10,6 +10,7 @@ from . import waldner
 from .potential import (
     mu_O_from_gas, mu_O_critical, phase_ladder, stable_phase,
     first_phase_margin, ti_phases, solid_mu0, gas_equilibrium, survey,
+    mu_O_to_pO2, pO2_to_mu_O, inert_atmosphere,
     SOURCES, DEFAULT_SOURCE,
 )
 from .equilibrium import (
@@ -29,4 +30,5 @@ __all__ = [
     'waldner', 'mu_O_from_gas', 'mu_O_critical', 'phase_ladder',
     'stable_phase', 'first_phase_margin', 'ti_phases', 'solid_mu0',
     'gas_equilibrium', 'survey', 'SOURCES', 'DEFAULT_SOURCE',
+    'mu_O_to_pO2', 'pO2_to_mu_O', 'inert_atmosphere',
 ]

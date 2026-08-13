@@ -9,6 +9,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 from .shomate import mu0, R_KJ, R_ATM  # noqa: F401  (R_ATM re-exported for scripts)
+from . import waldner
 
 GASES = ['CO2', 'H2', 'CO', 'H2O', 'CH4']
 
@@ -19,7 +20,13 @@ GASES = ['CO2', 'H2', 'CO', 'H2O', 'CH4']
 #   3x + 4(n - x)  = 4n - x = 4n - 2   ->   x = 2
 # so Ti2O3, Ti3O5, Ti4O7 and Ti5O9 all sit at two Ti(3+) per formula.
 TI_PHASES = {
-    'TiO2':  (1, 0),   # rutile, all Ti(4+)
+    'TiO2':   (1, 0),  # rutile, all Ti(4+)
+    'Ti20O39': (20, 2),
+    'Ti10O19': (10, 2),
+    'Ti9O17': (9, 2),
+    'Ti8O15': (8, 2),
+    'Ti7O13': (7, 2),
+    'Ti6O11': (6, 2),
     'Ti5O9': (5, 2),
     'Ti4O7': (4, 2),
     'Ti3O5': (3, 2),
@@ -28,7 +35,8 @@ TI_PHASES = {
 
 # Which titanium phases take part. Extend this list (and add the matching
 # Shomate entry) to bring another member of the series into the calculation.
-ACTIVE_TI_PHASES = ['TiO2', 'Ti4O7', 'Ti3O5', 'Ti2O3']
+ACTIVE_TI_PHASES = ['TiO2', 'Ti10O19', 'Ti8O15', 'Ti6O11', 'Ti5O9',
+                    'Ti4O7', 'Ti3O5', 'Ti2O3']
 
 FORMULAS = {
     'CO2': {'C': 1, 'O': 2},
@@ -37,6 +45,12 @@ FORMULAS = {
     'H2O': {'H': 2, 'O': 1},
     'CH4': {'C': 1, 'H': 4},
     'TiO2': {'O': 2, 'Ti': 1},
+    'Ti20O39': {'O': 39, 'Ti': 20},
+    'Ti10O19': {'O': 19, 'Ti': 10},
+    'Ti9O17': {'O': 17, 'Ti': 9},
+    'Ti8O15': {'O': 15, 'Ti': 8},
+    'Ti7O13': {'O': 13, 'Ti': 7},
+    'Ti6O11': {'O': 11, 'Ti': 6},
     'Ti5O9': {'O': 9, 'Ti': 5},
     'Ti4O7': {'O': 7, 'Ti': 4},
     'Ti3O5': {'O': 5, 'Ti': 3},
@@ -56,17 +70,28 @@ gas_idx = [i for i, s in enumerate(SPECIES) if s not in SOLIDS]
 sol_idx = [i for i, s in enumerate(SPECIES) if s in SOLIDS]
 
 
-def G_total(n, T, P_tot=1.0):
+def solid_mu(name, T, source='waldner'):
+    """Chemical potential of a condensed phase, from the chosen assessment.
+
+    Gases always come from NIST; only the titanium-bearing solids have a
+    choice, and the two sources must not be mixed inside one calculation.
+    """
+    if source == 'waldner' and name in waldner.WALDNER:
+        return waldner.mu0(name, T)
+    return mu0(name, T)
+
+
+def G_total(n, T, P_tot=1.0, source='waldner'):
     """Total Gibbs energy in kJ for a mole vector `n` at temperature T (K)."""
     ng = sum(n[i] for i in gas_idx)
     if ng <= 0:
         return 1e10
     return (sum(n[i] * (mu0(SPECIES[i], T) + R_KJ * T * np.log(n[i] / ng * P_tot))
                 for i in gas_idx if n[i] > 1e-30)
-            + sum(n[i] * mu0(SPECIES[i], T) for i in sol_idx))
+            + sum(n[i] * solid_mu(SPECIES[i], T, source) for i in sol_idx))
 
 
-def solve(b, T, inits, P_tot=1.0, tol=1e-8):
+def solve(b, T, inits, P_tot=1.0, tol=1e-8, source='waldner'):
     """Minimise G subject to ELEM.T @ n == b.
 
     `inits` is a list of starting mole vectors; SLSQP is run from each and the
@@ -80,7 +105,7 @@ def solve(b, T, inits, P_tot=1.0, tol=1e-8):
     best, bestG = None, 1e10
     for n_init in inits:
         try:
-            s = minimize(lambda n: G_total(n, T, P_tot), n_init, method='SLSQP',
+            s = minimize(lambda n: G_total(n, T, P_tot, source), n_init, method='SLSQP',
                          bounds=bnds, constraints=cons,
                          options={'ftol': 1e-13, 'maxiter': 1000, 'disp': False})
             if s.fun < bestG and residual(s.x, b) < tol:

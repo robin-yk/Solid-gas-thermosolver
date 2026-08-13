@@ -122,17 +122,24 @@ def test_mu0_is_h_minus_ts():
 
 
 def test_shomate_branch_switch_is_continuous():
-    """Both coefficient sets must agree at the 1000 K switch point."""
+    """Both coefficient sets must agree where that species actually switches.
+
+    NIST does not use one breakpoint for everything - O2 changes at 700 K and
+    N2 at 500 K - so checking every entry at 1000 K tests the wrong join.
+    """
+    from solidgas.shomate import BREAKPOINT, DEFAULT_BREAKPOINT
     for name in SHOMATE:
         lo, hi, dHf = SHOMATE[name]
+        T_sw = BREAKPOINT.get(name, DEFAULT_BREAKPOINT)
         vals = []
         for c in (lo, hi):
             A, B, C, D, E, F, G, H = c
-            t = 1.0
+            t = T_sw / 1000.0
             Ht = dHf + (A * t + B * t**2 / 2 + C * t**3 / 3 + D * t**4 / 4 - E / t + F - H)
             St = A * np.log(t) + B * t + C * t**2 / 2 + D * t**3 / 3 - E / (2 * t**2) + G
-            vals.append(Ht - 1000.0 * St / 1000.0)
-        assert abs(vals[1] - vals[0]) < 0.05, f'{name} jumps {vals[1] - vals[0]:.4f} kJ/mol'
+            vals.append(Ht - T_sw * St / 1000.0)
+        assert abs(vals[1] - vals[0]) < 0.05, \
+            f'{name} jumps {vals[1] - vals[0]:.4f} kJ/mol at {T_sw:.0f} K'
 
 
 def test_rwgs_is_endothermic_and_crosses_unity():
@@ -175,16 +182,26 @@ def test_element_matrix_matches_formulas():
     expected = {
         'CO2': (1, 0, 2, 0), 'H2': (0, 2, 0, 0), 'CO': (1, 0, 1, 0),
         'H2O': (0, 2, 1, 0), 'CH4': (1, 4, 0, 0),
-        'TiO2': (0, 0, 2, 1), 'Ti5O9': (0, 0, 9, 5), 'Ti4O7': (0, 0, 7, 4),
-        'Ti3O5': (0, 0, 5, 3), 'Ti2O3': (0, 0, 3, 2),
+        'TiO2': (0, 0, 2, 1), 'Ti20O39': (0, 0, 39, 20),
+        'Ti10O19': (0, 0, 19, 10), 'Ti9O17': (0, 0, 17, 9),
+        'Ti8O15': (0, 0, 15, 8), 'Ti7O13': (0, 0, 13, 7),
+        'Ti6O11': (0, 0, 11, 6), 'Ti5O9': (0, 0, 9, 5),
+        'Ti4O7': (0, 0, 7, 4), 'Ti3O5': (0, 0, 5, 3), 'Ti2O3': (0, 0, 3, 2),
     }
     for i, s in enumerate(SPECIES):
         assert tuple(ELEM[i].astype(int)) == expected[s]
 
 
 def test_every_active_phase_has_data_and_a_seed():
+    """Every active phase needs stoichiometry, a seed, and at least one source.
+
+    Not every one is in NIST - the shallow Magneli members exist only in the
+    Waldner assessment, which is why they were brought in.
+    """
+    from solidgas import waldner
     for p in ACTIVE_TI_PHASES:
-        assert p in SHOMATE and p in FORMULAS and p in TI_PHASES and p in VALID_RANGE
+        assert p in FORMULAS and p in TI_PHASES
+        assert p in SHOMATE or p in waldner.WALDNER, p
     assert len(phase_seeds(1.0)) == 1 + 2 * (len(ACTIVE_TI_PHASES) - 1)
 
 
