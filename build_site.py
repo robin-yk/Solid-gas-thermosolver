@@ -26,9 +26,12 @@ def main():
         html = fh.read()
     with open(os.path.join(HERE, 'solver.js')) as fh:
         solver = fh.read()
+    with open(os.path.join(HERE, 'page.js')) as fh:
+        page = fh.read()
     with open(os.path.join(HERE, 'thermo_data.json')) as fh:
         data = fh.read()
-    html = html.replace('__SOLVER__', solver).replace('__THERMO__', data)
+    html = (html.replace('__SOLVER__', solver).replace('__PAGE__', page)
+                .replace('__THERMO__', data))
     out = os.path.join(HERE, 'index.html')
     with open(out, 'w') as fh:
         fh.write(html)

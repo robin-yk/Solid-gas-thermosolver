@@ -6,192 +6,246 @@
 <title>TiOx Reduction Solver</title>
 <meta name="description" content="Interactive oxygen-potential solver for titanium oxides under reacting gas, on NIST-JANAF and Waldner-Eriksson data.">
 <style>
+/* Tokens extend the naming already used across the site set
+   (--bg / --ink / --ink-soft / --muted / --rule / --accent) rather than starting
+   a second system. Light is the bare :root; dark is declared twice, under the
+   OS media query and under the explicit toggle, so neither can win by accident.
+
+   Series colors do two different jobs and must not be merged:
+     --ord-*    phase boundaries. Ordered by O/Ti, so swapping them changes the
+                meaning: an ordinal one-hue ramp, stepped off --accent.
+     --series-* gas species. Nominal - CO2 is not "more" than H2 - so identity
+                needs separate hues. A one-hue ramp fails here by measurement,
+                not by taste: five steps of --accent score CVD dE 5.4 and a
+                normal-vision 5.6 against a floor of 15.
+   --danger and --safe are a reserved status channel and never carry a series. */
 :root{
-  --bg:#fbfbfa; --panel:#fff; --sunk:#f3f4f2; --ink:#16181d; --soft:#4a5058; --muted:#767c85;
-  --rule:#e2e5ea; --accent:#1f4e79; --ok:#1f6f43; --no:#a3341f; --warn:#8a6a12;
-  --c1:#7b3fa0; --c2:#2f6fb5; --c3:#c8452b; --c4:#c98a1e; --c5:#6b4a2f; --c6:#2f8f7a;
-  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --ground:#F4F1EA; --surface:#FCFAF6; --sunk:#EDE8DF;
+  --ink:#1F1B17; --ink-soft:#4A443C; --muted:#7A736A; --rule:#DDD6CA;
+  --accent:#3A6379; --danger:#A83E28; --safe:#3F7A4C;
+  --danger-fill:#A83E28; --safe-fill:#3F7A4C; --on-status:#FFFFFF;
+  --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a; --series-4:#eda100; --series-5:#e87ba4;
+  --ord-1:#8FB2C1; --ord-2:#6D97AA; --ord-3:#4E7C92; --ord-4:#3A6379; --ord-5:#2A4B5D;
+  --display:ui-sans-serif,"Helvetica Neue",Helvetica,"Segoe UI",Roboto,system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --rail:280px;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#101216; --panel:#171a20; --sunk:#1f232b; --ink:#e8eaee; --soft:#b0b6bf; --muted:#868d97;
-  --rule:#2a2f38; --accent:#7fb2e5; --ok:#5fc38c; --no:#e8806a; --warn:#d8b45c;
-  --c1:#c08ae0; --c2:#6fa8e0; --c3:#e8806a; --c4:#e0b656; --c5:#b08a63; --c6:#5fc3ad;
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){
+  --ground:#12100E; --surface:#1C1917; --sunk:#242019;
+  --ink:#EDE7DE; --ink-soft:#BDB5A9; --muted:#8B8377; --rule:#332E28;
+  --accent:#5B8FA3; --danger:#C6553E; --safe:#5E9B6B;
+  --danger-fill:#C6553E; --safe-fill:#4A8256; --on-status:#FFFFFF;
+  --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500; --series-5:#d55181;
+  --ord-1:#BCD4DD; --ord-2:#96B9C7; --ord-3:#6E9BAF; --ord-4:#4E7C92; --ord-5:#33586C;
 }}
 :root[data-theme="dark"]{
-  --bg:#101216; --panel:#171a20; --sunk:#1f232b; --ink:#e8eaee; --soft:#b0b6bf; --muted:#868d97;
-  --rule:#2a2f38; --accent:#7fb2e5; --ok:#5fc38c; --no:#e8806a; --warn:#d8b45c;
-  --c1:#c08ae0; --c2:#6fa8e0; --c3:#e8806a; --c4:#e0b656; --c5:#b08a63; --c6:#5fc3ad;
+  --ground:#12100E; --surface:#1C1917; --sunk:#242019;
+  --ink:#EDE7DE; --ink-soft:#BDB5A9; --muted:#8B8377; --rule:#332E28;
+  --accent:#5B8FA3; --danger:#C6553E; --safe:#5E9B6B;
+  --danger-fill:#C6553E; --safe-fill:#4A8256; --on-status:#FFFFFF;
+  --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500; --series-5:#d55181;
+  --ord-1:#BCD4DD; --ord-2:#96B9C7; --ord-3:#6E9BAF; --ord-4:#4E7C92; --ord-5:#33586C;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
- font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px}
-header{padding:52px 0 26px;border-bottom:1px solid var(--rule);margin-bottom:26px}
-h1{font-size:clamp(1.7rem,4vw,2.3rem);margin:0 0 10px;letter-spacing:-.02em}
-.lede{color:var(--soft);max-width:66ch;margin:0}
-h2{font-size:1.2rem;margin:38px 0 4px;letter-spacing:-.01em}
-.sub{color:var(--muted);font-size:.9rem;margin:0 0 16px}
-p{max-width:70ch}
+html{color-scheme:light dark}
+body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--body);
+ -webkit-font-smoothing:antialiased}
+.shell{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:0;min-height:100vh}
+/* every grid child needs an explicit zero minimum, or a wide chart pushes the
+   track instead of scrolling inside its own box */
+.shell>*{min-width:0}
 
-.controls{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:20px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
-label{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
-select,input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--rule);border-radius:7px;
- background:var(--sunk);color:var(--ink);font:inherit;font-size:.92rem}
-input[type=range]{width:100%;accent-color:var(--accent)}
-.rowval{font-family:var(--mono);font-size:.85rem;color:var(--soft);margin-top:4px}
-.seg{display:flex;gap:0;border:1px solid var(--rule);border-radius:7px;overflow:hidden}
-.seg button{flex:1;padding:8px 6px;border:0;background:var(--sunk);color:var(--soft);font:inherit;font-size:.85rem;cursor:pointer}
-.seg button[aria-pressed=true]{background:var(--accent);color:#fff}
+/* ---- control rail ---- */
+.rail{background:var(--surface);border-right:1px solid var(--rule);padding:26px 22px 40px;
+ position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{font-family:var(--display);font-size:1.12rem;font-weight:640;letter-spacing:-.015em;
+ line-height:1.25;margin:0 0 4px}
+.brand sub{font-size:.62em;font-weight:600}
+.tagline{color:var(--muted);font-size:.78rem;margin:0 0 24px;line-height:1.45}
+.field{margin-bottom:17px}
+label,.flabel{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.075em;
+ color:var(--muted);margin-bottom:6px;font-weight:600}
+select,input[type=number]{width:100%;padding:7px 9px;border:1px solid var(--rule);border-radius:6px;
+ background:var(--sunk);color:var(--ink);font:inherit;font-size:.87rem}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0 0}
+.readout{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.8rem;color:var(--ink-soft);margin-top:3px}
+.seg{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.seg button{flex:1;padding:7px 4px;border:0;background:var(--sunk);color:var(--muted);
+ font:inherit;font-size:.8rem;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--on-status)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.railnote{margin-top:22px;padding-top:16px;border-top:1px solid var(--rule);
+ font-size:.72rem;color:var(--muted);line-height:1.5}
 
-.verdict{margin:24px 0 8px;padding:16px 20px;border-radius:10px;border:1px solid;display:flex;
- flex-wrap:wrap;align-items:baseline;gap:6px 14px}
-.verdict.no{background:color-mix(in srgb,var(--no) 10%,transparent);border-color:color-mix(in srgb,var(--no) 30%,transparent)}
-.verdict.yes{background:color-mix(in srgb,var(--ok) 10%,transparent);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
-.verdict b{font-size:1.05rem}
-.verdict.no b{color:var(--no)} .verdict.yes b{color:var(--ok)}
-.verdict span{color:var(--soft);font-size:.92rem}
+/* ---- main ---- */
+main{padding:26px 32px 72px;max-width:1180px;min-width:0}
+.badge{display:inline-flex;align-items:baseline;gap:9px;padding:7px 15px;border-radius:6px;
+ background:var(--danger-fill);color:var(--on-status);font-family:var(--display);
+ font-size:1.05rem;font-weight:640;letter-spacing:-.01em}
+.badge.safe{background:var(--safe-fill)}
+.badge em{font-style:normal;font-weight:450;font-size:.83rem;opacity:.92}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:11px;margin:18px 0 6px}
+.kpi{background:var(--surface);border:1px solid var(--rule);border-radius:9px;padding:13px 15px}
+/* no case transform here: it turns mu into a capital M and Ti into TI */
+.kpi .k{font-size:.67rem;letter-spacing:.075em;color:var(--muted);font-weight:600}
+.kpi .v{font-family:var(--display);font-size:1.62rem;font-weight:640;letter-spacing:-.02em;
+ font-variant-numeric:tabular-nums;margin:5px 0 1px;line-height:1.1}
+.kpi .u{font-size:.74rem;color:var(--muted)}
+.kpi.is-danger .v{color:var(--danger)} .kpi.is-safe .v{color:var(--safe)}
+/* a word in the value slot must not wear the figure size */
+.kpi.is-word .v{font-size:1.06rem;font-weight:560;letter-spacing:0}
 
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0}
-.card{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 16px}
-.card .k{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-.card .v{font-size:1.5rem;font-weight:650;margin:4px 0 2px;font-variant-numeric:tabular-nums}
-.card .n{font-size:.82rem;color:var(--soft)}
-
-.chart{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 12px 6px;overflow-x:auto}
-svg{display:block;width:100%;height:auto;min-width:560px}
-.legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px 4px 4px;font-size:.83rem;color:var(--soft)}
+h2{font-family:var(--display);font-size:1.02rem;font-weight:640;letter-spacing:-.01em;
+ margin:34px 0 3px}
+.sub{color:var(--muted);font-size:.83rem;margin:0 0 13px;max-width:74ch}
+figure{margin:0}
+.plot{background:var(--surface);border:1px solid var(--rule);border-radius:9px;padding:12px 10px 4px;
+ position:relative;overflow-x:auto}
+svg{display:block;width:100%;height:auto;min-width:540px}
+.legend{display:flex;flex-wrap:wrap;gap:5px 15px;padding:9px 4px 3px;font-size:.79rem;color:var(--ink-soft)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
-.legend i{width:15px;height:3px;border-radius:2px}
-figcaption{font-size:.86rem;color:var(--muted);margin:8px 2px 0;max-width:70ch}
+.legend i{width:14px;height:2px;border-radius:1px;flex:none}
+sub,sup{font-size:.68em;line-height:0;margin-left:.02em}
+sub{vertical-align:-.22em} sup{vertical-align:.42em}
+figcaption{font-size:.81rem;color:var(--muted);margin:9px 2px 0;max-width:74ch}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--rule);
+ border-radius:7px;padding:8px 10px;font-size:.79rem;box-shadow:0 6px 18px rgba(0,0,0,.16);
+ opacity:0;transition:opacity .09s;min-width:132px;z-index:5}
+.tip .th{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);
+ font-size:.72rem;margin-bottom:4px}
+.tip .r{display:flex;align-items:center;gap:7px;line-height:1.5}
+.tip .r i{width:11px;height:2px;border-radius:1px;flex:none}
+.tip .r b{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:640;min-width:56px;text-align:right}
+.tip .r span{color:var(--ink-soft);font-size:.76rem}
 
-.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
-table{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
-th,td{padding:8px 13px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:9px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.83rem}
+th,td{padding:7px 13px;border-bottom:1px solid var(--rule);white-space:nowrap;
+ font-variant-numeric:tabular-nums}
+td{font-family:var(--mono)} td:last-child{font-family:var(--body)}
+th{text-align:right} td{text-align:right}
 th:first-child,td:first-child{text-align:left}
-thead th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+th:last-child,td:last-child{text-align:left}
+thead th{font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
 tbody tr:last-child td{border-bottom:0}
-code,.mono{font-family:var(--mono);font-size:.88em}
-.note{border-left:3px solid var(--warn);padding:2px 0 2px 15px;margin:18px 0;color:var(--soft);font-size:.92rem}
+.mono{font-family:var(--mono)}
+.note{border-left:2px solid var(--danger);padding:1px 0 1px 14px;margin:18px 0;
+ color:var(--ink-soft);font-size:.86rem;max-width:74ch}
 .note strong{color:var(--ink)}
-ul{max-width:70ch;padding-left:20px} li{margin:7px 0;color:var(--soft)}
+ul{max-width:74ch;padding-left:19px} li{margin:6px 0;color:var(--ink-soft);font-size:.88rem}
 li strong{color:var(--ink);font-weight:600}
-footer{margin-top:60px;padding-top:22px;border-top:1px solid var(--rule);font-size:.85rem;color:var(--muted)}
+footer{margin-top:52px;padding-top:19px;border-top:1px solid var(--rule);font-size:.79rem;color:var(--muted);max-width:74ch}
 a{color:var(--accent)}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule)}
+  main{padding:22px 20px 60px}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="shell">
 
-<header>
-  <h1>TiO<sub>x</sub> reduction solver</h1>
-  <p class="lede">Pick a gas and conditions; the page equilibrates the C&ndash;H&ndash;O gas, reads off its
-  oxygen potential, and compares that against every titanium oxide in the series. Everything is
-  computed in the browser from NIST-JANAF and Waldner&ndash;Eriksson coefficients &mdash; nothing here is
-  a stored answer.</p>
-</header>
+<aside class="rail">
+  <p class="brand">TiO<sub>x</sub> reduction solver</p>
+  <p class="tagline">Equilibrates the C&ndash;H&ndash;O gas, reads its oxygen potential, and compares
+  against every oxide in the Magn&eacute;li series. Computed live &mdash; nothing here is stored.</p>
 
-<div class="controls">
-  <div class="grid">
-    <div>
-      <label for="feed">Atmosphere</label>
-      <select id="feed">
-        <option value="CO2H2">CO2 / H2 = 1:1 (RWGS)</option>
-        <option value="H2">pure H2</option>
-        <option value="CH4">pure CH4</option>
-        <option value="inert">inert (N2) + O2 impurity</option>
-      </select>
-    </div>
-    <div>
-      <label for="src">Ti&ndash;O data</label>
-      <div class="seg" id="src">
-        <button data-v="waldner" aria-pressed="true">Waldner</button>
-        <button data-v="nist" aria-pressed="false">NIST</button>
-      </div>
-      <div class="rowval" id="srcNote"></div>
-    </div>
-    <div>
-      <label for="deep">Series depth</label>
-      <select id="deep">
-        <option value="active">to Ti10O19 (default)</option>
-        <option value="full">to Ti20O39 (model edge)</option>
-        <option value="ti4o7">Ti4O7 only</option>
-      </select>
-    </div>
-    <div>
-      <label for="P">Pressure (atm)</label>
-      <input type="number" id="P" value="1" min="0.01" max="100" step="0.1">
-    </div>
-    <div>
-      <label for="mass">TiO2 (mg)</label>
-      <input type="number" id="mass" value="100" min="1" max="10000" step="10">
-    </div>
-    <div>
-      <label for="vol">Volume (mL)</label>
-      <input type="number" id="vol" value="25" min="1" max="10000" step="5">
-    </div>
-    <div id="impWrap" hidden>
-      <label for="imp">O2 impurity (ppm)</label>
-      <input type="number" id="imp" value="1" min="0" max="1000000" step="0.1">
-    </div>
-    <div>
-      <label for="Tpick">Readout temperature</label>
-      <input type="range" id="Tpick" min="500" max="1500" step="10" value="1500">
-      <div class="rowval" id="TpickVal">1500 &deg;C</div>
-    </div>
+  <div class="field">
+    <label for="feed">Atmosphere</label>
+    <select id="feed">
+      <option value="CO2H2">CO2 / H2 = 1:1 (RWGS)</option>
+      <option value="H2">pure H2</option>
+      <option value="CH4">pure CH4</option>
+      <option value="inert">inert (N2) + O2</option>
+    </select>
   </div>
-</div>
+  <div class="field">
+    <span class="flabel">Ti&ndash;O dataset</span>
+    <div class="seg" id="src">
+      <button data-v="waldner" aria-pressed="true">Waldner</button>
+      <button data-v="nist" aria-pressed="false">NIST</button>
+    </div>
+    <div class="readout" id="srcNote"></div>
+  </div>
+  <div class="field">
+    <label for="deep">Series depth</label>
+    <select id="deep">
+      <option value="active">to Ti10O19</option>
+      <option value="full">to Ti20O39 (model edge)</option>
+      <option value="ti4o7">Ti4O7 only</option>
+    </select>
+  </div>
+  <div class="field pair">
+    <div><label for="P">Pressure</label><input type="number" id="P" value="1" min="0.01" max="100" step="0.1"><div class="readout">atm</div></div>
+    <div><label for="vol">Volume</label><input type="number" id="vol" value="25" min="1" max="10000" step="5"><div class="readout">mL</div></div>
+  </div>
+  <div class="field pair">
+    <div><label for="mass">TiO2</label><input type="number" id="mass" value="100" min="1" max="10000" step="10"><div class="readout">mg</div></div>
+    <div id="impWrap" hidden><label for="imp">O2 impurity</label><input type="number" id="imp" value="1" min="0" max="1000000" step="0.1"><div class="readout">ppm</div></div>
+  </div>
+  <div class="field">
+    <label for="Tpick">Readout temperature</label>
+    <input type="range" id="Tpick" min="500" max="1500" step="10" value="1500">
+    <div class="readout" id="TpickVal">1500 &deg;C</div>
+  </div>
+  <p class="railnote" id="railnote"></p>
+</aside>
 
-<div id="verdict" class="verdict no"></div>
-<div class="cards" id="cards"></div>
+<main>
+  <div id="badge" class="badge"></div>
+  <div class="kpis" id="kpis"></div>
 
-<h2>Oxygen potential against the phase boundaries</h2>
-<p class="sub">The one plot that answers the question. Reduction happens where the gas line drops below a boundary.</p>
-<figure>
-  <div class="chart"><svg id="chMu" viewBox="0 0 900 430" role="img" aria-label="Oxygen potential versus temperature"></svg></div>
-  <div class="legend" id="lgMu"></div>
-  <figcaption id="capMu"></figcaption>
-</figure>
+  <h2>Oxygen potential against the phase boundaries</h2>
+  <p class="sub">The plot that answers the question. Reduction happens where the gas line drops below a boundary.</p>
+  <figure>
+    <div class="plot" id="wrapMu"><svg id="chMu" viewBox="0 0 900 400" role="img" aria-label="Oxygen potential versus temperature"></svg><div class="tip" id="tipMu"></div></div>
+    <div class="legend" id="lgMu"></div>
+    <figcaption id="capMu"></figcaption>
+  </figure>
 
-<h2>Gas composition</h2>
-<figure>
-  <div class="chart"><svg id="chGas" viewBox="0 0 900 380" role="img" aria-label="Gas composition versus temperature"></svg></div>
-  <div class="legend" id="lgGas"></div>
-</figure>
+  <h2>Gas composition</h2>
+  <p class="sub">Equilibrium mole fractions of the five C&ndash;H&ndash;O species.</p>
+  <figure>
+    <div class="plot" id="wrapGas"><svg id="chGas" viewBox="0 0 900 340" role="img" aria-label="Gas composition versus temperature"></svg><div class="tip" id="tipGas"></div></div>
+    <div class="legend" id="lgGas"></div>
+  </figure>
 
-<h2>How much of the solid reduces</h2>
-<figure>
-  <div class="chart"><svg id="chTi" viewBox="0 0 900 340" role="img" aria-label="Ti(3+) percentage versus temperature"></svg></div>
-  <div class="legend" id="lgTi"></div>
-  <figcaption>Percentage of total titanium present as Ti(3+). Every Magneli member carries exactly two
-  Ti(3+) per formula unit, for any n, so this is a direct count.</figcaption>
-</figure>
+  <h2>How much of the solid reduces</h2>
+  <p class="sub">Percentage of total titanium present as Ti(3+).</p>
+  <figure>
+    <div class="plot" id="wrapTi"><svg id="chTi" viewBox="0 0 900 300" role="img" aria-label="Ti(3+) percentage versus temperature"></svg><div class="tip" id="tipTi"></div></div>
+    <div class="legend" id="lgTi"></div>
+    <figcaption>Every Magn&eacute;li member carries exactly two Ti(3+) per formula unit, for any n, so this is a direct count.</figcaption>
+  </figure>
 
-<h2>Numbers</h2>
-<div class="tablewrap"><table id="tbl"></table></div>
+  <h2>Numbers</h2>
+  <div class="tablewrap"><table id="tbl"></table></div>
 
-<div class="note" id="caveat"></div>
+  <div class="note" id="caveat"></div>
 
-<h2>What this does and does not model</h2>
-<ul>
-  <li><strong>Line compounds only.</strong> Each oxide is present or absent at unit activity. Real
-  reduction runs through a homologous series with mutual solubility, and at the shallow end through
-  oxygen-deficient rutile TiO<sub>2-x</sub>, which no set of line compounds can represent. That is
-  why the answer keeps moving as you deepen the series &mdash; try the depth selector.</li>
-  <li><strong>No carbon deposition.</strong> Graphite is not a species, so under CH<sub>4</sub> all
-  carbon leaves as CO. The gas comes out at H<sub>2</sub>:CO = 2:1 exactly, which is what happens
-  when carbon has nowhere else to go. Treat the CH<sub>4</sub> numbers as provisional.</li>
-  <li><strong>Sealed vessel.</strong> The inert case assumes a closed headspace. Flowing gas sweeps
-  the released O<sub>2</sub> away and is an open-system question this does not answer.</li>
-  <li><strong>Equilibrium only.</strong> Nothing here says how fast any of it happens.</li>
-</ul>
+  <h2>What this does and does not model</h2>
+  <ul>
+    <li><strong>Line compounds only.</strong> Each oxide is present or absent at unit activity. Real
+    reduction runs through a homologous series with mutual solubility, and at the shallow end through
+    oxygen-deficient rutile TiO<sub>2-x</sub>, which no set of line compounds can represent. That is
+    why the answer moves as you deepen the series &mdash; try the depth control.</li>
+    <li><strong>No carbon deposition.</strong> Graphite is not a species, so under CH<sub>4</sub> all
+    carbon leaves as CO. The gas comes out at H<sub>2</sub>:CO = 2:1 exactly, which is what happens
+    when carbon has nowhere else to go. Treat those numbers as provisional.</li>
+    <li><strong>Sealed vessel.</strong> The inert case assumes a closed headspace. Flowing gas sweeps
+    the released O<sub>2</sub> away and is an open-system question this does not answer.</li>
+    <li><strong>Equilibrium only.</strong> Nothing here says how fast any of it happens.</li>
+  </ul>
 
-<footer>
-  <span id="prov"></span>
-  Source and the Python package: <a href="https://github.com/robin-yk/Solid-gas-thermosolver">robin-yk/Solid-gas-thermosolver</a>.
-  Data: NIST-JANAF 4th ed. (Chase, 1998) for gases; Waldner &amp; Eriksson, Calphad 23 (1999) 189&ndash;218 for Ti&ndash;O condensed phases.
-</footer>
-
+  <footer>
+    <span id="prov"></span>
+    Source and the Python package: <a href="https://github.com/robin-yk/Solid-gas-thermosolver">robin-yk/Solid-gas-thermosolver</a>.
+    Data: NIST-JANAF 4th ed. (Chase, 1998) for gases; Waldner &amp; Eriksson, Calphad 23 (1999) 189&ndash;218 for Ti&ndash;O condensed phases.
+  </footer>
+</main>
 </div>
 
 <script id="thermo" type="application/json">{"R_KJ":0.008314472,"R_ATM":82.06,"gases":["CO2","H2","CO","H2O","CH4","O2","N2"],"shomate":{"CH4":{"lo":[-0.703029,108.4773,-42.52157,5.862788,0.678565,-76.84376,158.7163,-74.8731],"hi":[85.81217,11.26467,-2.114146,0.13819,-26.42221,-153.5327,224.4143,-74.8731],"dHf":-74.873,"brk":1000.0,"range":[298.0,6000.0]},"CO2":{"lo":[24.99735,55.18696,-33.69137,7.948387,-0.136638,-403.6075,228.2431,-393.5224],"hi":[58.16639,2.720074,-0.492289,0.038844,-6.447293,-425.9186,263.6125,-393.5224],"dHf":-393.51,"brk":1000.0,"range":[298.0,6000.0]},"CO":{"lo":[25.56759,6.09613,4.054656,-2.671301,0.131021,-118.0089,227.3665,-110.5271],"hi":[35.1507,1.300095,-0.205921,0.01355,-3.28278,-127.8375,231.712,-110.5271],"dHf":-110.527,"brk":1000.0,"range":[298.0,6000.0]},"H2":{"lo":[33.066178,-11.363417,11.432816,-2.772874,-0.158558,-9.980797,172.708,0.0],"hi":[18.563083,12.257357,-2.859786,0.268238,1.97799,-1.147438,156.2881,0.0],"dHf":0.0,"brk":1000.0,"range":[298.0,2500.0]},"H2O":{"lo":[30.092,6.832514,6.793435,-2.53448,0.082139,-250.881,223.3967,-241.8264],"hi":[30.092,6.832514,6.793435,-2.53448,0.082139,-250.881,223.3967,-241.8264],"dHf":-241.826,"brk":1000.0,"range":[500.0,1700.0]},"O2":{"lo":[31.32234,-20.23531,57.86644,-36.50624,-0.007374,-8.903471,246.7945,0.0],"hi":[30.03235,8.772972,-3.988133,0.788313,-0.741599,-11.32468,236.1663,0.0],"dHf":0.0,"brk":700.0,"range":[100.0,2000.0]},"N2":{"lo":[28.98641,1.853978,-9.647459,16.63537,0.000117,-8.671914,226.4168,0.0],"hi":[19.50583,19.88705,-8.598535,1.369784,0.527601,-4.935202,212.39,0.0],"dHf":0.0,"brk":500.0,"range":[100.0,2000.0]},"TiO2":{"lo":[67.2983,18.7094,-11.579,2.449561,-1.485471,-964.514,117.863,-938.722],"hi":[67.2983,18.7094,-11.579,2.449561,-1.485471,-964.514,117.863,-938.722],"dHf":-938.722,"brk":1000.0,"range":[298.0,2000.0]},"Ti4O7":{"lo":[248.9442,81.06458,-36.39967,6.641765,-5.509993,-3500.652,446.0018,-3404.525],"hi":[248.9442,81.06458,-36.39967,6.641765,-5.509993,-3500.652,446.0018,-3404.525],"dHf":-3404.525,"brk":1000.0,"range":[298.0,1950.0]},"Ti3O5":{"lo":[158.9933,50.20633,0.001071,-0.000225,-3.7e-05,-2495.827,335.0547,-2446.192],"hi":[158.9933,50.20633,0.001071,-0.000225,-3.7e-05,-2495.827,335.0547,-2446.192],"dHf":-2446.192,"brk":1000.0,"range":[298.0,2050.0]},"Ti2O3":{"lo":[147.5509,3.649536,-0.081337,0.011812,-4.774029,-1579.849,230.2715,-1520.884],"hi":[147.5509,3.649536,-0.081337,0.011812,-4.774029,-1579.849,230.2715,-1520.884],"dHf":-1520.884,"brk":1000.0,"range":[470.0,2115.0]},"Ti3O5_alpha":{"lo":[233.4149,-59.35757,68.20422,-20.59934,-5.90149,-2546.516,393.3579,-2459.15],"hi":[233.4149,-59.35757,68.20422,-20.59934,-5.90149,-2546.516,393.3579,-2459.15],"dHf":-2459.15,"brk":1000.0,"range":[298.0,1500.0]}},"waldner":{"TiO2":{"dHf":-944750.0,"S298":50.46,"ranges":[{"lo":298.15,"hi":6000.0,"form":"magneli","c":[77.83762,0.0,-3367841.0,402940672.0],"dHt":0.0}]},"Ti2O3":{"dHf":-1526171.0,"S298":77.463,"ranges":[{"lo":298.15,"hi":470.0,"form":"poly","c":[30.3934,0.199918,3.55968e-05,235600.0],"dHt":0.0},{"lo":470.0,"hi":2115.0,"form":"poly","c":[147.674,0.00347423,9.203e-10,-4790850.0],"dHt":1138.0}]},"Ti3O5":{"dHf":-2469900.0,"S298":127.75,"ranges":[{"lo":298.15,"hi":450.0,"form":"poly","c":[-23.9073,0.84031,-0.0008084413,0.0],"dHt":0.0},{"lo":450.0,"hi":5000.0,"form":"poly","c":[158.99208,0.05020795,0.0,0.0],"dHt":11757.0}]},"Ti4O7":{"dHf":-3416525.0,"S298":195.39,"ranges":[{"lo":298.15,"hi":5000.0,"form":"magneli","c":[364.36711,-2110.8923,-2519517.0,-144548200.0],"dHt":0.0}]},"Ti5O9":{"dHf":-4360918.5,"S298":248.95446,"ranges":[{"lo":298.15,"hi":5000.0,"form":"magneli","c":[442.20473,-2110.8923,-5887358.0,258392400.0],"dHt":0.0}]},"Ti6O11":{"dHf":-5306479.2,"S298":300.50153,"ranges":[{"lo":298.15,"hi":5000.0,"form":"magneli","c":[520.04235,-2110.8923,-9255199.0,661333100.0],"dHt":0.0}]},"Ti7O13":{"dHf":-6251259.949999998,"S298":351.91071,"ranges":[{"lo":298.15,"hi":5000.0,"form":"magneli","c":[597.87997,-2110.8923,-12623040.0,1064273800.0],"dHt":0.0}]},"Ti8O15":{"dHf":-7196482.4,"S298":403.17028,"ranges":[{"lo":298.15,"hi":5000.0,"form":"magneli","c":[675.71759,-2110.8923,-15990881.0,1467214400.0],"dHt":0.0}]},"Ti9O17":{"dHf":-8141241.7,"S298":454.36515,"ranges":[{"lo":298.15,"hi":5000.0,"form":"magneli","c":[753.55521,-2110.8923,-19358722.0,1870155100.0],"dHt":0.0}]},"Ti10O19":{"dHf":-9085912.9,"S298":505.51533,"ranges":[{"lo":298.15,"hi":5000.0,"form":"magneli","c":[831.39283,-2110.8923,-22726564.0,2273095800.0],"dHt":0.0}]},"Ti20O39":{"dHf":-18533039.0,"S298":1015.3802,"ranges":[{"lo":298.15,"hi":5000.0,"form":"magneli","c":[1609.769,-2110.8923,-56404974.0,6302502600.0],"dHt":0.0}]}},"formulas":{"CO2":{"C":1,"O":2},"H2":{"H":2},"CO":{"C":1,"O":1},"H2O":{"H":2,"O":1},"CH4":{"C":1,"H":4},"TiO2":{"O":2,"Ti":1},"Ti20O39":{"O":39,"Ti":20},"Ti10O19":{"O":19,"Ti":10},"Ti9O17":{"O":17,"Ti":9},"Ti8O15":{"O":15,"Ti":8},"Ti7O13":{"O":13,"Ti":7},"Ti6O11":{"O":11,"Ti":6},"Ti5O9":{"O":9,"Ti":5},"Ti4O7":{"O":7,"Ti":4},"Ti3O5":{"O":5,"Ti":3},"Ti2O3":{"O":3,"Ti":2}},"ti_phases":{"TiO2":[1,0],"Ti20O39":[20,2],"Ti10O19":[10,2],"Ti9O17":[9,2],"Ti8O15":[8,2],"Ti7O13":[7,2],"Ti6O11":[6,2],"Ti5O9":[5,2],"Ti4O7":[4,2],"Ti3O5":[3,2],"Ti2O3":[2,2]},"active":["TiO2","Ti10O19","Ti8O15","Ti6O11","Ti5O9","Ti4O7","Ti3O5","Ti2O3"],"waldner_order":["TiO2","Ti20O39","Ti10O19","Ti9O17","Ti8O15","Ti7O13","Ti6O11","Ti5O9","Ti4O7","Ti3O5","Ti2O3"],"ti7o13_printed":-3415327.0}</script>
@@ -555,199 +609,301 @@ E.prototype.inert = function (T, P, V, nTi, pO2Initial, phases, source) {
 };
 })(typeof module !== 'undefined' && module.exports ? module.exports : window.Thermo);
 </script>
-<script>
+<script>/* Page behaviour. The engine in solver.js does the thermodynamics; this file
+   only decides what to draw and how. */
+'use strict';
 const D = JSON.parse(document.getElementById('thermo').textContent);
 const E = new Thermo.Engine(D);
 const $ = id => document.getElementById(id);
 const cv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const SVGNS = 'http://www.w3.org/2000/svg';
-const el = (t,a) => { const e=document.createElementNS(SVGNS,t); for(const k in a) e.setAttribute(k,a[k]); return e; };
-
-let SRC = 'waldner';
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+/* Ti10O19 -> Ti<sub>10</sub>O<sub>19</sub>; digits after a letter only, so
+   a bare number is never mangled. */
+const sub = s => String(s).replace(/([A-Za-z])(\d+)/g, '$1<sub>$2</sub>');
+const sci = v => { const [m, e] = v.toExponential(2).split('e');
+  return m + ' \u00d7 10<sup>' + (+e) + '</sup>'; };
+let SRC = 'waldner', LAST = null;
 
 function phaseList() {
-  const mode = $('deep').value;
-  if (mode === 'ti4o7') return ['TiO2','Ti4O7'];
+  const m = $('deep').value;
+  if (m === 'ti4o7') return ['TiO2', 'Ti4O7'];
   if (SRC === 'nist') return D.active.filter(p => D.shomate[p]);
-  return mode === 'full' ? D.waldner_order : D.active;
+  return m === 'full' ? D.waldner_order : D.active;
 }
 
-function chart(svgId, legId, series, opt) {
-  const svg = $(svgId); svg.textContent = '';
-  const W = 900, H = svg.viewBox.baseVal.height, M = {l:66,r:16,t:14,b:44};
-  const iw = W-M.l-M.r, ih = H-M.t-M.b, log = !!opt.log;
-  const ys = series.flatMap(s=>s.y).filter(v=>v!=null && isFinite(v) && (!log||v>0));
-  if (!ys.length) return;
-  const x0=opt.x0, x1=opt.x1;
-  let y0 = opt.y0 ?? Math.min(...ys), y1 = opt.y1 ?? Math.max(...ys);
-  if (y0===y1) { y0-=1; y1+=1; }
-  const X = v => M.l + (v-x0)/(x1-x0)*iw;
-  const Y = log ? v => M.t+ih-(Math.log10(Math.max(v,y0))-Math.log10(y0))/(Math.log10(y1)-Math.log10(y0))*ih
-                : v => M.t+ih-(v-y0)/(y1-y0)*ih;
-  const rule=cv('--rule'), muted=cv('--muted');
-  const ticks = log ? (()=>{const a=[];for(let k=Math.ceil(Math.log10(y0));k<=Math.floor(Math.log10(y1));k++)a.push(10**k);return a;})()
-                    : Array.from({length:6},(_,i)=>y0+(y1-y0)*i/5);
-  ticks.forEach(t=>{
-    svg.appendChild(el('line',{x1:M.l,x2:W-M.r,y1:Y(t),y2:Y(t),stroke:rule,'stroke-width':1}));
-    const lab = log ? '1e'+Math.round(Math.log10(t)) : (+t.toFixed(opt.yfix??0)).toString();
-    const tx = el('text',{x:M.l-8,y:Y(t)+4,'text-anchor':'end',fill:muted,'font-size':11});
-    tx.textContent = lab; svg.appendChild(tx);
+/* ---------------------------------------------------------------- the chart
+
+   One function for all three plots. Gridlines are hairline and solid, the fill
+   under a curve is faint enough to read as weight rather than as a second
+   series, the final point carries a dot with a surface-coloured ring, and a
+   crosshair reads every series at one temperature. */
+function chart(svgId, legId, tipId, series, opt) {
+  const svg = $(svgId), tip = $(tipId);
+  svg.textContent = '';
+  const W = 900, H = svg.viewBox.baseVal.height;
+  const M = { l: 64, r: opt.labelRoom || 74, t: 14, b: 40 };
+  const iw = W - M.l - M.r, ih = H - M.t - M.b, log = !!opt.log;
+  const vals = series.flatMap(s => s.y).filter(v => v != null && isFinite(v) && (!log || v > 0));
+  if (!vals.length) return;
+  const x0 = opt.x0, x1 = opt.x1;
+  let y0 = opt.y0 != null ? opt.y0 : Math.min(...vals);
+  let y1 = opt.y1 != null ? opt.y1 : Math.max(...vals);
+  if (y0 === y1) { y0 -= 1; y1 += 1; }
+  if (opt.y0 == null && opt.y1 == null) { const pad = (y1 - y0) * 0.08; y0 -= pad; y1 += pad; }
+  const X = v => M.l + (v - x0) / (x1 - x0) * iw;
+  const Y = log
+    ? v => M.t + ih - (Math.log10(Math.max(v, y0)) - Math.log10(y0)) / (Math.log10(y1) - Math.log10(y0)) * ih
+    : v => M.t + ih - (v - y0) / (y1 - y0) * ih;
+
+  const rule = cv('--rule'), muted = cv('--muted'), surface = cv('--surface');
+  const ticks = log
+    ? (() => { const a = []; for (let k = Math.ceil(Math.log10(y0)); k <= Math.floor(Math.log10(y1)); k++) a.push(10 ** k); return a; })()
+    : Array.from({ length: 6 }, (_, i) => y0 + (y1 - y0) * i / 5);
+  ticks.forEach(t => {
+    svg.appendChild(el('line', { x1: M.l, x2: M.l + iw, y1: Y(t), y2: Y(t), stroke: rule, 'stroke-width': 1 }));
+    const lab = log ? '10' : (+t.toFixed(opt.yfix || 0)).toLocaleString();
+    const tx = el('text', { x: M.l - 9, y: Y(t) + 4, 'text-anchor': 'end', fill: muted, 'font-size': 11,
+                            'font-family': 'ui-monospace,monospace' });
+    tx.textContent = lab;
+    if (log) { const e = el('tspan', { 'font-size': 8, dy: -4 }); e.textContent = Math.round(Math.log10(t)); tx.appendChild(e); }
+    svg.appendChild(tx);
   });
-  for(let t=x0;t<=x1+1;t+=opt.xstep??200){
-    svg.appendChild(el('line',{x1:X(t),x2:X(t),y1:M.t,y2:M.t+ih,stroke:rule,'stroke-width':1}));
-    const tx=el('text',{x:X(t),y:H-18,'text-anchor':'middle',fill:muted,'font-size':11});
-    tx.textContent=t; svg.appendChild(tx);
+  for (let t = x0; t <= x1 + 1; t += opt.xstep || 200) {
+    svg.appendChild(el('line', { x1: X(t), x2: X(t), y1: M.t, y2: M.t + ih, stroke: rule, 'stroke-width': 1 }));
+    const tx = el('text', { x: X(t), y: H - 16, 'text-anchor': 'middle', fill: muted, 'font-size': 11,
+                            'font-family': 'ui-monospace,monospace' });
+    tx.textContent = t; svg.appendChild(tx);
   }
-  const ax=el('text',{x:M.l+iw/2,y:H-2,'text-anchor':'middle',fill:muted,'font-size':11});
-  ax.textContent='Temperature (°C)'; svg.appendChild(ax);
-  const ay=el('text',{x:13,y:M.t+ih/2,fill:muted,'font-size':11,'text-anchor':'middle',
-                      transform:`rotate(-90 13 ${M.t+ih/2})`});
-  ay.textContent=opt.ylabel; svg.appendChild(ay);
+  const ax = el('text', { x: M.l + iw / 2, y: H - 2, 'text-anchor': 'middle', fill: muted, 'font-size': 11 });
+  ax.textContent = 'Temperature (°C)'; svg.appendChild(ax);
+  const ay = el('text', { x: 13, y: M.t + ih / 2, fill: muted, 'font-size': 11, 'text-anchor': 'middle',
+                          transform: 'rotate(-90 13 ' + (M.t + ih / 2) + ')' });
+  ay.textContent = opt.ylabel; svg.appendChild(ay);
 
-  if (opt.marker!=null && opt.marker>=x0 && opt.marker<=x1)
-    svg.appendChild(el('line',{x1:X(opt.marker),x2:X(opt.marker),y1:M.t,y2:M.t+ih,
-                               stroke:cv('--muted'),'stroke-width':1,'stroke-dasharray':'3 3',opacity:.7}));
+  const clean = series.map(s => ({ s, pts: s.x.map((v, i) => [v, s.y[i]])
+    .filter(p => p[1] != null && isFinite(p[1]) && (!log || p[1] > 0)) })).filter(o => o.pts.length);
 
-  series.forEach(s=>{
-    const pts=s.x.map((v,i)=>[v,s.y[i]]).filter(p=>p[1]!=null&&isFinite(p[1])&&(!log||p[1]>0));
-    if(!pts.length) return;
-    const d=pts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ');
-    svg.appendChild(el('path',{d,fill:'none',stroke:cv(s.color),'stroke-width':s.dash?1.8:2.4,
-                               'stroke-dasharray':s.dash||'','stroke-linejoin':'round'}));
+  /* fill first, so every stroke sits above every fill */
+  clean.forEach(({ s, pts }) => {
+    if (!s.fill) return;
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ')
+      + ' L' + X(pts[pts.length - 1][0]).toFixed(1) + ' ' + (M.t + ih) + ' L' + X(pts[0][0]).toFixed(1) + ' ' + (M.t + ih) + ' Z';
+    svg.appendChild(el('path', { d, fill: cv(s.color), opacity: s.fill, stroke: 'none' }));
   });
-  const lg=$(legId); lg.textContent='';
-  series.forEach(s=>{
-    const sp=document.createElement('span'), i=document.createElement('i');
-    i.style.background = s.dash ? `repeating-linear-gradient(90deg,${cv(s.color)} 0 5px,transparent 5px 9px)` : cv(s.color);
-    sp.appendChild(i); sp.appendChild(document.createTextNode(s.label)); lg.appendChild(sp);
+  clean.forEach(({ s, pts }) => {
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
+    svg.appendChild(el('path', { d, fill: 'none', stroke: cv(s.color), 'stroke-width': s.dash ? 1.8 : 2,
+                                 'stroke-dasharray': s.dash || '', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+  });
+
+  /* end dot and a direct label, but only where labels will not collide */
+  const ends = clean.map(({ s, pts }) => ({ s, p: pts[pts.length - 1] }))
+                    .sort((a, b) => Y(a.p[1]) - Y(b.p[1]));
+  const placed = [];
+  ends.forEach(({ s, p }) => {
+    svg.appendChild(el('circle', { cx: X(p[0]), cy: Y(p[1]), r: 4.5, fill: cv(s.color),
+                                   stroke: surface, 'stroke-width': 2 }));
+    if (!opt.endLabels) return;
+    const y = Y(p[1]);
+    if (placed.some(q => Math.abs(q - y) < 13)) return;
+    placed.push(y);
+    const tx = el('text', { x: X(p[0]) + 9, y: y + 4, fill: muted, 'font-size': 11 });
+    tx.textContent = s.short || s.label; svg.appendChild(tx);
+  });
+
+  /* crosshair layer */
+  const hair = el('line', { x1: 0, x2: 0, y1: M.t, y2: M.t + ih, stroke: muted, 'stroke-width': 1, opacity: 0 });
+  svg.appendChild(hair);
+  const hit = el('rect', { x: M.l, y: M.t, width: iw, height: ih, fill: 'transparent' });
+  svg.appendChild(hit);
+  function move(ev) {
+    const r = svg.getBoundingClientRect();
+    const px = (ev.clientX - r.left) / r.width * W;
+    if (px < M.l || px > M.l + iw) return hide();
+    const t = x0 + (px - M.l) / iw * (x1 - x0);
+    const idx = series[0].x.reduce((a, v, i) => Math.abs(v - t) < Math.abs(series[0].x[a] - t) ? i : a, 0);
+    const tx = series[0].x[idx];
+    hair.setAttribute('x1', X(tx)); hair.setAttribute('x2', X(tx)); hair.setAttribute('opacity', .45);
+    const head = document.createElement('div'); head.className = 'th';
+    head.textContent = tx.toFixed(0) + ' °C';
+    tip.textContent = ''; tip.appendChild(head);
+    series.forEach(s => {
+      const v = s.y[idx];
+      if (v == null || !isFinite(v)) return;
+      const row = document.createElement('div'); row.className = 'r';
+      const key = document.createElement('i'); key.style.background = cv(s.color);
+      const val = document.createElement('b'); val.textContent = opt.fmt ? opt.fmt(v) : v.toFixed(1);
+      const nm = document.createElement('span'); nm.textContent = s.label;
+      row.append(key, val, nm); tip.appendChild(row);
+    });
+    tip.style.opacity = 1;
+    const wrapW = svg.parentElement.clientWidth, tw = tip.offsetWidth;
+    const left = X(tx) / W * wrapW + 14;
+    tip.style.left = Math.min(left, wrapW - tw - 8) + 'px';
+    tip.style.top = '14px';
+  }
+  function hide(){ hair.setAttribute('opacity', 0); tip.style.opacity = 0; }
+  hit.addEventListener('pointermove', move);
+  hit.addEventListener('pointerleave', hide);
+
+  const lg = $(legId); lg.textContent = '';
+  series.forEach(s => {
+    const sp = document.createElement('span'), i = document.createElement('i');
+    i.style.background = s.dash ? 'repeating-linear-gradient(90deg,' + cv(s.color) + ' 0 5px,transparent 5px 9px)' : cv(s.color);
+    sp.appendChild(i);
+    const t = document.createElement('span'); t.innerHTML = s.legend || s.label;
+    sp.appendChild(t); lg.appendChild(sp);
   });
 }
 
 function table(id, cols, rows){
-  const t=$(id); t.textContent='';
-  const th=document.createElement('thead'), tr=document.createElement('tr');
-  cols.forEach(c=>{const e=document.createElement('th');e.innerHTML=c;tr.appendChild(e);});
+  const t = $(id); t.textContent = '';
+  const th = document.createElement('thead'), tr = document.createElement('tr');
+  cols.forEach(c => { const e = document.createElement('th'); e.innerHTML = c; tr.appendChild(e); });
   th.appendChild(tr); t.appendChild(th);
-  const tb=document.createElement('tbody');
-  rows.forEach(r=>{const e=document.createElement('tr');
-    r.forEach(c=>{const d=document.createElement('td');d.innerHTML=c;e.appendChild(d);});
-    tb.appendChild(e);});
+  const tb = document.createElement('tbody');
+  rows.forEach(r => { const e = document.createElement('tr');
+    r.forEach(c => { const d = document.createElement('td'); d.innerHTML = c; e.appendChild(d); });
+    tb.appendChild(e); });
   t.appendChild(tb);
 }
 
 function compute(){
-  const feed=$('feed').value, P=+$('P').value||1, V=+$('vol').value||25;
-  const nTi=(+$('mass').value||100)/1000/79.87;
-  const ppm=+$('imp').value||0, pO2imp=ppm*1e-6*P;
-  const phases=phaseList();
-  const rows=[];
-  for(let TC=500;TC<=1500.001;TC+=12.5){
-    const T=TC+273.15, g=P*V/(D.R_ATM*T);
-    let rec={TC};
-    if(feed==='inert'){
-      const r=E.inert(T,P,V,nTi,pO2imp,phases,SRC);
-      const muImp = pO2imp>0 ? E.pO2ToMuO(pO2imp,T) : -Infinity;
-      rec=Object.assign(rec,{muO:muImp,phase:r.phase,crit:r.crit,ti3:r.ti3,
-        margin:muImp-r.crit,pO2:pO2imp,pO2eq:r.pO2_eq,y:null,reduces:r.reduces});
-    } else if(feed==='CO2H2'){
-      const n0=g/2, gas=E.gasEquilibrium(n0,2*n0,2*n0,T,P);
-      if(!gas) continue;
-      const muO=E.muOFromRatio(T,gas.y.H2O/gas.y.H2);
-      const f=E.firstPhase(muO,T,phases,SRC);
-      let ti3=0;
-      if(f.margin<0){ const b=E.buffered('CO2H2',T,P,V,nTi,phases,SRC); ti3=b.ti3; }
-      rec=Object.assign(rec,{muO,phase:f.phase,crit:f.crit,margin:f.margin,ti3,
-        y:gas.y,pO2:E.muOToPO2(muO,T),reduces:f.margin<0});
+  const feed = $('feed').value, P = +$('P').value || 1, V = +$('vol').value || 25;
+  const nTi = (+$('mass').value || 100) / 1000 / 79.87;
+  const pO2imp = (+$('imp').value || 0) * 1e-6 * P;
+  const phases = phaseList(), rows = [];
+  for (let TC = 500; TC <= 1500.001; TC += 12.5){
+    const T = TC + 273.15, g = P * V / (D.R_ATM * T);
+    let rec = { TC };
+    if (feed === 'inert'){
+      const r = E.inert(T, P, V, nTi, pO2imp, phases, SRC);
+      const mu = pO2imp > 0 ? E.pO2ToMuO(pO2imp, T) : null;
+      rec = Object.assign(rec, { muO: mu, phase: r.phase, crit: r.crit, ti3: r.ti3,
+        margin: mu == null ? null : mu - r.crit, pO2: pO2imp, y: null, reduces: r.reduces && r.ti3 > 1e-6 });
+    } else if (feed === 'CO2H2'){
+      const n0 = g / 2, gas = E.gasEquilibrium(n0, 2 * n0, 2 * n0, T, P);
+      if (!gas) continue;
+      const mu = E.muOFromRatio(T, gas.y.H2O / gas.y.H2);
+      const f = E.firstPhase(mu, T, phases, SRC);
+      let ti3 = 0, ph = f.phase;
+      if (f.margin < 0){ const b = E.buffered('CO2H2', T, P, V, nTi, phases, SRC); ti3 = b.ti3; ph = b.phase; }
+      rec = Object.assign(rec, { muO: mu, phase: ph, crit: f.crit, margin: f.margin, ti3,
+        y: gas.y, pO2: E.muOToPO2(mu, T), reduces: f.margin < 0 });
     } else {
-      const b=E.buffered(feed,T,P,V,nTi,phases,SRC);
-      const muO=isFinite(b.muO)?b.muO:b.crit;
-      rec=Object.assign(rec,{muO,phase:b.phase,crit:b.crit,ti3:b.ti3,
-        margin:b.reduces?0:(b.margin||0),y:b.gas?b.gas.y:null,
-        pO2:E.muOToPO2(muO,T),reduces:b.reduces,conv:b.conv,Ofrac:b.O_fraction});
+      const b = E.buffered(feed, T, P, V, nTi, phases, SRC);
+      const mu = isFinite(b.muO) ? b.muO : b.crit;
+      rec = Object.assign(rec, { muO: mu, phase: b.phase, crit: b.crit, ti3: b.ti3,
+        margin: b.reduces ? 0 : (b.margin || 0), y: b.gas ? b.gas.y : null,
+        pO2: E.muOToPO2(mu, T), reduces: b.reduces });
     }
     rows.push(rec);
   }
-  return {rows,feed,phases};
+  return { rows, feed, phases };
 }
 
 function render(){
-  const {rows,feed,phases}=compute();
-  if(!rows.length) return;
-  const T=rows.map(r=>r.TC);
-  const Tsel=+$('Tpick').value;
-  const at=rows.reduce((a,b)=>Math.abs(b.TC-Tsel)<Math.abs(a.TC-Tsel)?b:a);
+  const { rows, feed, phases } = compute();
+  if (!rows.length) return;
+  LAST = rows;
+  const T = rows.map(r => r.TC), Tsel = +$('Tpick').value;
+  const at = rows.reduce((a,b) => Math.abs(b.TC - Tsel) < Math.abs(a.TC - Tsel) ? b : a);
+  const anyRed = rows.some(r => r.reduces);
 
-  const anyRed=rows.some(r=>r.reduces);
-  const v=$('verdict'); v.className='verdict '+(anyRed?'yes':'no');
-  v.innerHTML = anyRed
-    ? `<b>Reduces.</b> <span>At ${at.TC.toFixed(0)} °C the solid is ${at.phase}, with ${at.ti3.toFixed(2)}% of the titanium as Ti(3+).</span>`
-    : `<b>No reduction.</b> <span>Rutile survives the whole range. Closest approach ${Math.min(...rows.map(r=>r.margin)).toFixed(1)} kJ/mol&#8209;O, against ${at.phase}.</span>`;
+  const bd = $('badge');
+  /* danger is the reduced state - that is the outcome being tested for, and
+     the brief reserves the colour for it. Rutile surviving is the safe read. */
+  bd.className = 'badge' + (anyRed ? '' : ' safe');
+  bd.innerHTML = anyRed
+    ? 'Reduces. <em>At ' + at.TC.toFixed(0) + ' °C the solid is ' + sub(at.phase) + '</em>'
+    : 'No reduction. <em>Rutile survives the whole range</em>';
 
-  const cards=[
-    ['Ti(3+)', at.ti3.toFixed(at.ti3<1?3:2)+'%', `at ${at.TC.toFixed(0)} °C`],
-    ['Margin', (at.margin>0?'+':'')+at.margin.toFixed(1), 'kJ per mol O — positive is safe'],
-    ['μ<sub>O</sub> (gas)', isFinite(at.muO)?at.muO.toFixed(1):'−∞', 'kJ per mol O'],
-    ['pO<sub>2</sub>', at.pO2>0?at.pO2.toExponential(2):'0', 'atm'],
+  /* A buffered solid sits exactly on a boundary, so its margin is zero by
+     construction. Printing 0.0 reads as a near miss; it is not a measurement. */
+  const marginVals = rows.filter(r => !r.reduces).map(r => r.margin).filter(v => v != null);
+  const worst = marginVals.length ? Math.min(...marginVals) : null;
+  const dash = '\u2014';
+  const kpis = [
+    ['Margin',
+     at.reduces ? 'on boundary'
+                : (at.margin == null ? dash : (at.margin > 0 ? '+' : '') + at.margin.toFixed(1)),
+     at.reduces ? 'the solid holds the gas there'
+                : 'kJ per mol O \u00b7 closest ' + (worst == null ? dash : worst.toFixed(1)),
+     at.reduces ? 'is-danger is-word' : (at.margin == null ? '' : 'is-safe')],
+    ['\u03bc<sub>O</sub> (gas)', at.muO == null ? '\u2212\u221e' : at.muO.toFixed(1), 'kJ per mol O', ''],
+    ['pO<sub>2</sub>', at.pO2 > 0 ? sci(at.pO2) : '0', 'atm', ''],
+    ['Ti(3+)', at.ti3.toFixed(at.ti3 < 1 ? 3 : 2) + '%', 'of total titanium',
+     at.ti3 > 0.01 ? 'is-danger' : ''],
   ];
-  $('cards').innerHTML=cards.map(c=>`<div class="card"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="n">${c[2]}</div></div>`).join('');
+  $('kpis').innerHTML = kpis.map(c =>
+    '<div class="kpi ' + c[3] + '"><div class="k">' + c[0] + '</div><div class="v">' + c[1] + '</div><div class="u">' + c[2] + '</div></div>').join('');
 
-  const cols=['--c3','--c4','--c6','--c1','--c5'];
-  const bound=phases.filter(p=>p!=='TiO2').slice(0,4).map((p,i)=>({
-    x:T, y:rows.map(r=>E.muOCritical(p,r.TC+273.15,SRC)), color:cols[i%cols.length],
-    label:'boundary: TiO₂ → '+p, dash:'5 4'}));
-  const gasLine={x:T,y:rows.map(r=>isFinite(r.muO)?r.muO:null),color:'--c2',label:'gas'};
-  chart('chMu','lgMu',[gasLine,...bound],{x0:500,x1:1500,ylabel:'μO (kJ per mol O)',yfix:0,marker:Tsel});
-  $('capMu').innerHTML = anyRed
-    ? 'The gas line sits below a boundary, so that phase forms and the solid then holds the gas on it.'
-    : 'The gas line stays above every boundary across the range, so nothing reduces. The vertical distance is the margin.';
+  /* boundaries are ordinal - one hue, stepped by depth in the series */
+  const ords = ['--ord-1','--ord-2','--ord-3','--ord-4','--ord-5'];
+  const bounds = phases.filter(p => p !== 'TiO2').slice(0, 5).map((p, i) => ({
+    x: T, y: rows.map(r => E.muOCritical(p, r.TC + 273.15, SRC)),
+    color: ords[i], label: 'TiO2 -> ' + p, legend: sub('TiO2') + ' → ' + sub(p),
+    short: p, dash: '5 4' }));
+  const gasLine = { x: T, y: rows.map(r => r.muO), color: '--accent', label: 'gas',
+                    legend: 'gas', short: 'gas', fill: .1 };
+  chart('chMu','lgMu','tipMu',[gasLine, ...bounds],
+        { x0:500, x1:1500, ylabel:'μO (kJ per mol O)', yfix:0, endLabels:true, labelRoom:96,
+          fmt:v => v.toFixed(1) });
+  $('capMu').textContent = anyRed
+    ? 'The gas line sits on a boundary: the solid holds it there while both phases coexist.'
+    : 'The gas line stays above every boundary. The vertical distance is the margin.';
 
-  if(rows[0].y){
-    chart('chGas','lgGas',[
-      {x:T,y:rows.map(r=>r.y?r.y.CO2*100:null),color:'--c1',label:'CO₂'},
-      {x:T,y:rows.map(r=>r.y?r.y.H2*100:null),color:'--c2',label:'H₂'},
-      {x:T,y:rows.map(r=>r.y?r.y.CO*100:null),color:'--c3',label:'CO'},
-      {x:T,y:rows.map(r=>r.y?r.y.H2O*100:null),color:'--c4',label:'H₂O'},
-      {x:T,y:rows.map(r=>r.y?r.y.CH4*100:null),color:'--c5',label:'CH₄'},
-    ],{x0:500,x1:1500,ylabel:'gas mol %',y0:0,y1:100,marker:Tsel});
+  const gs = ['--series-1','--series-2','--series-3','--series-4','--series-5'];
+  const names = ['CO2','H2','CO','H2O','CH4'];
+  if (rows.some(r => r.y)){
+    chart('chGas','lgGas','tipGas', names.map((n,i) => ({
+      x:T, y: rows.map(r => r.y ? r.y[n] * 100 : null), color: gs[i],
+      label: n, legend: sub(n), short: n })),
+      { x0:500, x1:1500, ylabel:'gas mol %', y0:0, y1:100, endLabels:true,
+        fmt: v => v.toFixed(2) + '%' });
   } else {
     $('chGas').textContent=''; $('lgGas').textContent='';
-    const t=el('text',{x:450,y:180,'text-anchor':'middle',fill:cv('--muted'),'font-size':14});
-    t.textContent='inert carrier — no C–H–O gas to equilibrate'; $('chGas').appendChild(t);
+    const t = el('text',{ x:450, y:150, 'text-anchor':'middle', fill: cv('--muted'), 'font-size':13 });
+    t.textContent = 'inert carrier — no C–H–O gas to equilibrate';
+    $('chGas').appendChild(t);
   }
 
-  chart('chTi','lgTi',[{x:T,y:rows.map(r=>r.ti3),color:'--c3',label:'Ti(3+) % of total Ti'}],
-        {x0:500,x1:1500,ylabel:'Ti(3+) %',y0:0,marker:Tsel});
+  chart('chTi','lgTi','tipTi',[{ x:T, y: rows.map(r => r.ti3), color:'--danger',
+    label:'Ti(3+)', legend:'Ti(3+) % of total Ti', fill:.13 }],
+    { x0:500, x1:1500, ylabel:'Ti(3+) %', y0:0, fmt: v => v.toFixed(3) + '%' });
 
-  const pick=rows.filter(r=>Math.abs(r.TC%200)<7);
-  table('tbl',['T (°C)','μ<sub>O</sub>','boundary','margin','pO<sub>2</sub> (atm)','Ti(3+) %','phase'],
-    pick.map(r=>[r.TC.toFixed(0),isFinite(r.muO)?r.muO.toFixed(1):'−∞',r.crit.toFixed(1),
-      (r.margin>0?'+':'')+r.margin.toFixed(1),r.pO2>0?r.pO2.toExponential(2):'0',
-      r.ti3.toFixed(3),`<span class="mono">${r.phase}</span>`]));
+  const pick = rows.filter(r => Math.abs(r.TC % 200) < 7);
+  table('tbl',['T (°C)','\u03bc<sub>O</sub>','boundary','margin','pO<sub>2</sub> (atm)','Ti(3+) %','phase'],
+    pick.map(r => [r.TC.toFixed(0), r.muO == null ? '−∞' : r.muO.toFixed(1), r.crit.toFixed(1),
+      r.reduces ? 'buffered'
+        : (r.margin == null ? '\u2014' : (r.margin > 0 ? '+' : '') + r.margin.toFixed(1)),
+      r.pO2 > 0 ? r.pO2.toExponential(2) : '0', r.ti3.toFixed(3), sub(r.phase)]));
 
-  const notes=[];
-  if(feed==='CH4') notes.push('<strong>CH₄ is provisional.</strong> Without graphite in the species list all carbon must leave as CO, and the H₂:CO = 2:1 that comes out may be an artefact of that.');
-  if($('deep').value==='full') notes.push('<strong>Ti₂₀O₃₉ is the model edge, not a phase you would find.</strong> Nineteen of twenty titaniums are still Ti(4+); at that point the series is standing in for oxygen-deficient rutile.');
-  if(SRC==='nist') notes.push('<strong>NIST stops at Ti₄O₇.</strong> The shallow Magneli members are missing, so margins here are measured against too hard a step and read high.');
-  if(feed==='inert') notes.push('<strong>The impurity level decides this, not the temperature.</strong> Set O₂ to zero and the oxide still barely moves: a sealed headspace cannot hold enough O₂ for the reduction to go anywhere.');
+  const notes = [];
+  if (feed === 'CH4') notes.push('<strong>CH4 is provisional.</strong> Without graphite in the species list all carbon must leave as CO, and the H2:CO = 2:1 that comes out may be an artefact of that.');
+  if ($('deep').value === 'full') notes.push('<strong>Ti20O39 is the model edge, not a phase you would find.</strong> Nineteen of twenty titaniums are still Ti(4+); there the series stands in for oxygen-deficient rutile.');
+  if (SRC === 'nist') notes.push('<strong>NIST stops at Ti4O7.</strong> The shallow Magnéli members are missing, so margins here are measured against too hard a step and read high.');
+  if (feed === 'inert') notes.push('<strong>The impurity level decides this, not the temperature.</strong> Set O2 to zero and the oxide still barely moves: a sealed headspace cannot hold enough O2 for the reduction to go anywhere.');
   $('caveat').innerHTML = notes.join(' ') || '<strong>Nothing to flag.</strong> These conditions sit inside every fit range and use a single consistent dataset.';
-  $('srcNote').textContent = SRC==='waldner' ? 'full Magneli series' : 'stops at Ti4O7';
-  $('prov').textContent = `Computed live in this page: ${rows.length} temperatures × ${phases.length} phases. `;
+  $('srcNote').textContent = SRC === 'waldner' ? 'full Magnéli series' : 'stops at Ti4O7';
+  $('railnote').innerHTML = 'Boundaries take an ordinal ramp — they are ordered by O/Ti. Gas species take separate hues; a one-hue ramp fails colour-vision separation for them by measurement.';
+  $('prov').textContent = 'Computed live in this page: ' + rows.length + ' temperatures × ' + phases.length + ' phases. ';
 }
 
-['feed','deep','P','mass','vol','imp','Tpick'].forEach(id=>{
-  $(id).addEventListener('input',()=>{
-    $('impWrap').hidden = $('feed').value!=='inert';
-    $('TpickVal').innerHTML = $('Tpick').value+' &deg;C';
+['feed','deep','P','mass','vol','imp','Tpick'].forEach(id =>
+  $(id).addEventListener('input', () => {
+    $('impWrap').hidden = $('feed').value !== 'inert';
+    $('TpickVal').innerHTML = $('Tpick').value + ' &deg;C';
     render();
-  });
-});
-$('src').addEventListener('click',e=>{
-  const b=e.target.closest('button'); if(!b) return;
-  SRC=b.dataset.v;
-  [...$('src').children].forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  }));
+$('src').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  SRC = b.dataset.v;
+  [...$('src').children].forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   render();
 });
-matchMedia('(prefers-color-scheme:dark)').addEventListener('change',render);
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change', render);
 $('impWrap').hidden = true;
 render();
 </script>

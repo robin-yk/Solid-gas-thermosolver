@@ -58,9 +58,11 @@ def test_index_html_embeds_the_current_data_and_solver(exported):
     html = open(path).read()
     with open(os.path.join(ROOT, 'thermo_data.json')) as fh:
         assert fh.read() in html, 'index.html is stale - run build_site.py'
-    with open(os.path.join(ROOT, 'solver.js')) as fh:
-        assert fh.read() in html, 'index.html is stale - run build_site.py'
-    assert '__THERMO__' not in html and '__SOLVER__' not in html
+    for js in ('solver.js', 'page.js'):
+        with open(os.path.join(ROOT, js)) as fh:
+            assert fh.read() in html, f'index.html is stale against {js} - run build_site.py'
+    for token in ('__THERMO__', '__SOLVER__', '__PAGE__'):
+        assert token not in html
 
 
 def test_page_has_no_external_requests():

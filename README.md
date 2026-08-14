@@ -196,8 +196,20 @@ is only possible because the oxygen-potential route has no optimiser in it.
 
 ```bash
 python3 export_thermo.py   # thermo_data.json, straight from the package
-python3 build_site.py      # inlines solver.js + the data into index.html
+python3 build_site.py      # inlines solver.js + page.js + the data into index.html
 ```
+
+**Series colour is two different jobs, and merging them fails by measurement.**
+Phase boundaries are ordered by O/Ti, so swapping them changes the meaning:
+they take an ordinal one-hue ramp stepped off `--accent`. Gas species are
+nominal - CO2 is not "more" than H2 - so identity needs separate hues. Five
+steps of one hue score CVD ΔE 5.4 and a normal-vision ΔE 5.6 against a floor
+of 15; the separate-hue set clears every check in both modes. Both palettes
+were run through the validator rather than eyeballed.
+
+`--danger` and `--safe` are a reserved status channel and never carry a
+series. Reduction is the outcome under test, so it wears `--danger`; rutile
+surviving is the safe reading.
 
 The coefficients are exported rather than retyped, and `tests/test_export.py`
 fails if `thermo_data.json` or `index.html` goes stale against the package -
