@@ -195,6 +195,23 @@ a{color:var(--accent)}
 </aside>
 
 <main>
+
+  <section id="reported">
+    <h2>Reported values</h2>
+    <p class="sub">Twenty-four points &mdash; four atmospheres, six temperatures &mdash; each one the
+    converged minimum of the total Gibbs energy over the full species set at fixed elemental balance.
+    This table and the repository's <code>results.json</code> are the same file, so the page cannot
+    drift away from the numbers.</p>
+    <div class="tablewrap"><table id="gibbsTbl"></table></div>
+    <p class="railnote" id="gibbsProv"></p>
+  </section>
+
+  <h2 id="explore">Explore other conditions</h2>
+  <p class="sub">Everything below is the <strong>cross-check route</strong> &mdash; the oxygen-potential
+  formulation, solved live in the browser so you can move the conditions. It agrees with the
+  minimisation at the twenty-four points above, which is what earns it the right to be here, but it
+  is not where the reported numbers come from.</p>
+
   <div id="badge" class="badge"></div>
   <div class="kpis" id="kpis"></div>
 
@@ -238,6 +255,9 @@ a{color:var(--accent)}
     <li><strong>Sealed vessel.</strong> The inert case assumes a closed headspace. Flowing gas sweeps
     the released O<sub>2</sub> away and is an open-system question this does not answer.</li>
     <li><strong>Equilibrium only.</strong> Nothing here says how fast any of it happens.</li>
+    <li><strong>No experimental validation.</strong> Every check in this work is internal consistency
+    &mdash; two independent routes agreeing, and coexisting phases landing on their computed boundary.
+    Nothing has been compared against a measured phase boundary.</li>
   </ul>
 
   <footer>
@@ -248,6 +268,7 @@ a{color:var(--accent)}
 </main>
 </div>
 
+<script id="results" type="application/json">__RESULTS__</script>
 <script id="thermo" type="application/json">__THERMO__</script>
 <script>__SOLVER__</script>
 <script>__PAGE__</script>

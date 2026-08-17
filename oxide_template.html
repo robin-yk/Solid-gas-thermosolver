@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gas-Solid Equilibrium Solver | Oxide Reduction</title>
+<meta name="description" content="Full-composition Gibbs energy minimisation for a reacting gas in contact with a reducible oxide. Ti-O and Ce-O under RWGS feed. Self-contained, no external requests.">
+<style>
+/* White ground. The page does not follow the system into dark on its own -
+   dark is reachable, but only when asked for with the toggle. */
+:root{--blue:#0078d4;--navy:#153b56;--ink:#18232d;--muted:#5f6b76;--line:#dde4ea;
+      --bg:#ffffff;--panel:#ffffff;--orange:#d96b00;--green:#107c41;--red:#c0392b;
+      --code:#f6f8fa;--shadow:0 1px 3px #0000000f;color-scheme:light}
+:root[data-theme="dark"]{--blue:#4aa8e8;--navy:#cfe2f1;--ink:#e6edf3;--muted:#9bb0c0;
+  --line:#2b3a47;--bg:#121a21;--panel:#18222b;--orange:#e08b3a;--green:#4caf7d;--red:#e07a6a;
+  --code:#131c24;--shadow:0 4px 16px #00000040;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Arial,Helvetica,sans-serif}
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:34px clamp(18px,5vw,64px)}
+.eyebrow{color:var(--blue);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+h1{margin:8px 0;color:var(--navy);font-size:clamp(24px,4vw,34px);line-height:1.15;letter-spacing:-.02em}
+header p{max-width:900px;margin:0;color:var(--muted);font-size:15px}
+main{max-width:1200px;margin:auto;padding:26px 20px 60px}
+h2{margin:0 0 6px;color:var(--navy);font-size:21px;line-height:1.25}
+h3{margin:18px 0 6px;color:var(--navy);font-size:16px}
+.sub{margin:0 0 14px;color:var(--muted);font-size:13px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+       box-shadow:var(--shadow);margin-bottom:18px}
+.pad{padding:20px}
+.grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+label,.flabel{display:block;font-size:12px;font-weight:700;color:var(--muted);
+       text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+input,select,button{font:inherit;font-size:13px;color:var(--ink);background:var(--panel);
+       border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+input[type=range]{padding:0;border:0;background:transparent}
+.field{margin-bottom:14px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.readout{font-size:11px;color:var(--muted);margin-top:3px}
+button.act{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700;cursor:pointer}
+button.act:hover{filter:brightness(1.08)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+/* No text-transform here: these labels carry formulae, and uppercasing turns
+   mu into Mu and Ti into TI. Weight and colour carry the hierarchy instead. */
+.kpi .k{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.kpi .v{font-size:21px;font-weight:700;color:var(--navy);
+        font-variant-numeric:tabular-nums;margin:3px 0 1px;line-height:1.1}
+.kpi .u{font-size:11px;color:var(--muted)}
+.kpi.good .v{color:var(--green)} .kpi.warn .v{color:var(--red)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line);margin-bottom:0}
+.tab{width:auto;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;
+     background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;padding:9px 14px}
+.tab.active{background:var(--panel);border-color:var(--line);color:var(--navy)}
+.page{display:none} .page.active{display:block}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11px;letter-spacing:.04em;color:var(--muted);font-weight:700}
+.tablewrap{overflow-x:auto;max-width:100%}
+.eq{background:var(--code);border-left:3px solid var(--blue);border-radius:0 6px 6px 0;
+    padding:11px 14px;margin:11px 0;font-family:"Courier New",monospace;font-size:13px;
+    line-height:1.7;overflow-x:auto}
+.note{background:var(--code);border-left:3px solid var(--orange);border-radius:0 6px 6px 0;
+      padding:11px 14px;margin:11px 0;font-size:13px}
+.note.stop{border-left-color:var(--red)}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:12px}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:13px;
+    overflow-x:auto;font-size:11px;line-height:1.45;max-height:460px}
+ul{margin:8px 0;padding-left:20px} li{margin:5px 0;font-size:14px}
+.ok{color:var(--green);font-weight:700} .bad{color:var(--red);font-weight:700}
+footer{color:var(--muted);font-size:12px;padding:22px 0 0;border-top:1px solid var(--line);margin-top:24px}
+a{color:var(--blue)}
+.themebtn{width:auto;padding:6px 11px;font-size:12px;cursor:pointer;float:right}
+</style>
+</head>
+<body>
+<header>
+  <button class="themebtn" id="themeBtn" type="button">Theme</button>
+  <p class="eyebrow">Gas-solid equilibrium</p>
+  <h1>Oxide reduction under a reacting gas</h1>
+  <p>Full-composition Gibbs energy minimisation over gas and condensed phases at fixed
+  elemental balance. The phase assemblage is an <em>output</em>, not an input. Ti&ndash;O and
+  Ce&ndash;O under a CO<sub>2</sub>/H<sub>2</sub> feed. Everything runs in this file &mdash;
+  no external requests, no server.</p>
+</header>
+
+<main>
+<div class="grid">
+
+  <aside>
+    <div class="panel pad">
+      <div class="field">
+        <label for="sys">Oxide system</label>
+        <select id="sys">
+          <option value="Ti-O">Ti&ndash;O (rutile + Magn&eacute;li)</option>
+          <option value="Ce-O">Ce&ndash;O (ceria)</option>
+        </select>
+        <div class="readout" id="sysNote"></div>
+      </div>
+      <div class="field">
+        <label for="feed">Feed</label>
+        <select id="feed"><option value="RWGS">CO2 / H2 = 1:1 (RWGS)</option></select>
+      </div>
+      <div class="field" id="depthWrap">
+        <label for="depth">Series cut</label>
+        <select id="depth">
+          <option value="full">to Ti10O19 (shallowest assessed)</option>
+          <option value="ti4o7">to Ti4O7 only</option>
+          <option value="ti3o5">to Ti3O5</option>
+        </select>
+        <div class="readout">Where the Magn&eacute;li series is truncated.</div>
+      </div>
+      <div class="field pair">
+        <div><label for="P">Pressure</label><input type="number" id="P" value="1" min="0.01" max="100" step="0.1"><div class="readout">atm</div></div>
+        <div><label for="V">Volume</label><input type="number" id="V" value="25" min="1" max="10000" step="5"><div class="readout">mL</div></div>
+      </div>
+      <div class="field"><label for="mass">Oxide charge</label>
+        <input type="number" id="mass" value="100" min="1" max="10000" step="10"><div class="readout">mg</div></div>
+      <div class="field">
+        <label for="T">Temperature</label>
+        <input type="range" id="T" min="500" max="1500" step="25" value="900">
+        <div class="readout" id="Tval">900 &deg;C</div>
+      </div>
+      <button class="act" id="run" type="button">Solve</button>
+      <div class="readout" id="status" style="margin-top:9px"></div>
+    </div>
+
+    <div class="panel pad">
+      <label>Saved conditions</label>
+      <div class="field"><select id="favSel"></select></div>
+      <div class="field pair">
+        <button type="button" id="favLoad">Load</button>
+        <button type="button" id="favDel">Delete</button>
+      </div>
+      <div class="field"><input type="text" id="favName" placeholder="name this condition"></div>
+      <button type="button" id="favSave">Save current</button>
+      <div class="readout" id="favNote"></div>
+    </div>
+  </aside>
+
+  <section>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-page="p-res" type="button">Results</button>
+      <button class="tab" data-page="p-how" type="button">How the solver works</button>
+      <button class="tab" data-page="p-ver" type="button">Verification</button>
+      <button class="tab" data-page="p-bal" type="button">Element balance</button>
+      <button class="tab" data-page="p-coef" type="button">Coefficients</button>
+      <button class="tab" data-page="p-der" type="button">Derivation</button>
+      <button class="tab" data-page="p-src" type="button">Solver source</button>
+    </div>
+
+    <div class="panel pad page active" id="p-res">
+      <h2>Equilibrium at this condition</h2>
+      <p class="sub">Every number on this tab is the converged minimum of the total Gibbs
+      energy over the full species set. Method: <code>gibbs_min</code>.</p>
+      <h3>Condensed phases</h3>
+      <div class="tablewrap"><table id="tPhase"></table></div>
+      <h3>Gas composition</h3>
+      <div class="tablewrap"><table id="tGas"></table></div>
+      <h3>Sweep over temperature</h3>
+      <p class="sub">The same minimisation at every 100 &deg;C. <button type="button" id="sweep" style="width:auto;padding:5px 10px">Run sweep</button>
+      <button type="button" id="csv" style="width:auto;padding:5px 10px">Download CSV</button></p>
+      <div class="tablewrap"><table id="tSweep"></table></div>
+      <div id="resNotes"></div>
+    </div>
+
+    <div class="panel pad page" id="p-how">__HOW__</div>
+    <div class="panel pad page" id="p-ver">
+      <h2>Verification</h2>
+      <p class="sub">The same condition solved a second way, by an independent route, with
+      the difference shown. This is a check on the minimiser, not the reported answer.</p>
+      <div id="verBody"></div>
+    </div>
+    <div class="panel pad page" id="p-bal">
+      <h2>Element balance</h2>
+      <p class="sub">The constraint the minimisation was subject to, checked on its own answer.</p>
+      <div class="tablewrap"><table id="tBal"></table></div>
+      <div id="balNote"></div>
+    </div>
+    <div class="panel pad page" id="p-coef">
+      <h2>Coefficients in use</h2>
+      <p class="sub">The actual numbers this page is running on, not a citation of them.</p>
+      <div id="coefBody"></div>
+    </div>
+    <div class="panel pad page" id="p-der">__DERIV__</div>
+    <div class="panel pad page" id="p-src">
+      <h2>Solver source</h2>
+      <p class="sub">The functions below are the ones that produced the numbers above,
+      printed from the running page rather than pasted.</p>
+      <pre id="rawSrc"></pre>
+    </div>
+
+    <footer>
+      <span id="prov"></span>
+      Gases: NIST-JANAF 4th ed. (Chase, 1998). Ti&ndash;O condensed phases: Waldner &amp; Eriksson,
+      Calphad 23 (1999) 189&ndash;218. Ce&ndash;O: NIST-JANAF.
+      Engine ported from <a href="https://github.com/robin-yk/Solid-gas-thermosolver">robin-yk/Solid-gas-thermosolver</a>,
+      verified against the Python reference to five significant figures.
+    </footer>
+  </section>
+</div>
+</main>
+
+<script id="oxide-data" type="application/json">__DATA__</script>
+<script>__ENGINE__</script>
+<script>__PAGE__</script>
+</body>
+</html>

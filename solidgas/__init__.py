@@ -14,7 +14,7 @@ from .potential import (
     SOURCES, DEFAULT_SOURCE,
 )
 from .equilibrium import (
-    GASES, TI_PHASES, ACTIVE_TI_PHASES, FORMULAS,
+    GASES, TI_PHASES, CE_PHASES, METAL_PHASES, ACTIVE_TI_PHASES, FORMULAS,
     SPECIES, ELEMENTS, ELEM, SOLIDS, gas_idx, sol_idx,
     G_total, solve, residual, phase_seeds, gas_fractions, ti3_percent, phase_split,
     mean_valence, moles_of_gas,
@@ -23,7 +23,7 @@ from .equilibrium import (
 __all__ = [
     'SHOMATE', 'VALID_RANGE', 'R_KJ', 'R_ATM', 'mu0', 'enthalpy', 'entropy',
     'heat_capacity', 'Kp',
-    'GASES', 'TI_PHASES', 'ACTIVE_TI_PHASES', 'FORMULAS',
+    'GASES', 'TI_PHASES', 'CE_PHASES', 'METAL_PHASES', 'ACTIVE_TI_PHASES', 'FORMULAS',
     'SPECIES', 'ELEMENTS', 'ELEM', 'SOLIDS', 'gas_idx', 'sol_idx',
     'G_total', 'solve', 'residual', 'phase_seeds', 'gas_fractions', 'ti3_percent',
     'phase_split', 'mean_valence', 'moles_of_gas',

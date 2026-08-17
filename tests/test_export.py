@@ -52,7 +52,7 @@ def test_every_coefficient_matches_the_package(exported):
 
 def test_index_html_embeds_the_current_data_and_solver(exported):
     """index.html is built by inlining both, so it must contain them verbatim."""
-    path = os.path.join(ROOT, 'index.html')
+    path = os.path.join(ROOT, 'tiox.html')
     if not os.path.exists(path):
         pytest.skip('index.html not built')
     html = open(path).read()
@@ -67,7 +67,7 @@ def test_index_html_embeds_the_current_data_and_solver(exported):
 
 def test_page_has_no_external_requests():
     """GitHub Pages serves it flat; nothing may be fetched from elsewhere."""
-    path = os.path.join(ROOT, 'index.html')
+    path = os.path.join(ROOT, 'tiox.html')
     if not os.path.exists(path):
         pytest.skip('index.html not built')
     html = open(path).read()

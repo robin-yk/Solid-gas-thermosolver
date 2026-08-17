@@ -7,63 +7,94 @@ a Magneli phase?**
 The answer is no across 500-1500 C, but the margin is not uniform, and the
 place where it is thinnest is not yet fully tested. See *Where this is soft*.
 
-## Two routes to the same answer
+## One route reports, the other checks
 
-**Full Gibbs minimisation** (`solidgas/equilibrium.py`). Total Gibbs energy is
-minimised over the mole vector, gases ideal and mixing, condensed phases pure
-at unit activity, subject to elemental balance on C, H, O and Ti. Multiple
-starts per temperature, because each solid sits in its own basin.
+Every number in `results.json` is a **full-composition Gibbs minimisation**:
+the total Gibbs energy minimised over the whole species set, gases ideal and
+mixing, condensed phases pure at unit activity, subject to elemental balance.
+Nothing is read off a phase-boundary table, and no point is filled in by the
+faster route.
 
-**Oxygen potential** (`solidgas/potential.py`). Titanium does not enter the gas
-below about 2000 K, so the solid exchanges nothing with the gas but oxygen.
-That splits the problem: equilibrate the C-H-O gas alone, read off its oxygen
-potential, and compare against each condensed phase's critical potential, which
-is a plain function of temperature with no optimisation in it at all.
+`solidgas/gibbs.py` does that in reaction-extent coordinates. The change of
+variables is exact - same objective, same feasible set - but the constant part
+of G is removed analytically rather than carried through the arithmetic, and
+that is what makes the inert case computable at all. Sealed N2 pulls rutile off
+stoichiometry by a mole fraction near 1e-38; in species space that is destroyed
+before the optimiser sees it, because `n_TiO2 = n_Ti - 10*xi` with `n_Ti` at
+1e-3 rounds to `n_Ti` exactly. Minimising the reaction Gibbs energy directly
+keeps the extent as a primary variable at its own magnitude.
 
-The second route is **238x faster** (1.35 s versus 321 s for an 80-point sweep)
-and **more accurate** - it holds the RWGS quotient to 4e-5 against Kp, where the
-full nine-species minimisation manages 1e-3. Both are kept: the fast route is
-the one to use, and `test_potential_route_matches_the_full_minimisation`
-pins them to each other so the fast one cannot drift.
+`solidgas/potential.py` is the **oxygen-potential route** and is kept as the
+cross-check. Titanium does not enter the gas below about 2000 K, so the solid
+exchanges nothing but oxygen with it; that lets each condensed phase's critical
+potential be computed as a plain function of temperature, with no optimiser in
+it. It is roughly 200x faster, and it is still not what gets reported.
 
-The speed is not the interesting part. Line compounds are present or absent,
-not continuous unknowns, so making them variables forces the optimiser to walk
-an absent phase's mole number down to its bound through a log singularity that
-never needed to exist. Removing the solids as unknowns removes the reason for
-multistart.
+The reason is not that it is wrong. It is that the two agree nearly everywhere,
+which is exactly what makes a value from the wrong one impossible to spot by
+reading it. So the routes are separated in code, every row of `results.json`
+carries a `method` field, and `tests/test_results.py` refuses any row that does
+not say `gibbs_min`. A rule stated in prose survives one sitting; a rule with a
+test behind it survives the next person.
+
+The cross-check runs on every row and is recorded there. It is a real test, not
+a comparison of a number against itself: where the minimisation leaves rutile
+sitting with a reduced phase, coexistence fixes the gas oxygen potential
+exactly, and the boundary value comes from the phase data alone. The minimised
+gas has to land on it.
+
+```bash
+python3 run_all.py      # 24 points -> results.json, every row stamped gibbs_min
+python3 build_site.py   # embeds that same file in index.html
+python3 -m pytest tests/ -q
+```
 
 ## Results
 
-100 mg TiO2, 25 mL, 1 atm, 500-1500 C.
+100 mg TiO2, 25 mL, 1 atm. Every number below is `gibbs_min`, straight out of
+`results.json`.
 
-| feed | Ti(3+) at 900 C | Ti(3+) at 1500 C | deepest phase |
-|---|---|---|---|
-| CO2/H2 = 1:1 | 0.000% | 0.000% | none - rutile throughout |
-| pure H2 | 0.17% | 6.4% | Ti10O19 |
-| pure CH4 | 33.3% | 33.0% | Ti5O9 / Ti6O11 |
-| sealed N2 | 0.000% | 0.000% | none |
+**Ti(3+) as a percentage of total titanium**
 
-Both solvers were run on the pure-H2 case and agree to the printed digit.
-An apparent disagreement at first turned out to be only that one phase list
-carried Ti20O39 and the other did not, which is worth more than the agreement:
-truncating the series at Ti10O19 gives 6.4% at 1500 C and including Ti20O39
-gives 9.8%, and that spread is the line-compound model reaching its limit
-rather than a numerical problem.
+| feed | 500 C | 700 C | 900 C | 1100 C | 1300 C | 1500 C |
+|---|---|---|---|---|---|---|
+| CO2/H2 = 1:1 | 1.0e-17 | 1.0e-17 | 4.6e-16 | 6.7e-18 | 5.0e-18 | 1.1e-42 |
+| pure H2 | 0.0005 | 0.0168 | 0.1702 | 0.8694 | 2.82 | 6.37 |
+| pure CH4 | 0.1678 | 5.59 | 33.33 | 36.59 | 33.33 | 33.33 |
+| sealed N2 | 1.5e-36 | 1.7e-26 | 7.2e-20 | 3.9e-15 | 1.4e-11 | 8.7e-09 |
 
-Sealed inert gas does nothing, and not because the temperature is too low: the
-oxide has nowhere to put the oxygen. At 1500 C the boundary sits at
-pO2 = 1.6e-10 atm, and 25 mL at that pressure holds 2.7e-14 mol of O2 while
-converting even 1% of the charge would release 6.3e-7 mol.
+**Phases that appear**
 
-Under RWGS the gas equilibrates to ordinary shift behaviour, 25% to 66% CO2
-conversion, and the solid never enters. Kp from standard potentials and Q from
-the converged mole fractions agree at every temperature.
+| feed | reduced phases |
+|---|---|
+| CO2/H2 = 1:1 | none - rutile throughout |
+| pure H2 | Ti10O19 |
+| pure CH4 | Ti10O19, Ti6O11, Ti5O9 |
+| sealed N2 | Ti10O19 |
 
-**Ti3O5 and Ti2O3 never appear.** They were added to test whether the phase set
-was limiting the answer. It was not: under CH4 the solid parks on the
-TiO2/Ti4O7 two-phase buffer, and the gas there is 12 to 74 times too oxidising
-to carry the next step. The 92% Ti4O7 reached at 1500 C is a buffer, not
-saturation.
+RWGS never reduces rutile anywhere in the range. Pure H2 sits on the
+TiO2/Ti10O19 buffer at every temperature, converting more of the charge as it
+gets hotter but never getting past the first step. Pure CH4 is the only feed
+that drives the solid off rutile entirely.
+
+Sealed inert gas does nothing, and the minimisation now says so in its own
+right rather than by a capacity argument: the oxide gives up oxygen until the
+gas reaches the boundary potential, and that leaves between 1e-36 and 1e-8
+percent of the titanium reduced across 500-1500 C.
+
+**The cross-check.** Where the minimisation leaves two phases together the gas
+must sit exactly on their boundary, a value computed from the phase data with
+no optimiser in it. Across the twelve buffered rows the worst disagreement is
+**4e-5 kJ per mol O**. The inert case agrees with the oxygen-potential route on
+pO2 to five significant figures at all six temperatures.
+
+**Where the two routes part company.** At 1100 C under CH4 the minimisation
+puts Ti5O9 + TiO2 below Ti6O11 by 0.6% in reaction Gibbs energy, and the
+oxygen-potential route's ladder walk cannot represent that: it assumes the
+series is monotonic in n, and here it is not - the intermediate members lie
+above the convex hull. The Gibbs value is the reported one. The gap is well
+inside the assessment's own scatter, so the *phase identity* at the CH4 hot end
+is not resolved by this data; the Ti(3+) level, 33 to 37%, is robust either way.
 
 ### How far RWGS sits from reduction
 
@@ -72,13 +103,13 @@ easily out of untouched rutile. Positive means nothing reduces.
 
 | T (C) | 500 | 700 | 900 | 1100 | 1300 | 1500 |
 |---|---|---|---|---|---|---|
-| vs Ti4O7 only (NIST) | +69.2 | +47.1 | +45.9 | +35.4 | +24.4 | +22.7 |
-| vs Ti4O7 only (Waldner) | +85.0 | +71.0 | +64.3 | +57.2 | +49.5 | +41.2 |
-| **vs the full series (Waldner)** | **+74.7** | **+58.2** | **+48.9** | **+39.3** | **+29.1** | **+18.3** |
+| **margin, from the minimised gas** | **+78.44** | **+62.92** | **+54.74** | **+46.17** | **+37.03** | **+27.30** |
 
-The last row is the answer. It is measured against Ti20O39, the highest-n
-member assessed and the easiest phase to form; against the more conventional
-Ti10O19 the 1500 C figure is +27.3.
+These are measured against Ti10O19, the shallowest member in `ACTIVE_TI_PHASES`
+and so the easiest phase to form out of untouched rutile. Against Ti20O39, the
+highest-n member the assessment carries, the 1500 C figure falls to +18.3 - and
+that spread is the line-compound model reaching its limit, not a numerical
+problem.
 
 Two corrections cancel in part, and both matter:
 
@@ -104,7 +135,9 @@ solidgas/
   shomate.py      NIST-JANAF coefficients; H, S, Cp, mu0, Kp
   waldner.py      Waldner & Eriksson Ti-O assessment: the Magneli series
   equilibrium.py  species, element matrix, G_total, constrained solve
-  potential.py    oxygen-potential route: gas-only solve + critical potentials
+  gibbs.py        the reported route: Gibbs minimisation in extent coordinates
+  potential.py    oxygen-potential route, kept as the cross-check only
+run_all.py              the 24 reported points -> results.json
 run_Ti4O7_RWGS.py       CO2/H2 sweep, writes Ti4O7_RWGS.png + results_rwgs.json
 run_Ti4O7_reducing.py   pure-H2 and pure-CH4 sweeps, writes results_reducing.json
 solver.js               the same thermodynamics for the browser
@@ -185,41 +218,60 @@ Notes on the two added this round:
   rutile non-stoichiometry.
 - **Equilibrium only.** Nothing here says how fast any of it happens.
 
-## The interactive page
+## The pages
 
-**<https://robin-yk.github.io/Solid-gas-thermosolver/>**
+**<https://robin-yk.github.io/Solid-gas-thermosolver/>** is a portal over two tools.
 
-Pick an atmosphere and conditions; the page equilibrates the C-H-O gas, reads
-off its oxygen potential, and compares it against every member of the series.
-Nothing is a stored answer - the whole calculation runs in the browser, which
-is only possible because the oxygen-potential route has no optimiser in it.
+**`oxide_tool.html` &mdash; oxide reduction under a reacting gas.** The Gibbs minimisation, in the
+browser. Ti&ndash;O and Ce&ndash;O under a CO2/H2 feed; the phase assemblage is an output. Carries
+its own verification tab (the same condition solved by the oxygen-potential route, with the
+difference shown), the coefficients it is actually running on, the element balance, the solver's
+own state, the full derivation, and the solver source printed from the running page. Self-contained:
+no external requests.
+
+**`tiox.html` &mdash; the oxygen-potential dashboard.** The fast route, swept continuously across
+temperature with the phase boundaries drawn. Its reported values are read from `results.json`, not
+recomputed there, and a test compares the embedded copy against the file so the page and the table
+cannot drift apart.
 
 ```bash
-python3 export_thermo.py   # thermo_data.json, straight from the package
-python3 build_site.py      # inlines solver.js + page.js + the data into index.html
+python3 run_all.py         # results.json   - the 24 reported points
+python3 export_thermo.py   # thermo_data.json
+python3 export_oxide.py    # oxide_data.json
+python3 oxide_reference.py # oxide_reference.json - what the JS port must reproduce
+python3 build_site.py      # tiox.html
+python3 build_oxide.py     # oxide_tool.html
+python3 build_portal.py    # index.html
 ```
 
-**Series colour is two different jobs, and merging them fails by measurement.**
-Phase boundaries are ordered by O/Ti, so swapping them changes the meaning:
-they take an ordinal one-hue ramp stepped off `--accent`. Gas species are
-nominal - CO2 is not "more" than H2 - so identity needs separate hues. Five
-steps of one hue score CVD ΔE 5.4 and a normal-vision ΔE 5.6 against a floor
-of 15; the separate-hue set clears every check in both modes. Both palettes
-were run through the validator rather than eyeballed.
+### Porting the engine to the browser
 
-`--danger` and `--safe` are a reserved status channel and never carry a
-series. Reduction is the outcome under test, so it wears `--danger`; rutile
-surviving is the safe reading.
+`oxide.js` is `solidgas/gibbs.py` carried across: reaction-extent coordinates, the constant part of
+G removed analytically, the analytic gradient. Two things could not be copied and are worth naming.
 
-The coefficients are exported rather than retyped, and `tests/test_export.py`
-fails if `thermo_data.json` or `index.html` goes stale against the package -
-a drifted page would keep working and quietly answer with old numbers.
+SciPy's SLSQP does not exist in a browser. The change of variables has already removed every
+equality constraint, so what replaces it is a projected gradient with a Barzilai-Borwein step and
+backtracking, over the log of the extents; `G_rel` returns a large number on an infeasible
+composition, so a line search that only accepts a decrease cannot step outside the feasible set.
+`tests/test_oxide_port.py` holds the two implementations to five significant figures - the worst
+disagreement on any species actually present is 3.5e-6, across both oxide systems and six
+temperatures each.
 
-`solver.js` reimplements the thermodynamics in the browser and agrees with the
-Python package to the printed digit on every case. It is in one respect
-better: the gas equilibrium is solved by nested bisection rather than SLSQP,
-which holds the RWGS quotient to machine precision against Kp where SLSQP
-manages 4e-5.
+The WGS page's `shomate(c, T)` reads seven coefficients and lands on the absolute potential because
+NIST's F already carries the formation term; this package keeps eight and adds dHf explicitly.
+Rather than generalise that function - the gas path is the part already checked against an Excel
+workbook - `export_oxide.py` folds the constant in as `F' = F - H + dHf`, and the evaluator is
+copied unchanged.
 
-The CH4 case carries a visible caveat in the page itself, since graphite is
-still missing.
+### A defect, stated
+
+An absent phase should have exactly zero moles. In logarithmic extent coordinates it cannot: the
+logarithm of zero does not exist, so absent phases come back at 1e-26 to 1e-17 percent instead of at
+nothing. Telling that residue apart from a phase genuinely present in a trace amount then needs a
+second argument - under sealed N2 a share of 1e-36 percent is the entire answer, and under RWGS the
+same size is nothing - which is a thing that has already been got wrong once here.
+
+The fix is to enumerate which phases are present, hold the absent ones at exactly zero, and compare
+the total Gibbs energy across those cases; the degrees of freedom are small enough that the
+enumeration is cheap. Until it lands, both pages state a detection limit and report below it as
+below it, rather than printing a number that looks like a measurement.

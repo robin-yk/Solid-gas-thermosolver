@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gas-Solid Equilibrium Solver | Oxide Reduction</title>
+<meta name="description" content="Full-composition Gibbs energy minimisation for a reacting gas in contact with a reducible oxide. Ti-O and Ce-O under RWGS feed. Self-contained, no external requests.">
+<style>
+/* White ground. The page does not follow the system into dark on its own -
+   dark is reachable, but only when asked for with the toggle. */
+:root{--blue:#0078d4;--navy:#153b56;--ink:#18232d;--muted:#5f6b76;--line:#dde4ea;
+      --bg:#ffffff;--panel:#ffffff;--orange:#d96b00;--green:#107c41;--red:#c0392b;
+      --code:#f6f8fa;--shadow:0 1px 3px #0000000f;color-scheme:light}
+:root[data-theme="dark"]{--blue:#4aa8e8;--navy:#cfe2f1;--ink:#e6edf3;--muted:#9bb0c0;
+  --line:#2b3a47;--bg:#121a21;--panel:#18222b;--orange:#e08b3a;--green:#4caf7d;--red:#e07a6a;
+  --code:#131c24;--shadow:0 4px 16px #00000040;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Arial,Helvetica,sans-serif}
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:34px clamp(18px,5vw,64px)}
+.eyebrow{color:var(--blue);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+h1{margin:8px 0;color:var(--navy);font-size:clamp(24px,4vw,34px);line-height:1.15;letter-spacing:-.02em}
+header p{max-width:900px;margin:0;color:var(--muted);font-size:15px}
+main{max-width:1200px;margin:auto;padding:26px 20px 60px}
+h2{margin:0 0 6px;color:var(--navy);font-size:21px;line-height:1.25}
+h3{margin:18px 0 6px;color:var(--navy);font-size:16px}
+.sub{margin:0 0 14px;color:var(--muted);font-size:13px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+       box-shadow:var(--shadow);margin-bottom:18px}
+.pad{padding:20px}
+.grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+label,.flabel{display:block;font-size:12px;font-weight:700;color:var(--muted);
+       text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+input,select,button{font:inherit;font-size:13px;color:var(--ink);background:var(--panel);
+       border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+input[type=range]{padding:0;border:0;background:transparent}
+.field{margin-bottom:14px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.readout{font-size:11px;color:var(--muted);margin-top:3px}
+button.act{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700;cursor:pointer}
+button.act:hover{filter:brightness(1.08)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+/* No text-transform here: these labels carry formulae, and uppercasing turns
+   mu into Mu and Ti into TI. Weight and colour carry the hierarchy instead. */
+.kpi .k{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.kpi .v{font-size:21px;font-weight:700;color:var(--navy);
+        font-variant-numeric:tabular-nums;margin:3px 0 1px;line-height:1.1}
+.kpi .u{font-size:11px;color:var(--muted)}
+.kpi.good .v{color:var(--green)} .kpi.warn .v{color:var(--red)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line);margin-bottom:0}
+.tab{width:auto;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;
+     background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;padding:9px 14px}
+.tab.active{background:var(--panel);border-color:var(--line);color:var(--navy)}
+.page{display:none} .page.active{display:block}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11px;letter-spacing:.04em;color:var(--muted);font-weight:700}
+.tablewrap{overflow-x:auto;max-width:100%}
+.eq{background:var(--code);border-left:3px solid var(--blue);border-radius:0 6px 6px 0;
+    padding:11px 14px;margin:11px 0;font-family:"Courier New",monospace;font-size:13px;
+    line-height:1.7;overflow-x:auto}
+.note{background:var(--code);border-left:3px solid var(--orange);border-radius:0 6px 6px 0;
+      padding:11px 14px;margin:11px 0;font-size:13px}
+.note.stop{border-left-color:var(--red)}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:12px}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:13px;
+    overflow-x:auto;font-size:11px;line-height:1.45;max-height:460px}
+ul{margin:8px 0;padding-left:20px} li{margin:5px 0;font-size:14px}
+.ok{color:var(--green);font-weight:700} .bad{color:var(--red);font-weight:700}
+footer{color:var(--muted);font-size:12px;padding:22px 0 0;border-top:1px solid var(--line);margin-top:24px}
+a{color:var(--blue)}
+.themebtn{width:auto;padding:6px 11px;font-size:12px;cursor:pointer;float:right}
+</style>
+</head>
+<body>
+<header>
+  <button class="themebtn" id="themeBtn" type="button">Theme</button>
+  <p class="eyebrow">Gas-solid equilibrium</p>
+  <h1>Oxide reduction under a reacting gas</h1>
+  <p>Full-composition Gibbs energy minimisation over gas and condensed phases at fixed
+  elemental balance. The phase assemblage is an <em>output</em>, not an input. Ti&ndash;O and
+  Ce&ndash;O under a CO<sub>2</sub>/H<sub>2</sub> feed. Everything runs in this file &mdash;
+  no external requests, no server.</p>
+</header>
+
+<main>
+<div class="grid">
+
+  <aside>
+    <div class="panel pad">
+      <div class="field">
+        <label for="sys">Oxide system</label>
+        <select id="sys">
+          <option value="Ti-O">Ti&ndash;O (rutile + Magn&eacute;li)</option>
+          <option value="Ce-O">Ce&ndash;O (ceria)</option>
+        </select>
+        <div class="readout" id="sysNote"></div>
+      </div>
+      <div class="field">
+        <label for="feed">Feed</label>
+        <select id="feed"><option value="RWGS">CO2 / H2 = 1:1 (RWGS)</option></select>
+      </div>
+      <div class="field" id="depthWrap">
+        <label for="depth">Series cut</label>
+        <select id="depth">
+          <option value="full">to Ti10O19 (shallowest assessed)</option>
+          <option value="ti4o7">to Ti4O7 only</option>
+          <option value="ti3o5">to Ti3O5</option>
+        </select>
+        <div class="readout">Where the Magn&eacute;li series is truncated.</div>
+      </div>
+      <div class="field pair">
+        <div><label for="P">Pressure</label><input type="number" id="P" value="1" min="0.01" max="100" step="0.1"><div class="readout">atm</div></div>
+        <div><label for="V">Volume</label><input type="number" id="V" value="25" min="1" max="10000" step="5"><div class="readout">mL</div></div>
+      </div>
+      <div class="field"><label for="mass">Oxide charge</label>
+        <input type="number" id="mass" value="100" min="1" max="10000" step="10"><div class="readout">mg</div></div>
+      <div class="field">
+        <label for="T">Temperature</label>
+        <input type="range" id="T" min="500" max="1500" step="25" value="900">
+        <div class="readout" id="Tval">900 &deg;C</div>
+      </div>
+      <button class="act" id="run" type="button">Solve</button>
+      <div class="readout" id="status" style="margin-top:9px"></div>
+    </div>
+
+    <div class="panel pad">
+      <label>Saved conditions</label>
+      <div class="field"><select id="favSel"></select></div>
+      <div class="field pair">
+        <button type="button" id="favLoad">Load</button>
+        <button type="button" id="favDel">Delete</button>
+      </div>
+      <div class="field"><input type="text" id="favName" placeholder="name this condition"></div>
+      <button type="button" id="favSave">Save current</button>
+      <div class="readout" id="favNote"></div>
+    </div>
+  </aside>
+
+  <section>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-page="p-res" type="button">Results</button>
+      <button class="tab" data-page="p-how" type="button">How the solver works</button>
+      <button class="tab" data-page="p-ver" type="button">Verification</button>
+      <button class="tab" data-page="p-bal" type="button">Element balance</button>
+      <button class="tab" data-page="p-coef" type="button">Coefficients</button>
+      <button class="tab" data-page="p-der" type="button">Derivation</button>
+      <button class="tab" data-page="p-src" type="button">Solver source</button>
+    </div>
+
+    <div class="panel pad page active" id="p-res">
+      <h2>Equilibrium at this condition</h2>
+      <p class="sub">Every number on this tab is the converged minimum of the total Gibbs
+      energy over the full species set. Method: <code>gibbs_min</code>.</p>
+      <h3>Condensed phases</h3>
+      <div class="tablewrap"><table id="tPhase"></table></div>
+      <h3>Gas composition</h3>
+      <div class="tablewrap"><table id="tGas"></table></div>
+      <h3>Sweep over temperature</h3>
+      <p class="sub">The same minimisation at every 100 &deg;C. <button type="button" id="sweep" style="width:auto;padding:5px 10px">Run sweep</button>
+      <button type="button" id="csv" style="width:auto;padding:5px 10px">Download CSV</button></p>
+      <div class="tablewrap"><table id="tSweep"></table></div>
+      <div id="resNotes"></div>
+    </div>
+
+    <div class="panel pad page" id="p-how"><h2>How the solver works</h2>
+<p class="sub">The method by its exact name, and what it cannot do, in the same place.</p>
+
+<h3>What this is</h3>
+<p><strong>Full-composition Gibbs energy minimisation.</strong> Every gas species and every allowed
+condensed phase is an unknown. The total Gibbs energy</p>
+<div class="eq">μ<sub>i</sub> = μ°<sub>i</sub>(T) + RT ln[y<sub>i</sub>P/P°]   (gases)<br/>
+μ<sub>i</sub> = μ°<sub>i</sub>(T)                    (condensed, unit activity)<br/>
+G<sub>total</sub> = Σ n<sub>i</sub> μ<sub>i</sub></div>
+<p>is minimised subject to elemental balance and non-negative moles:</p>
+<div class="eq">minimise G<sub>total</sub><br/>subject to  A·n = A·n<sub>feed</sub><br/>
+and  n<sub>i</sub> ≥ 0</div>
+<p><strong>The phase assemblage is an output.</strong> Nothing tells the solver which oxide should
+be stable; it finds out by putting them all in and letting the minimum decide. That is the whole
+reason for doing it this way instead of comparing a gas against a table of phase boundaries.</p>
+
+<h3>What this is not</h3>
+<p>It is <strong>not</strong> a bisection on an oxygen chemical potential, and it is not a walk down
+a ladder of phase boundaries. That route exists, it is roughly two hundred times faster, and it is
+in this page — on the Verification tab, where it belongs. It is not what any number on the Results
+tab came from.</p>
+<p>The distinction matters because the two agree almost everywhere. That is exactly what makes a
+value from the wrong one impossible to catch by reading it, so the two are kept apart in the code
+and every result carries <code>method: "gibbs_min"</code>.</p>
+
+<h3>Why the degrees of freedom are small</h3>
+<p>With a CO<sub>2</sub>/H<sub>2</sub> feed the gas holds C, H and O, and the solid adds one metal.
+Fixing which condensed phases are present leaves three or four independent composition variables:
+the shift between CO<sub>2</sub>/H<sub>2</sub> and CO/H<sub>2</sub>O, methane formation, molecular
+O<sub>2</sub>, and the oxygen handed to or taken from the solid. That is a small enough problem to
+solve deterministically rather than hopefully.</p>
+
+<h3>Solver state</h3>
+<p>The panel on the left reports how many starting points were tried, how many iterations ran, the
+wall time, and the elemental-balance residual on the answer. The Element balance tab shows that
+residual per element. A residual there means the optimiser left the feasible set, which is a
+different failure from finding the wrong minimum inside it — both are possible, and only one of
+them is what that check catches.</p>
+
+<div class="note stop"><strong>Known defect, being fixed.</strong> The present build represents an
+absent phase by a very small number rather than by zero, because the extents are carried in
+logarithmic coordinates and the logarithm of zero does not exist. Absent phases therefore come back
+at around 10<sup>−26</sup> to 10<sup>−17</sup> percent instead of at nothing, and telling that
+residue apart from a phase that is genuinely present in a trace amount currently needs a second
+argument rather than being read straight off the answer. The replacement enumerates which phases
+are present, holds the absent ones at exactly zero, and compares the total Gibbs energy across
+those cases. Until that lands, treat any reduction below about 10<sup>−10</sup> percent on this
+page as zero.</div>
+</div>
+    <div class="panel pad page" id="p-ver">
+      <h2>Verification</h2>
+      <p class="sub">The same condition solved a second way, by an independent route, with
+      the difference shown. This is a check on the minimiser, not the reported answer.</p>
+      <div id="verBody"></div>
+    </div>
+    <div class="panel pad page" id="p-bal">
+      <h2>Element balance</h2>
+      <p class="sub">The constraint the minimisation was subject to, checked on its own answer.</p>
+      <div class="tablewrap"><table id="tBal"></table></div>
+      <div id="balNote"></div>
+    </div>
+    <div class="panel pad page" id="p-coef">
+      <h2>Coefficients in use</h2>
+      <p class="sub">The actual numbers this page is running on, not a citation of them.</p>
+      <div id="coefBody"></div>
+    </div>
+    <div class="panel pad page" id="p-der"><h2>Derivation</h2>
+<p class="sub">The full working, on the same page as the numbers rather than behind a citation.</p>
+
+<h3>1. Chemical potentials</h3>
+<p>Gases follow the NIST-JANAF Shomate form, with t = T/1000:</p>
+<div class="eq">C<sub>p</sub>° = A + Bt + Ct² + Dt³ + E/t²<br/>
+H°(T) = At + Bt²/2 + Ct³/3 + Dt⁴/4 − E/t + F′<br/>
+S°(T) = A ln t + Bt + Ct²/2 + Dt³/3 − E/(2t²) + G<br/>
+μ°(T) = H°(T) − T·S°(T)</div>
+<p>F′ = F − H + Δ<sub>f</sub>H°<sub>298</sub> is folded in when the coefficients are exported, so
+this returns the potential on the elemental reference rather than relative to 298 K. The evaluator
+itself is the one from the WGS tools page, unchanged.</p>
+<p>CALPHAD condensed phases use a different heat-capacity form and are integrated from 298.15 K,
+entering a transition enthalpy at each range boundary:</p>
+<div class="eq">Magnéli:  C<sub>p</sub> = k₀ + k₁T<sup>−1/2</sup> + k₂T<sup>−2</sup> + k₃T<sup>−3</sup><br/>
+poly:     C<sub>p</sub> = a + bT + cT² + dT<sup>−2</sup><br/>
+H(T) = Δ<sub>f</sub>H°<sub>298</sub> + Σ [ ΔH<sub>trans</sub> + ∫C<sub>p</sub>dT ]<br/>
+S(T) = S°<sub>298</sub> + Σ [ ΔH<sub>trans</sub>/T<sub>trans</sub> + ∫(C<sub>p</sub>/T)dT ]</div>
+<p>Both H and S step at a transition while G stays continuous, which is why an error there hides:
+the equilibrium uses G. Dropping ΔH<sub>trans</sub> moves μ for Ti<sub>3</sub>O<sub>5</sub> by
+about 35 kJ/mol at 1500 °C without breaking anything visible.</p>
+
+<h3>2. Reaction-extent coordinates</h3>
+<p>One component is chosen per element — here the charge as loaded, CO<sub>2</sub>, H<sub>2</sub>,
+H<sub>2</sub>O and the host oxide — and every remaining species is formed from them by one
+reaction, carrying one extent ξ:</p>
+<div class="eq">n = n<sub>0</sub>(b) + Δn(ξ),   Δn<sub>free</sub> = ξ,   Δn<sub>comp</sub> = −(A<sub>K</sub><sup>−1</sup>A<sub>D</sub>)ξ<br/>
+CO   = CO<sub>2</sub> + H<sub>2</sub> − H<sub>2</sub>O<br/>
+CH<sub>4</sub>  = CO<sub>2</sub> + 4H<sub>2</sub> − 2H<sub>2</sub>O<br/>
+Ti<sub>10</sub>O<sub>19</sub> = 10 TiO<sub>2</sub> + H<sub>2</sub> − H<sub>2</sub>O<br/>
+Ce<sub>2</sub>O<sub>3</sub> = 2 CeO<sub>2</sub> + H<sub>2</sub> − H<sub>2</sub>O</div>
+<p>The change of variables is exact: same objective, same feasible set. It removes the elemental
+constraints by construction — they are satisfied identically, not enforced — and it lets the
+constant part of G be dropped analytically:</p>
+<div class="eq">G<sub>rel</sub>(ξ) = G(n(ξ)) − G(n(0))<br/>
+   = ξ·ΔG°<sub>form</sub> + RT·[ mixing(n) − mixing(n<sub>0</sub>) ]<br/>
+ΔG°<sub>form</sub> = μ°<sub>free</sub> + (A<sub>K</sub><sup>−1</sup>A<sub>D</sub>)<sup>T</sup>μ°<sub>comp</sub></div>
+<p>That is not a refinement. Under a sealed inert gas the oxide leaves stoichiometry by a mole
+fraction near 10<sup>−38</sup>, and in species coordinates
+n(TiO<sub>2</sub>) = n<sub>Ti</sub> − 10ξ rounds to n<sub>Ti</sub> exactly — a double carries
+sixteen digits and the gap is thirty-nine. The extent survives only if it is never subtracted from
+something large.</p>
+
+<h3>3. The mixing term</h3>
+<p>Written so a small change against a large reference never becomes a difference of two logarithms:</p>
+<div class="eq">Δmix = Σ<sub>gas</sub> [ n<sub>i,0</sub>·log1p(Δn<sub>i</sub>/n<sub>i,0</sub>) + Δn<sub>i</sub>·ln n<sub>i</sub> ]<br/>
+     − n<sub>g,0</sub>·log1p(δ/n<sub>g,0</sub>) − δ·ln n<sub>g</sub> + δ·ln P</div>
+
+<h3>4. The gradient</h3>
+<p>Analytic, because finite differences are useless on an objective that can sit at
+10<sup>−19</sup> kJ. The terms in ∂n<sub>g</sub>/∂ξ cancel identically, since the mole fractions
+sum to one:</p>
+<div class="eq">∂G/∂ξ<sub>j</sub> = ΔG°<sub>form,j</sub> + RT Σ<sub>gas</sub> ν<sub>ij</sub> ln(y<sub>i</sub>P)</div>
+
+<h3>5. Oxygen potential — verification only</h3>
+<p>The metal does not enter the gas below about 2000 K, so the solid exchanges nothing with it but
+oxygen. Each phase boundary is then a plain function of temperature, with no optimiser in it:</p>
+<div class="eq">μ<sub>O</sub> = μ°(H<sub>2</sub>O) − μ°(H<sub>2</sub>) + RT ln(y<sub>H2O</sub>/y<sub>H2</sub>)<br/>
+μ<sub>O</sub><sup>crit</sup>(higher→lower) = [ n·μ°(higher) − μ°(lower) ] / ΔO<br/>
+μ<sub>O</sub> = ½[ μ°(O<sub>2</sub>) + RT ln pO<sub>2</sub> ]</div>
+<p>Two phases in contact fix μ<sub>O</sub> exactly. So where the minimisation leaves two phases
+together, its gas has to land on a number computed from the phase data alone — a test of the
+minimiser using nothing the minimiser produced. Reporting this route instead would turn that test
+into a number compared against itself.</p>
+</div>
+    <div class="panel pad page" id="p-src">
+      <h2>Solver source</h2>
+      <p class="sub">The functions below are the ones that produced the numbers above,
+      printed from the running page rather than pasted.</p>
+      <pre id="rawSrc"></pre>
+    </div>
+
+    <footer>
+      <span id="prov"></span>
+      Gases: NIST-JANAF 4th ed. (Chase, 1998). Ti&ndash;O condensed phases: Waldner &amp; Eriksson,
+      Calphad 23 (1999) 189&ndash;218. Ce&ndash;O: NIST-JANAF.
+      Engine ported from <a href="https://github.com/robin-yk/Solid-gas-thermosolver">robin-yk/Solid-gas-thermosolver</a>,
+      verified against the Python reference to five significant figures.
+    </footer>
+  </section>
+</div>
+</main>
+
+<script id="oxide-data" type="application/json">{"R_ATM":82.06,"R_KJ":0.008314472,"calphad":{"Ti10O19":{"S298":505.51533,"dHf298":-9085912.9,"ranges":[{"T0":298.15,"T1":5000.0,"c":[831.39283,-2110.8923,-22726564.0,2273095800.0],"dHt":0.0,"form":"magneli"}]},"Ti2O3":{"S298":77.463,"dHf298":-1526171.0,"ranges":[{"T0":298.15,"T1":470.0,"c":[30.3934,0.199918,3.55968e-05,235600.0],"dHt":0.0,"form":"poly"},{"T0":470.0,"T1":2115.0,"c":[147.674,0.00347423,9.203e-10,-4790850.0],"dHt":1138.0,"form":"poly"}]},"Ti3O5":{"S298":127.75,"dHf298":-2469900.0,"ranges":[{"T0":298.15,"T1":450.0,"c":[-23.9073,0.84031,-0.0008084413,0.0],"dHt":0.0,"form":"poly"},{"T0":450.0,"T1":5000.0,"c":[158.99208,0.05020795,0.0,0.0],"dHt":11757.0,"form":"poly"}]},"Ti4O7":{"S298":195.39,"dHf298":-3416525.0,"ranges":[{"T0":298.15,"T1":5000.0,"c":[364.36711,-2110.8923,-2519517.0,-144548200.0],"dHt":0.0,"form":"magneli"}]},"Ti5O9":{"S298":248.95446,"dHf298":-4360918.5,"ranges":[{"T0":298.15,"T1":5000.0,"c":[442.20473,-2110.8923,-5887358.0,258392400.0],"dHt":0.0,"form":"magneli"}]},"Ti6O11":{"S298":300.50153,"dHf298":-5306479.2,"ranges":[{"T0":298.15,"T1":5000.0,"c":[520.04235,-2110.8923,-9255199.0,661333100.0],"dHt":0.0,"form":"magneli"}]},"Ti8O15":{"S298":403.17028,"dHf298":-7196482.4,"ranges":[{"T0":298.15,"T1":5000.0,"c":[675.71759,-2110.8923,-15990881.0,1467214400.0],"dHt":0.0,"form":"magneli"}]},"TiO2":{"S298":50.46,"dHf298":-944750.0,"ranges":[{"T0":298.15,"T1":6000.0,"c":[77.83762,0.0,-3367841.0,402940672.0],"dHt":0.0,"form":"magneli"}]}},"formulas":{"CH4":{"C":1,"H":4},"CO":{"C":1,"O":1},"CO2":{"C":1,"O":2},"Ce2O3":{"Ce":2,"O":3},"CeO2":{"Ce":1,"O":2},"H2":{"H":2},"H2O":{"H":2,"O":1},"O2":{"O":2},"Ti10O19":{"O":19,"Ti":10},"Ti2O3":{"O":3,"Ti":2},"Ti3O5":{"O":5,"Ti":3},"Ti4O7":{"O":7,"Ti":4},"Ti5O9":{"O":9,"Ti":5},"Ti6O11":{"O":11,"Ti":6},"Ti8O15":{"O":15,"Ti":8},"TiO2":{"O":2,"Ti":1}},"gases":["CO2","H2","CO","H2O","CH4","O2"],"metal_phases":{"Ce2O3":[2,2],"CeO2":[1,0],"Ti10O19":[10,2],"Ti2O3":[2,2],"Ti3O5":[3,2],"Ti4O7":[4,2],"Ti5O9":[5,2],"Ti6O11":[6,2],"Ti8O15":[8,2],"TiO2":[1,0]},"shomate":{"CH4":{"brk":1000.0,"dHf":-74.873,"hi":[85.81217,11.26467,-2.114146,0.13819,-26.42221,-153.5326,224.4143],"lo":[-0.703029,108.4773,-42.52157,5.862788,0.678565,-76.84366000000001,158.7163]},"CO":{"brk":1000.0,"dHf":-110.527,"hi":[35.1507,1.300095,-0.205921,0.01355,-3.28278,-127.8374,231.712],"lo":[25.56759,6.09613,4.054656,-2.671301,0.131021,-118.0088,227.3665]},"CO2":{"brk":1000.0,"dHf":-393.51,"hi":[58.16639,2.720074,-0.492289,0.038844,-6.447293,-425.9062,263.6125],"lo":[24.99735,55.18696,-33.69137,7.948387,-0.136638,-403.5951,228.2431]},"Ce2O3":{"brk":1000.0,"dHf":-1796.2,"hi":[117.4,17.8,-12.2,3.2,-2.2,-1869.2,246.6],"lo":[117.4,17.8,-12.2,3.2,-2.2,-1869.2,246.6]},"CeO2":{"brk":1000.0,"dHf":-1088.7,"hi":[69.36,9.44,-7.48,2.14,-1.094,-1133.92,133.9],"lo":[69.36,9.44,-7.48,2.14,-1.094,-1133.92,133.9]},"H2":{"brk":1000.0,"dHf":0.0,"hi":[18.563083,12.257357,-2.859786,0.268238,1.97799,-1.147438,156.2881],"lo":[33.066178,-11.363417,11.432816,-2.772874,-0.158558,-9.980797,172.708]},"H2O":{"brk":1000.0,"dHf":-241.826,"hi":[30.092,6.832514,6.793435,-2.53448,0.082139,-250.8806,223.3967],"lo":[30.092,6.832514,6.793435,-2.53448,0.082139,-250.8806,223.3967]},"O2":{"brk":700.0,"dHf":0.0,"hi":[30.03235,8.772972,-3.988133,0.788313,-0.741599,-11.32468,236.1663],"lo":[31.32234,-20.23531,57.86644,-36.50624,-0.007374,-8.903471,246.7945]}},"systems":{"Ce-O":{"host":"CeO2","metal":"Ce","mw":172.12,"solids":["CeO2","Ce2O3"],"source":"NIST-JANAF; one coefficient set across the range","thermo":"shomate"},"Ti-O":{"host":"TiO2","metal":"Ti","mw":79.87,"solids":["TiO2","Ti10O19","Ti8O15","Ti6O11","Ti5O9","Ti4O7","Ti3O5","Ti2O3"],"source":"Waldner & Eriksson, Calphad 23 (1999) 189-218","thermo":"calphad"}}}</script>
+<script>/* Gas-solid equilibrium by full-composition Gibbs minimisation.
+
+   The engine is the Python package `solidgas` ported one to one:
+   reaction-extent coordinates, the constant part of G removed analytically,
+   and an analytic gradient. It is not an oxygen-potential shortcut and it is
+   not a bisection on a phase pair - it minimises the total Gibbs energy over
+   the whole species set at fixed elemental balance, and the phases fall out.
+
+   What it cannot do is stated on the page next to the results, not here.
+
+   Verified against the Python reference to five significant figures at every
+   condition the page ships with; `tests/test_oxide_port.py` holds that. */
+
+const Oxide = (function () {
+  'use strict';
+
+  const D = JSON.parse(document.getElementById('oxide-data').textContent);
+  const R = D.R_KJ;                       // kJ / mol / K
+  const LOG_FLOOR = -110;                 // e^-110 = 1.7e-48
+  const LOG_CEIL = Math.log(10);
+
+  /* ---------------------------------------------------------------- thermo */
+
+  /* Body copied from the WGS tools page. One token differs: the coefficients
+     arrive as an argument instead of through `thermo[s].c`, because this data
+     carries a low and a high range per species where that page carries one.
+     The arithmetic is untouched, and the formation term is folded into F by
+     export_oxide.py so this still returns the absolute potential. */
+  function shomate(c, T) {
+    const [A, B, C, D_, E, F, G] = c, t = T / 1000,
+      Cp = A + B * t + C * t * t + D_ * t ** 3 + E / (t * t),
+      H = A * t + B * t * t / 2 + C * t ** 3 / 3 + D_ * t ** 4 / 4 - E / t + F,
+      S = A * Math.log(t) + B * t + C * t * t / 2 + D_ * t ** 3 / 3 - E / (2 * t * t) + G;
+    return { Cp, H, S, mu: H * 1000 - T * S };
+  }
+
+  /* Sibling, not a generalisation. CALPHAD condensed phases use a different Cp
+     functional form and are integrated from 298.15 K with a transition
+     enthalpy entered at each range boundary; folding that into shomate() would
+     break the gas path, which is the one thing here that is already checked. */
+  function cpInt(form, c, T0, T1) {
+    const F = form === 'poly'
+      ? T => c[0] * T + c[1] * T * T / 2 + c[2] * T ** 3 / 3 - c[3] / T
+      : T => c[0] * T + 2 * c[1] * Math.sqrt(T) - c[2] / T - c[3] / (2 * T * T);
+    return F(T1) - F(T0);
+  }
+
+  function cpIntOverT(form, c, T0, T1) {
+    const F = form === 'poly'
+      ? T => c[0] * Math.log(T) + c[1] * T + c[2] * T * T / 2 - c[3] / (2 * T * T)
+      : T => c[0] * Math.log(T) - 2 * c[1] / Math.sqrt(T) - c[2] / (2 * T * T)
+             - c[3] / (3 * T ** 3);
+    return F(T1) - F(T0);
+  }
+
+  function segments(e, T) {
+    const out = []; let lo = 298.15;
+    for (const r of e.ranges) {
+      if (T <= r.T0) break;
+      const hi = Math.min(T, r.T1);
+      if (hi > Math.max(lo, r.T0)) { out.push({ t0: Math.max(lo, r.T0), t1: hi, r }); lo = hi; }
+      if (T <= r.T1) break;
+    }
+    if (out.length && out[out.length - 1].t1 < T) {          // extrapolate the last
+      const r = e.ranges[e.ranges.length - 1];
+      out.push({ t0: out[out.length - 1].t1, t1: T, r: Object.assign({}, r, { dHt: 0 }) });
+    }
+    return out;
+  }
+
+  function calphad(e, T) {
+    let H = e.dHf298, S = e.S298;
+    for (const s of segments(e, T)) {
+      H += s.r.dHt + cpInt(s.r.form, s.r.c, s.t0, s.t1);
+      S += (s.r.dHt ? s.r.dHt / s.r.T0 : 0) + cpIntOverT(s.r.form, s.r.c, s.t0, s.t1);
+    }
+    return { H, S, mu: (H - T * S) / 1000 };                 // kJ/mol
+  }
+
+  /* Chemical potential in kJ/mol, whichever table the species lives in. */
+  function mu0(name, T) {
+    if (D.calphad[name]) return calphad(D.calphad[name], T).mu;
+    const e = D.shomate[name];
+    return shomate(T <= e.brk ? e.lo : e.hi, T).mu / 1000;
+  }
+
+  /* ------------------------------------------------------------ small algebra */
+
+  function inv(M) {
+    const n = M.length, A = M.map((r, i) => r.concat(M.map((_, j) => (i === j ? 1 : 0))));
+    for (let c = 0; c < n; c++) {
+      let p = c;
+      for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      if (Math.abs(A[p][c]) < 1e-12) throw new Error('component set is singular');
+      [A[c], A[p]] = [A[p], A[c]];
+      const d = A[c][c];
+      for (let j = 0; j < 2 * n; j++) A[c][j] /= d;
+      for (let r = 0; r < n; r++) {
+        if (r === c) continue;
+        const f = A[r][c];
+        if (f) for (let j = 0; j < 2 * n; j++) A[r][j] -= f * A[c][j];
+      }
+    }
+    return A.map(r => r.slice(n));
+  }
+
+  /* ---------------------------------------------------------------- system */
+
+  class GibbsSystem {
+    constructor(gases, solids, components) {
+      this.gases = gases.slice();
+      this.solids = solids.slice();
+      this.species = this.gases.concat(this.solids);
+
+      const els = [];
+      for (const s of this.species)
+        for (const e of Object.keys(D.formulas[s])) if (!els.includes(e)) els.push(e);
+      this.elements = els.sort();
+
+      this.E = this.species.map(s => this.elements.map(e => D.formulas[s][e] || 0));
+      this.isGas = this.species.map(s => this.gases.includes(s));
+      this.comp = components.map(c => this.species.indexOf(c));
+      this.free = this.species.map((_, i) => i).filter(i => !this.comp.includes(i));
+      if (this.comp.length !== this.elements.length)
+        throw new Error('need one component per element');
+
+      // Ek is elements x components; invert it once.
+      const Ek = this.elements.map((_, e) => this.comp.map(i => this.E[i][e]));
+      this.Ainv = inv(Ek);
+      // dK[c][f] : how much of component c one unit of free species f consumes.
+      this.dK = this.comp.map((_, ci) => this.free.map((fi) => {
+        let v = 0;
+        for (let e = 0; e < this.elements.length; e++) v += this.Ainv[ci][e] * this.E[fi][e];
+        return -v;
+      }));
+    }
+
+    /* Element vector for a charge written as species moles. Built by name: the
+       element order is whatever sorting gave, and it differs between Ti-O and
+       Ce-O because Ce sorts before H. */
+    bFrom(moles) {
+      const b = this.elements.map(() => 0);
+      for (const name of Object.keys(moles))
+        for (const [e, k] of Object.entries(D.formulas[name]))
+          b[this.elements.indexOf(e)] += k * moles[name];
+      return b;
+    }
+
+    n0(b) {
+      const n = this.species.map(() => 0);
+      const mx = Math.max(...b.map(Math.abs), 1e-300);
+      this.comp.forEach((si, ci) => {
+        let v = 0;
+        for (let e = 0; e < this.elements.length; e++) v += this.Ainv[ci][e] * b[e];
+        n[si] = Math.abs(v) < 1e-14 * mx ? 0 : v;            // snap the round-off
+      });
+      return n;
+    }
+
+    deltaN(xi) {
+      const d = this.species.map(() => 0);
+      this.free.forEach((si, f) => { d[si] = xi[f]; });
+      this.comp.forEach((si, ci) => {
+        let v = 0;
+        for (let f = 0; f < this.free.length; f++) v += this.dK[ci][f] * xi[f];
+        d[si] = v;
+      });
+      return d;
+    }
+
+    nOf(xi, b) { const z = this.n0(b), d = this.deltaN(xi); return z.map((v, i) => v + d[i]); }
+
+    /* Reaction Gibbs energy for forming each free species from the components.
+       This is the whole standard-state dependence of G on the extents, formed
+       directly rather than as a difference of two much larger sums - which is
+       what lets an extent of 1e-38 be seen at all. */
+    dGForm(T) {
+      const mu = this.species.map(s => mu0(s, T));
+      return this.free.map((si, f) => {
+        let v = mu[si];
+        this.comp.forEach((ci, k) => { v += this.dK[k][f] * mu[ci]; });
+        return v;
+      });
+    }
+
+    /* Change in the gas mixing term, in units of RT. Every piece goes through
+       log1p rather than a difference of two logs, so a small change against a
+       large reference survives. */
+    dmix(n0, dn, n, P) {
+      let s = 0, ng0 = 0, d = 0;
+      for (let i = 0; i < this.species.length; i++) {
+        if (!this.isGas[i]) continue;
+        if (n[i] < 0) return Infinity;
+        ng0 += n0[i]; d += dn[i];
+        if (n0[i] > 0 && Math.abs(dn[i]) < 0.5 * n0[i]) {
+          s += n0[i] * Math.log1p(dn[i] / n0[i]) + dn[i] * Math.log(n[i]);
+        } else {
+          if (n[i] > 0) s += n[i] * Math.log(n[i]);
+          if (n0[i] > 0) s -= n0[i] * Math.log(n0[i]);
+        }
+      }
+      const ng = ng0 + d;
+      if (ng <= 0) return Infinity;
+      if (ng0 > 0 && Math.abs(d) < 0.5 * ng0) s -= ng0 * Math.log1p(d / ng0) + d * Math.log(ng);
+      else s -= ng * Math.log(ng) - (ng0 > 0 ? ng0 * Math.log(ng0) : 0);
+      return s + d * Math.log(P);
+    }
+
+    /* Gibbs energy relative to the unreacted charge, in kJ. */
+    GRel(xi, b, T, P) {
+      const z = this.n0(b), dn = this.deltaN(xi), n = z.map((v, i) => v + dn[i]);
+      const floor = -1e-12 * Math.max(1, Math.max(...z.map(Math.abs)));
+      for (let i = 0; i < n.length; i++) if (n[i] < floor) return 1e10;
+      for (let i = 0; i < n.length; i++) if (n[i] < 0) n[i] = 0;
+      const m = this.dmix(z, dn, n, P);
+      if (!isFinite(m)) return 1e10;
+      const g = this.dGForm(T);
+      let lin = 0;
+      for (let f = 0; f < xi.length; f++) lin += g[f] * xi[f];
+      return lin + R * T * m;
+    }
+
+    /* dG/dxi, analytic. The d(ng)/dxi terms cancel identically because the mole
+       fractions sum to one. Finite differences are useless here - the whole of
+       GRel can sit at 1e-19 kJ - so the gradient is written out. */
+    gradGRel(xi, b, T, P) {
+      const n = this.nOf(xi, b).map(v => (v > 0 ? v : 0));
+      let ng = 0;
+      for (let i = 0; i < n.length; i++) if (this.isGas[i]) ng += n[i];
+      const ly = n.map((v, i) => (this.isGas[i] && ng > 0
+        ? Math.log(Math.max(v, 1e-300) / ng * P) : 0));
+      const g = this.dGForm(T);
+      return this.free.map((si, f) => {
+        let v = g[f];
+        if (this.isGas[si]) v += R * T * ly[si];
+        this.comp.forEach((ci, k) => {
+          if (this.isGas[ci]) v += R * T * this.dK[k][f] * ly[ci];
+        });
+        return v;
+      });
+    }
+
+    gasFractions(n) {
+      let tot = 0;
+      for (let i = 0; i < n.length; i++) if (this.isGas[i]) tot += n[i];
+      const y = {};
+      this.species.forEach((s, i) => { if (this.isGas[i]) y[s] = tot > 0 ? n[i] / tot : 0; });
+      return y;
+    }
+
+    reducedPercent(n, nMetal) {
+      if (nMetal <= 0) return 0;
+      let red = 0;
+      this.solids.forEach(p => {
+        const m = D.metal_phases[p];
+        if (m) red += n[this.species.indexOf(p)] * m[1];
+      });
+      return Math.min(red / nMetal, 1) * 100;
+    }
+
+    phaseSplit(n, nMetal) {
+      const out = {};
+      if (nMetal <= 0) return out;
+      this.solids.forEach(p => {
+        const m = D.metal_phases[p];
+        if (m) out[p] = n[this.species.indexOf(p)] * m[0] / nMetal * 100;
+      });
+      return out;
+    }
+  }
+
+  /* -------------------------------------------------------------- optimiser */
+
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+  /* Projected gradient with a Barzilai-Borwein step and backtracking, over the
+     log of the extents. SciPy's SLSQP does not exist in a browser and this is
+     what replaces it. Two things make the substitution safe: the change of
+     variables has already removed every equality constraint, so only the
+     component non-negativities remain, and GRel returns 1e10 on an infeasible
+     composition - so a line search that only accepts a decrease can never step
+     outside the feasible set.
+
+     Reports its own iteration count and gradient norm; the page shows them. */
+  function descend(sys, u0, b, T, P, maxIter) {
+    const nf = u0.length;
+    let u = u0.slice(), f = sys.GRel(u.map(Math.exp), b, T, P);
+    if (!isFinite(f) || f >= 1e9) return null;
+    let g = sys.gradGRel(u.map(Math.exp), b, T, P).map((v, i) => v * Math.exp(u[i]));
+    let step = 1e-2, pu = null, pg = null, it = 0, g0 = null;
+    for (; it < maxIter; it++) {
+      if (pu) {
+        let sy = 0, ss = 0;
+        for (let i = 0; i < nf; i++) {
+          const ds = u[i] - pu[i], dg = g[i] - pg[i];
+          sy += ds * dg; ss += ds * ds;
+        }
+        if (sy > 1e-300 && isFinite(ss / sy)) step = clamp(ss / sy, 1e-12, 1e6);
+      }
+      let t = step, moved = false;
+      for (let k = 0; k < 80; k++) {
+        const un = u.map((v, i) => clamp(v - t * g[i], LOG_FLOOR, LOG_CEIL));
+        const fn = sys.GRel(un.map(Math.exp), b, T, P);
+        if (isFinite(fn) && fn < f) { pu = u; pg = g; u = un; f = fn; moved = true; break; }
+        t *= 0.5;
+      }
+      if (!moved) break;
+      g = sys.gradGRel(u.map(Math.exp), b, T, P).map((v, i) => v * Math.exp(u[i]));
+      let gn = 0; for (let i = 0; i < nf; i++) gn += g[i] * g[i];
+      gn = Math.sqrt(gn);
+      if (g0 === null) g0 = gn;
+      if (gn < 1e-12 * Math.max(g0, 1e-300)) break;
+    }
+    let gf = 0; for (let i = 0; i < nf; i++) gf += g[i] * g[i];
+    return { u, f, it, gnorm: Math.sqrt(gf) };
+  }
+
+  /* Minimise from every seed and keep the lowest. The basis is scaled to order
+     one first: G is homogeneous of degree one in n, so that is exact, and it
+     keeps the tolerances meaningful against a charge of a millimole. */
+  function minimise(sys, b, T, seeds, P, maxIter) {
+    const scale = b.reduce((a, v) => a + Math.abs(v), 0);
+    if (!(scale > 0)) throw new Error('empty charge');
+    const bs = b.map(v => v / scale);
+    let best = null, tried = 0, iters = 0;
+
+    // Coarse pass: every seed, few iterations. This is only choosing a basin -
+    // running any of them to convergence would be waste, since all but one gets
+    // thrown away.
+    for (const seed of seeds) {
+      const u0 = seed.map(v => clamp(Math.log(Math.max(v / scale, Math.exp(LOG_FLOOR))),
+                                     LOG_FLOOR, LOG_CEIL));
+      const r = descend(sys, u0, bs, T, P, 150);
+      tried++;
+      if (!r) continue;
+      iters += r.it;
+      if (best === null || r.f < best.f) best = r;
+    }
+    if (!best) return null;
+
+    // Polish: the winning basin, run out properly. Projected gradient gets the
+    // last digits more slowly than SLSQP does, and the port has to match the
+    // Python answer to five figures, so it is given the room to.
+    //
+    // Restarted rather than run once. The Barzilai-Borwein step is built from
+    // the previous two iterates, and when it stalls it stalls with a step that
+    // no amount of backtracking rescues; beginning again from the same point
+    // throws that history away and the descent resumes. It stops when a whole
+    // restart buys nothing.
+    for (let round = 0; round < 6; round++) {
+      const pol = descend(sys, best.u, bs, T, P, maxIter || 3000);
+      if (!pol) break;
+      iters += pol.it;
+      const gained = best.f - pol.f;
+      if (pol.f < best.f) best = pol;
+      if (!(gained > 1e-15 * Math.abs(best.f))) break;
+    }
+    const xi = best.u.map(v => Math.exp(clamp(v, LOG_FLOOR, LOG_CEIL)) * scale);
+    const n = sys.nOf(xi, b).map(v => (v > 0 ? v : 0));
+    let resid = 0;
+    for (let e = 0; e < sys.elements.length; e++) {
+      let v = 0;
+      for (let i = 0; i < sys.species.length; i++) v += sys.E[i][e] * n[i];
+      resid = Math.max(resid, Math.abs(v - b[e]));
+    }
+    return {
+      n, xi, G_rel_kJ: best.f * scale, residual: resid,
+      method: 'gibbs_min', formulation: 'reaction_extent',
+      seeds: tried, iterations: iters, gnorm: best.gnorm,
+    };
+  }
+
+  /* Extent starts: a ladder of gas conversion crossed with each phase basin.
+     A start within a couple of decades of the answer is what the optimiser
+     needs, and there is no way to know in advance which decade. */
+  function buildSeeds(sys, ng, nMetal) {
+    const ref = sys.free.map(i => (sys.isGas[i] ? ng : nMetal));
+    const gasPos = sys.free.map((i, j) => (sys.isGas[i] ? j : -1)).filter(j => j >= 0);
+    const solPos = sys.free.map((i, j) => (sys.isGas[i] ? -1 : j)).filter(j => j >= 0);
+    const out = [];
+    for (const gf of [1e-6, 0.05, 0.2, 0.4, 0.7]) {
+      const base = sys.free.map(() => 1e-48);
+      gasPos.forEach(j => { base[j] = ref[j] * gf; });
+      out.push(base.slice());
+      for (const j of solPos)
+        for (const m of [1e-1, 1e-4, 1e-8, 1e-14, 1e-22, 1e-32, 1e-42]) {
+          const v = base.slice(); v[j] = ref[j] * m; out.push(v);
+        }
+    }
+    return out;
+  }
+
+  /* ------------------------------------------------------- verification only
+
+     A second, independent route to the same answer, for the verification tab
+     and nowhere else. It is not a minimisation: the metal does not enter the
+     gas below about 2000 K, so the solid exchanges nothing with it but oxygen,
+     and each condensed phase's critical oxygen potential becomes a plain
+     function of temperature with no optimiser in it.
+
+     That shortcut is legitimate here and it is fast, and it is still not what
+     the page reports. Two phases in contact fix the gas oxygen potential
+     exactly, so where the minimisation puts two phases together its gas has to
+     reproduce a number computed from the phase data alone - which is a test of
+     the minimiser using nothing the minimiser produced. Reporting the shortcut
+     instead would turn that test into a number compared against itself. */
+  const Verify = {
+    /* Oxygen potential of a mixture, per mole of O, from the redox couples.
+       Molecular O2 is not used: in a C-H-O gas its equilibrium amount is around
+       1e-40 and sits at the optimiser's floor, so its value is arbitrary. */
+    muOFromGas(y, T) {
+      const vals = [];
+      for (const [red, ox] of [['H2', 'H2O'], ['CO', 'CO2']]) {
+        const a = y[red] || 0, b = y[ox] || 0;
+        if (a > 1e-280 && b > 1e-280)
+          vals.push(mu0(ox, T) - mu0(red, T) + R * T * Math.log(b / a));
+      }
+      if (!vals.length) return { muO: null, spread: null };
+      return {
+        muO: vals.reduce((a, v) => a + v, 0) / vals.length,
+        spread: Math.max(...vals) - Math.min(...vals),
+      };
+    },
+
+    counts(name, metal) {
+      const f = D.formulas[name];
+      return [f[metal] || 0, f.O || 0];
+    },
+
+    /* Critical potential for higher -> lower, per mole of O removed. Both are
+       line compounds, so this is a pure function of temperature. */
+    muOCritical(lower, higher, T, metal) {
+      const [th, oh] = this.counts(higher, metal), [tl, ol] = this.counts(lower, metal);
+      const nHi = tl / th, dO = nHi * oh - ol;
+      if (dO <= 0) throw new Error(lower + ' is not more reduced than ' + higher);
+      return (nHi * mu0(higher, T) - mu0(lower, T)) / dO;
+    },
+
+    ladder(solids, T, metal) {
+      const ord = solids.slice().sort((a, b) => {
+        const [ta, oa] = this.counts(a, metal), [tb, ob] = this.counts(b, metal);
+        return ob / tb - oa / ta;
+      });
+      const out = [];
+      for (let i = 0; i < ord.length - 1; i++)
+        out.push({ higher: ord[i], lower: ord[i + 1],
+                   crit: this.muOCritical(ord[i + 1], ord[i], T, metal) });
+      return out;
+    },
+
+    /* pO2, in atm, carrying a given oxygen potential. The mu0(O2) term is the
+       one that is easy to drop, and dropping it moves this by fourteen orders
+       of magnitude - though never a margin, which is a difference and cancels. */
+    muOToPO2(muO, T) { return Math.exp((2 * muO - mu0('O2', T)) / (R * T)); },
+  };
+
+  return { D, R, mu0, shomate, calphad, GibbsSystem, minimise, buildSeeds,
+           Verify, LOG_FLOOR };
+})();
+</script>
+<script>/* UI for the gas-solid Gibbs minimisation. All numbers come from Oxide.minimise;
+   the verification tab is the only place the second route is allowed to appear,
+   and it is labelled there. */
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const D = Oxide.D;
+  const sub = s => String(s).replace(/([A-Za-z])(\d+)/g, '$1<sub>$2</sub>');
+  const sci = v => { const [m, e] = v.toExponential(2).split('e'); return m + '×10' + sup(+e); };
+  const sup = n => String(n).replace(/-/g, '\u207b').replace(/[0-9]/g,
+    d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]);
+
+  /* Below this share of the metal, a phase is the optimiser's floor rather than
+     a phase. The present build cannot represent an absent phase as exactly zero
+     - see the defect note on the How tab - so the limit is stated and shown
+     rather than quietly rounded away. */
+  const DETECT_PCT = 1e-6;
+  const LIMIT = '&lt; 10\u207b\u2076 %';
+  const GAS = D.gases;
+  const DEPTHS = {
+    full: ['TiO2', 'Ti10O19', 'Ti8O15', 'Ti6O11', 'Ti5O9', 'Ti4O7', 'Ti3O5', 'Ti2O3'],
+    ti3o5: ['TiO2', 'Ti4O7', 'Ti3O5'],
+    ti4o7: ['TiO2', 'Ti4O7'],
+  };
+  let LAST = null, SWEEP = null;
+
+  function cfg() {
+    const name = $('sys').value, sy = D.systems[name];
+    const solids = name === 'Ti-O' ? DEPTHS[$('depth').value] : sy.solids;
+    return {
+      name, host: sy.host, metal: sy.metal, mw: sy.mw, source: sy.source, solids,
+      P: +$('P').value || 1, V: +$('V').value || 25,
+      mass: (+$('mass').value || 100) / 1000, T_C: +$('T').value,
+    };
+  }
+
+  function solveAt(c, T_C) {
+    const T = T_C + 273.15, ng = c.P * c.V / (D.R_ATM * T), n0 = ng / 2;
+    const nM = c.mass / c.mw;
+    const S = new Oxide.GibbsSystem(GAS, c.solids, ['CO2', 'H2', 'H2O', c.host]);
+    const b = S.bFrom({ CO2: n0, H2: n0, [c.host]: nM });
+    const t0 = performance.now();
+    const r = Oxide.minimise(S, b, T, Oxide.buildSeeds(S, ng, nM), c.P);
+    if (!r) return null;
+    const ms = performance.now() - t0;
+    const y = S.gasFractions(r.n);
+    const split = S.phaseSplit(r.n, nM);
+    const present = Object.keys(split).filter(p => split[p] > DETECT_PCT);
+    let O = 0, M = 0;
+    Object.keys(split).forEach(p => {
+      const moles = r.n[S.species.indexOf(p)];
+      O += moles * (D.formulas[p].O || 0); M += moles * (D.formulas[p][c.metal] || 0);
+    });
+    return {
+      T_C, T, S, b, n: r.n, y, split, present, ms, solver: r, nM, n0, ng,
+      reduced: S.reducedPercent(r.n, nM),
+      x: M > 0 ? 2 - O / M : 0,
+      conv: (n0 - r.n[S.species.indexOf('CO2')]) / n0 * 100,
+      Kp: Math.exp(-(Oxide.mu0('CO', T) + Oxide.mu0('H2O', T)
+                     - Oxide.mu0('CO2', T) - Oxide.mu0('H2', T)) / (Oxide.R * T)),
+      Q: (y.CO * y.H2O) / (y.CO2 * y.H2),
+      muO: Oxide.Verify.muOFromGas(y, T),
+    };
+  }
+
+  function table(id, cols, rows) {
+    const t = $(id); t.textContent = '';
+    const th = document.createElement('thead'), tr = document.createElement('tr');
+    cols.forEach(c => { const e = document.createElement('th'); e.innerHTML = c; tr.appendChild(e); });
+    th.appendChild(tr); t.appendChild(th);
+    const tb = document.createElement('tbody');
+    rows.forEach(r => {
+      const e = document.createElement('tr');
+      r.forEach(c => { const d = document.createElement('td'); d.innerHTML = c; e.appendChild(d); });
+      tb.appendChild(e);
+    });
+    t.appendChild(tb);
+  }
+
+  function render() {
+    const c = cfg(), R = solveAt(c, c.T_C);
+    if (!R) { $('status').innerHTML = '<span class="bad">no feasible solution</span>'; return; }
+    LAST = { c, R };
+
+    const reduced = R.reduced > DETECT_PCT;
+    $('kpis').innerHTML = [
+      ['Solid', R.present.map(sub).join(' + ') || sub(c.host), 'phases present', ''],
+      [c.metal + '(3+)', reduced ? R.reduced.toFixed(R.reduced < 1 ? 4 : 2) + '%' : LIMIT,
+       reduced ? 'of total ' + c.metal : 'below detection limit', reduced ? 'warn' : 'good'],
+      ['x in ' + c.metal + 'O<sub>2−x</sub>', reduced ? R.x.toExponential(2) : LIMIT,
+       'oxygen deficiency', reduced ? 'warn' : 'good'],
+      ['μ<sub>O</sub>', R.muO.muO == null ? '—' : R.muO.muO.toFixed(1), 'kJ per mol O', ''],
+      ['pO<sub>2</sub>', R.muO.muO == null ? '—' : sci(Oxide.Verify.muOToPO2(R.muO.muO, R.T)), 'atm', ''],
+      ['CO<sub>2</sub> conversion', R.conv.toFixed(2) + '%', 'of the feed', ''],
+    ].map(k => '<div class="kpi ' + k[3] + '"><div class="k">' + k[0] + '</div><div class="v">'
+      + k[1] + '</div><div class="u">' + k[2] + '</div></div>').join('');
+
+    table('tPhase', ['Phase', 'O / ' + c.metal, 'share of ' + c.metal + ' (%)', 'moles'],
+      c.solids.map(p => {
+        const f = D.formulas[p], moles = R.n[R.S.species.indexOf(p)];
+        const on = R.split[p] > DETECT_PCT;
+        return [sub(p), (f.O / f[c.metal]).toFixed(4),
+          on ? R.split[p].toFixed(6) : '<span style="color:var(--muted)">' + LIMIT + '</span>',
+          on ? moles.toExponential(3) : '0'];
+      }));
+
+    table('tGas', ['Species', 'mol %', 'moles', 'p<sub>i</sub> (atm)'],
+      GAS.map(s => [sub(s), R.y[s] > 1e-12 ? (R.y[s] * 100).toFixed(6) : sci(R.y[s] * 100),
+        R.n[R.S.species.indexOf(s)].toExponential(3), sci(R.y[s] * c.P)]));
+
+    $('status').innerHTML = 'converged &middot; ' + R.solver.seeds + ' starts, '
+      + R.solver.iterations + ' iterations, ' + R.ms.toFixed(0) + ' ms<br>'
+      + 'balance residual ' + R.solver.residual.toExponential(1) + ' mol &middot; '
+      + 'method <code>' + R.solver.method + '</code>';
+
+    renderNotes(c, R); renderVerify(c, R); renderBalance(c, R); renderCoef(c);
+    $('prov').textContent = 'Solved in this page: ' + R.solver.seeds + ' starts, '
+      + R.solver.iterations + ' iterations, ' + R.ms.toFixed(0) + ' ms. ';
+  }
+
+  /* What this run cannot tell you, next to what it does. */
+  function renderNotes(c, R) {
+    const n = [];
+    if (c.name === 'Ti-O') {
+      n.push('<div class="note"><strong>The series is cut at ' + sub(c.solids[c.solids.length - 1])
+        + '.</strong> Where it is cut changes the answer, because each shallower Magnéli member '
+        + 'forms more easily than the last. Use the <em>Series cut</em> control and watch μ<sub>O</sub> '
+        + 'against the boundary on the Verification tab: cutting at Ti<sub>4</sub>O<sub>7</sub> alone '
+        + 'measures against too hard a step and reads about 14 kJ/mol-O too safe at 1500 °C.</div>');
+    }
+    n.push('<div class="note stop"><strong>Not modelled.</strong> No graphite, so carbon cannot '
+      + 'deposit and must leave as CO or CH<sub>4</sub>. No oxygen-deficient rutile '
+      + '(' + sub(c.host) + '<sub>2−x</sub> as a solution phase) &mdash; every condensed phase here is a '
+      + 'line compound, present or absent at unit activity, which is exactly what the n → ∞ '
+      + 'limit of the series is not. Equilibrium only: nothing here says how fast any of it happens.</div>');
+    n.push('<div class="note stop"><strong>No experimental validation.</strong> Every check in this '
+      + 'page is internal consistency — two independent routes agreeing, coexisting phases landing '
+      + 'on their computed boundary, Q matching K<sub>p</sub>, atoms balancing. Nothing has been '
+      + 'compared against a measured phase boundary.</div>');
+    $('resNotes').innerHTML = n.join('');
+  }
+
+  function renderVerify(c, R) {
+    const T = R.T, V = Oxide.Verify;
+    let h = '<h3>1. Reaction quotient against the equilibrium constant</h3>'
+      + '<p class="sub">The minimiser is not told about the RWGS reaction. If it found the '
+      + 'equilibrium, Q must come out equal to K<sub>p</sub> anyway.</p>'
+      + '<div class="tablewrap"><table><thead><tr><th>quantity</th><th>value</th></tr></thead><tbody>'
+      + '<tr><td>K<sub>p</sub> from standard potentials</td><td>' + R.Kp.toFixed(6) + '</td></tr>'
+      + '<tr><td>Q from the minimised composition</td><td>' + R.Q.toFixed(6) + '</td></tr>'
+      + '<tr><td>relative difference</td><td class="' + (Math.abs(R.Q / R.Kp - 1) < 1e-4 ? 'ok' : 'bad')
+      + '">' + Math.abs(R.Q / R.Kp - 1).toExponential(2) + '</td></tr></tbody></table></div>';
+
+    h += '<h3>2. Oxygen potential against the phase boundaries</h3>'
+      + '<p class="sub">This is the second route: the metal does not enter the gas, so each phase '
+      + 'boundary is a plain function of temperature computed from the phase data alone — with no '
+      + 'optimiser in it, and using nothing the minimiser produced. Where the minimisation leaves two '
+      + 'phases together, coexistence pins the gas exactly onto that boundary.</p>';
+    const lad = V.ladder(c.solids, T, c.metal);
+    const rows = lad.map(l => {
+      const d = R.muO.muO == null ? null : R.muO.muO - l.crit;
+      const both = R.split[l.higher] > DETECT_PCT && R.split[l.lower] > DETECT_PCT;
+      return '<tr><td>' + sub(l.higher) + ' → ' + sub(l.lower) + '</td><td>'
+        + l.crit.toFixed(3) + '</td><td>' + (d == null ? '—'
+          : (d > 0 ? '+' : '') + d.toFixed(3)) + '</td><td>'
+        + (both ? '<span class="ok">coexisting — gas must sit here</span>'
+          : (d > 0 ? 'gas above: this step does not happen' : 'gas below')) + '</td></tr>';
+    }).join('');
+    h += '<div class="tablewrap"><table><thead><tr><th>step</th>'
+      + '<th>boundary μ<sub>O</sub> (kJ/mol-O)</th><th>gas − boundary</th><th></th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table></div>';
+
+    const coex = lad.find(l => R.split[l.higher] > DETECT_PCT && R.split[l.lower] > DETECT_PCT);
+    if (coex) {
+      const d = R.muO.muO - coex.crit;
+      h += '<div class="note"><strong>Two-phase check: '
+        + (Math.abs(d) < 0.01 ? '<span class="ok">passed</span>' : '<span class="bad">failed</span>')
+        + '.</strong> ' + sub(coex.higher) + ' and ' + sub(coex.lower) + ' coexist, so the gas must sit '
+        + 'on their boundary. It is off by ' + Math.abs(d).toExponential(2) + ' kJ per mol O.</div>';
+    } else {
+      h += '<div class="note">One phase holds the metal at this condition, so the gas is not pinned '
+        + 'to any boundary and there is nothing to check here. The column above says how far it is '
+        + 'from each step instead.</div>';
+    }
+
+    h += '<h3>3. Couple agreement</h3><p class="sub">H<sub>2</sub>/H<sub>2</sub>O and '
+      + 'CO/CO<sub>2</sub> are two independent ways to read the same gas. At equilibrium they must '
+      + 'give the same oxygen potential.</p><div class="eq">'
+      + 'μ<sub>O</sub> = ' + (R.muO.muO == null ? '—' : R.muO.muO.toFixed(4)) + ' kJ/mol-O'
+      + '<br/>disagreement between the two couples = '
+      + (R.muO.spread == null ? '—' : R.muO.spread.toExponential(2)) + ' kJ/mol-O</div>';
+
+    h += '<div class="note stop"><strong>What this tab is and is not.</strong> The oxygen-potential '
+      + 'route above is a check, never the reported answer. It is legitimate and it is far faster, '
+      + 'but it assumes the series is monotonic in n — it walks the ladder rung by rung — and in '
+      + 'the Waldner assessment that is not true everywhere. Where the two disagree, the reported '
+      + 'value is the minimisation.</div>';
+    $('verBody').innerHTML = h;
+  }
+
+  function renderBalance(c, R) {
+    const S = R.S;
+    table('tBal', ['element', 'in the charge (mol)', 'at equilibrium (mol)', 'residual (mol)'],
+      S.elements.map((e, j) => {
+        let v = 0;
+        for (let i = 0; i < S.species.length; i++) v += S.E[i][j] * R.n[i];
+        return [e, R.b[j].toExponential(8), v.toExponential(8),
+          '<span class="' + (Math.abs(v - R.b[j]) < 1e-12 ? 'ok' : 'bad') + '">'
+          + (v - R.b[j]).toExponential(2) + '</span>'];
+      }));
+    $('balNote').innerHTML = '<div class="note">Elements are the constraint, not a result: the '
+      + 'minimisation is carried out subject to <code>A·n = A·n<sub>feed</sub></code> exactly. '
+      + 'A residual here would mean the optimiser left the feasible set, which is a different failure '
+      + 'from finding the wrong minimum inside it. Both are possible; this catches one of them.</div>';
+  }
+
+  function renderCoef(c) {
+    let h = '<h3>Gases &mdash; NIST-JANAF Shomate</h3><div class="tablewrap"><table>'
+      + '<thead><tr><th>species</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>'
+      + '<th>F′</th><th>G</th><th>range split (K)</th></tr></thead><tbody>';
+    GAS.forEach(s => {
+      const e = D.shomate[s];
+      h += '<tr><td>' + sub(s) + '</td>' + e.lo.map(v => '<td>' + v.toPrecision(7) + '</td>').join('')
+        + '<td>' + e.brk + '</td></tr>';
+    });
+    h += '</tbody></table></div><div class="note">Low-temperature set shown; the high set takes over '
+      + 'above the split. F′ = F − H + Δ<sub>f</sub>H°<sub>298</sub>, folded at export so the '
+      + 'seven-coefficient evaluator returns the absolute potential.</div>';
+
+    if (c.name === 'Ti-O') {
+      h += '<h3>Ti&ndash;O condensed phases &mdash; CALPHAD (Waldner &amp; Eriksson)</h3>'
+        + '<p class="sub">A different C<sub>p</sub> functional form from the gases, evaluated by a '
+        + 'separate function. Magnéli form: C<sub>p</sub> = k₀ + k₁T<sup>−0.5</sup> '
+        + '+ k₂T<sup>−2</sup> + k₃T<sup>−3</sup>. Poly form: '
+        + 'C<sub>p</sub> = a + bT + cT² + d T<sup>−2</sup>.</p>'
+        + '<div class="tablewrap"><table><thead><tr><th>phase</th>'
+        + '<th>Δ<sub>f</sub>H°<sub>298</sub> (J/mol)</th><th>S°<sub>298</sub></th>'
+        + '<th>range (K)</th><th>form</th><th>coefficients</th>'
+        + '<th>ΔH<sub>trans</sub> (J/mol)</th></tr></thead><tbody>';
+      c.solids.forEach(p => {
+        const e = D.calphad[p];
+        if (!e) return;
+        e.ranges.forEach((r, i) => {
+          h += '<tr><td>' + (i === 0 ? sub(p) : '') + '</td><td>'
+            + (i === 0 ? e.dHf298.toFixed(0) : '') + '</td><td>'
+            + (i === 0 ? e.S298.toFixed(3) : '') + '</td><td>' + r.T0 + '–' + r.T1
+            + '</td><td>' + r.form + '</td><td>' + r.c.map(v => v.toPrecision(6)).join(', ')
+            + '</td><td>' + (r.dHt || 0) + '</td></tr>';
+        });
+      });
+      h += '</tbody></table></div>';
+    } else {
+      h += '<h3>Ce&ndash;O condensed phases &mdash; Shomate</h3><div class="tablewrap"><table>'
+        + '<thead><tr><th>species</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>'
+        + '<th>F′</th><th>G</th></tr></thead><tbody>';
+      c.solids.forEach(s => {
+        const e = D.shomate[s];
+        h += '<tr><td>' + sub(s) + '</td>' + e.lo.map(v => '<td>' + v.toPrecision(7) + '</td>').join('') + '</tr>';
+      });
+      h += '</tbody></table></div><div class="note stop"><strong>Provenance is thin here.</strong> '
+        + 'Both ceria entries carry one coefficient set standing in for the whole range rather than '
+        + 'the usual low/high pair, and no fit range is recorded with them. They arrive that way from '
+        + 'the notebook this work started in. Treat Ce&ndash;O numbers as provisional until that is '
+        + 'traced back to a source.</div>';
+    }
+    $('coefBody').innerHTML = h;
+  }
+
+  /* ---- sweep and CSV ---- */
+  function sweep() {
+    const c = cfg(), rows = [];
+    for (let T_C = 500; T_C <= 1500.001; T_C += 100) {
+      const R = solveAt(c, T_C);
+      if (R) rows.push(R);
+    }
+    SWEEP = { c, rows };
+    table('tSweep', ['T (&deg;C)', 'solid', c.metal + '(3+) %', 'x', 'CO<sub>2</sub> conv %',
+      'CO %', 'H<sub>2</sub>O %', 'CH<sub>4</sub> %', 'μ<sub>O</sub>', 'Q/K<sub>p</sub>', 'residual'],
+      rows.map(R => [R.T_C, R.present.map(sub).join(' + '),
+        R.reduced > DETECT_PCT ? R.reduced.toFixed(4) : '&lt;10\u207b\u2076',
+        R.reduced > DETECT_PCT ? R.x.toExponential(2) : '\u2014',
+        R.conv.toFixed(2), (R.y.CO * 100).toFixed(3), (R.y.H2O * 100).toFixed(3),
+        (R.y.CH4 * 100).toPrecision(4),
+        R.muO.muO == null ? '—' : R.muO.muO.toFixed(2),
+        (R.Q / R.Kp).toFixed(6), R.solver.residual.toExponential(1)]));
+  }
+
+  function csv() {
+    if (!SWEEP) sweep();
+    const head = ['system', 'T_C', 'method', 'phases', 'reduced_pct', 'x', 'conv_CO2_pct']
+      .concat(GAS.map(g => 'y_' + g)).concat(['mu_O_kJ', 'Kp', 'Q', 'residual_mol']);
+    const lines = [head.join(',')].concat(SWEEP.rows.map(R => [
+      SWEEP.c.name, R.T_C, R.solver.method, '"' + R.present.join(' + ') + '"',
+      R.reduced, R.x, R.conv].concat(GAS.map(g => R.y[g]))
+      .concat([R.muO.muO, R.Kp, R.Q, R.solver.residual]).join(',')));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'oxide_' + SWEEP.c.name + '_gibbs_min.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  /* ---- saved conditions ---- */
+  const KEY = 'oxideSolverConditions';
+  const getSaved = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } };
+  function setSaved(o) {
+    try { localStorage.setItem(KEY, JSON.stringify(o)); return true; }
+    catch (e) { $('favNote').innerHTML = '<span class="bad">Browser storage unavailable; not saved.</span>'; return false; }
+  }
+  const FIELDS = ['sys', 'depth', 'P', 'V', 'mass', 'T'];
+  function refreshFav(sel) {
+    const o = getSaved();
+    $('favSel').innerHTML = Object.keys(o).sort().map(n =>
+      '<option' + (n === sel ? ' selected' : '') + '>' + n + '</option>').join('')
+      || '<option value="">(none saved)</option>';
+  }
+
+  /* ---- wiring ---- */
+  $('tabs').addEventListener('click', e => {
+    const b = e.target.closest('.tab'); if (!b) return;
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === b));
+    document.querySelectorAll('.page').forEach(x => x.classList.toggle('active', x.id === b.dataset.page));
+  });
+  $('T').addEventListener('input', () => { $('Tval').innerHTML = $('T').value + ' &deg;C'; });
+  $('sys').addEventListener('change', () => {
+    $('depthWrap').hidden = $('sys').value !== 'Ti-O';
+    $('sysNote').textContent = D.systems[$('sys').value].source;
+    render();
+  });
+  ['depth', 'P', 'V', 'mass'].forEach(id => $(id).addEventListener('change', render));
+  $('T').addEventListener('change', render);
+  $('run').addEventListener('click', render);
+  $('sweep').addEventListener('click', sweep);
+  $('csv').addEventListener('click', csv);
+  $('favSave').addEventListener('click', () => {
+    const n = ($('favName').value || '').trim();
+    if (!n) { $('favNote').textContent = 'Give it a name first.'; return; }
+    const o = getSaved(); o[n] = {}; FIELDS.forEach(f => { o[n][f] = $(f).value; });
+    if (setSaved(o)) { refreshFav(n); $('favNote').textContent = 'Saved "' + n + '".'; $('favName').value = ''; }
+  });
+  $('favLoad').addEventListener('click', () => {
+    const o = getSaved(), n = $('favSel').value;
+    if (!o[n]) return;
+    FIELDS.forEach(f => { if (o[n][f] !== undefined) $(f).value = o[n][f]; });
+    $('Tval').innerHTML = $('T').value + ' &deg;C';
+    $('depthWrap').hidden = $('sys').value !== 'Ti-O';
+    $('favNote').textContent = 'Loaded "' + n + '".';
+    render();
+  });
+  $('favDel').addEventListener('click', () => {
+    const o = getSaved(), n = $('favSel').value;
+    if (!o[n]) return;
+    delete o[n]; if (setSaved(o)) { refreshFav(); $('favNote').textContent = 'Deleted "' + n + '".'; }
+  });
+  $('themeBtn').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : cur === 'light' ? null : 'dark';
+    if (next) document.documentElement.setAttribute('data-theme', next);
+    else document.documentElement.removeAttribute('data-theme');
+    $('themeBtn').textContent = 'Theme: ' + (next || 'system');
+  });
+
+  $('rawSrc').textContent = [
+    Oxide.shomate, Oxide.calphad, Oxide.mu0,
+    Oxide.GibbsSystem.prototype.dGForm, Oxide.GibbsSystem.prototype.dmix,
+    Oxide.GibbsSystem.prototype.GRel, Oxide.GibbsSystem.prototype.gradGRel,
+    Oxide.minimise, Oxide.buildSeeds, Oxide.Verify.muOCritical,
+  ].map(f => f.toString()).join('\n\n');
+
+  $('depthWrap').hidden = false;
+  $('sysNote').textContent = D.systems['Ti-O'].source;
+  $('themeBtn').textContent = 'Theme: system';
+  refreshFav();
+  render();
+})();
+</script>
+</body>
+</html>
