@@ -33,6 +33,14 @@ TI_PHASES = {
     'Ti2O3': (2, 2),
 }
 
+# Ceria, the second oxide system the same engine runs. Ce2O3 carries two Ce(3+)
+# per formula, the same way every Magneli member carries two Ti(3+).
+CE_PHASES = {'CeO2': (1, 0), 'Ce2O3': (2, 2)}
+
+# Every condensed phase, keyed name -> (metal atoms, reduced-metal atoms) per
+# formula unit. The readout is the same count for either oxide.
+METAL_PHASES = {**TI_PHASES, **CE_PHASES}
+
 # Which titanium phases take part. Extend this list (and add the matching
 # Shomate entry) to bring another member of the series into the calculation.
 ACTIVE_TI_PHASES = ['TiO2', 'Ti10O19', 'Ti8O15', 'Ti6O11', 'Ti5O9',
@@ -44,6 +52,14 @@ FORMULAS = {
     'CO': {'C': 1, 'O': 1},
     'H2O': {'H': 2, 'O': 1},
     'CH4': {'C': 1, 'H': 4},
+    # Carried for the inert case only. Under N2 nothing but O2 can accept
+    # the oxygen a line compound gives up, so it is the whole gas phase
+    # story there; in a C-H-O feed it is negligible and left out, because
+    # its equilibrium amount is a difference of two much larger extents.
+    'O2': {'O': 2},
+    'N2': {'N': 2},
+    'CeO2': {'O': 2, 'Ce': 1},
+    'Ce2O3': {'O': 3, 'Ce': 2},
     'TiO2': {'O': 2, 'Ti': 1},
     'Ti20O39': {'O': 39, 'Ti': 20},
     'Ti10O19': {'O': 19, 'Ti': 10},

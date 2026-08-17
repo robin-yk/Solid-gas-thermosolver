@@ -52,7 +52,18 @@ SHOMATE = {
     # Not a member of SPECIES - it is never the stable form in this range.
     'Ti3O5_alpha': ([233.4149, -59.35757, 68.20422, -20.59934, -5.901490, -2546.516, 393.3579, -2459.150],
                     [233.4149, -59.35757, 68.20422, -20.59934, -5.901490, -2546.516, 393.3579, -2459.150], -2459.150),
+    # Ceria, carried so the same engine can run a second oxide system. Both
+    # entries have one coefficient set standing in for the whole range rather
+    # than the usual low/high pair, which is how they arrive from the notebook
+    # this work started in; the page says so where it shows them.
+    'CeO2': ([69.3600, 9.4400, -7.4800, 2.1400, -1.0940, -1133.920, 133.900, -1088.700],
+             [69.3600, 9.4400, -7.4800, 2.1400, -1.0940, -1133.920, 133.900, -1088.700],
+             -1088.700),
+    'Ce2O3': ([117.400, 17.800, -12.200, 3.200, -2.200, -1869.200, 246.600, -1796.200],
+              [117.400, 17.800, -12.200, 3.200, -2.200, -1869.200, 246.600, -1796.200],
+              -1796.200),
 }
+
 
 # Where each entry switches from its low- to its high-temperature coefficients.
 # NIST does not use one breakpoint for everything; 1000 K is the common case.
@@ -74,6 +85,12 @@ VALID_RANGE = {
     'TiO2': (298.0, 2000.0), 'Ti4O7': (298.0, 1950.0),
     'Ti3O5': (298.0, 2050.0), 'Ti3O5_alpha': (298.0, 1500.0),
     'Ti2O3': (470.0, 2115.0),
+    # No fit range was published with the ceria coefficients - they arrive from
+    # the notebook as a single set with no range attached. This records the range
+    # the tools actually evaluate them over, which is not the same as a range the
+    # fit is known to be good on. See test_ceria_fit_is_not_self_consistent.
+    'CeO2': (298.15, 2000.0),
+    'Ce2O3': (298.15, 2000.0),
 }
 
 

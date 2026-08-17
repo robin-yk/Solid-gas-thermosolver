@@ -280,6 +280,51 @@ function render(){
   $('prov').textContent = 'Computed live in this page: ' + rows.length + ' temperatures × ' + phases.length + ' phases. ';
 }
 
+/* -- reported values ------------------------------------------------------
+   Rendered straight out of the embedded results.json. This table never asks
+   the live solver below for anything: the solver runs the oxygen-potential
+   route, and these numbers are the Gibbs minimisation. Keeping them separate
+   in code is what keeps them from quietly becoming the same thing. */
+const RES = JSON.parse(document.getElementById('results').textContent);
+
+function fmtTi(v){
+  if (v === 0) return '0';
+  if (v < 1e-3) return sci(v);
+  return v.toFixed(v < 1 ? 4 : 2);
+}
+
+function gibbsTable(){
+  const rows = RES.rows.map(r => {
+    const gas = Object.entries(r.gas_pct).filter(([, v]) => v > 0.05).slice(0, 3)
+      .map(([k, v]) => sub(k) + ' ' + v.toFixed(1)).join(' \u00b7 ');
+    const solid = Object.entries(r.phase_split_pct).filter(([, v]) => v > 1e-6)
+      .map(([k, v]) => sub(k) + (v > 99.999 ? '' : ' ' + v.toFixed(1) + '%')).join(' + ');
+    const red = r.ti3_pct > 0.01;
+    return ['<span class="' + (red ? 'is-danger' : '') + '">' + r.label + '</span>',
+            r.T_C, fmtTi(r.ti3_pct) + '%', solid || sub('TiO2'), gas || '\u2014',
+            r.pO2_atm > 0 ? sci(r.pO2_atm) : '\u2014',
+            '<code>' + r.method + '</code>'];
+  });
+  table('gibbsTbl', ['Atmosphere', 'T (&deg;C)', 'Ti(3+)', 'Solid', 'Gas (mol%)',
+                     'pO<sub>2</sub> (atm)', 'method'], rows);
+
+  /* The worst disagreement with the cross-check route, stated rather than
+     buried: a check nobody can see the result of is not a check. */
+  const d = RES.rows.map(r => r.crosscheck && r.crosscheck.d_mu_O_kJ)
+                    .filter(v => v != null).map(Math.abs);
+  const worst = d.length ? Math.max(...d) : null;
+  $('gibbsProv').innerHTML =
+    RES.rows.length + ' points, all <code>' + RES.method + '</code>. Solid data: '
+    + RES.conditions.solid_data + '; gases: ' + RES.conditions.gas_data + '. '
+    + RES.conditions.m_TiO2_g * 1000 + ' mg TiO2 in ' + RES.conditions.V_cm3
+    + ' mL at ' + RES.conditions.P_atm + ' atm. '
+    + (worst == null ? ''
+       : 'Largest disagreement with the oxygen-potential cross-check where two phases fix the gas: '
+         + worst.toFixed(3) + ' kJ per mol O.');
+}
+
+gibbsTable();
+
 ['feed','deep','P','mass','vol','imp','Tpick'].forEach(id =>
   $(id).addEventListener('input', () => {
     $('impWrap').hidden = $('feed').value !== 'inert';

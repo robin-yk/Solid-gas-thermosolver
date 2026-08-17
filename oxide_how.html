@@ -1,0 +1,48 @@
+<h2>How the solver works</h2>
+<p class="sub">The method by its exact name, and what it cannot do, in the same place.</p>
+
+<h3>What this is</h3>
+<p><strong>Full-composition Gibbs energy minimisation.</strong> Every gas species and every allowed
+condensed phase is an unknown. The total Gibbs energy</p>
+<div class="eq">μ<sub>i</sub> = μ°<sub>i</sub>(T) + RT ln[y<sub>i</sub>P/P°]   (gases)<br/>
+μ<sub>i</sub> = μ°<sub>i</sub>(T)                    (condensed, unit activity)<br/>
+G<sub>total</sub> = Σ n<sub>i</sub> μ<sub>i</sub></div>
+<p>is minimised subject to elemental balance and non-negative moles:</p>
+<div class="eq">minimise G<sub>total</sub><br/>subject to  A·n = A·n<sub>feed</sub><br/>
+and  n<sub>i</sub> ≥ 0</div>
+<p><strong>The phase assemblage is an output.</strong> Nothing tells the solver which oxide should
+be stable; it finds out by putting them all in and letting the minimum decide. That is the whole
+reason for doing it this way instead of comparing a gas against a table of phase boundaries.</p>
+
+<h3>What this is not</h3>
+<p>It is <strong>not</strong> a bisection on an oxygen chemical potential, and it is not a walk down
+a ladder of phase boundaries. That route exists, it is roughly two hundred times faster, and it is
+in this page — on the Verification tab, where it belongs. It is not what any number on the Results
+tab came from.</p>
+<p>The distinction matters because the two agree almost everywhere. That is exactly what makes a
+value from the wrong one impossible to catch by reading it, so the two are kept apart in the code
+and every result carries <code>method: "gibbs_min"</code>.</p>
+
+<h3>Why the degrees of freedom are small</h3>
+<p>With a CO<sub>2</sub>/H<sub>2</sub> feed the gas holds C, H and O, and the solid adds one metal.
+Fixing which condensed phases are present leaves three or four independent composition variables:
+the shift between CO<sub>2</sub>/H<sub>2</sub> and CO/H<sub>2</sub>O, methane formation, molecular
+O<sub>2</sub>, and the oxygen handed to or taken from the solid. That is a small enough problem to
+solve deterministically rather than hopefully.</p>
+
+<h3>Solver state</h3>
+<p>The panel on the left reports how many starting points were tried, how many iterations ran, the
+wall time, and the elemental-balance residual on the answer. The Element balance tab shows that
+residual per element. A residual there means the optimiser left the feasible set, which is a
+different failure from finding the wrong minimum inside it — both are possible, and only one of
+them is what that check catches.</p>
+
+<div class="note stop"><strong>Known defect, being fixed.</strong> The present build represents an
+absent phase by a very small number rather than by zero, because the extents are carried in
+logarithmic coordinates and the logarithm of zero does not exist. Absent phases therefore come back
+at around 10<sup>−26</sup> to 10<sup>−17</sup> percent instead of at nothing, and telling that
+residue apart from a phase that is genuinely present in a trace amount currently needs a second
+argument rather than being read straight off the answer. The replacement enumerates which phases
+are present, holds the absent ones at exactly zero, and compares the total Gibbs energy across
+those cases. Until that lands, treat any reduction below about 10<sup>−10</sup> percent on this
+page as zero.</div>

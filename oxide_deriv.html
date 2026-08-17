@@ -1,0 +1,64 @@
+<h2>Derivation</h2>
+<p class="sub">The full working, on the same page as the numbers rather than behind a citation.</p>
+
+<h3>1. Chemical potentials</h3>
+<p>Gases follow the NIST-JANAF Shomate form, with t = T/1000:</p>
+<div class="eq">C<sub>p</sub>° = A + Bt + Ct² + Dt³ + E/t²<br/>
+H°(T) = At + Bt²/2 + Ct³/3 + Dt⁴/4 − E/t + F′<br/>
+S°(T) = A ln t + Bt + Ct²/2 + Dt³/3 − E/(2t²) + G<br/>
+μ°(T) = H°(T) − T·S°(T)</div>
+<p>F′ = F − H + Δ<sub>f</sub>H°<sub>298</sub> is folded in when the coefficients are exported, so
+this returns the potential on the elemental reference rather than relative to 298 K. The evaluator
+itself is the one from the WGS tools page, unchanged.</p>
+<p>CALPHAD condensed phases use a different heat-capacity form and are integrated from 298.15 K,
+entering a transition enthalpy at each range boundary:</p>
+<div class="eq">Magnéli:  C<sub>p</sub> = k₀ + k₁T<sup>−1/2</sup> + k₂T<sup>−2</sup> + k₃T<sup>−3</sup><br/>
+poly:     C<sub>p</sub> = a + bT + cT² + dT<sup>−2</sup><br/>
+H(T) = Δ<sub>f</sub>H°<sub>298</sub> + Σ [ ΔH<sub>trans</sub> + ∫C<sub>p</sub>dT ]<br/>
+S(T) = S°<sub>298</sub> + Σ [ ΔH<sub>trans</sub>/T<sub>trans</sub> + ∫(C<sub>p</sub>/T)dT ]</div>
+<p>Both H and S step at a transition while G stays continuous, which is why an error there hides:
+the equilibrium uses G. Dropping ΔH<sub>trans</sub> moves μ for Ti<sub>3</sub>O<sub>5</sub> by
+about 35 kJ/mol at 1500 °C without breaking anything visible.</p>
+
+<h3>2. Reaction-extent coordinates</h3>
+<p>One component is chosen per element — here the charge as loaded, CO<sub>2</sub>, H<sub>2</sub>,
+H<sub>2</sub>O and the host oxide — and every remaining species is formed from them by one
+reaction, carrying one extent ξ:</p>
+<div class="eq">n = n<sub>0</sub>(b) + Δn(ξ),   Δn<sub>free</sub> = ξ,   Δn<sub>comp</sub> = −(A<sub>K</sub><sup>−1</sup>A<sub>D</sub>)ξ<br/>
+CO   = CO<sub>2</sub> + H<sub>2</sub> − H<sub>2</sub>O<br/>
+CH<sub>4</sub>  = CO<sub>2</sub> + 4H<sub>2</sub> − 2H<sub>2</sub>O<br/>
+Ti<sub>10</sub>O<sub>19</sub> = 10 TiO<sub>2</sub> + H<sub>2</sub> − H<sub>2</sub>O<br/>
+Ce<sub>2</sub>O<sub>3</sub> = 2 CeO<sub>2</sub> + H<sub>2</sub> − H<sub>2</sub>O</div>
+<p>The change of variables is exact: same objective, same feasible set. It removes the elemental
+constraints by construction — they are satisfied identically, not enforced — and it lets the
+constant part of G be dropped analytically:</p>
+<div class="eq">G<sub>rel</sub>(ξ) = G(n(ξ)) − G(n(0))<br/>
+   = ξ·ΔG°<sub>form</sub> + RT·[ mixing(n) − mixing(n<sub>0</sub>) ]<br/>
+ΔG°<sub>form</sub> = μ°<sub>free</sub> + (A<sub>K</sub><sup>−1</sup>A<sub>D</sub>)<sup>T</sup>μ°<sub>comp</sub></div>
+<p>That is not a refinement. Under a sealed inert gas the oxide leaves stoichiometry by a mole
+fraction near 10<sup>−38</sup>, and in species coordinates
+n(TiO<sub>2</sub>) = n<sub>Ti</sub> − 10ξ rounds to n<sub>Ti</sub> exactly — a double carries
+sixteen digits and the gap is thirty-nine. The extent survives only if it is never subtracted from
+something large.</p>
+
+<h3>3. The mixing term</h3>
+<p>Written so a small change against a large reference never becomes a difference of two logarithms:</p>
+<div class="eq">Δmix = Σ<sub>gas</sub> [ n<sub>i,0</sub>·log1p(Δn<sub>i</sub>/n<sub>i,0</sub>) + Δn<sub>i</sub>·ln n<sub>i</sub> ]<br/>
+     − n<sub>g,0</sub>·log1p(δ/n<sub>g,0</sub>) − δ·ln n<sub>g</sub> + δ·ln P</div>
+
+<h3>4. The gradient</h3>
+<p>Analytic, because finite differences are useless on an objective that can sit at
+10<sup>−19</sup> kJ. The terms in ∂n<sub>g</sub>/∂ξ cancel identically, since the mole fractions
+sum to one:</p>
+<div class="eq">∂G/∂ξ<sub>j</sub> = ΔG°<sub>form,j</sub> + RT Σ<sub>gas</sub> ν<sub>ij</sub> ln(y<sub>i</sub>P)</div>
+
+<h3>5. Oxygen potential — verification only</h3>
+<p>The metal does not enter the gas below about 2000 K, so the solid exchanges nothing with it but
+oxygen. Each phase boundary is then a plain function of temperature, with no optimiser in it:</p>
+<div class="eq">μ<sub>O</sub> = μ°(H<sub>2</sub>O) − μ°(H<sub>2</sub>) + RT ln(y<sub>H2O</sub>/y<sub>H2</sub>)<br/>
+μ<sub>O</sub><sup>crit</sup>(higher→lower) = [ n·μ°(higher) − μ°(lower) ] / ΔO<br/>
+μ<sub>O</sub> = ½[ μ°(O<sub>2</sub>) + RT ln pO<sub>2</sub> ]</div>
+<p>Two phases in contact fix μ<sub>O</sub> exactly. So where the minimisation leaves two phases
+together, its gas has to land on a number computed from the phase data alone — a test of the
+minimiser using nothing the minimiser produced. Reporting this route instead would turn that test
+into a number compared against itself.</p>
