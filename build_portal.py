@@ -17,7 +17,7 @@ def main():
     shutil.copyfile(src, dst)
     with open(dst) as fh:
         html = fh.read()
-    for target in ('oxide_tool.html', 'tiox.html'):
+    for target in ('ti_solver.html', 'tiox.html'):
         assert f'href="{target}"' in html, f'portal does not link {target}'
         if not os.path.exists(os.path.join(HERE, target)):
             raise SystemExit(f'portal links {target} but it is not built')

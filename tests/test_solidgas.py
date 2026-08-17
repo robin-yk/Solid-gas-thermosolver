@@ -17,7 +17,14 @@ RWGS = {'CO2': -1, 'H2': -1, 'CO': 1, 'H2O': 1}
 
 # ---------------------------------------------------------------- Shomate data
 
-@pytest.mark.parametrize('name', list(SHOMATE))
+# Parametrised over exactly the entries the property applies to, instead of
+# skipping at run time: H2O and Ti2O3 have fits that start above 298.15 K, and
+# the ceria pair is pinned as known-bad in test_ceria_fit_is_not_self_consistent.
+_H298_NAMES = [n for n in SHOMATE
+               if VALID_RANGE[n][0] <= 298.15 and n not in ('CeO2', 'Ce2O3')]
+
+
+@pytest.mark.parametrize('name', _H298_NAMES)
 def test_enthalpy_at_298_returns_formation_enthalpy(name):
     """The (H - H298) part of the Shomate form must vanish at 298.15 K.
 
@@ -27,11 +34,6 @@ def test_enthalpy_at_298_returns_formation_enthalpy(name):
     slop, not a data error, and it is four orders of magnitude below the
     formation enthalpies themselves.
     """
-    if VALID_RANGE[name][0] > 298.15:
-        pytest.skip(f'{name} fit starts at {VALID_RANGE[name][0]:.0f} K')
-    if name in ('CeO2', 'Ce2O3'):
-        pytest.skip('ceria does not satisfy this - pinned in '
-                    'test_ceria_fit_is_not_self_consistent instead')
     dHf = SHOMATE[name][2]
     condensed = 'Ti' in FORMULAS.get(name, {}) or name.startswith('Ti')
     tol = 0.2 if condensed else 0.01

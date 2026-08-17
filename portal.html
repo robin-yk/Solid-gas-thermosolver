@@ -54,17 +54,18 @@ code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:12px}
   <article class="tool">
     <div class="bar"></div>
     <div class="body">
-      <span class="tag">gibbs_min</span>
-      <h2>Oxide reduction under a reacting gas</h2>
-      <p>Full-composition Gibbs energy minimisation over gas and condensed phases at fixed
-      elemental balance. The phase assemblage is an <em>output</em>, not an input.</p>
+      <span class="tag">gibbs_min &middot; active set</span>
+      <h2>Ti&ndash;O equilibrium under any CO<sub>2</sub>/H<sub>2</sub>/CO/H<sub>2</sub>O/N<sub>2</sub>/O<sub>2</sub> gas</h2>
+      <p>Gibbs minimisation with condensed phases as an active set: an absent phase is exactly
+      zero and carries a KKT reduced cost saying how far it is from appearing. The phase
+      assemblage is an <em>output</em>, not an input.</p>
       <ul>
-        <li>Ti&ndash;O (rutile + Magn&eacute;li series) and Ce&ndash;O (ceria)</li>
-        <li>CO<sub>2</sub>/H<sub>2</sub> = 1:1 feed, 500&ndash;1500 &deg;C</li>
-        <li>Verification tab: the same condition solved by an independent route, difference shown</li>
-        <li>Coefficients, element balance, solver state and the full derivation on the page</li>
+        <li>Free initial gas composition, presets, ppm-level O<sub>2</sub></li>
+        <li>Initial oxide, mass, T, P, volume and charge temperature as inputs</li>
+        <li>KKT reduced costs, element balance and every candidate set on the page</li>
+        <li>Validation tab re-runs the 80-digit oracle's reference points in the browser</li>
       </ul>
-      <a class="go" href="oxide_tool.html">Open the solver</a>
+      <a class="go" href="ti_solver.html">Open the solver</a>
     </div>
   </article>
 
@@ -87,12 +88,12 @@ code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:12px}
 
 </div>
 
-<div class="note"><strong>Which one answers the question.</strong> The two routes are
-mathematically equivalent for this system and they agree wherever both have been run &mdash; the
-minimisation's gas lands on the independently computed phase boundary to within 4&times;10<sup>&minus;5</sup>
-kJ per mol O. They are kept apart anyway: agreement everywhere is exactly what makes a value from
-the wrong route impossible to catch by reading it, so every reported number carries the method that
-produced it, and a test refuses any that does not say <code>gibbs_min</code>.</div>
+<div class="note"><strong>How the two relate.</strong> The oxygen-potential route is the
+<em>dual</em> of the minimisation, not an independent check: its margin equals the KKT reduced
+cost per mole of oxygen, which is why the two always agreed. The solver now reports that reduced
+cost directly, and independent verification comes from an 80-digit mpmath oracle and a
+NIST-vs-Waldner data comparison instead. Every reported number carries the method that produced
+it, and a test refuses any that does not say <code>gibbs_min</code>.</div>
 
 <footer>
   Gases: NIST-JANAF 4th ed. (Chase, 1998). Ti&ndash;O condensed phases: Waldner &amp; Eriksson,

@@ -97,30 +97,6 @@ def test_dominant_phase_agrees(pair):
         assert a == b, f'{k}: py={a} js={b}'
 
 
-@pytest.mark.xfail(reason='the residue under the dominant phase is arbitrary in both '
-                          'implementations; the active-set rewrite is what makes this pass',
-                   strict=False)
-def test_phase_assemblage_agrees(pair):
-    """The full set of phases present, not just the dominant one.
-
-    This cannot pass while absent phases sit at a floor instead of at zero, and
-    the reason is worth keeping rather than deleting the test. Across the six
-    ceria points the residue in Ce2O3 runs 0 to 1.8e-6 percent on the JavaScript
-    side and 0 to 9.2e-29 on the Python side, uncorrelated - two optimisers
-    stopping in different places on a variable whose true value is exactly zero.
-
-    So no threshold separates residue from a phase genuinely present in trace
-    amounts, because the residue is not small in a predictable way. Under sealed
-    N2 a share of 1e-36 percent is the whole answer; here 1.8e-6 percent is
-    nothing. Only holding absent phases at zero makes this question answerable.
-    """
-    py, js = pair
-    for k, p in py.items():
-        a = {q for q, v in p['phase_split_pct'].items() if v > 1e-6}
-        b = {q for q, v in js[k]['phase_split_pct'].items() if v > 1e-6}
-        assert a == b, f'{k}: py={sorted(a)} js={sorted(b)}'
-
-
 def test_total_gibbs_energy_agrees(pair):
     py, js = pair
     for k, p in py.items():
@@ -137,18 +113,8 @@ def test_elemental_balance_holds_in_the_port(pair):
         assert set(x['elements']) == ({'C', 'H', 'O', 'Ti'} if k[0] == 'Ti-O'
                                       else {'C', 'H', 'O', 'Ce'})
 
-
-@pytest.mark.xfail(reason='absent phases sit at the log-coordinate floor, not at zero; '
-                          'the active-set rewrite is what makes this pass',
-                   strict=False)
-def test_absent_phases_are_exactly_zero(pair):
-    """The defect, written down as a failing test rather than as a comment.
-
-    A line compound has no mixing entropy, so above its formation boundary its
-    optimum is exactly zero. Logarithmic coordinates cannot represent that, and
-    the residue left behind has already been misread once as a phase.
-    """
-    py, js = pair
-    for k, x in js.items():
-        for phase, v in x['phase_split_pct'].items():
-            assert v == 0.0 or v > 1e-6, f'{k} {phase}: {v:.3e} is neither zero nor a phase'
+# The two xfail tests that used to close this file - full assemblage
+# agreement, and absent phases at exactly zero - are not xfails any more:
+# they hold on the production active-set engine and are enforced in
+# tests/test_activeset_port.py. The legacy engine tested here keeps only the
+# properties it actually has.

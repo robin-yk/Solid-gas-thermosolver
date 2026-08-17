@@ -1,67 +1,112 @@
 # solid-gas-thermosolver
 
 Equilibrium solver for a gas phase in contact with a reducible oxide, built to
-answer one question: **can a reverse water-gas-shift feed reduce rutile TiO2 to
-a Magneli phase?**
+answer one question: **can this gas reduce this titanium oxide?**
 
-The answer is no across 500-1500 C, but the margin is not uniform, and the
-place where it is thinnest is not yet fully tested. See *Where this is soft*.
+For a reverse water-gas-shift feed the answer is no across 500-1500 C, now
+with the margin reported as what it mathematically is: the KKT reduced cost
+of the absent phase.
 
-## One route reports, the other checks
+## The production route: active-set Gibbs minimisation
 
-Every number in `results.json` is a **full-composition Gibbs minimisation**:
-the total Gibbs energy minimised over the whole species set, gases ideal and
-mixing, condensed phases pure at unit activity, subject to elemental balance.
+`solidgas/activeset.py` is the solver the released page runs, and it exists
+to enforce one discipline: **phase stability is decided by KKT reduced costs,
+never by the size of a mole number.** Gas species live in logarithmic
+element-potential coordinates; condensed phases are enumerated as active sets
+(every single and every pair - the phase rule allows two generic line
+compounds in an M-O system at fixed T and P, and triples are probed only as
+degeneracy detectors). A phase left out of a candidate is not a variable at
+all, so its mole number in the result is exactly 0.0, and every inactive
+phase carries r_j = mu0_j - t_j*lambda_Ti - o_j*lambda_O, reported per
+formula unit and per mole of oxygen. The program is convex, so the candidate
+that is feasible with clean KKT *is* the global minimum - candidates are
+never ranked by total-G values double precision cannot resolve.
+
+Verification is layered, and the layers are genuinely independent:
+
+- `oracle_tio.py` - an 80-digit mpmath oracle sharing only the coefficient
+  tables with production, solving a different formulation (element-potential
+  root solve per candidate). Its output is
+  `reference_results_high_precision.json`; `tests/test_activeset.py` holds
+  production to it (worst deviation observed: 2e-13 on gas fractions,
+  8e-12 kJ on reduced costs, including solid amounts down to 1e-41 mol).
+- `activeset.js` - the browser port, held to production by
+  `tests/test_activeset_port.py` (worst observed 6e-15; trace amounts agree
+  bit for bit in log10).
+- NIST-vs-Waldner data comparison and the Ellingham direction of the
+  boundary pO2, inside the reference file - data against data, no solver.
+
+**What the old "cross-check" actually was.** The oxygen-potential route
+(`solidgas/potential.py`) is the *dual* of the same minimisation: its
+"margin" is algebraically the KKT reduced cost per mole of oxygen. The
+earlier README presented it as an independent check; it is not one, and the
+repository no longer claims it is. It survives as the dual identity - useful,
+fast, and now correctly named.
+
+## Legacy route
+
+Every number in `results.json` is a **full-composition Gibbs minimisation**
+by the legacy reaction-extent SLSQP engine (`solidgas/gibbs.py`): total Gibbs
+energy minimised over the whole species set, gases ideal and mixing,
+condensed phases pure at unit activity, subject to elemental balance.
 Nothing is read off a phase-boundary table, and no point is filled in by the
 faster route.
 
-`solidgas/gibbs.py` does that in reaction-extent coordinates. The change of
+The legacy engine is kept, isolated, for regression - production imports
+nothing from it, and a test enforces that. Its known defect (absent phases
+at a log-coordinate floor instead of at zero) is what the active-set rewrite
+removed; see *A defect, resolved* below. Its gas registry also includes CH4
+(without graphite), so its low-temperature carbon-feed rows are conditional
+in a way the new page states and excludes.
+
+`solidgas/gibbs.py` works in reaction-extent coordinates. The change of
 variables is exact - same objective, same feasible set - but the constant part
-of G is removed analytically rather than carried through the arithmetic, and
-that is what makes the inert case computable at all. Sealed N2 pulls rutile off
-stoichiometry by a mole fraction near 1e-38; in species space that is destroyed
-before the optimiser sees it, because `n_TiO2 = n_Ti - 10*xi` with `n_Ti` at
-1e-3 rounds to `n_Ti` exactly. Minimising the reaction Gibbs energy directly
-keeps the extent as a primary variable at its own magnitude.
+of G is removed analytically rather than carried through the arithmetic. That
+made the inert case *representable*; the active-set solver is what finally
+made it *clean*, because the trace there is a genuine unknown, not a residue.
 
-`solidgas/potential.py` is the **oxygen-potential route** and is kept as the
-cross-check. Titanium does not enter the gas below about 2000 K, so the solid
-exchanges nothing but oxygen with it; that lets each condensed phase's critical
-potential be computed as a plain function of temperature, with no optimiser in
-it. It is roughly 200x faster, and it is still not what gets reported.
-
-The reason is not that it is wrong. It is that the two agree nearly everywhere,
-which is exactly what makes a value from the wrong one impossible to spot by
-reading it. So the routes are separated in code, every row of `results.json`
-carries a `method` field, and `tests/test_results.py` refuses any row that does
-not say `gibbs_min`. A rule stated in prose survives one sitting; a rule with a
-test behind it survives the next person.
-
-The cross-check runs on every row and is recorded there. It is a real test, not
-a comparison of a number against itself: where the minimisation leaves rutile
-sitting with a reduced phase, coexistence fixes the gas oxygen potential
-exactly, and the boundary value comes from the phase data alone. The minimised
-gas has to land on it.
+`solidgas/potential.py` is the oxygen-potential route: each condensed phase's
+critical potential as a plain function of temperature, no optimiser. Roughly
+200x faster, and - see above - the dual of the reported route, not an
+independent check of it. Every row of `results.json` carries a `method`
+field, and `tests/test_results.py` refuses any row that does not say
+`gibbs_min`.
 
 ```bash
-python3 run_all.py      # 24 points -> results.json, every row stamped gibbs_min
-python3 build_site.py   # embeds that same file in index.html
-python3 -m pytest tests/ -q
+# the production pipeline
+python3 oracle_tio.py         # 38 points at 80 digits -> reference_results_high_precision.json
+python3 export_activeset.py   # activeset_data.json, straight from the package
+python3 build_ti_solver.py    # ti_solver.html, self-contained
+python3 -m pytest tests/ -q   # release gate: no skips, no xfails
+
+# legacy pipeline (kept for regression)
+python3 run_all.py            # 24 points -> results.json
+python3 build_site.py         # tiox.html
 ```
 
 ## Results
 
-100 mg TiO2, 25 mL, 1 atm. Every number below is `gibbs_min`, straight out of
-`results.json`.
+100 mg TiO2, 25 mL, 1 atm. Active-set values from
+`reference_results_high_precision.json` (production agrees to 2e-13); the CH4
+row is legacy-only, from `results.json`, because the v0.1 gas registry
+excludes CH4 rather than carry it without graphite.
 
 **Ti(3+) as a percentage of total titanium**
 
 | feed | 500 C | 700 C | 900 C | 1100 C | 1300 C | 1500 C |
 |---|---|---|---|---|---|---|
-| CO2/H2 = 1:1 | 1.0e-17 | 1.0e-17 | 4.6e-16 | 6.7e-18 | 5.0e-18 | 1.1e-42 |
+| CO2/H2 = 1:1 | **0, exact** | **0, exact** | **0, exact** | **0, exact** | **0, exact** | **0, exact** |
 | pure H2 | 0.0005 | 0.0168 | 0.1702 | 0.8694 | 2.82 | 6.37 |
-| pure CH4 | 0.1678 | 5.59 | 33.33 | 36.59 | 33.33 | 33.33 |
+| pure CH4 (legacy engine) | 0.1678 | 5.59 | 33.33 | 36.59 | 33.33 | 33.33 |
 | sealed N2 | 1.5e-36 | 1.7e-26 | 7.2e-20 | 3.9e-15 | 1.4e-11 | 8.7e-09 |
+
+The RWGS row used to print 1e-17-ish numbers here: those were the legacy
+optimiser's log-floor residue, and the KKT reduced costs (+78 to +27 kJ/mol O
+across the range) prove the true value is exactly zero. The sealed-N2 row is
+the opposite case - the same magnitudes are *real*, the two-phase buffer
+under an oxygen-free gas, and the active-set solver resolves them as
+first-class unknowns (m(Ti10O19) = 9.66e-42 mol at 500 C, bit-identical
+between Python and the browser port in log10).
 
 **Phases that appear**
 
@@ -134,16 +179,19 @@ hot end is now measured rather than assumed.
 solidgas/
   shomate.py      NIST-JANAF coefficients; H, S, Cp, mu0, Kp
   waldner.py      Waldner & Eriksson Ti-O assessment: the Magneli series
-  equilibrium.py  species, element matrix, G_total, constrained solve
-  gibbs.py        the reported route: Gibbs minimisation in extent coordinates
-  potential.py    oxygen-potential route, kept as the cross-check only
-run_all.py              the 24 reported points -> results.json
-run_Ti4O7_RWGS.py       CO2/H2 sweep, writes Ti4O7_RWGS.png + results_rwgs.json
-run_Ti4O7_reducing.py   pure-H2 and pure-CH4 sweeps, writes results_reducing.json
-solver.js               the same thermodynamics for the browser
-export_thermo.py        dumps the coefficients as thermo_data.json
-site_template.html      page shell; build_site.py inlines the two into index.html
-tests/                  data checks, solver checks, export-drift checks
+  activeset.py    PRODUCTION: active-set Gibbs minimisation, KKT decisions
+  equilibrium.py  legacy: species, element matrix, G_total, constrained solve
+  gibbs.py        legacy: extent-coordinate minimisation (regression only)
+  potential.py    oxygen-potential route = the dual/KKT identity
+oracle_tio.py           80-digit mpmath oracle -> reference_results_high_precision.json
+export_activeset.py     data layer for the browser -> activeset_data.json
+activeset.js            the production solver, ported for the browser
+ti_solver_template.html + ti_solver_page.js + build_ti_solver.py -> ti_solver.html
+run_all.py              legacy: the 24 results.json points
+solver.js / page.js     legacy browser engine (tiox.html)
+export_thermo.py        legacy data dump (thermo_data.json)
+tests/                  release gate: oracle parity, KKT invariants, JS parity,
+                        data checks, export-drift checks - no skips, no xfails
 ```
 
 ```bash
@@ -263,15 +311,21 @@ Rather than generalise that function - the gas path is the part already checked 
 workbook - `export_oxide.py` folds the constant in as `F' = F - H + dHf`, and the evaluator is
 copied unchanged.
 
-### A defect, stated
+### A defect, resolved
 
-An absent phase should have exactly zero moles. In logarithmic extent coordinates it cannot: the
-logarithm of zero does not exist, so absent phases come back at 1e-26 to 1e-17 percent instead of at
-nothing. Telling that residue apart from a phase genuinely present in a trace amount then needs a
-second argument - under sealed N2 a share of 1e-36 percent is the entire answer, and under RWGS the
-same size is nothing - which is a thing that has already been got wrong once here.
+An absent phase should have exactly zero moles, and in the legacy logarithmic
+extent coordinates it could not: absent phases came back at 1e-26 to 1e-17
+percent, and telling that residue apart from a genuine trace needed a second
+argument that was already misread once.
 
-The fix is to enumerate which phases are present, hold the absent ones at exactly zero, and compare
-the total Gibbs energy across those cases; the degrees of freedom are small enough that the
-enumeration is cheap. Until it lands, both pages state a detection limit and report below it as
-below it, rather than printing a number that looks like a measurement.
+The active-set solver removed the defect the way the note above proposed,
+with one correction learned on the way: candidates are *not* compared by
+total Gibbs energy, because a 1e-34 kJ difference does not survive double
+precision - the winner is the candidate whose KKT conditions are clean, which
+for this convex program is equivalent and numerically robust. Absent phases
+are exactly zero because they are not variables; the sealed-N2 trace at
+1e-41 mol is a first-class unknown recovered linearly from the balances; and
+`ti_solver.html` shows the reduced cost of every absent phase instead of a
+detection-limit apology. The legacy pages (`oxide_tool.html`, `tiox.html`)
+retain the old engine and its stated limits; `oxide_tool.html` is no longer
+linked from the portal.
