@@ -76,6 +76,7 @@ field, and `tests/test_results.py` refuses any row that does not say
 # the production pipeline
 python3 oracle_tio.py         # 38 points at 80 digits -> reference_results_high_precision.json
 python3 export_activeset.py   # activeset_data.json, straight from the package
+python3 export_equations.py   # equations_method.html, typeset from equations_registry.py
 python3 build_ti_solver.py    # ti_solver.html, self-contained
 python3 -m pytest tests/ -q   # release gate: no skips, no xfails
 

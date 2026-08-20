@@ -177,10 +177,10 @@ def test_page_is_built_and_fresh():
     html = page.read_text()
     assert (ROOT / 'activeset_data.json').read_text().strip() in html, \
         'page is stale against activeset_data.json - run build_ti_solver.py'
-    for src in ('activeset.js', 'ti_solver_page.js'):
+    for src in ('activeset.js', 'ti_solver_page.js', 'equations_method.html'):
         assert (ROOT / src).read_text() in html, \
             f'page is stale against {src} - run build_ti_solver.py'
-    for token in ('__DATA__', '__REF__', '__ENGINE__', '__PAGE__'):
+    for token in ('__DATA__', '__REF__', '__ENGINE__', '__PAGE__', '__EQS__'):
         assert token not in html
     assert 'gibbs_min' in html
     for phrase in ('CH', 'graphite', 'nitrides', 'not a flow reactor'):

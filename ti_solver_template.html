@@ -82,6 +82,14 @@ ul{margin:8px 0;padding-left:20px} li{margin:5px 0;font-size:14px}
 footer{color:var(--muted);font-size:12px;padding:22px 0 0;border-top:1px solid var(--line);margin-top:24px}
 a{color:var(--blue)}
 .themebtn{width:auto;padding:6px 11px;font-size:12px;cursor:pointer;float:right}
+.eqrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+       padding:7px 0;overflow-x:auto;color:var(--ink)}
+.eqrow svg{flex:0 1 auto;display:block}
+.eqno{color:var(--muted);font-size:11px;flex:0 0 auto}
+.eqnote{color:var(--muted);padding:3px 0;overflow-x:auto}
+.eqnote svg{display:block}
+.eqbox{background:var(--code);border-left:3px solid var(--blue);
+       border-radius:0 6px 6px 0;padding:6px 14px;margin:8px 0}
 </style>
 </head>
 <body>
@@ -151,12 +159,19 @@ a{color:var(--blue)}
         <select id="preset">
           <option value="">custom</option>
           <option value="rwgs">RWGS fresh feed CO2:H2 = 1:1</option>
+          <option value="rwgsdil">RWGS 10/10/80, diluted feed</option>
           <option value="h2rich">H2-rich RWGS CO2:H2 = 1:3</option>
           <option value="product">RWGS product/recycle 3:3:2:2</option>
           <option value="h2">pure H2</option>
+          <option value="h2co2">H2 + 1% CO2 (near onset)</option>
           <option value="n2">pure N2</option>
           <option value="n2o2">N2 + 10 ppm O2</option>
+          <option value="co2">pure CO2 (reoxidation gas)</option>
+          <option value="magneli">deep Magneli window &mdash; 2 mg, 1200 &deg;C, pure H2</option>
+          <option value="reox">CO2 reoxidation of Ti4O7 &mdash; 600 &deg;C</option>
         </select>
+        <div class="readout">The last two also set temperature, mass, volume, and the
+        initial solid.</div>
       </div>
       <button class="act" id="run" type="button">Run equilibrium</button>
       <div class="readout" id="status" style="margin-top:9px"></div>
@@ -262,6 +277,11 @@ a{color:var(--blue)}
       reported on the Active set &amp; KKT tab. Independent verification is provided by an
       80-digit reference implementation and by the NIST&ndash;Waldner data comparison
       (Validation tab).</div>
+      <h3 style="margin-top:24px">Complete formulation</h3>
+      <p class="sub">Equations (1)&ndash;(30), as implemented. Rendered at build time from
+      <code>equations_registry.py</code>; a PDF version is in the repository
+      (<code>equations.pdf</code>).</p>
+      __EQS__
     </div>
 
     <div class="panel pad page" id="p-val">

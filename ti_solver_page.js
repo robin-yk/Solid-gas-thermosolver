@@ -30,13 +30,22 @@
 
   /* ------------------------------------------------------------- inputs */
 
+  /* A preset always sets the gas composition; the condition presets also set
+     temperature, mass, volume, and the initial solid. */
   var PRESETS = {
-    rwgs: { CO2: 1, H2: 1, CO: 0, H2O: 0, N2: 0, O2: 0 },
-    h2rich: { CO2: 1, H2: 3, CO: 0, H2O: 0, N2: 0, O2: 0 },
-    product: { CO2: 3, H2: 3, CO: 2, H2O: 2, N2: 0, O2: 0 },
-    h2: { CO2: 0, H2: 1, CO: 0, H2O: 0, N2: 0, O2: 0 },
-    n2: { CO2: 0, H2: 0, CO: 0, H2O: 0, N2: 1, O2: 0 },
-    n2o2: { CO2: 0, H2: 0, CO: 0, H2O: 0, N2: 999990, O2: 10 },
+    rwgs: { gas: { CO2: 1, H2: 1, CO: 0, H2O: 0, N2: 0, O2: 0 } },
+    rwgsdil: { gas: { CO2: 10, H2: 10, CO: 0, H2O: 0, N2: 80, O2: 0 } },
+    h2rich: { gas: { CO2: 1, H2: 3, CO: 0, H2O: 0, N2: 0, O2: 0 } },
+    product: { gas: { CO2: 3, H2: 3, CO: 2, H2O: 2, N2: 0, O2: 0 } },
+    h2: { gas: { CO2: 0, H2: 1, CO: 0, H2O: 0, N2: 0, O2: 0 } },
+    h2co2: { gas: { CO2: 1, H2: 99, CO: 0, H2O: 0, N2: 0, O2: 0 } },
+    n2: { gas: { CO2: 0, H2: 0, CO: 0, H2O: 0, N2: 1, O2: 0 } },
+    n2o2: { gas: { CO2: 0, H2: 0, CO: 0, H2O: 0, N2: 999990, O2: 10 } },
+    co2: { gas: { CO2: 1, H2: 0, CO: 0, H2O: 0, N2: 0, O2: 0 } },
+    magneli: { gas: { CO2: 0, H2: 1, CO: 0, H2O: 0, N2: 0, O2: 0 },
+               T: 1200, mass: 2, V: 25, solid: 'TiO2' },
+    reox: { gas: { CO2: 1, H2: 0, CO: 0, H2O: 0, N2: 0, O2: 0 },
+            T: 600, mass: 100, V: 25, solid: 'Ti4O7' },
   };
 
   D.gases.forEach(function (g) {
@@ -114,7 +123,12 @@
   });
   $('preset').addEventListener('change', function () {
     var p = PRESETS[$('preset').value];
-    if (p) setFeed(p);
+    if (!p) return;
+    setFeed(p.gas);
+    if (p.T !== undefined) $('T').value = p.T;
+    if (p.mass !== undefined) $('mass').value = p.mass;
+    if (p.V !== undefined) $('V').value = p.V;
+    if (p.solid !== undefined) $('solid0').value = p.solid;
   });
   $('chargeAtT').addEventListener('change', function () {
     $('chargeTWrap').style.display = $('chargeAtT').checked ? 'none' : 'grid';
@@ -535,7 +549,7 @@
   $('run').addEventListener('click', run);
   refreshFavs();
   renderCoefs();
-  setFeed(PRESETS.rwgs);
+  setFeed(PRESETS.rwgs.gas);
   $('preset').value = 'rwgs';
   run();
 })();

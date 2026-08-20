@@ -55,19 +55,25 @@ def main():
         engine = fh.read()
     with open(os.path.join(HERE, 'ti_solver_page.js')) as fh:
         page = fh.read()
+    with open(os.path.join(HERE, 'equations_method.html')) as fh:
+        eqs = fh.read()
     ref = json.dumps(slim_reference(), separators=(',', ':'))
 
     for token, body in (('__DATA__', data), ('__REF__', ref),
-                        ('__ENGINE__', engine), ('__PAGE__', page)):
+                        ('__ENGINE__', engine), ('__PAGE__', page),
+                        ('__EQS__', eqs)):
         assert token in html, f'{token} missing from the template'
         html = html.replace(token, body)
 
     out = os.path.join(HERE, 'ti_solver.html')
     with open(out, 'w') as fh:
         fh.write(html)
-    if 'http://' in html:
+    # XML namespace URIs in the inlined SVGs are identifiers, not requests.
+    checked = html.replace('http://www.w3.org/2000/svg', '') \
+                  .replace('http://www.w3.org/1999/xlink', '')
+    if 'http://' in checked:
         raise SystemExit('external reference found: http://')
-    n_ext = html.count('https://') - html.count('https://github.com')
+    n_ext = checked.count('https://') - checked.count('https://github.com')
     if n_ext:
         raise SystemExit('external request found beyond the repo link')
     print(f'ti_solver.html written ({os.path.getsize(out) / 1024:.0f} kB)')
