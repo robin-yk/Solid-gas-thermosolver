@@ -493,51 +493,6 @@
     }
   } catch (e) {}
 
-  /* saved conditions */
-  function favs() {
-    try { return JSON.parse(localStorage.getItem('tio_favs') || '{}'); }
-    catch (e) { return {}; }
-  }
-  function refreshFavs(sel) {
-    var f = favs();
-    $('favSel').innerHTML = Object.keys(f).sort().map(function (n) {
-      return '<option' + (n === sel ? ' selected' : '') + '>' + n + '</option>';
-    }).join('') || '<option value="">(none saved)</option>';
-  }
-  $('favSave').addEventListener('click', function () {
-    var name = $('favName').value.trim();
-    if (!name) { $('favNote').textContent = 'give the condition a name first'; return; }
-    var f = favs();
-    var state = { solid0: $('solid0').value, mass: $('mass').value,
-                  P: $('P').value, V: $('V').value, T: $('T').value,
-                  chargeAtT: $('chargeAtT').checked, Tcharge: $('Tcharge').value,
-                  gas: {} };
-    D.gases.forEach(function (g) { state.gas[g] = $('gas_' + g).value; });
-    f[name] = state;
-    try { localStorage.setItem('tio_favs', JSON.stringify(f)); } catch (e) {}
-    refreshFavs(name);
-    $('favNote').textContent = 'saved';
-  });
-  $('favLoad').addEventListener('click', function () {
-    var s = favs()[$('favSel').value];
-    if (!s) return;
-    $('solid0').value = s.solid0; $('mass').value = s.mass;
-    $('P').value = s.P; $('V').value = s.V; $('T').value = s.T;
-    $('chargeAtT').checked = s.chargeAtT;
-    $('Tcharge').value = s.Tcharge;
-    $('chargeTWrap').style.display = s.chargeAtT ? 'none' : 'grid';
-    D.gases.forEach(function (g) { $('gas_' + g).value = s.gas[g] || 0; });
-    $('preset').value = '';
-    showNormalized();
-    run();
-  });
-  $('favDel').addEventListener('click', function () {
-    var f = favs();
-    delete f[$('favSel').value];
-    try { localStorage.setItem('tio_favs', JSON.stringify(f)); } catch (e) {}
-    refreshFavs();
-  });
-
   $('rawSrc').textContent = [
     'mu0Gas', 'mu0Solid', 'buildCharge', 'solveCandidate',
     'enumerateCandidates', 'tripleProbes', 'solve',
@@ -547,7 +502,6 @@
   }).join('\n\n');
 
   $('run').addEventListener('click', run);
-  refreshFavs();
   renderCoefs();
   setFeed(PRESETS.rwgs.gas);
   $('preset').value = 'rwgs';
