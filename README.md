@@ -268,7 +268,11 @@ Notes on the two added this round:
 
 ## The pages
 
-**<https://robin-yk.github.io/Solid-gas-thermosolver/>** is a portal over two tools.
+**<https://robin-yk.github.io/Solid-gas-thermosolver/>** opens the active-set solver
+directly (`index.html` is a copy of `ti_solver.html`, made by `build_portal.py`).
+The legacy pages below remain reachable from the solver's **Legacy** tab, labelled
+with why they are retired; `portal.html` stays in the tree for history but is no
+longer the root.
 
 **`oxide_tool.html` &mdash; oxide reduction under a reacting gas.** The Gibbs minimisation, in the
 browser. Ti&ndash;O and Ce&ndash;O under a CO2/H2 feed; the phase assemblage is an output. Carries

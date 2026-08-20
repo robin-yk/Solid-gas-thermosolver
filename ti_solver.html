@@ -187,6 +187,7 @@ a{color:var(--blue)}
       <button class="tab" data-page="p-val" type="button">Validation</button>
       <button class="tab" data-page="p-coef" type="button">Coefficients</button>
       <button class="tab" data-page="p-src" type="button">Solver source</button>
+      <button class="tab" data-page="p-legacy" type="button">Legacy</button>
     </div>
 
     <div class="panel pad page active" id="p-res">
@@ -284,6 +285,27 @@ a{color:var(--blue)}
       <p class="sub">The functions below are the ones that produced the numbers above,
       printed from the running page rather than pasted.</p>
       <pre id="rawSrc"></pre>
+    </div>
+
+    <div class="panel pad page" id="p-legacy">
+      <h2>Legacy tools</h2>
+      <p class="sub">Earlier pages from this repository, kept for provenance. They run the
+      retired engine and their numbers are superseded by this page.</p>
+      <p><a href="tiox.html">TiO<sub>x</sub> oxygen-potential dashboard</a> &mdash; the fast
+      route, swept continuously across temperature with the phase boundaries drawn. Its
+      &ldquo;margin&rdquo; is the dual of this page's KKT reduced cost (see the Method tab),
+      so it was never an independent check of the minimisation.</p>
+      <p><a href="oxide_tool.html">First-generation Gibbs solver</a> &mdash; the
+      log-coordinate minimiser this page replaced.</p>
+      <div class="note"><b>Why these are retired.</b> The old engine could not hold an absent
+      phase at exactly zero: logarithmic coordinates floor it at ~10<sup>&minus;17</sup>&ndash;10<sup>&minus;26</sup>
+      percent, which is indistinguishable by size from a genuine trace (under sealed
+      N<sub>2</sub>, 10<sup>&minus;36</sup> percent <em>is</em> the answer) &mdash; and that
+      ambiguity was misread once. The active-set engine on this page removes the ambiguity:
+      absent phases are exactly zero and carry a KKT reduced cost, and every result is pinned
+      to an 80-digit reference by the repository's release gate. Legacy trace values such as
+      &ldquo;10<sup>&minus;17</sup>&nbsp;%&rdquo; on those pages are solver residue, not phases;
+      their CH<sub>4</sub>-feed rows assume no carbon deposition and are conditional.</div>
     </div>
 
     <footer>
