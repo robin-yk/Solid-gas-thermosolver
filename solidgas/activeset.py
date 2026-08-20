@@ -69,10 +69,10 @@ TOL_DEG_KJ = 1e-6           # |r_j| per mol O below this flags a boundary
 TRACE_MOL = 1e-12           # below this, log10(n) is reported alongside
 EXP_CAP = 700.0             # exp() guard; beyond it the step is damped back
 
-MODE_NOTE = ('species-limited C-H-O-N / Ti-O Gibbs equilibrium; gases '
-             'CO2 H2 CO H2O N2 O2; CH4, graphite, nitrides and the rutile '
-             'TiO2-x solution phase are excluded; closed finite-inventory '
-             'contact, not a flow reactor')
+MODE_NOTE = ('C-H-O-N / Ti-O Gibbs equilibrium; gas registry in this '
+             'version: CO2 H2 CO H2O N2 O2; CH4, graphite, nitrides and the '
+             'rutile TiO2-x solution phase are not included in this version; '
+             'closed finite-inventory contact, not a flow reactor')
 
 
 def mu0_gas(name, T):

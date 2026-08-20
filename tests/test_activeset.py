@@ -145,7 +145,7 @@ def test_balance_closes_per_element(solved):
 def test_method_and_mode_are_stamped(solved):
     for k, r in solved.items():
         assert r['method'] == 'gibbs_min', k
-        assert 'CH4' in r['mode'] and 'excluded' in r['mode'], k
+        assert 'CH4' in r['mode'] and 'not included' in r['mode'], k
         assert r['converged'] is True, k
 
 

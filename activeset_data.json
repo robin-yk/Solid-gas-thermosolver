@@ -36,7 +36,7 @@
   "N2",
   "O2"
  ],
- "mode_note": "species-limited C-H-O-N / Ti-O Gibbs equilibrium; gases CO2 H2 CO H2O N2 O2; CH4, graphite, nitrides and the rutile TiO2-x solution phase are excluded; closed finite-inventory contact, not a flow reactor",
+ "mode_note": "C-H-O-N / Ti-O Gibbs equilibrium; gas registry in this version: CO2 H2 CO H2O N2 O2; CH4, graphite, nitrides and the rutile TiO2-x solution phase are not included in this version; closed finite-inventory contact, not a flow reactor",
  "provenance": {
   "gases": "NIST-JANAF 4th ed. Shomate (solidgas/shomate.py)",
   "solids": "Waldner & Eriksson, Calphad 23 (1999) 189-218, Appendix pp. 216-218 (solidgas/waldner.py)"

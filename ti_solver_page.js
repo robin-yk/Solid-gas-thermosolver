@@ -182,27 +182,25 @@
         + 'Stable assemblage: <b>' + R.active_condensed_phases.map(sub).join(' + ')
         + '</b>; Ti³⁺ = ' + sci(R.reduced_pct, 4) + '% of the titanium'
         + (R.reduced_pct < 1e-6
-           ? ' (a genuine trace: log₁₀ n = '
+           ? ' (trace amount: log₁₀ n = '
              + (R.log10_trace_amounts[reduced[0]] || 0).toFixed(1)
-             + ' - the two-phase buffer under an oxygen-free gas)' : '')
+             + '; two-phase buffer under an oxygen-free gas)' : '')
         + '.</div>';
     } else {
       var nb = nearestBoundary(R);
       v = '<div class="verdict none"><b>No reduced phase is stable at this '
-        + 'condition, exactly.</b> Every reduced phase is held at zero moles with a '
-        + 'positive KKT reduced cost' + (nb
+        + 'condition.</b> All reduced phases are held at zero moles with '
+        + 'positive KKT reduced costs' + (nb
           ? '; the nearest boundary is <b>' + sub(nb.phase) + '</b> at r = +'
-            + sci(nb.r, 4) + ' kJ per mol O - the gas oxygen potential sits that '
-            + 'far above the ' + sub(R.active_condensed_phases[0]) + '/'
-            + sub(nb.phase) + ' buffer' : '')
+            + sci(nb.r, 4) + ' kJ per mol O' : '')
         + '.</div>';
     }
     if (R.boundary_or_degenerate) {
-      v += '<div class="note">Degenerate boundary flagged: '
-        + (R.degenerate_phases.map(sub).join(', ') || 'triple-point probe hit')
-        + ' - a reduced cost sits at zero within '
+      v += '<div class="note">Degenerate boundary: '
+        + (R.degenerate_phases.map(sub).join(', ') || 'triple-point probe')
+        + '. A reduced cost is zero within '
         + sci(R.solver_tolerance.degeneracy_kJ_per_mol_O, 1)
-        + ' kJ/mol O, so two assemblages coexist here.</div>';
+        + ' kJ/mol O; two assemblages coexist.</div>';
     }
     $('verdict').innerHTML = v;
 
@@ -265,8 +263,8 @@
       + ' kJ; common reference (unreacted charge) = ' + sci(R.common_reference_G_kJ, 8)
       + ' kJ; G<sub>rel</sub> = '
       + (R.G_rel_below_double_resolution
-         ? 'below double resolution (|G_rel| &lt; ' + sci(R.reporting_detection_limit.G_rel_kJ_floor, 2)
-           + ' kJ); the 80-digit oracle carries the exact value'
+         ? 'below double-precision resolution (|G_rel| &lt; ' + sci(R.reporting_detection_limit.G_rel_kJ_floor, 2)
+           + ' kJ); the exact value is in the reference dataset'
          : sci(R.G_rel_kJ, 6) + ' kJ')
       + '. Mode: ' + R.mode + '.</div>';
 
@@ -278,10 +276,10 @@
       if (!rc) return;
       var pf = rc.per_formula_kJ, po = rc.per_mol_O_kJ;
       var reading = pf === null ? '—'
-        : !isFinite(pf) ? 'unbounded descent: dry gas + reducible phase'
+        : !isFinite(pf) ? 'oxygen-free gas; formation direction unbounded'
         : Math.abs(po) < R.solver_tolerance.degeneracy_kJ_per_mol_O
           ? 'on the boundary (degenerate)'
-        : pf > 0 ? 'absent, exactly zero' : 'MISSED STABLE PHASE';
+        : pf > 0 ? 'absent (exactly zero)' : 'negative reduced cost (not expected)';
       h += '<tr><td>' + sub(s) + '</td><td>'
         + (pf === null ? '—' : !isFinite(pf) ? '−∞' : sci(pf, 5))
         + '</td><td>'
@@ -302,7 +300,7 @@
     R.candidates.forEach(function (c) {
       var isWin = c.active.join() === R.active_condensed_phases.join();
       h += '<tr' + (isWin ? ' style="font-weight:700"' : '') + '><td>'
-        + c.active.map(sub).join(' + ') + (isWin ? ' ← winner' : '')
+        + c.active.map(sub).join(' + ') + (isWin ? ' ← selected' : '')
         + '</td><td>' + (c.feasible ? '<span class="ok">yes</span>' : 'no')
         + '</td><td>' + (c.kkt_ok ? '<span class="ok">clean</span>' : 'fails')
         + '</td><td>' + (c.worst_inactive_r_kJ === null ? '−∞ / —'
@@ -414,7 +412,7 @@
     out += '</tbody></table>';
     out = '<div class="note ' + (allOk ? 'calm' : '') + '"><b>'
       + (allOk ? 'Every reference point reproduced within tolerance.'
-               : 'DISAGREEMENT with the oracle - do not trust this build.')
+               : 'Disagreement with the reference; this build is not validated.')
       + '</b> Reference: ' + REF.precision + '.</div>' + out;
     $('valBody').innerHTML = out;
   });

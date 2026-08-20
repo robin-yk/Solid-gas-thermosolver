@@ -88,22 +88,22 @@ a{color:var(--blue)}
 <header>
   <button class="themebtn" id="themeBtn" type="button">Theme</button>
   <p class="eyebrow">Gas-solid equilibrium &middot; Ti&ndash;O and Hydrocarbons &middot; Vlachos Group</p>
-  <h1>Can this gas reduce this titanium oxide?</h1>
-  <p>Gibbs energy minimisation with condensed phases handled as an active set: a phase that is
-  absent is held at <em>exactly zero</em> and carries a KKT reduced cost saying how far it is
-  from appearing. Free initial gas composition over CO<sub>2</sub>, H<sub>2</sub>, CO,
-  H<sub>2</sub>O, N<sub>2</sub>, O<sub>2</sub>. Everything runs in this file &mdash; no external
-  requests, no server.</p>
+  <h1>Ti&ndash;O gas&ndash;solid equilibrium solver</h1>
+  <p>Gibbs energy minimisation for an ideal CO<sub>2</sub>/H<sub>2</sub>/CO/H<sub>2</sub>O/N<sub>2</sub>/O<sub>2</sub>
+  gas mixture in contact with titanium oxides at fixed temperature, pressure, and elemental
+  composition. Condensed phases are treated as an active set: an absent phase is held at
+  exactly zero moles and carries a KKT reduced cost measuring its distance from stability.
+  The page is self-contained and makes no external requests.</p>
 </header>
 
 <main>
 <div class="note calm" style="margin-top:0">
-  <b>Scope.</b> Species-limited C&ndash;H&ndash;O&ndash;N / Ti&ndash;O Gibbs equilibrium.
-  Gas registry: CO<sub>2</sub>, H<sub>2</sub>, CO, H<sub>2</sub>O, N<sub>2</sub>, O<sub>2</sub>.
-  <b>Excluded:</b> CH<sub>4</sub>, graphite, nitrides, and the rutile TiO<sub>2&minus;x</sub>
-  solution phase. This is a <b>closed, finite-inventory equilibrium contact</b> between one gas
-  charge and one solid charge &mdash; not a flow-reactor steady state. Every reported number is
-  <code>gibbs_min</code>.
+  <b>Scope.</b> C&ndash;H&ndash;O&ndash;N / Ti&ndash;O Gibbs equilibrium. Gas registry in
+  this version: CO<sub>2</sub>, H<sub>2</sub>, CO, H<sub>2</sub>O, N<sub>2</sub>, O<sub>2</sub>.
+  Hydrocarbon species (CH<sub>4</sub>), graphite, nitrides, and the rutile
+  TiO<sub>2&minus;x</sub> solution phase are not included in this version. The calculation is
+  a closed, finite-inventory equilibrium between one gas charge and one solid charge, not a
+  flow-reactor steady state. Every reported value is <code>gibbs_min</code>.
 </div>
 
 <div class="grid">
@@ -193,7 +193,7 @@ a{color:var(--blue)}
     <div class="panel pad page active" id="p-res">
       <h2>Equilibrium at this condition</h2>
       <p class="sub">Method: <code>gibbs_min</code>, active-set enumeration with KKT
-      classification. Excluded phases are exactly zero, not small.</p>
+      classification. Excluded phases are held at exactly zero moles.</p>
       <h3>Condensed phases</h3>
       <div class="tablewrap"><table id="tPhase"></table></div>
       <h3>Gas: initial and equilibrium</h3>
@@ -205,10 +205,9 @@ a{color:var(--blue)}
 
     <div class="panel pad page" id="p-kkt">
       <h2>Active set and KKT reduced costs</h2>
-      <p class="sub">Stability is decided by these signs, never by the size of a mole number.
-      r<sub>j</sub> &gt; 0: the phase is absent, exactly. r<sub>j</sub> = 0 within tolerance:
-      phase boundary. r<sub>j</sub> &lt; 0 anywhere at the winner would mean a missed stable
-      phase &mdash; the enumeration makes that impossible.</p>
+      <p class="sub">Phase stability is decided by the sign of the reduced cost.
+      r<sub>j</sub> &gt; 0: the phase is absent. |r<sub>j</sub>| within tolerance: phase
+      boundary. Negative values do not occur at a reported solution.</p>
       <h3>Inactive phases at the winner</h3>
       <div class="tablewrap"><table id="tKKT"></table></div>
       <h3>Element potentials &lambda;</h3>
@@ -226,64 +225,64 @@ a{color:var(--blue)}
 
     <div class="panel pad page" id="p-how">
       <h2>Method</h2>
-      <p>The problem is the minimum of the total Gibbs energy</p>
+      <p>The solver computes the minimum of the total Gibbs energy</p>
       <div class="eq">G = &Sigma;<sub>gas</sub> n<sub>i</sub> [&mu;&deg;<sub>i</sub>(T) + RT ln(y<sub>i</sub>P/P&deg;)] + &Sigma;<sub>solid</sub> m<sub>j</sub> &mu;&deg;<sub>j</sub>(T)</div>
-      <p>subject to the elemental balance <code>A&middot;n = b</code> and <code>n &ge; 0</code>. Gases are ideal
-      and mix; each condensed phase is a pure line compound at unit activity. The inputs that
-      define <code>b</code> are the initial gas composition, the gas charge n<sub>g,0</sub> = PV/RT<sub>charge</sub>,
-      and the initial solid phase and mass &mdash; the equilibrium phase split is never an input.</p>
-      <p><b>Condensed phases are an active set.</b> For each candidate subset of phases (every
-      single and every pair &mdash; Gibbs' phase rule allows two generic line compounds in a
-      two-component M&ndash;O solid system at fixed T, P; N<sub>2</sub> adds no solid axis), the
-      equilibrium conditions become</p>
+      <p>subject to the elemental balance <code>A&middot;n = b</code> and <code>n &ge; 0</code>.
+      Gases form an ideal mixture; each condensed phase is a pure line compound at unit
+      activity. The inputs defining <code>b</code> are the initial gas composition, the gas
+      charge n<sub>g,0</sub> = PV/RT<sub>charge</sub>, and the initial solid phase and mass.
+      The equilibrium phase split is an output.</p>
+      <p><b>Active set.</b> Condensed phases are enumerated as candidates: every single phase
+      and every phase pair (the phase rule allows two line compounds in an M&ndash;O system at
+      fixed T and P; N<sub>2</sub> adds no solid component). For each candidate the equilibrium
+      conditions are</p>
       <div class="eq">gas:&nbsp; &mu;<sub>i</sub> = &Sigma;<sub>e</sub> a<sub>ie</sub>&lambda;<sub>e</sub>&nbsp;&nbsp;&nbsp;&nbsp;active solids:&nbsp; &mu;&deg;<sub>j</sub> = t<sub>j</sub>&lambda;<sub>Ti</sub> + o<sub>j</sub>&lambda;<sub>O</sub></div>
-      <p>solved by Newton in the element potentials &lambda; with the gas in logarithmic
-      coordinates; the solid amounts then come out of the Ti and O balances <em>linearly</em>,
-      through the combination O&nbsp;&minus;&nbsp;&rho;<sub>host</sub>&middot;Ti that removes the host
-      oxygen symbolically. A phase at 10<sup>&minus;41</sup> mol costs the solver nothing, and a
-      phase not in the candidate is exactly zero because it is not a variable at all.</p>
-      <p><b>The decision is KKT.</b> Every inactive phase gets a reduced cost
+      <p>solved by Newton iteration in the element potentials &lambda; with the gas in
+      logarithmic coordinates. Condensed amounts follow linearly from the Ti and O balances
+      through the combination O&nbsp;&minus;&nbsp;&rho;<sub>host</sub>&middot;Ti, which removes
+      the host oxygen symbolically; coexisting phases are resolved down to
+      ~10<sup>&minus;41</sup> mol. A phase outside the candidate is not a variable and is
+      exactly zero in the result.</p>
+      <p><b>Stability criterion.</b> Each inactive phase carries a reduced cost
       r<sub>j</sub> = &mu;&deg;<sub>j</sub> &minus; t<sub>j</sub>&lambda;<sub>Ti</sub> &minus; o<sub>j</sub>&lambda;<sub>O</sub>,
-      reported per formula unit and per mole of oxygen (they differ by def<sub>j</sub> = 2t<sub>j</sub>&minus;o<sub>j</sub>,
-      which is 1 for every TiO<sub>2</sub>&rarr;Magn&eacute;li step and not 1 in general). The
-      program is convex, so a candidate that is feasible with all r<sub>j</sub> &ge; 0 <em>is</em>
-      the global minimum &mdash; candidates are never ranked by comparing total G values that
-      double precision cannot resolve. Ties within tolerance are reported as degenerate
-      boundaries, not silently resolved.</p>
-      <p><b>Why a bone-dry feed always sits on a buffer.</b> Under pure H<sub>2</sub> or pure
-      N<sub>2</sub> the candidate &ldquo;rutile alone&rdquo; leaves the gas with zero oxygen
-      inventory, and the derivative of G toward creating a trace of O-bearing gas plus a reduced
-      phase is &minus;&infin; (the &xi;&middot;ln&xi; edge). So the solver reports the two-phase
-      buffer with a genuinely tiny extent &mdash; under sealed N<sub>2</sub> that trace, at
-      10<sup>&minus;41</sup>&nbsp;mol, <em>is</em> the answer &mdash; while 10 ppm of O<sub>2</sub>
-      in the same nitrogen shuts reduction off entirely, with a strictly positive margin.</p>
-      <div class="note">The oxygen-potential route that used to be called an independent
-      cross-check is the <b>dual</b> of this same problem: its &ldquo;margin&rdquo; equals the KKT
-      reduced cost per mole of oxygen. It lives on as exactly that, on the Active set &amp; KKT
-      tab. Independence comes from the 80-digit oracle and the NIST-vs-Waldner data comparison on
-      the Validation tab.</div>
+      reported per formula unit and per mole of oxygen (def<sub>j</sub> = 2t<sub>j</sub> &minus; o<sub>j</sub>;
+      def<sub>j</sub> = 1 for each TiO<sub>2</sub>&rarr;Magn&eacute;li step). The problem is
+      convex, so a feasible candidate with all r<sub>j</sub> &ge; 0 is the global minimum.
+      Candidates are not ranked by total Gibbs energy, whose differences can fall below
+      double-precision resolution. Reduced costs at zero within tolerance are reported as
+      phase coexistence.</p>
+      <p><b>Oxygen-free feeds.</b> Under pure H<sub>2</sub> or N<sub>2</sub> the single-phase
+      candidate leaves the gas with zero oxygen inventory, and the derivative of G toward
+      forming a trace of O-bearing gas together with a reduced phase diverges. The solver
+      therefore reports the two-phase buffer with a finite trace amount; under sealed
+      N<sub>2</sub> this trace is the equilibrium result. An O<sub>2</sub> impurity at the ppm
+      level is sufficient to suppress reduction, with a positive margin.</p>
+      <div class="note calm">The oxygen-potential margin used by earlier versions of this site
+      equals the reduced cost per mole of oxygen (the dual of the same minimisation); it is
+      reported on the Active set &amp; KKT tab. Independent verification is provided by an
+      80-digit reference implementation and by the NIST&ndash;Waldner data comparison
+      (Validation tab).</div>
     </div>
 
     <div class="panel pad page" id="p-val">
       <h2>Validation</h2>
-      <p class="sub">This engine against the 80-digit mpmath oracle
-      (<code>oracle_tio.py</code>, element-potential root solve, no shared solver code): the
-      reference values are embedded below and the same conditions can be re-run here, in this
-      browser, right now.</p>
+      <p class="sub">This engine against an independent 80-digit reference implementation
+      (<code>oracle_tio.py</code>, element-potential root solve, no shared solver code).
+      Reference values are embedded below; the same conditions can be re-run in the
+      browser.</p>
       <p><button type="button" class="mini" id="valRun">Run all reference points in this browser</button></p>
       <div id="valBody"></div>
     </div>
 
     <div class="panel pad page" id="p-coef">
       <h2>Coefficients in use</h2>
-      <p class="sub">The actual numbers this page is running on, not a citation of them.</p>
+      <p class="sub">The coefficient tables used by this page.</p>
       <div id="coefBody"></div>
     </div>
 
     <div class="panel pad page" id="p-src">
       <h2>Solver source</h2>
-      <p class="sub">The functions below are the ones that produced the numbers above,
-      printed from the running page rather than pasted.</p>
+      <p class="sub">The functions below are printed from the running page.</p>
       <pre id="rawSrc"></pre>
     </div>
 
@@ -291,29 +290,28 @@ a{color:var(--blue)}
       <h2>Legacy tools</h2>
       <p class="sub">Earlier pages from this repository, kept for provenance. They run the
       retired engine and their numbers are superseded by this page.</p>
-      <p><a href="tiox.html">TiO<sub>x</sub> oxygen-potential dashboard</a> &mdash; the fast
-      route, swept continuously across temperature with the phase boundaries drawn. Its
-      &ldquo;margin&rdquo; is the dual of this page's KKT reduced cost (see the Method tab),
-      so it was never an independent check of the minimisation.</p>
+      <p><a href="tiox.html">TiO<sub>x</sub> oxygen-potential dashboard</a> &mdash; critical
+      oxygen potentials swept across temperature with the phase boundaries drawn. Its margin
+      equals the reduced cost per mole of oxygen reported on this page (the dual of the same
+      minimisation).</p>
       <p><a href="oxide_tool.html">First-generation Gibbs solver</a> &mdash; the
-      log-coordinate minimiser this page replaced.</p>
-      <div class="note"><b>Why these are retired.</b> The old engine could not hold an absent
-      phase at exactly zero: logarithmic coordinates floor it at ~10<sup>&minus;17</sup>&ndash;10<sup>&minus;26</sup>
-      percent, which is indistinguishable by size from a genuine trace (under sealed
-      N<sub>2</sub>, 10<sup>&minus;36</sup> percent <em>is</em> the answer) &mdash; and that
-      ambiguity was misread once. The active-set engine on this page removes the ambiguity:
-      absent phases are exactly zero and carry a KKT reduced cost, and every result is pinned
-      to an 80-digit reference by the repository's release gate. Legacy trace values such as
-      &ldquo;10<sup>&minus;17</sup>&nbsp;%&rdquo; on those pages are solver residue, not phases;
-      their CH<sub>4</sub>-feed rows assume no carbon deposition and are conditional.</div>
+      log-coordinate minimiser replaced by this page.</p>
+      <div class="note"><b>Why these pages are retired.</b> The earlier engine represented
+      absent phases at a logarithmic floor (~10<sup>&minus;17</sup>&ndash;10<sup>&minus;26</sup>
+      percent) rather than at zero, which cannot be distinguished by magnitude from a genuine
+      trace amount (under sealed N<sub>2</sub>, ~10<sup>&minus;36</sup> percent is the
+      equilibrium result). The engine on this page holds absent phases at exactly zero,
+      reports a KKT reduced cost instead, and is pinned to an 80-digit reference by the
+      repository test suite. Trace values on the legacy pages are solver residue, not phases;
+      their CH<sub>4</sub>-feed results assume no carbon deposition and are conditional.</div>
     </div>
 
     <footer>
       Gases: NIST-JANAF 4th ed. (Chase, 1998). Ti&ndash;O condensed phases: Waldner &amp;
       Eriksson, Calphad 23 (1999) 189&ndash;218, Appendix pp. 216&ndash;218.
       Engine: <a href="https://github.com/robin-yk/Solid-gas-thermosolver">robin-yk/Solid-gas-thermosolver</a>
-      <code>solidgas/activeset.py</code>, ported line for line; pinned to the Python production
-      solver and the 80-digit oracle by the repository's release gate.
+      (<code>solidgas/activeset.py</code>); verified against the Python implementation and an
+      80-digit reference implementation by the repository test suite.
     </footer>
   </section>
 </div>
@@ -357,7 +355,7 @@ a{color:var(--blue)}
   "N2",
   "O2"
  ],
- "mode_note": "species-limited C-H-O-N / Ti-O Gibbs equilibrium; gases CO2 H2 CO H2O N2 O2; CH4, graphite, nitrides and the rutile TiO2-x solution phase are excluded; closed finite-inventory contact, not a flow reactor",
+ "mode_note": "C-H-O-N / Ti-O Gibbs equilibrium; gas registry in this version: CO2 H2 CO H2O N2 O2; CH4, graphite, nitrides and the rutile TiO2-x solution phase are not included in this version; closed finite-inventory contact, not a flow reactor",
  "provenance": {
   "gases": "NIST-JANAF 4th ed. Shomate (solidgas/shomate.py)",
   "solids": "Waldner & Eriksson, Calphad 23 (1999) 189-218, Appendix pp. 216-218 (solidgas/waldner.py)"
@@ -1485,27 +1483,25 @@ root.Solver = Solver;
         + 'Stable assemblage: <b>' + R.active_condensed_phases.map(sub).join(' + ')
         + '</b>; Ti³⁺ = ' + sci(R.reduced_pct, 4) + '% of the titanium'
         + (R.reduced_pct < 1e-6
-           ? ' (a genuine trace: log₁₀ n = '
+           ? ' (trace amount: log₁₀ n = '
              + (R.log10_trace_amounts[reduced[0]] || 0).toFixed(1)
-             + ' - the two-phase buffer under an oxygen-free gas)' : '')
+             + '; two-phase buffer under an oxygen-free gas)' : '')
         + '.</div>';
     } else {
       var nb = nearestBoundary(R);
       v = '<div class="verdict none"><b>No reduced phase is stable at this '
-        + 'condition, exactly.</b> Every reduced phase is held at zero moles with a '
-        + 'positive KKT reduced cost' + (nb
+        + 'condition.</b> All reduced phases are held at zero moles with '
+        + 'positive KKT reduced costs' + (nb
           ? '; the nearest boundary is <b>' + sub(nb.phase) + '</b> at r = +'
-            + sci(nb.r, 4) + ' kJ per mol O - the gas oxygen potential sits that '
-            + 'far above the ' + sub(R.active_condensed_phases[0]) + '/'
-            + sub(nb.phase) + ' buffer' : '')
+            + sci(nb.r, 4) + ' kJ per mol O' : '')
         + '.</div>';
     }
     if (R.boundary_or_degenerate) {
-      v += '<div class="note">Degenerate boundary flagged: '
-        + (R.degenerate_phases.map(sub).join(', ') || 'triple-point probe hit')
-        + ' - a reduced cost sits at zero within '
+      v += '<div class="note">Degenerate boundary: '
+        + (R.degenerate_phases.map(sub).join(', ') || 'triple-point probe')
+        + '. A reduced cost is zero within '
         + sci(R.solver_tolerance.degeneracy_kJ_per_mol_O, 1)
-        + ' kJ/mol O, so two assemblages coexist here.</div>';
+        + ' kJ/mol O; two assemblages coexist.</div>';
     }
     $('verdict').innerHTML = v;
 
@@ -1568,8 +1564,8 @@ root.Solver = Solver;
       + ' kJ; common reference (unreacted charge) = ' + sci(R.common_reference_G_kJ, 8)
       + ' kJ; G<sub>rel</sub> = '
       + (R.G_rel_below_double_resolution
-         ? 'below double resolution (|G_rel| &lt; ' + sci(R.reporting_detection_limit.G_rel_kJ_floor, 2)
-           + ' kJ); the 80-digit oracle carries the exact value'
+         ? 'below double-precision resolution (|G_rel| &lt; ' + sci(R.reporting_detection_limit.G_rel_kJ_floor, 2)
+           + ' kJ); the exact value is in the reference dataset'
          : sci(R.G_rel_kJ, 6) + ' kJ')
       + '. Mode: ' + R.mode + '.</div>';
 
@@ -1581,10 +1577,10 @@ root.Solver = Solver;
       if (!rc) return;
       var pf = rc.per_formula_kJ, po = rc.per_mol_O_kJ;
       var reading = pf === null ? '—'
-        : !isFinite(pf) ? 'unbounded descent: dry gas + reducible phase'
+        : !isFinite(pf) ? 'oxygen-free gas; formation direction unbounded'
         : Math.abs(po) < R.solver_tolerance.degeneracy_kJ_per_mol_O
           ? 'on the boundary (degenerate)'
-        : pf > 0 ? 'absent, exactly zero' : 'MISSED STABLE PHASE';
+        : pf > 0 ? 'absent (exactly zero)' : 'negative reduced cost (not expected)';
       h += '<tr><td>' + sub(s) + '</td><td>'
         + (pf === null ? '—' : !isFinite(pf) ? '−∞' : sci(pf, 5))
         + '</td><td>'
@@ -1605,7 +1601,7 @@ root.Solver = Solver;
     R.candidates.forEach(function (c) {
       var isWin = c.active.join() === R.active_condensed_phases.join();
       h += '<tr' + (isWin ? ' style="font-weight:700"' : '') + '><td>'
-        + c.active.map(sub).join(' + ') + (isWin ? ' ← winner' : '')
+        + c.active.map(sub).join(' + ') + (isWin ? ' ← selected' : '')
         + '</td><td>' + (c.feasible ? '<span class="ok">yes</span>' : 'no')
         + '</td><td>' + (c.kkt_ok ? '<span class="ok">clean</span>' : 'fails')
         + '</td><td>' + (c.worst_inactive_r_kJ === null ? '−∞ / —'
@@ -1717,7 +1713,7 @@ root.Solver = Solver;
     out += '</tbody></table>';
     out = '<div class="note ' + (allOk ? 'calm' : '') + '"><b>'
       + (allOk ? 'Every reference point reproduced within tolerance.'
-               : 'DISAGREEMENT with the oracle - do not trust this build.')
+               : 'Disagreement with the reference; this build is not validated.')
       + '</b> Reference: ' + REF.precision + '.</div>' + out;
     $('valBody').innerHTML = out;
   });
