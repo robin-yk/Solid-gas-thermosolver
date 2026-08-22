@@ -57,11 +57,21 @@ def main():
         page = fh.read()
     with open(os.path.join(HERE, 'equations_method.html')) as fh:
         eqs = fh.read()
+    with open(os.path.join(HERE, 'rutile_dft.json')) as fh:
+        sm_data = fh.read().strip()
+    with open(os.path.join(HERE, 'statmech.js')) as fh:
+        sm_engine = fh.read()
+    with open(os.path.join(HERE, 'statmech_worker.js')) as fh:
+        sm_worker = fh.read()
+    with open(os.path.join(HERE, 'statmech_ui.js')) as fh:
+        sm_ui = fh.read()
     ref = json.dumps(slim_reference(), separators=(',', ':'))
 
     for token, body in (('__DATA__', data), ('__REF__', ref),
                         ('__ENGINE__', engine), ('__PAGE__', page),
-                        ('__EQS__', eqs)):
+                        ('__EQS__', eqs), ('__SM_DATA__', sm_data),
+                        ('__SM_ENGINE__', sm_engine),
+                        ('__SM_WORKER__', sm_worker), ('__SM_UI__', sm_ui)):
         assert token in html, f'{token} missing from the template'
         html = html.replace(token, body)
 

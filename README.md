@@ -75,9 +75,10 @@ field, and `tests/test_results.py` refuses any row that does not say
 ```bash
 # the production pipeline
 python3 oracle_tio.py         # 38 points at 80 digits -> reference_results_high_precision.json
+python3 oracle_statmech.py    # defect stat-mech reference -> reference_statmech.json
 python3 export_activeset.py   # activeset_data.json, straight from the package
 python3 export_equations.py   # equations_method.html, typeset from equations_registry.py
-python3 build_ti_solver.py    # ti_solver.html, self-contained
+python3 build_ti_solver.py    # ti_solver.html, self-contained (both workspaces)
 python3 -m pytest tests/ -q   # release gate: no skips, no xfails
 
 # legacy pipeline (kept for regression)
@@ -174,6 +175,61 @@ consistent basis the answer is +18.3.
 **RWGS does not reduce rutile anywhere in 500-1500 C**, and the margin at the
 hot end is now measured rather than assumed.
 
+## Defect statistical mechanics (second workspace)
+
+The page carries a second workspace, `Defect stat mech`: given the total
+oxygen-vacancy inventory measured in experiment (H2O integration), it computes
+where those vacancies sit inside rutile - (110) bridging-O surface, first
+subsurface O layer, or bulk. Canonical, not grand-canonical: a 30-minute H2
+reduction is not guaranteed to be at equilibrium with the gas, so the total is
+taken as a fixed input rather than predicted.
+
+The architecture keeps the Monte Carlo honest about particle size. Surface
+vacancies interact (short-range pair table along and across the bridging-O
+rows), so the surface isotherm theta_s(mu_V) is sampled by canonical swap
+Metropolis on a representative slab with Widom insertion supplying mu_V. The
+particle-scale split then equalises mu_V over the *real* geometric site
+counts: at 0.9 um the surface layer is 13.6 umol-O/g of capacity (0.05% of
+all O sites - the slab's 10% would misplace the inventory by two orders of
+magnitude). Subsurface and bulk are non-interacting in this version and use
+the exact site-exclusion isotherm. Because the isotherm depends only on
+temperature and energetics, one run serves every inventory and particle size;
+inventory and geometry changes re-solve instantly in the browser.
+
+At the flagship condition (95 umol-O/g, 600 C, sX energies) the model gives
+surface 2.7 (pinned at the 20% reconstruction threshold), subsurface 52.0,
+bulk 40.3 umol-O/g at mu_V = 0.826 eV - the surface saturates early and the
+inventory is forced deep, which is the accessibility story of the paper in
+equilibrium form. Warnings mark the model's edges: surface at the
+reconstruction cap, subsurface beyond the dilute regime (a heavily reduced
+shell, not isolated point defects), and x approaching the shear-plane range.
+
+Every parameter is data, not code: `rutile_dft.json` holds the layer energies
+(Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), sX and GGA presets - the
+surface < subsurface < bulk ordering survives the functional), the surface
+ordering constraints the pair table is calibrated to (Birschitzky et al., npj
+Comput. Mater. 10 (2024): spacings of 1-2 sites suppressed, modal 4-5,
+critical coverage ~17%, reconstruction ~20%, cutoff ~10 A), and diffusion
+barriers stored for a later kinetic version (Iddir et al. 2010; Wang et al.
+2010). When project DFT numbers arrive they replace the JSON; nothing is
+re-fitted in code. Explicit Ti3+ polaron variables, CO2-accessibility
+kinetics and the grand-canonical bridge to the equilibrium workspace's
+oxygen potential are the next stages.
+
+Verification mirrors the thermodynamic side. `oracle_statmech.py` (mpmath,
+50 digits, no shared solver code) certifies the analytic matching grid, exact
+finite-lattice canonical ensembles via generating polynomials, and exact
+enumerations of interacting micro-lattices - including the chemical potential
+that Widom insertion estimates. The JS engine is a line-for-line port pinned
+move-for-move: same-seed swap trajectories are compared as integers, class
+occupancies and histograms bitwise, mu to 1e-9. The shipped default
+configuration reproduces the oracle flagship end-to-end in node.
+
+```bash
+python3 oracle_statmech.py     # reference_statmech.json
+python3 -m pytest tests/test_statmech.py tests/test_statmech_port.py -q
+```
+
 ## Layout
 
 ```
@@ -181,12 +237,16 @@ solidgas/
   shomate.py      NIST-JANAF coefficients; H, S, Cp, mu0, Kp
   waldner.py      Waldner & Eriksson Ti-O assessment: the Magneli series
   activeset.py    PRODUCTION: active-set Gibbs minimisation, KKT decisions
+  statmech.py     PRODUCTION: canonical defect lattice model, isotherm + matching
   equilibrium.py  legacy: species, element matrix, G_total, constrained solve
   gibbs.py        legacy: extent-coordinate minimisation (regression only)
   potential.py    oxygen-potential route = the dual/KKT identity
 oracle_tio.py           80-digit mpmath oracle -> reference_results_high_precision.json
+oracle_statmech.py      50-digit stat-mech oracle -> reference_statmech.json
+rutile_dft.json         defect dataset: literature energetics, swapped for project DFT
 export_activeset.py     data layer for the browser -> activeset_data.json
 activeset.js            the production solver, ported for the browser
+statmech.js             the defect engine, ported for the browser (+ _worker, _ui)
 ti_solver_template.html + ti_solver_page.js + build_ti_solver.py -> ti_solver.html
 run_all.py              legacy: the 24 results.json points
 solver.js / page.js     legacy browser engine (tiox.html)

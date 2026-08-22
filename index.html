@@ -10,10 +10,12 @@
    dark is reachable, but only when asked for with the toggle. */
 :root{--blue:#0078d4;--navy:#153b56;--ink:#18232d;--muted:#5f6b76;--line:#dde4ea;
       --bg:#ffffff;--panel:#ffffff;--orange:#d96b00;--green:#107c41;--red:#c0392b;
-      --code:#f6f8fa;--shadow:0 1px 3px #0000000f;color-scheme:light}
+      --code:#f6f8fa;--shadow:0 1px 3px #0000000f;color-scheme:light;
+      --cSurf:#0078d4;--cSub:#d96b00;--cBulk:#7a52c2}
 :root[data-theme="dark"]{--blue:#4aa8e8;--navy:#cfe2f1;--ink:#e6edf3;--muted:#9bb0c0;
   --line:#2b3a47;--bg:#121a21;--panel:#18222b;--orange:#e08b3a;--green:#4caf7d;--red:#e07a6a;
-  --code:#131c24;--shadow:0 4px 16px #00000040;color-scheme:dark}
+  --code:#131c24;--shadow:0 4px 16px #00000040;color-scheme:dark;
+  --cSurf:#3b8ed0;--cSub:#c97a1f;--cBulk:#9a7bd8}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Arial,Helvetica,sans-serif}
 header{background:var(--panel);border-bottom:1px solid var(--line);padding:30px clamp(18px,5vw,64px)}
@@ -90,6 +92,12 @@ a{color:var(--blue)}
 .eqnote svg{display:block}
 .eqbox{background:var(--code);border-left:3px solid var(--blue);
        border-radius:0 6px 6px 0;padding:6px 14px;margin:8px 0}
+.wstabs{display:flex;gap:8px;margin:0 0 18px}
+.wstab{width:auto;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer;
+       border-radius:8px;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
+.wstab.active{color:#fff;background:var(--blue);border-color:var(--blue)}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.smchart{width:100%;height:auto;display:block;max-width:640px}
 </style>
 </head>
 <body>
@@ -101,10 +109,18 @@ a{color:var(--blue)}
   gas mixture in contact with titanium oxides at fixed temperature, pressure, and elemental
   composition. Condensed phases are treated as an active set: an absent phase is held at
   exactly zero moles and carries a KKT reduced cost measuring its distance from stability.
+  A second workspace distributes a measured oxygen-vacancy inventory over surface,
+  subsurface and bulk sites of rutile by canonical lattice statistical mechanics.
   The page is self-contained and makes no external requests.</p>
 </header>
 
 <main>
+<div class="wstabs" id="wstabs">
+  <button class="wstab active" data-ws="ws-thermo" type="button">Gas&ndash;solid equilibrium</button>
+  <button class="wstab" data-ws="ws-defect" type="button">Defect stat mech</button>
+</div>
+
+<div id="ws-thermo">
 <div class="note calm" style="margin-top:0">
   <b>Scope.</b> C&ndash;H&ndash;O&ndash;N / Ti&ndash;O Gibbs equilibrium. Gas registry in
   this version: CO<sub>2</sub>, H<sub>2</sub>, CO, H<sub>2</sub>O, N<sub>2</sub>, O<sub>2</sub>.
@@ -9158,15 +9174,178 @@ z
       their CH<sub>4</sub>-feed results assume no carbon deposition and are conditional.</div>
     </div>
 
-    <footer>
-      Gases: NIST-JANAF 4th ed. (Chase, 1998). Ti&ndash;O condensed phases: Waldner &amp;
-      Eriksson, Calphad 23 (1999) 189&ndash;218, Appendix pp. 216&ndash;218.
-      Engine: <a href="https://github.com/robin-yk/Solid-gas-thermosolver">robin-yk/Solid-gas-thermosolver</a>
-      (<code>solidgas/activeset.py</code>); verified against the Python implementation and an
-      80-digit reference implementation by the repository test suite.
-    </footer>
   </section>
 </div>
+</div>
+
+<div id="ws-defect" style="display:none">
+<div class="note calm" style="margin-top:0">
+  <b>Scope.</b> Canonical lattice statistical mechanics for a measured oxygen-vacancy
+  inventory in rutile TiO<sub>2</sub>: the total V<sub>O</sub> is fixed from experiment
+  and distributed over (110) bridging-O, first-subsurface and bulk sites at equal vacancy
+  chemical potential. Site energies are polaron-relaxed literature DFT values;
+  Ti<sup>3+</sup> polarons are not explicit variables in this version. Surface coverage
+  beyond the (1&times;2) reconstruction threshold (20% of bridging sites) is not modelled
+  &mdash; surface content is pinned at the threshold. The result is the equilibrium
+  distribution of a fixed inventory, not reduction kinetics; coupling to the gas-phase
+  oxygen potential arrives with the thermodynamic bridge in a later version.
+</div>
+
+<div class="grid">
+
+  <aside>
+    <div class="panel pad">
+      <h3 style="margin-top:0">Defect state</h3>
+      <div class="field pair">
+        <div><label for="smVO">Total V<sub>O</sub></label><input type="number" id="smVO" value="95" min="0.01" step="5"><div class="readout">&mu;mol-O per g TiO<sub>2</sub></div></div>
+        <div><label for="smT">Temperature</label><input type="number" id="smT" value="600" min="100" max="1200" step="25"><div class="readout">&deg;C</div></div>
+      </div>
+      <div class="field pair">
+        <div><label for="smGeoMode">Particle input</label>
+          <select id="smGeoMode">
+            <option value="d">diameter</option>
+            <option value="bet">BET area</option>
+          </select></div>
+        <div><label for="smGeoVal">Value</label><input type="number" id="smGeoVal" value="0.90" min="0.0001" step="0.1"><div class="readout" id="smGeoUnit">&mu;m (spherical particle)</div></div>
+      </div>
+      <div class="readout" id="smDerived" style="margin:2px 0 12px"></div>
+      <div class="field">
+        <label>Mode</label>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <label style="text-transform:none;font-weight:400;font-size:13px;color:var(--ink);display:flex;gap:7px;align-items:center;margin:0;letter-spacing:0">
+            <input type="radio" name="smMode" value="measured" checked style="width:auto"> Measured V<sub>O</sub> (canonical)
+          </label>
+          <label style="text-transform:none;font-weight:400;font-size:13px;color:var(--muted);display:flex;gap:7px;align-items:center;margin:0;letter-spacing:0">
+            <input type="radio" name="smMode" value="thermo" disabled style="width:auto"> Thermodynamic &mu;<sub>O</sub> (grand-canonical)
+          </label>
+        </div>
+        <div class="readout">The second mode arrives with absolute DFT formation free
+        energies and the bridge to the equilibrium workspace.</div>
+      </div>
+    </div>
+
+    <div class="panel pad">
+      <h3 style="margin-top:0">DFT energetics</h3>
+      <div class="field">
+        <label for="smPreset">Layer energies</label>
+        <select id="smPreset">
+          <option value="sx">sX hybrid &middot; Li et al. 2015 (0 / +0.59 / +1.31 eV)</option>
+          <option value="gga">GGA &middot; Li et al. 2015 (0 / +0.39 / +1.08 eV)</option>
+          <option value="custom">custom</option>
+        </select>
+        <div class="readout">Relative to the surface bridging-O vacancy; the oxygen
+        reference cancels at fixed inventory.</div>
+      </div>
+      <div class="field pair">
+        <div><label for="smEpsSS">Subsurface</label><input type="number" id="smEpsSS" step="0.01"><div class="readout">eV vs surface</div></div>
+        <div><label for="smEpsB">Bulk</label><input type="number" id="smEpsB" step="0.01"><div class="readout">eV vs surface</div></div>
+      </div>
+      <div class="field">
+        <label>Surface pair repulsion (along the O<sub>br</sub> row)</label>
+        <div class="trio">
+          <div><input type="number" id="smV1" step="0.01"><div class="readout">&Delta; = 1 site, eV</div></div>
+          <div><input type="number" id="smV2" step="0.01"><div class="readout">&Delta; = 2, eV</div></div>
+          <div><input type="number" id="smV3" step="0.01"><div class="readout">&Delta; = 3, eV</div></div>
+        </div>
+        <div class="readout">Calibrated to the published ordering constraints; cross-row
+        terms and the 10 &Aring; cutoff are fixed in <code>rutile_dft.json</code>.</div>
+      </div>
+      <div class="readout" style="line-height:1.6">
+        <b>Dataset.</b> Layer energetics: Li, Guo &amp; Robertson, J. Phys. Chem. C 119
+        (2015). Surface ordering: Birschitzky et al., npj Comput. Mater. 10 (2024).
+        Diffusion barriers (stored for a later kinetic version): Iddir et al., J. Phys.
+        Chem. C (2010); Wang et al., Phys. Rev. B 82 (2010).
+      </div>
+    </div>
+
+    <div class="panel pad">
+      <h3 style="margin-top:0">Monte Carlo</h3>
+      <div class="field pair">
+        <div><label for="smQuality">Sampling</label>
+          <select id="smQuality">
+            <option value="0.3">fast survey</option>
+            <option value="1" selected>standard</option>
+            <option value="3">thorough</option>
+          </select></div>
+        <div><label for="smSeed">Seed</label><input type="number" id="smSeed" value="12345" step="1"></div>
+      </div>
+      <button class="act" id="smRun" type="button">Run model</button>
+      <div class="readout" id="smStatus" style="margin-top:9px"></div>
+      <div class="readout" style="margin-top:6px">A run samples the surface isotherm
+      &theta;<sub>s</sub>(&mu;<sub>V</sub>) for the current temperature and energetics in
+      a Web Worker (canonical swap Metropolis, Widom insertion). Inventory and particle
+      size re-solve instantly without a new run.</div>
+    </div>
+  </aside>
+
+  <section>
+    <div id="smSummary"></div>
+    <div class="kpis" id="smKpis"></div>
+
+    <div class="panel pad">
+      <h2>Vacancy distribution</h2>
+      <p class="sub">Share of the total inventory in each site class at the common
+      vacancy chemical potential, using the real geometric site counts of the particle
+      &mdash; not the slab ratio of the sampling lattice.</p>
+      <svg id="smChart" class="smchart" viewBox="0 0 560 300" role="img"
+           aria-label="Vacancy distribution over surface, subsurface and bulk sites"></svg>
+      <div class="tablewrap" style="margin-top:10px"><table id="smTable"></table></div>
+      <div class="readout" id="smSpacing" style="margin-top:8px"></div>
+      <div id="smNotes"></div>
+    </div>
+
+    <div class="panel pad">
+      <h2>Model</h2>
+      <p>Three site classes hold the fixed total: rutile (110) bridging O, the first
+      subsurface O layer, and bulk. The distribution equalises the vacancy chemical
+      potential across the classes. Surface vacancies interact through a short-range
+      pair table, so the surface isotherm &theta;<sub>s</sub>(&mu;<sub>V</sub>) is
+      sampled by canonical Metropolis Monte Carlo on a representative slab, with Widom
+      insertion supplying the chemical potential; subsurface and bulk sites are
+      non-interacting in this version and follow the exact site-exclusion isotherm.</p>
+      <p>The particle-scale balance uses the real geometric site counts rather than the
+      slab's class ratio. At 0.9 &mu;m the surface layer holds at most 13.6
+      &mu;mol-O/g &mdash; 14% of a 95 &mu;mol-O/g inventory &mdash; so deeper sites must
+      carry the rest whatever the energetics; with the reconstruction threshold at 20%
+      coverage, the surface share at that inventory is a few percent. Because the
+      isotherm depends only on temperature and energetics, one Monte Carlo run serves
+      every inventory and particle size.</p>
+      <p>Site energies are polaron-relaxed DFT values: the oxygen vacancy itself is most
+      stable in the surface layer, while the Ti<sup>3+</sup> small polarons it donates
+      prefer subsurface Ti (Reticcioli et al., Phys. Rev. B 98, 045306 (2018)). Explicit
+      polaron variables, CO<sub>2</sub> accessibility kinetics and the grand-canonical
+      coupling to the gas-phase oxygen potential are later stages of this workspace.</p>
+      <p><b>Dataset.</b> Layer energies: Li, Guo &amp; Robertson, J. Phys. Chem. C 119
+      (2015), DOI 10.1021/acs.jpcc.5b02430 &mdash; sX 0 / +0.59 / +1.31 eV, GGA
+      0 / +0.39 / +1.08 eV (surface / first subsurface / bulk); the ordering survives the
+      change of functional. Surface ordering constraints: Birschitzky et al., npj Comput.
+      Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4 &mdash; in-row spacings of 1&ndash;2
+      bridging sites nearly absent, modal spacing 4&ndash;5 sites, critical coverage
+      &sim;17%, reconstruction threshold &sim;20%, interaction range &sim;10 &Aring;.
+      The pair energies here are calibrated to those constraints, not computed, and are
+      replaced &mdash; not re-fitted &mdash; when project DFT configuration energies
+      arrive: every model parameter lives in <code>rutile_dft.json</code>.</p>
+      <div class="note calm">The browser engine is a line-for-line port of
+      <code>solidgas/statmech.py</code>, pinned move-for-move to the Python reference
+      (same-seed swap trajectories compared as integers) and to a 50-digit analytic
+      oracle plus exact finite-lattice ensembles by the repository test suite
+      (<code>tests/test_statmech.py</code>, <code>tests/test_statmech_port.py</code>).</div>
+    </div>
+  </section>
+</div>
+</div>
+
+<footer>
+  Gases: NIST-JANAF 4th ed. (Chase, 1998). Ti&ndash;O condensed phases: Waldner &amp;
+  Eriksson, Calphad 23 (1999) 189&ndash;218, Appendix pp. 216&ndash;218. Defect
+  energetics: Li et al., J. Phys. Chem. C 119 (2015); Birschitzky et al., npj Comput.
+  Mater. 10 (2024); Iddir et al.; Wang et al. &mdash; parameters in
+  <code>rutile_dft.json</code>.
+  Engines: <a href="https://github.com/robin-yk/Solid-gas-thermosolver">robin-yk/Solid-gas-thermosolver</a>
+  (<code>solidgas/activeset.py</code>, <code>solidgas/statmech.py</code>); verified
+  against the Python implementations, an 80-digit equilibrium reference and a 50-digit
+  stat-mech reference by the repository test suite.
+</footer>
 </main>
 
 <script id="activeset-data" type="application/json">{
@@ -9584,6 +9763,66 @@ z
  }
 }</script>
 <script id="reference-data" type="application/json">{"precision":"mpmath, 90 working digits, 80 certified","method":"gibbs_min","cases_feeds":{"rwgs_1_1":{"CO2":1,"H2":1},"h2_rich":{"CO2":1,"H2":3},"product_mix":{"CO2":3,"H2":3,"CO":2,"H2O":2},"pure_h2":{"H2":1},"pure_n2":{"N2":1},"n2_10ppm_o2":{"N2":999990,"O2":10}},"rows":[{"case":"rwgs_1_1","T_C":500,"active":["TiO2"],"gas_fractions":{"CO2":0.34678089109494636,"H2":0.34678089109494636,"CO":0.15321910890505364,"H2O":0.15321910890505364,"N2":0.0,"O2":3.9820932258244495e-29},"r_per_mol_O":{"Ti10O19":70.3953163938429,"Ti8O15":71.42759240507262,"Ti6O11":73.28283827494293,"Ti5O9":74.93400656802575,"Ti4O7":76.9777195018133,"Ti3O5":83.89668857951648,"Ti2O3":89.47610392409527},"log10_traces":{"O2":-31.804343840988626},"reduced_pct":0.0},{"case":"rwgs_1_1","T_C":700,"active":["TiO2"],"gas_fractions":{"CO2":0.27973188248579994,"H2":0.27973188248579994,"CO":0.22026811751420003,"H2O":0.22026811751420003,"N2":0.0,"O2":9.098063469409851e-22},"r_per_mol_O":{"Ti10O19":62.789260493179945,"Ti8O15":64.10654564747983,"Ti6O11":66.31154141119764,"Ti5O9":68.18012377183206,"Ti4O7":70.84472853191554,"Ti3O5":77.04225028437762,"Ti2O3":85.3859138149082},"log10_traces":{"O2":-24.545422328734084},"reduced_pct":0.0},{"case":"rwgs_1_1","T_C":900,"active":["TiO2"],"gas_fractions":{"CO2":0.23495202422895647,"H2":0.23495202422895659,"CO":0.2650479757710435,"H2O":0.2650479757710434,"N2":0.0,"O2":6.524460411024822e-17},"r_per_mol_O":{"Ti10O19":54.743136328513046,"Ti8O15":56.34543058325036,"Ti6O11":58.90017623870647,"Ti5O9":60.9861726682347,"Ti4O7":64.27166925116269,"Ti3O5":70.21251346130057,"Ti2O3":80.78637626184869},"log10_traces":{"O2":-19.77100044863235},"reduced_pct":0.0},{"case":"rwgs_1_1","T_C":1100,"active":["TiO2"],"gas_fractions":{"CO2":0.20536548199329446,"H2":0.20536548199365592,"CO":0.29463451800661516,"H2O":0.29463451800625373,"N2":0.0,"O2":1.8072138501252096e-13},"r_per_mol_O":{"Ti10O19":46.16919772764154,"Ti8O15":48.056501058542814,"Ti6O11":50.96099660476112,"Ti5O9":53.26440710380431,"Ti4O7":57.17079550797958,"Ti3O5":63.10528390788978,"Ti2O3":75.69870593438125},"log10_traces":{"O2":-16.396899938925987},"reduced_pct":0.0},{"case":"rwgs_1_1","T_C":1300,"active":["TiO2"],"gas_fractions":{"CO2":0.1852141713510819,"H2":0.18521417148432937,"CO":0.3147858286156062,"H2O":0.31478582848235875,"N2":0.0,"O2":6.662373005869165e-11},"r_per_mol_O":{"Ti10O19":37.02646796212602,"Ti8O15":39.198780354060226,"Ti6O11":42.45302579052765,"Ti5O9":44.97385035941231,"Ti4O7":49.50113058399526,"Ti3O5":55.485859821540565,"Ti2O3":70.14758687063554},"log10_traces":{"O2":-13.889332694692747},"reduced_pct":0.0},{"case":"rwgs_1_1","T_C":1500,"active":["TiO2"],"gas_fractions":{"CO2":0.1709862844209685,"H2":0.17098629733161658,"CO":0.3290137123513695,"H2O":0.3290136994407214,"N2":0.0,"O2":6.4553240437175984e-09},"r_per_mol_O":{"Ti10O19":27.298866453485687,"Ti8O15":29.7561878963856,"Ti6O11":33.36018322280685,"Ti5O9":36.0984218617209,"Ti4O7":41.24659390622835,"Ti3O5":47.16995659878341,"Ti2O3":64.15581905845517},"log10_traces":{},"reduced_pct":0.0},{"case":"h2_rich","T_C":500,"active":["TiO2"],"gas_fractions":{"CO2":0.12594463142920412,"H2":0.6259446314292041,"CO":0.12405536857079587,"H2O":0.12405536857079587,"N2":0.0,"O2":8.012262402475997e-30},"r_per_mol_O":{"Ti10O19":65.24165819420148,"Ti8O15":66.27393420543119,"Ti6O11":68.1291800753015,"Ti5O9":69.78034836838432,"Ti4O7":71.82406130217187,"Ti3O5":78.74303037987505,"Ti2O3":84.32244572445384},"log10_traces":{"O2":-32.50070010013401},"reduced_pct":0.0},{"case":"h2_rich","T_C":700,"active":["TiO2"],"gas_fractions":{"CO2":0.08017375200460848,"H2":0.5801737520046085,"CO":0.1698262479953915,"H2O":0.1698262479953915,"N2":0.0,"O2":1.2572541963478195e-22},"r_per_mol_O":{"Ti10O19":54.782458162669926,"Ti8O15":56.099743316969814,"Ti6O11":58.304739080687625,"Ti5O9":60.17332144132204,"Ti4O7":62.83792620140552,"Ti3O5":69.0354479538676,"Ti2O3":77.37911148439818},"log10_traces":{"O2":-25.40494819709616},"reduced_pct":0.0},{"case":"h2_rich","T_C":900,"active":["TiO2"],"gas_fractions":{"CO2":0.05429594118061754,"H2":0.5542959411806175,"CO":0.19570405881938246,"H2O":0.19570405881938244,"N2":0.0,"O2":6.391021337044912e-18},"r_per_mol_O":{"Ti10O19":43.412507019175855,"Ti8O15":45.01480127391318,"Ti6O11":47.56954692936928,"Ti5O9":49.65554335889751,"Ti4O7":52.9410399418255,"Ti3O5":58.88188415196338,"Ti2O3":69.45574695251149},"log10_traces":{"O2":-20.77997478141728},"reduced_pct":0.0},{"case":"h2_rich","T_C":1100,"active":["TiO2"],"gas_fractions":{"CO2":0.03977710754462324,"H2":0.5397771075446433,"CO":0.21022289245537343,"H2O":0.21022289245534678,"N2":0.0,"O2":1.3317671066074852e-14},"r_per_mol_O":{"Ti10O19":31.282179447842648,"Ti8O15":33.16948277874393,"Ti6O11":36.07397832496223,"Ti5O9":38.37738882400542,"Ti4O7":42.28377722818069,"Ti3O5":48.21826562809089,"Ti2O3":60.81168765458237},"log10_traces":{"O2":-17.529481201172544},"reduced_pct":0.0},{"case":"h2_rich","T_C":1300,"active":["TiO2"],"gas_fractions":{"CO2":0.031200003001103996,"H2":0.5312000030069737,"CO":0.21879999699791772,"H2O":0.21879999699009142,"N2":0.0,"O2":3.913141130102002e-12},"r_per_mol_O":{"Ti10O19":18.48752172619087,"Ti8O15":20.659834118125072,"Ti6O11":23.914079554592494,"Ti5O9":26.43490412347716,"Ti4O7":30.96218434806011,"Ti3O5":36.946913585605415,"Ti2O3":51.60864063470038},"log10_traces":{"O2":-15.120436127264727},"reduced_pct":0.0},{"case":"h2_rich","T_C":1500,"active":["TiO2"],"gas_fractions":{"CO2":0.025815120918291197,"H2":0.5258151213936817,"CO":0.22418487900247705,"H2O":0.22418487836862314,"N2":0.0,"O2":3.169269627783506e-10},"r_per_mol_O":{"Ti10O19":5.081537703341143,"Ti8O15":7.538859146241058,"Ti6O11":11.14285447266231,"Ti5O9":13.881093111576359,"Ti4O7":19.029265156083802,"Ti3O5":24.95262784863887,"Ti2O3":41.93849030831062},"log10_traces":{"O2":-13.26397779154746},"reduced_pct":0.0},{"case":"product_mix","T_C":500,"active":["TiO2"],"gas_fractions":{"CO2":0.34678089109494636,"H2":0.34678089109494636,"CO":0.15321910890505364,"H2O":0.15321910890505364,"N2":0.0,"O2":3.9820932258244495e-29},"r_per_mol_O":{"Ti10O19":70.3953163938429,"Ti8O15":71.42759240507262,"Ti6O11":73.28283827494293,"Ti5O9":74.93400656802575,"Ti4O7":76.9777195018133,"Ti3O5":83.89668857951648,"Ti2O3":89.47610392409527},"log10_traces":{"O2":-31.804343840988626},"reduced_pct":0.0},{"case":"product_mix","T_C":700,"active":["TiO2"],"gas_fractions":{"CO2":0.27973188248579994,"H2":0.27973188248579994,"CO":0.22026811751420003,"H2O":0.22026811751420003,"N2":0.0,"O2":9.098063469409851e-22},"r_per_mol_O":{"Ti10O19":62.789260493179945,"Ti8O15":64.10654564747983,"Ti6O11":66.31154141119764,"Ti5O9":68.18012377183206,"Ti4O7":70.84472853191554,"Ti3O5":77.04225028437762,"Ti2O3":85.3859138149082},"log10_traces":{"O2":-24.545422328734084},"reduced_pct":0.0},{"case":"product_mix","T_C":900,"active":["TiO2"],"gas_fractions":{"CO2":0.23495202422895647,"H2":0.23495202422895659,"CO":0.2650479757710435,"H2O":0.2650479757710434,"N2":0.0,"O2":6.524460411024822e-17},"r_per_mol_O":{"Ti10O19":54.743136328513046,"Ti8O15":56.34543058325036,"Ti6O11":58.90017623870647,"Ti5O9":60.9861726682347,"Ti4O7":64.27166925116269,"Ti3O5":70.21251346130057,"Ti2O3":80.78637626184869},"log10_traces":{"O2":-19.77100044863235},"reduced_pct":0.0},{"case":"product_mix","T_C":1100,"active":["TiO2"],"gas_fractions":{"CO2":0.20536548199329446,"H2":0.20536548199365592,"CO":0.29463451800661516,"H2O":0.29463451800625373,"N2":0.0,"O2":1.8072138501252096e-13},"r_per_mol_O":{"Ti10O19":46.16919772764154,"Ti8O15":48.056501058542814,"Ti6O11":50.96099660476112,"Ti5O9":53.26440710380431,"Ti4O7":57.17079550797958,"Ti3O5":63.10528390788978,"Ti2O3":75.69870593438125},"log10_traces":{"O2":-16.396899938925987},"reduced_pct":0.0},{"case":"product_mix","T_C":1300,"active":["TiO2"],"gas_fractions":{"CO2":0.1852141713510819,"H2":0.18521417148432937,"CO":0.3147858286156062,"H2O":0.31478582848235875,"N2":0.0,"O2":6.662373005869165e-11},"r_per_mol_O":{"Ti10O19":37.02646796212602,"Ti8O15":39.198780354060226,"Ti6O11":42.45302579052765,"Ti5O9":44.97385035941231,"Ti4O7":49.50113058399526,"Ti3O5":55.485859821540565,"Ti2O3":70.14758687063554},"log10_traces":{"O2":-13.889332694692747},"reduced_pct":0.0},{"case":"product_mix","T_C":1500,"active":["TiO2"],"gas_fractions":{"CO2":0.1709862844209685,"H2":0.17098629733161658,"CO":0.3290137123513695,"H2O":0.3290136994407214,"N2":0.0,"O2":6.4553240437175984e-09},"r_per_mol_O":{"Ti10O19":27.298866453485687,"Ti8O15":29.7561878963856,"Ti6O11":33.36018322280685,"Ti5O9":36.0984218617209,"Ti4O7":41.24659390622835,"Ti3O5":47.16995659878341,"Ti2O3":64.15581905845517},"log10_traces":{},"reduced_pct":0.0},{"case":"pure_h2","T_C":500,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.9999922484587748,"CO":0.0,"H2O":7.751541225285632e-06,"N2":0.0,"O2":1.2256846023967987e-38},"r_per_mol_O":{"Ti8O15":1.0322760112297187,"Ti6O11":2.8875218811000294,"Ti5O9":4.538690174182854,"Ti4O7":6.582403107970391,"Ti3O5":13.501372185673583,"Ti2O3":19.08078753025237},"log10_traces":{"O2":-41.3160765338519},"reduced_pct":0.00048788704753319613},{"case":"pure_h2","T_C":700,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.9996643648560822,"CO":0.0,"H2O":0.0003356351439177392,"N2":0.0,"O2":1.65407825985466e-28},"r_per_mol_O":{"Ti8O15":1.3172851542998838,"Ti6O11":3.522280918017699,"Ti5O9":5.390863278652112,"Ti4O7":8.055468038735595,"Ti3O5":14.252989791197676,"Ti2O3":22.596653321728258},"log10_traces":{"O2":-31.285815237344263},"reduced_pct":0.01678350373942391},{"case":"pure_h2","T_C":900,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.995896397360795,"CO":0.0,"H2O":0.004103602639204913,"N2":0.0,"O2":8.704749486058111e-22},"r_per_mol_O":{"Ti8O15":1.6022942547373182,"Ti6O11":4.157039910193423,"Ti5O9":6.243036339721652,"Ti4O7":9.528532922649644,"Ti3O5":15.469377132787528,"Ti2O3":26.043239933335638},"log10_traces":{"O2":-24.645788771828055},"reduced_pct":0.17021849377220685},{"case":"pure_h2","T_C":1100,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.9754682331721954,"CO":0.0,"H2O":0.024531766827804505,"N2":0.0,"O2":5.55301168819423e-17},"r_per_mol_O":{"Ti8O15":1.8873033309012783,"Ti6O11":4.791798877119581,"Ti5O9":7.095209376162776,"Ti4O7":11.001597780338038,"Ti3O5":16.93608618024824,"Ti2O3":29.52950820673972},"log10_traces":{"O2":-19.909380897603718},"reduced_pct":0.8693723720941287},{"case":"pure_h2","T_C":1300,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.908910922161555,"CO":0.0,"H2O":0.09108907783821331,"N2":0.0,"O2":2.31652500207071e-13},"r_per_mol_O":{"Ti8O15":2.172312391934202,"Ti6O11":5.426557828401623,"Ti5O9":7.947382397286289,"Ti4O7":12.47466262186924,"Ti3O5":18.45939185941454,"Ti2O3":33.12111890850951},"log10_traces":{"O2":-16.34812464670558},"reduced_pct":2.817676685620668},{"case":"pure_h2","T_C":1500,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.7680187769576718,"CO":0.0,"H2O":0.2319812228832632,"N2":0.0,"O2":1.5906502261482795e-10},"r_per_mol_O":{"Ti8O15":2.4573214428999144,"Ti6O11":6.061316769321167,"Ti5O9":8.799555408235216,"Ti4O7":13.947727452742662,"Ti3O5":19.871090145297725,"Ti2O3":36.85695260496948},"log10_traces":{"O2":-13.563362288723642},"reduced_pct":6.3665234850013315},{"case":"pure_n2","T_C":500,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":1.0,"O2":1.2256846023967987e-38},"r_per_mol_O":{"Ti8O15":1.0322760112297187,"Ti6O11":2.8875218811000294,"Ti5O9":4.538690174182854,"Ti4O7":6.582403107970391,"Ti3O5":13.501372185673583,"Ti2O3":19.08078753025237},"log10_traces":{"O2":-41.3160765338519,"Ti10O19":-41.01504653818792},"reduced_pct":1.542907725033065e-36},{"case":"pure_n2","T_C":700,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":1.0,"O2":1.65407825985466e-28},"r_per_mol_O":{"Ti8O15":1.3172851542998838,"Ti6O11":3.522280918017699,"Ti5O9":5.390863278652112,"Ti4O7":8.055468038735595,"Ti3O5":14.252989791197676,"Ti2O3":22.596653321728258},"log10_traces":{"O2":-31.285815237344263,"Ti10O19":-30.98478524168028},"reduced_pct":1.6542504062908545e-26},{"case":"pure_n2","T_C":900,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":1.0,"O2":8.704749486058111e-22},"r_per_mol_O":{"Ti8O15":1.6022942547373182,"Ti6O11":4.157039910193423,"Ti5O9":6.243036339721652,"Ti4O7":9.528532922649644,"Ti3O5":15.469377132787528,"Ti2O3":26.043239933335638},"log10_traces":{"O2":-24.645788771828055,"Ti10O19":-24.344758776164074},"reduced_pct":7.22150498698524e-20},{"case":"pure_n2","T_C":1100,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.9999999999999999,"O2":5.55301168819423e-17},"r_per_mol_O":{"Ti8O15":1.8873033309012783,"Ti6O11":4.791798877119581,"Ti5O9":7.095209376162776,"Ti4O7":11.001597780338038,"Ti3O5":16.93608618024824,"Ti2O3":29.52950820673972},"log10_traces":{"O2":-19.909380897603718,"Ti10O19":-19.608350901939737},"reduced_pct":3.935823275606987e-15},{"case":"pure_n2","T_C":1300,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.9999999999997683,"O2":2.31652500207071e-13},"r_per_mol_O":{"Ti8O15":2.172312391934202,"Ti6O11":5.426557828401623,"Ti5O9":7.947382397286289,"Ti4O7":12.47466262186924,"Ti3O5":18.45939185941454,"Ti2O3":33.12111890850951},"log10_traces":{"O2":-16.34812464670558,"Ti10O19":-16.047094651041597},"reduced_pct":1.4331506355903713e-11},{"case":"pure_n2","T_C":1500,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.999999999840935,"O2":1.5906502261482795e-10},"r_per_mol_O":{"Ti8O15":2.4573214428999144,"Ti6O11":6.061316769321167,"Ti5O9":8.799555408235216,"Ti4O7":13.947727452742662,"Ti3O5":19.871090145297725,"Ti2O3":36.85695260496948},"log10_traces":{"O2":-13.563362288723642,"Ti10O19":-13.26233229305966},"reduced_pct":8.730803192984354e-09},{"case":"n2_10ppm_o2","T_C":500,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":243.57538916659988,"Ti8O15":244.60766517782957,"Ti6O11":246.4629110476999,"Ti5O9":248.11407934078272,"Ti4O7":250.15779227457026,"Ti3O5":257.0767613522734,"Ti2O3":262.65617669685224},"log10_traces":{},"reduced_pct":0.0},{"case":"n2_10ppm_o2","T_C":700,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":212.21760181581286,"Ti8O15":213.53488697011272,"Ti6O11":215.73988273383054,"Ti5O9":217.60846509446495,"Ti4O7":220.27306985454845,"Ti3O5":226.47059160701053,"Ti2O3":234.8142551375411},"log10_traces":{},"reduced_pct":0.0},{"case":"n2_10ppm_o2","T_C":900,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":180.35411043589676,"Ti8O15":181.9564046906341,"Ti6O11":184.51115034609018,"Ti5O9":186.5971467756184,"Ti4O7":189.8826433585464,"Ti3O5":195.82348756868427,"Ti2O3":206.39735036923238},"log10_traces":{},"reduced_pct":0.0},{"case":"n2_10ppm_o2","T_C":1100,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":147.94559494291266,"Ti8O15":149.83289827381395,"Ti6O11":152.73739382003225,"Ti5O9":155.04080431907545,"Ti4O7":158.9471927232507,"Ti3O5":164.88168112316092,"Ti2O3":177.4751031496524},"log10_traces":{},"reduced_pct":0.0},{"case":"n2_10ppm_o2","T_C":1300,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":114.97642908665293,"Ti8O15":117.14874147858714,"Ti6O11":120.40298691505456,"Ti5O9":122.92381148393922,"Ti4O7":127.45109170852217,"Ti3O5":133.43582094606748,"Ti2O3":148.09754799516244},"log10_traces":{},"reduced_pct":0.0},{"case":"n2_10ppm_o2","T_C":1500,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":81.445029241995,"Ti8O15":83.90235068489491,"Ti6O11":87.50634601131617,"Ti5O9":90.24458465023021,"Ti4O7":95.39275669473766,"Ti3O5":101.31611938729273,"Ti2O3":118.30198184696448},"log10_traces":{},"reduced_pct":0.0}],"h2_h2o_boundary":{"T_C":900,"mu_O_critical_kJ_per_mol_O":-368.2779953652982,"H2O_over_H2_critical_ratio":0.004120511581405242,"note":"feeds H2 + r*H2O at r = ratio*(1 -/+ 1e-3) must land on the two-phase buffer / single-phase rutile respectively"}}</script>
+<script id="statmech-data" type="application/json">{
+  "version": "0.1-M1",
+  "material": "rutile TiO2",
+  "facet": "(110)",
+  "lattice_constants_A": {"a": 4.5937, "c": 2.9587},
+  "molar_mass_g_mol": 79.866,
+
+  "vacancy_energetics": {
+    "reference_state": "surface bridging O vacancy",
+    "default_preset": "sx",
+    "presets": {
+      "sx": {"label": "sX hybrid, Li et al. 2015",
+             "surface_eV": 0.0, "subsurface_eV": 0.59, "bulk_eV": 1.31},
+      "gga": {"label": "GGA, Li et al. 2015",
+              "surface_eV": 0.0, "subsurface_eV": 0.39, "bulk_eV": 1.08}
+    },
+    "provenance": "Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), DOI 10.1021/acs.jpcc.5b02430. Absolute neutral V_O formation energies on rutile (110): sX 4.39 / 4.98 / 5.70 eV, GGA 3.71 / 4.10 / 4.79 eV (surface / first subsurface / bulk). Relative values are used; the oxygen chemical potential cancels in the canonical ensemble. Site energies are polaron-relaxed: Ti3+ small polarons are not explicit variables (context: Reticcioli et al., Phys. Rev. B 98 (2018) 045306)."
+  },
+
+  "surface_ordering": {
+    "pair_eV": {"along_row": [0.40, 0.20, 0.05], "cross_row": [0.05, 0.02]},
+    "interaction_cutoff_A": 10.0,
+    "critical_coverage": 0.17,
+    "reconstruction_coverage": 0.20,
+    "disfavored_spacing_sites": [1, 2],
+    "preferred_spacing_sites": [4, 5],
+    "pair_table_note": "Pair energies are calibrated, not computed: chosen so that spacings of 1-2 bridging sites are suppressed and the modal spacing near critical coverage is 4-5 sites, with the ordering energy scale of the published low-energy configurations (~0.2-0.3 eV). Replace with project DFT configuration energies when available.",
+    "provenance": "Birschitzky, Reticcioli et al., npj Comput. Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4. DFT+U (U = 3.9 eV) + ML + Metropolis MC on rutile (110): computed critical coverage 16.7%, reconstruction threshold ~20%, interaction range ~10 A, in-row spacings of 1-2 sites nearly absent, most probable spacing 4-5 sites."
+  },
+
+  "saturation": {
+    "surface_cap_coverage": 0.20,
+    "subsurface_dilute_warn": 0.25,
+    "x_max_shear": 0.008,
+    "note": "Beyond ~20% bridging-O vacancy coverage the (1x2) reconstruction takes over; the model pins surface content at the threshold instead of describing the reconstructed phase. x_max is the approximate rutile point-defect range before crystallographic shear planes."
+  },
+
+  "diffusion_eV": {
+    "bulk_c_axis": 0.65,
+    "surface_001": 1.19,
+    "surface_crossrow_concerted": 0.91,
+    "note": "Stored for a later kinetic version; not used by the equilibrium model. The surface-to-subsurface exchange barrier is a different path and is not any of these numbers.",
+    "provenance": "Bulk: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a. Surface (unstrained rutile 110): Wang et al., Phys. Rev. B 82 (2010) 165309."
+  },
+
+  "defaults": {
+    "T_C": 600,
+    "VO_total_umol_g": 95.0,
+    "particle_diameter_um": 0.90,
+    "subsurface_layers": 1,
+    "energetics_preset": "sx",
+    "mc": {
+      "seed": 12345,
+      "rows": 8, "row_sites": 25, "ss_layers": 1, "bulk_layers": 8,
+      "fillings": [2, 4, 7, 12, 20, 32, 50, 75, 110, 160],
+      "equil_sweeps": 2500, "warm_equil_sweeps": 1000, "sample_sweeps": 4000,
+      "widom_every": 10, "hist_every": 25, "blocks": 20
+    }
+  }
+}</script>
 <script>/* Active-set gas/solid Gibbs equilibrium for the browser.
    Line-for-line port of solidgas/activeset.py: gas species in logarithmic
    element-potential coordinates, condensed phases enumerated as active sets,
@@ -10659,6 +10898,985 @@ root.Solver = Solver;
   setFeed(PRESETS.rwgs.gas);
   $('preset').value = 'rwgs';
   run();
+})();
+</script>
+<script id="sm-engine">/* Canonical defect statistical mechanics for oxygen vacancies in rutile.
+   Line-for-line port of solidgas/statmech.py: same loops, same operation
+   order, same sfc32 RNG, so a same-seed run is bit-reproducible against the
+   Python reference (verified by tests/test_statmech_port.py). Runs on the
+   page, inside a Worker, and under node. */
+
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.StatMech = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var KB_EV = 8.617333262e-5;
+  var N_AVO = 6.02214076e23;
+
+  /* ------------------------------------------------------------- RNG */
+
+  function makeRng(seed) {
+    /* sfc32 seeded by splitmix32. State lives in a Uint32Array: V8 then
+       keeps the words as raw int32 instead of heap-boxed closure slots,
+       which is ~4x faster at an identical output stream. */
+    var st = new Uint32Array(4);
+    var state = seed >>> 0;
+    for (var k = 0; k < 4; k++) {
+      state = (state + 0x9E3779B9) >>> 0;
+      var z = state;
+      z = Math.imul(z ^ (z >>> 16), 0x21F0AAAD) >>> 0;
+      z = Math.imul(z ^ (z >>> 15), 0x735A2D97) >>> 0;
+      st[k] = (z ^ (z >>> 15)) >>> 0;
+    }
+    var rng = function () {
+      var a = st[0], b = st[1], c = st[2], d = st[3];
+      var t = (a + b) >>> 0;
+      a = (b ^ (b >>> 9)) >>> 0;
+      b = (c + ((c << 3) >>> 0)) >>> 0;
+      c = (((c << 21) >>> 0) | (c >>> 11)) >>> 0;
+      d = (d + 1) >>> 0;
+      t = (t + d) >>> 0;
+      c = (c + t) >>> 0;
+      st[0] = a; st[1] = b; st[2] = c; st[3] = d;
+      return t / 4294967296;
+    };
+    for (var i = 0; i < 12; i++) rng();
+    return rng;
+  }
+
+  /* -------------------------------------------------------- geometry */
+
+  function siteDensities(p) {
+    var a = p.lattice_constants_A.a, c = p.lattice_constants_A.c;
+    var cellA2 = c * a * Math.sqrt(2.0);
+    return [1e16 / cellA2, 4e16 / cellA2];
+  }
+
+  function densityGCm3(p) {
+    var a = p.lattice_constants_A.a, c = p.lattice_constants_A.c;
+    var vcell = a * a * c * 1e-24;
+    return 2.0 * p.molar_mass_g_mol / (N_AVO * vcell);
+  }
+
+  function geometry(p, opts) {
+    opts = opts || {};
+    var ssLayers = opts.ss_layers != null ? opts.ss_layers
+      : p.defaults.subsurface_layers;
+    var area;
+    if (opts.bet_m2_g != null) {
+      area = opts.bet_m2_g * 1e4;
+    } else {
+      var d = opts.d_um != null ? opts.d_um : p.defaults.particle_diameter_um;
+      area = 6.0 / (densityGCm3(p) * d * 1e-4);
+    }
+    var sig = siteDensities(p);
+    var nO = 2.0 / p.molar_mass_g_mol * 1e6;
+    var nS = area * sig[0] / N_AVO * 1e6;
+    var nSS = area * sig[1] * ssLayers / N_AVO * 1e6;
+    return { area_m2_g: area * 1e-4, N_s: nS, N_ss: nSS,
+             N_b: nO - nS - nSS, N_O_total: nO, ss_layers: ssLayers };
+  }
+
+  /* --------------------------------------------------------- lattice */
+
+  function buildLattice(rows, rowSites, ssLayers, bulkLayers, ordering) {
+    var along = ordering.pair_eV.along_row;
+    var cross = ordering.pair_eV.cross_row;
+    if (along.length && rowSites < 2 * along.length + 1) {
+      throw new Error('row too short for the along-row interaction range');
+    }
+    var hasCross = false;
+    for (var q = 0; q < cross.length; q++) if (cross[q] !== 0.0) hasCross = true;
+    if (hasCross && rows < 3) {
+      throw new Error('cross-row interactions need at least 3 rows');
+    }
+    var nSurf = rows * rowSites;
+    var nSS = ssLayers * rows * rowSites;
+    var nBulk = bulkLayers * rows * rowSites;
+    var n = nSurf + nSS + nBulk;
+    var cls = new Uint8Array(n);
+    var i;
+    for (i = 0; i < n; i++) {
+      cls[i] = i < nSurf ? 0 : (i < nSurf + nSS ? 1 : 2);
+    }
+    var nbrs = new Array(nSurf);
+    function sid(r, k) {
+      return (((r % rows) + rows) % rows) * rowSites
+        + (((k % rowSites) + rowSites) % rowSites);
+    }
+    for (var r = 0; r < rows; r++) {
+      for (var k = 0; k < rowSites; k++) {
+        var lst = [];
+        for (var dz = 1; dz <= along.length; dz++) {
+          var v = along[dz - 1];
+          if (v !== 0.0) {
+            lst.push([sid(r, k + dz), v]);
+            lst.push([sid(r, k - dz), v]);
+          }
+        }
+        for (var off = 0; off < cross.length; off++) {
+          var w = cross[off];
+          if (w === 0.0) continue;
+          if (off === 0) {
+            lst.push([sid(r + 1, k), w]);
+            lst.push([sid(r - 1, k), w]);
+          } else {
+            lst.push([sid(r + 1, k + off), w]);
+            lst.push([sid(r + 1, k - off), w]);
+            lst.push([sid(r - 1, k + off), w]);
+            lst.push([sid(r - 1, k - off), w]);
+          }
+        }
+        nbrs[sid(r, k)] = lst;
+      }
+    }
+    /* flat neighbour arrays: same iteration order, no per-pair objects in
+       the sampling loop (and the same layout the Python reference uses) */
+    var total = 0;
+    for (i = 0; i < nSurf; i++) total += nbrs[i].length;
+    var nbrOff = new Int32Array(nSurf + 1);
+    var nbrIdx = new Int32Array(total);
+    var nbrV = new Float64Array(total);
+    var pos = 0;
+    for (i = 0; i < nSurf; i++) {
+      var lst2 = nbrs[i];
+      for (var t2 = 0; t2 < lst2.length; t2++) {
+        nbrIdx[pos] = lst2[t2][0];
+        nbrV[pos] = lst2[t2][1];
+        pos++;
+      }
+      nbrOff[i + 1] = pos;
+    }
+    return { n: n, n_surf: nSurf, n_ss: nSS, n_bulk: nBulk,
+             rows: rows, row_sites: rowSites, cls: cls,
+             nbr_off: nbrOff, nbr_idx: nbrIdx, nbr_v: nbrV };
+  }
+
+  function inter(i, occ, lat) {
+    if (i >= lat.n_surf) return 0.0;
+    var s = 0.0;
+    var off = lat.nbr_off, idx = lat.nbr_idx, vv = lat.nbr_v;
+    for (var t = off[i]; t < off[i + 1]; t++) {
+      if (occ[idx[t]]) s += vv[t];
+    }
+    return s;
+  }
+
+  function totalEnergy(lat, occ, epsCls) {
+    var e = 0.0, i, t;
+    for (i = 0; i < lat.n; i++) {
+      if (occ[i]) e += epsCls[lat.cls[i]];
+    }
+    var p = 0.0;
+    var off = lat.nbr_off, idx = lat.nbr_idx, vv = lat.nbr_v;
+    for (i = 0; i < lat.n_surf; i++) {
+      if (occ[i]) {
+        for (t = off[i]; t < off[i + 1]; t++) {
+          if (occ[idx[t]]) p += vv[t];
+        }
+      }
+    }
+    return e + 0.5 * p;
+  }
+
+  /* -------------------------------------------------------------- MC */
+
+  function gapHist(lat, occ, hist) {
+    var rows = lat.rows, ls = lat.row_sites;
+    for (var r = 0; r < rows; r++) {
+      var base = r * ls;
+      var ks = [];
+      for (var k = 0; k < ls; k++) if (occ[base + k]) ks.push(k);
+      var m = ks.length;
+      if (m < 2) continue;
+      for (var t = 0; t < m; t++) {
+        var gap = (t + 1 < m) ? ks[t + 1] - ks[t] : ks[0] + ls - ks[t];
+        hist[gap] += 1;
+      }
+    }
+  }
+
+  function adjustFilling(lat, occ, vac, target, rng) {
+    var n = lat.n;
+    while (vac.length > target) {
+      var iv = Math.floor(rng() * vac.length);
+      occ[vac[iv]] = 0;
+      vac.splice(iv, 1);
+    }
+    while (vac.length < target) {
+      var s = Math.floor(rng() * n);
+      if (!occ[s]) {
+        occ[s] = 1;
+        vac.push(s);
+      }
+    }
+  }
+
+  function mcRun(lat, epsCls, kt, occ, vac, sweepsEq, sweepsSample, rng, opts) {
+    opts = opts || {};
+    var widomEvery = opts.widom_every != null ? opts.widom_every : 10;
+    var histEvery = opts.hist_every != null ? opts.hist_every : 25;
+    var blocks = opts.blocks != null ? opts.blocks : 20;
+    var n = lat.n;
+    var cls = lat.cls;
+    var nSurf = lat.n_surf;
+    var off = lat.nbr_off, idx = lat.nbr_idx, vv = lat.nbr_v;
+    var nv = vac.length;
+    var beta = 1.0 / kt;
+    var cnt = new Int32Array(3);
+    var i;
+    for (i = 0; i < nv; i++) cnt[cls[vac[i]]] += 1;
+    /* single-element typed arrays keep the mutated accumulators unboxed */
+    var es = new Float64Array(1);
+    es[0] = totalEnergy(lat, occ, epsCls);
+    var eps0 = new Float64Array(3);
+    eps0[0] = epsCls[0]; eps0[1] = epsCls[1]; eps0[2] = epsCls[2];
+
+    function attempt() {
+      var iv = (rng() * nv) | 0;
+      var v = vac[iv];
+      var s = (rng() * n) | 0;
+      if (occ[s]) return;
+      occ[v] = 0;
+      var iS = 0.0, iV = 0.0, t;
+      if (s < nSurf) {
+        for (t = off[s]; t < off[s + 1]; t++) {
+          if (occ[idx[t]]) iS += vv[t];
+        }
+      }
+      if (v < nSurf) {
+        for (t = off[v]; t < off[v + 1]; t++) {
+          if (occ[idx[t]]) iV += vv[t];
+        }
+      }
+      var de = (eps0[cls[s]] - eps0[cls[v]]) + (iS - iV);
+      if (de <= 0.0 || rng() < Math.exp(-de * beta)) {
+        occ[s] = 1;
+        vac[iv] = s;
+        cnt[cls[v]] -= 1;
+        cnt[cls[s]] += 1;
+        es[0] += de;
+      } else {
+        occ[v] = 1;
+      }
+    }
+
+    var moves = sweepsEq * n;
+    for (i = 0; i < moves; i++) attempt();
+
+    var bsize = Math.max(1, Math.floor(sweepsSample / blocks));
+    var thBlocks = [];
+    var widSum = 0.0, widN = 0;
+    var hist = new Array(lat.row_sites + 1);
+    for (i = 0; i <= lat.row_sites; i++) hist[i] = 0;
+    var eSum = 0.0;
+    for (var b = 0; b < blocks; b++) {
+      var acc0 = 0, acc1 = 0, acc2 = 0;
+      for (var sw = 0; sw < bsize; sw++) {
+        for (i = 0; i < n; i++) attempt();
+        acc0 += cnt[0];
+        acc1 += cnt[1];
+        acc2 += cnt[2];
+        eSum += es[0];
+        var gsw = b * bsize + sw;
+        if (widomEvery && gsw % widomEvery === 0) {
+          var w = 0.0;
+          for (i = 0; i < n; i++) {
+            if (!occ[i]) {
+              w += Math.exp(-beta * (epsCls[cls[i]] + inter(i, occ, lat)));
+            }
+          }
+          widSum += w;
+          widN += 1;
+        }
+        if (histEvery && gsw % histEvery === 0) gapHist(lat, occ, hist);
+      }
+      thBlocks.push([acc0 / (bsize * lat.n_surf),
+                     lat.n_ss ? acc1 / (bsize * lat.n_ss) : 0.0,
+                     lat.n_bulk ? acc2 / (bsize * lat.n_bulk) : 0.0]);
+    }
+
+    var theta = [0.0, 0.0, 0.0];
+    var k2;
+    for (i = 0; i < thBlocks.length; i++) {
+      for (k2 = 0; k2 < 3; k2++) theta[k2] += thBlocks[i][k2];
+    }
+    for (k2 = 0; k2 < 3; k2++) theta[k2] /= blocks;
+    var err = [0.0, 0.0, 0.0];
+    if (blocks > 1) {
+      for (k2 = 0; k2 < 3; k2++) {
+        var s2 = 0.0;
+        for (i = 0; i < thBlocks.length; i++) {
+          var dd = thBlocks[i][k2] - theta[k2];
+          s2 += dd * dd;
+        }
+        err[k2] = Math.sqrt(s2 / (blocks - 1) / blocks);
+      }
+    }
+    var muW = widN ? -kt * Math.log((widSum / widN) / (nv + 1)) : null;
+    var eCheck = totalEnergy(lat, occ, epsCls);
+    var vacSorted = vac.slice().sort(function (x, y) { return x - y; });
+    return { theta_s: theta[0], theta_ss: theta[1], theta_b: theta[2],
+             err_s: err[0], err_ss: err[1], err_b: err[2],
+             mu_eV: muW, E_mean_eV: eSum / (blocks * bsize),
+             E_drift_eV: Math.abs(es[0] - eCheck),
+             hist: hist, n_vac: nv, vac_sorted: vacSorted };
+  }
+
+  function isothermScan(p, tC, opts) {
+    opts = opts || {};
+    var d = {};
+    var key;
+    for (key in p.defaults.mc) d[key] = p.defaults.mc[key];
+    if (opts.mc) for (key in opts.mc) d[key] = opts.mc[key];
+    var ordering = opts.ordering != null ? opts.ordering : p.surface_ordering;
+    if (opts.zero_pairs) {
+      ordering = { pair_eV: { along_row: [], cross_row: [] } };
+    }
+    var lat = buildLattice(d.rows, d.row_sites, d.ss_layers, d.bulk_layers,
+                           ordering);
+    var epsCls = opts.eps != null ? opts.eps
+      : energetics(p, opts.preset).eps;
+    var kt = KB_EV * (tC + 273.15);
+    var rng = makeRng(opts.seed != null ? opts.seed : d.seed);
+    var occ = new Uint8Array(lat.n);
+    var vac = [];
+    var quality = opts.quality != null ? opts.quality : 1.0;
+    var swEq = Math.max(1, Math.round(d.equil_sweeps * quality));
+    var swWarm = Math.max(1, Math.round(d.warm_equil_sweeps * quality));
+    var swSm = Math.max(d.blocks, Math.round(d.sample_sweeps * quality));
+    var pts = [];
+    for (var idx = 0; idx < d.fillings.length; idx++) {
+      adjustFilling(lat, occ, vac, d.fillings[idx], rng);
+      var res = mcRun(lat, epsCls, kt, occ, vac,
+                      idx === 0 ? swEq : swWarm, swSm, rng,
+                      { widom_every: d.widom_every, hist_every: d.hist_every,
+                        blocks: d.blocks });
+      res.filling = d.fillings[idx];
+      delete res.vac_sorted;
+      pts.push(res);
+      if (opts.progress) opts.progress(idx + 1, d.fillings.length);
+    }
+    return pts;
+  }
+
+  /* -------------------------------------------------------- matching */
+
+  function fd(mu, epsI, kt) {
+    var x = (epsI - mu) / kt;
+    if (x > 700.0) return 0.0;
+    if (x < -700.0) return 1.0;
+    return 1.0 / (1.0 + Math.exp(x));
+  }
+
+  function energetics(p, preset) {
+    var ve = p.vacancy_energetics;
+    var key = preset || ve.default_preset;
+    var q = ve.presets[key];
+    return { preset: key, eps: [q.surface_eV, q.subsurface_eV, q.bulk_eV] };
+  }
+
+  function thetaSInterp(points, epsS, kt) {
+    var pts = [];
+    var i;
+    for (i = 0; i < points.length; i++) {
+      if (points[i].mu_eV != null) pts.push(points[i]);
+    }
+    pts.sort(function (a, b) { return a.mu_eV - b.mu_eV; });
+    var mus = [], ths = [];
+    var run = 0.0;
+    for (i = 0; i < pts.length; i++) {
+      if (pts[i].theta_s > run) run = pts[i].theta_s;
+      mus.push(pts[i].mu_eV);
+      ths.push(run);
+    }
+    return function (mu) {
+      if (!mus.length) return fd(mu, epsS, kt);
+      if (mu <= mus[0]) {
+        var t = fd(mu, epsS, kt);
+        return t < ths[0] ? t : ths[0];
+      }
+      if (mu >= mus[mus.length - 1]) return ths[ths.length - 1];
+      var lo = 0, hi = mus.length - 1;
+      while (hi - lo > 1) {
+        var mid = (lo + hi) >> 1;
+        if (mus[mid] <= mu) lo = mid; else hi = mid;
+      }
+      var w = (mu - mus[lo]) / (mus[hi] - mus[lo]);
+      return ths[lo] + w * (ths[hi] - ths[lo]);
+    };
+  }
+
+  function distribute(p, tC, voTotal, geom, opts) {
+    opts = opts || {};
+    var kt = KB_EV * (tC + 273.15);
+    var eps = opts.eps != null ? opts.eps : energetics(p, opts.preset).eps;
+    var cap = p.saturation.surface_cap_coverage;
+    var thetaSFn = opts.theta_s_fn || function (mu) { return fd(mu, eps[0], kt); };
+
+    function parts(mu) {
+      var ts = thetaSFn(mu);
+      if (ts > cap) ts = cap;
+      return [ts, fd(mu, eps[1], kt), fd(mu, eps[2], kt)];
+    }
+    function total(mu) {
+      var t = parts(mu);
+      return geom.N_s * t[0] + geom.N_ss * t[1] + geom.N_b * t[2];
+    }
+
+    var lo = -3.0, hi = 3.0;
+    var it;
+    for (it = 0; it < 40; it++) {
+      if (total(lo) <= voTotal) break;
+      lo *= 2.0;
+    }
+    for (it = 0; it < 40; it++) {
+      if (total(hi) >= voTotal) break;
+      hi *= 2.0;
+    }
+    for (it = 0; it < 200; it++) {
+      var mid = 0.5 * (lo + hi);
+      if (total(mid) < voTotal) lo = mid; else hi = mid;
+    }
+    var mu = 0.5 * (lo + hi);
+    var t3 = parts(mu);
+    var ts = t3[0], tss = t3[1], tb = t3[2];
+    var us = geom.N_s * ts, uss = geom.N_ss * tss, ub = geom.N_b * tb;
+    var tot = us + uss + ub;
+    var molTi = 1e6 / p.molar_mass_g_mol;
+    var x = voTotal / molTi;
+    var sat = p.saturation;
+    var warnings = [];
+    if (ts >= cap - 1e-12) {
+      warnings.push({ kind: 'surface_cap',
+        text: 'Surface pinned at the ' + (cap * 100).toFixed(0)
+          + '% reconstruction threshold (' + us.toFixed(2) + ' of '
+          + geom.N_s.toFixed(2) + ' umol-O/g capacity); coverage beyond it '
+          + 'is not modelled.' });
+    }
+    if (tss > sat.subsurface_dilute_warn) {
+      warnings.push({ kind: 'subsurface_dense',
+        text: 'Subsurface layer occupancy ' + (tss * 100).toFixed(0)
+          + '% is far beyond the dilute-defect regime; read this as a '
+          + 'heavily reduced near-surface shell (extended defects), not '
+          + 'isolated vacancies.' });
+    }
+    if (x >= sat.x_max_shear) {
+      warnings.push({ kind: 'x_max',
+        text: 'x = ' + x.toFixed(4) + ' in TiO2-x exceeds the rutile '
+          + 'point-defect range (~' + sat.x_max_shear.toFixed(3)
+          + '); crystallographic shear planes are expected.' });
+    } else if (x >= 0.8 * sat.x_max_shear) {
+      warnings.push({ kind: 'x_near',
+        text: 'x = ' + x.toFixed(4) + ' in TiO2-x is near the rutile '
+          + 'point-defect range (~' + sat.x_max_shear.toFixed(3) + ').' });
+    }
+    if (voTotal > 0 && Math.abs(tot - voTotal) > 1e-6 * voTotal) {
+      warnings.push({ kind: 'unresolved',
+        text: 'Inventory not matched within tolerance; check the isotherm '
+          + 'range.' });
+    }
+    return { method: 'canonical_statmech',
+             T_C: tC, VO_total_umol_g: voTotal,
+             mu_V_eV: mu,
+             theta: { surface: ts, subsurface: tss, bulk: tb },
+             umol_g: { surface: us, subsurface: uss, bulk: ub },
+             fractions: { surface: tot ? us / tot : 0.0,
+                          subsurface: tot ? uss / tot : 0.0,
+                          bulk: tot ? ub / tot : 0.0 },
+             matched_umol_g: tot,
+             x_TiO2mx: x, Ti3_frac: 2.0 * x,
+             surface_cap_bound: ts >= cap - 1e-12,
+             warnings: warnings };
+  }
+
+  function spacingSummary(points, thetaS) {
+    var best = null;
+    var i;
+    for (i = 0; i < points.length; i++) {
+      var q = points[i];
+      if (q.mu_eV == null) continue;
+      var d = Math.abs(q.theta_s - thetaS);
+      if (best === null || d < best[0]) best = [d, q];
+    }
+    if (best === null) return null;
+    var pt = best[1];
+    var tot = 0, mode = 0, modeN = -1, near = 0;
+    for (var gap = 1; gap < pt.hist.length; gap++) {
+      var c = pt.hist[gap];
+      tot += c;
+      if (c > modeN) { modeN = c; mode = gap; }
+      if (gap <= 2) near += c;
+    }
+    if (tot === 0) return null;
+    return { at_theta_s: pt.theta_s, modal_gap_sites: mode,
+             P_gap_le_2: near / tot, pairs_sampled: tot };
+  }
+
+  function runFull(p, opts) {
+    opts = opts || {};
+    var tC = opts.T_C != null ? opts.T_C : p.defaults.T_C;
+    var vo = opts.VO_total != null ? opts.VO_total
+      : p.defaults.VO_total_umol_g;
+    var geom = geometry(p, { d_um: opts.d_um, bet_m2_g: opts.bet_m2_g,
+                             ss_layers: opts.ss_layers });
+    var kt = KB_EV * (tC + 273.15);
+    var eps = opts.eps != null ? opts.eps : energetics(p, opts.preset).eps;
+    var pts = isothermScan(p, tC, { seed: opts.seed, quality: opts.quality,
+                                    eps: eps, zero_pairs: opts.zero_pairs,
+                                    ordering: opts.ordering, mc: opts.mc,
+                                    progress: opts.progress });
+    var fn = thetaSInterp(pts, eps[0], kt);
+    var out = distribute(p, tC, vo, geom, { theta_s_fn: fn, eps: eps });
+    out.geometry = geom;
+    out.isotherm = pts;
+    out.spacing = spacingSummary(pts, out.theta.surface);
+    return out;
+  }
+
+  return { KB_EV: KB_EV, N_AVO: N_AVO,
+           makeRng: makeRng, siteDensities: siteDensities,
+           densityGCm3: densityGCm3, geometry: geometry,
+           buildLattice: buildLattice, inter: inter,
+           totalEnergy: totalEnergy, adjustFilling: adjustFilling,
+           mcRun: mcRun, isothermScan: isothermScan, fd: fd,
+           energetics: energetics, thetaSInterp: thetaSInterp,
+           distribute: distribute, spacingSummary: spacingSummary,
+           runFull: runFull };
+});
+</script>
+<script type="text/plain" id="sm-worker-src">/* Worker shell for the defect stat-mech engine. The page assembles this
+   worker from a Blob whose source is statmech.js followed by this file, so
+   the StatMech global defined there is in scope; the dataset arrives in the
+   message, so the worker makes no requests of its own. */
+
+'use strict';
+
+self.onmessage = function (ev) {
+  var msg = ev.data;
+  if (!msg || msg.cmd !== 'run') return;
+  try {
+    var pts = StatMech.isothermScan(msg.data, msg.T_C, {
+      seed: msg.seed,
+      quality: msg.quality,
+      eps: msg.eps,
+      ordering: msg.ordering,
+      mc: msg.mc,
+      progress: function (i, n) {
+        self.postMessage({ kind: 'progress', done: i, total: n,
+                           token: msg.token });
+      }
+    });
+    self.postMessage({ kind: 'done', isotherm: pts, token: msg.token });
+  } catch (e) {
+    self.postMessage({ kind: 'error',
+                       message: String(e && e.message ? e.message : e),
+                       token: msg.token });
+  }
+};
+</script>
+<script>/* UI for the Defect stat mech workspace.
+
+   The Monte Carlo isotherm runs in a Worker assembled from the inlined
+   engine source (no request leaves the page); everything downstream of the
+   isotherm - inventory, particle size, geometry mode - re-solves instantly
+   on the main thread because the isotherm depends only on temperature and
+   energetics. Before the first run finishes, results render from the exact
+   ideal-surface isotherm and are labelled as a preview. */
+
+(function () {
+  'use strict';
+
+  if (!window.StatMech) return;
+  var SM = window.StatMech;
+  var DATA = JSON.parse(document.getElementById('statmech-data').textContent);
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {};
+  ['smT', 'smVO', 'smGeoMode', 'smGeoVal', 'smGeoUnit', 'smDerived',
+   'smPreset', 'smEpsSS', 'smEpsB', 'smV1', 'smV2', 'smV3', 'smQuality',
+   'smSeed', 'smRun', 'smStatus', 'smSummary', 'smKpis', 'smChart',
+   'smTable', 'smSpacing', 'smNotes'].forEach(function (id) { el[id] = $(id); });
+
+  /* ------------------------------------------- workspace switching */
+
+  var started = false;
+  var tabs = document.querySelectorAll('#wstabs .wstab');
+  Array.prototype.forEach.call(tabs, function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(tabs, function (b) {
+        b.classList.toggle('active', b === btn);
+      });
+      ['ws-thermo', 'ws-defect'].forEach(function (ws) {
+        $(ws).style.display = ws === btn.dataset.ws ? '' : 'none';
+      });
+      if (btn.dataset.ws === 'ws-defect' && !started) {
+        started = true;
+        solve();
+        launch();
+      }
+    });
+  });
+
+  /* ------------------------------------------------ input reading */
+
+  function num(node, fallback) {
+    var v = parseFloat(node.value);
+    return isFinite(v) ? v : fallback;
+  }
+  function currentT() { return num(el.smT, DATA.defaults.T_C); }
+  function currentEps() {
+    return [0.0, num(el.smEpsSS, 0.59), num(el.smEpsB, 1.31)];
+  }
+  function currentOrdering() {
+    return { pair_eV: {
+      along_row: [num(el.smV1, 0.40), num(el.smV2, 0.20), num(el.smV3, 0.05)],
+      cross_row: DATA.surface_ordering.pair_eV.cross_row } };
+  }
+  function currentGeom() {
+    if (el.smGeoMode.value === 'bet') {
+      return SM.geometry(DATA, { bet_m2_g: num(el.smGeoVal, 1.57) });
+    }
+    return SM.geometry(DATA, {
+      d_um: num(el.smGeoVal, DATA.defaults.particle_diameter_um) });
+  }
+  function isoSignature() {
+    return JSON.stringify([currentT(), currentEps(), currentOrdering(),
+                           el.smQuality.value, num(el.smSeed, 12345)]);
+  }
+
+  /* --------------------------------------------------- MC run flow */
+
+  var iso = null, isoKey = '', isoInfo = '';
+  var worker = null, runToken = 0, running = false, pending = null;
+
+  function setStatus(t) { el.smStatus.textContent = t; }
+
+  function buildWorker() {
+    var src = document.getElementById('sm-engine').textContent + '\n'
+      + document.getElementById('sm-worker-src').textContent;
+    var blob = new Blob([src], { type: 'application/javascript' });
+    return new Worker(URL.createObjectURL(blob));
+  }
+
+  function stopRun(msg) {
+    if (worker) { worker.terminate(); worker = null; }
+    running = false;
+    el.smRun.textContent = 'Run model';
+    if (msg) setStatus(msg);
+  }
+
+  function finishRun(sig, pts, ms) {
+    running = false;
+    el.smRun.textContent = 'Run model';
+    iso = pts;
+    isoKey = sig;
+    isoInfo = 'isotherm: ' + pts.length + ' points, '
+      + (ms / 1000).toFixed(1) + ' s';
+    setStatus(isoInfo);
+    solve();
+  }
+
+  function launch() {
+    if (running) stopRun(null);
+    var sig = isoSignature();
+    var token = ++runToken;
+    var t0 = Date.now();
+    var msg = { cmd: 'run', data: DATA, T_C: currentT(),
+                seed: num(el.smSeed, 12345),
+                quality: parseFloat(el.smQuality.value) || 1.0,
+                eps: currentEps(), ordering: currentOrdering(),
+                mc: null, token: token };
+    running = true;
+    el.smRun.textContent = 'Cancel run';
+    setStatus('sampling the surface isotherm…');
+    try {
+      worker = buildWorker();
+      worker.onmessage = function (ev) {
+        var m = ev.data;
+        if (m.token !== token) return;
+        if (m.kind === 'progress') {
+          setStatus('sampling the surface isotherm… point '
+            + m.done + ' of ' + m.total);
+        } else if (m.kind === 'done') {
+          finishRun(sig, m.isotherm, Date.now() - t0);
+        } else if (m.kind === 'error') {
+          stopRun('run failed: ' + m.message);
+        }
+      };
+      worker.postMessage(msg);
+    } catch (e) {
+      setStatus('sampling on the main thread (workers unavailable)…');
+      setTimeout(function () {
+        var pts = SM.isothermScan(DATA, msg.T_C, {
+          seed: msg.seed, quality: msg.quality, eps: msg.eps,
+          ordering: msg.ordering });
+        finishRun(sig, pts, Date.now() - t0);
+      }, 30);
+    }
+  }
+
+  function scheduleRun() {
+    clearTimeout(pending);
+    pending = setTimeout(function () {
+      if (!started) return;
+      if (isoKey !== isoSignature()) launch();
+    }, 700);
+  }
+
+  el.smRun.addEventListener('click', function () {
+    if (running) stopRun('run cancelled'); else launch();
+  });
+
+  /* ------------------------------------------------ solve + render */
+
+  function solve() {
+    var geom = currentGeom();
+    var tC = currentT();
+    var vo = num(el.smVO, DATA.defaults.VO_total_umol_g);
+    var eps = currentEps();
+    var kt = SM.KB_EV * (tC + 273.15);
+    var fresh = !!iso && isoKey === isoSignature();
+    var opts = { eps: eps };
+    if (fresh) opts.theta_s_fn = SM.thetaSInterp(iso, eps[0], kt);
+    var out = SM.distribute(DATA, tC, vo, geom, opts);
+    out.geometry = geom;
+    out.spacing = fresh ? SM.spacingSummary(iso, out.theta.surface) : null;
+    render(out, fresh);
+  }
+
+  function f2(v) {
+    if (v >= 100) return v.toFixed(0);
+    if (v >= 10) return v.toFixed(1);
+    return v.toFixed(2);
+  }
+  function pctf(f) {
+    var p = f * 100;
+    if (p >= 10) return p.toFixed(1) + '%';
+    if (p >= 0.1) return p.toFixed(2) + '%';
+    if (p > 0) return p.toExponential(1) + '%';
+    return '0%';
+  }
+  function thf(th) {
+    if (th >= 0.001) return (th * 100).toFixed(1) + '%';
+    if (th > 0) return th.toExponential(2);
+    return '0';
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  }
+
+  var CLASSES = [
+    { key: 'surface', label: 'Surface', varname: '--cSurf' },
+    { key: 'subsurface', label: 'Subsurface', varname: '--cSub' },
+    { key: 'bulk', label: 'Bulk', varname: '--cBulk' }];
+
+  function render(out, fresh) {
+    var geom = out.geometry;
+    el.smDerived.textContent = 'x in TiO2-x = ' + out.x_TiO2mx.toFixed(4)
+      + ' · Ti³⁺/Ti = ' + (out.Ti3_frac * 100).toFixed(2)
+      + '% · area ' + geom.area_m2_g.toFixed(2)
+      + ' m²/g · surface capacity ' + geom.N_s.toFixed(1)
+      + ' μmol-O/g';
+
+    var bad = out.warnings.some(function (w) {
+      return w.kind === 'x_max' || w.kind === 'unresolved';
+    });
+    var parts = CLASSES.map(function (c) {
+      return c.label.toLowerCase() + ' ' + f2(out.umol_g[c.key]) + ' ('
+        + pctf(out.fractions[c.key]) + ')';
+    });
+    el.smSummary.className = 'verdict ' + (bad ? 'red' : 'none');
+    el.smSummary.innerHTML = '<b>' + f2(out.VO_total_umol_g)
+      + ' μmol-O/g at ' + out.T_C + ' °C:</b> ' + parts.join(', ')
+      + ' μmol-O/g. Vacancy chemical potential μ<sub>V</sub> = '
+      + out.mu_V_eV.toFixed(3) + ' eV.'
+      + (fresh ? '' : ' <span style="color:var(--muted)">Ideal-surface '
+         + 'preview — the interacting isotherm is being sampled.</span>');
+
+    var k = '';
+    CLASSES.forEach(function (c) {
+      k += '<div class="kpi"><div class="k"><span class="swatch" style="'
+        + 'background:var(' + c.varname + ')"></span>' + c.label
+        + ' V<sub>O</sub></div><div class="v">' + f2(out.umol_g[c.key])
+        + '</div><div class="u">μmol-O/g · '
+        + pctf(out.fractions[c.key]) + ' of inventory</div></div>';
+    });
+    k += '<div class="kpi"><div class="k">μ<sub>V</sub> (vacancy)</div>'
+      + '<div class="v">' + out.mu_V_eV.toFixed(3) + '</div>'
+      + '<div class="u">eV, common to all classes</div></div>';
+    el.smKpis.innerHTML = k;
+
+    drawChart(out);
+
+    var h = '<tr><th>Site class</th><th>θ occupancy</th>'
+      + '<th>μmol-O/g</th><th>share of inventory</th></tr>';
+    CLASSES.forEach(function (c) {
+      h += '<tr><td><span class="swatch" style="background:var(' + c.varname
+        + ')"></span>' + c.label + '</td><td>' + thf(out.theta[c.key])
+        + '</td><td>' + f2(out.umol_g[c.key]) + '</td><td>'
+        + pctf(out.fractions[c.key]) + '</td></tr>';
+    });
+    h += '<tr><td><b>Total</b></td><td></td><td><b>'
+      + f2(out.matched_umol_g) + '</b></td><td><b>100%</b></td></tr>';
+    el.smTable.innerHTML = h;
+
+    if (out.spacing) {
+      el.smSpacing.textContent = 'Surface pair statistics at θs = '
+        + out.spacing.at_theta_s.toFixed(3) + ': modal spacing '
+        + out.spacing.modal_gap_sites + ' bridging sites, P(spacing ≤ 2) '
+        + '= ' + (out.spacing.P_gap_le_2 * 100).toFixed(1)
+        + '%. Literature window: modal 4–5, close pairs suppressed.';
+    } else {
+      el.smSpacing.textContent = '';
+    }
+
+    var notes = '';
+    out.warnings.forEach(function (w) {
+      var calm = w.kind === 'surface_cap' || w.kind === 'x_near';
+      notes += '<div class="note' + (calm ? ' calm' : '') + '">'
+        + (w.kind === 'x_max' ? '<b>Model range.</b> ' : '')
+        + esc(w.text) + '</div>';
+    });
+    el.smNotes.innerHTML = notes;
+  }
+
+  /* ------------------------------------------------------- chart */
+
+  var SVG = 'http://www.w3.org/2000/svg';
+
+  function sv(tag, attrs, parent) {
+    var n = document.createElementNS(SVG, tag);
+    for (var a in attrs) n.setAttribute(a, attrs[a]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+
+  function drawChart(out) {
+    var svg = el.smChart;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var W = 560, H = 300, L = 52, R = 12, T = 26, B = 48;
+    var pw = W - L - R, ph = H - T - B;
+    var fmax = 0;
+    CLASSES.forEach(function (c) {
+      if (out.fractions[c.key] > fmax) fmax = out.fractions[c.key];
+    });
+    // round tick steps: the axis reads 0/20/40/60/80%, never 17.5%
+    var steps = [0.025, 0.05, 0.1, 0.2, 0.25];
+    var step = steps[steps.length - 1];
+    for (var si = 0; si < steps.length; si++) {
+      if (4 * steps[si] >= Math.min(1, fmax * 1.1)) { step = steps[si]; break; }
+    }
+    var ymax = 4 * step;
+    for (var i = 0; i <= 4; i++) {
+      var fv = step * i;
+      var y = T + ph - ph * fv / ymax;
+      sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
+                   style: 'stroke:var(--line);stroke-width:1' }, svg);
+      var lab = sv('text', { x: L - 8, y: y + 4, 'text-anchor': 'end',
+        style: 'fill:var(--muted);font-size:11px' }, svg);
+      lab.textContent = (Math.round(fv * 1000) / 10) + '%';
+    }
+    var bw = pw / 3;
+    CLASSES.forEach(function (c, idx) {
+      var f = out.fractions[c.key];
+      var barW = Math.min(96, bw * 0.52);
+      var x = L + bw * idx + (bw - barW) / 2;
+      var hgt = ph * f / ymax;
+      var y = T + ph - hgt;
+      var r = Math.min(4, hgt);
+      if (hgt > 0) {
+        var d = 'M' + x + ',' + (T + ph)
+          + ' L' + x + ',' + (y + r)
+          + ' Q' + x + ',' + y + ' ' + (x + r) + ',' + y
+          + ' L' + (x + barW - r) + ',' + y
+          + ' Q' + (x + barW) + ',' + y + ' ' + (x + barW) + ',' + (y + r)
+          + ' L' + (x + barW) + ',' + (T + ph) + ' Z';
+        var p = sv('path', { d: d, style: 'fill:var(' + c.varname + ')' }, svg);
+        var tt = document.createElementNS(SVG, 'title');
+        tt.textContent = c.label + ': ' + f2(out.umol_g[c.key])
+          + ' μmol-O/g (' + pctf(f) + ' of inventory), θ = '
+          + thf(out.theta[c.key]);
+        p.appendChild(tt);
+      }
+      var vt = sv('text', { x: x + barW / 2, y: y - 7, 'text-anchor': 'middle',
+        style: 'fill:var(--ink);font-size:13px;font-weight:700' }, svg);
+      vt.textContent = pctf(f);
+      var nt = sv('text', { x: x + barW / 2, y: T + ph + 17,
+        'text-anchor': 'middle',
+        style: 'fill:var(--navy);font-size:12px;font-weight:700' }, svg);
+      nt.textContent = c.label;
+      var ut = sv('text', { x: x + barW / 2, y: T + ph + 33,
+        'text-anchor': 'middle',
+        style: 'fill:var(--muted);font-size:10.5px' }, svg);
+      ut.textContent = f2(out.umol_g[c.key]) + ' μmol-O/g';
+    });
+    sv('line', { x1: L, x2: L + pw, y1: T + ph, y2: T + ph,
+                 style: 'stroke:var(--muted);stroke-width:1' }, svg);
+  }
+
+  /* --------------------------------------------------------- wiring */
+
+  function fillPreset(key) {
+    var q = DATA.vacancy_energetics.presets[key];
+    if (!q) return;
+    el.smEpsSS.value = q.subsurface_eV;
+    el.smEpsB.value = q.bulk_eV;
+  }
+
+  el.smPreset.addEventListener('change', function () {
+    if (el.smPreset.value !== 'custom') fillPreset(el.smPreset.value);
+    solve();
+    scheduleRun();
+  });
+  [el.smEpsSS, el.smEpsB, el.smV1, el.smV2, el.smV3].forEach(function (n) {
+    n.addEventListener('input', function () {
+      var key = el.smPreset.value;
+      var q = DATA.vacancy_energetics.presets[key];
+      if (q && (num(el.smEpsSS, -1) !== q.subsurface_eV
+                || num(el.smEpsB, -1) !== q.bulk_eV)) {
+        el.smPreset.value = 'custom';
+      }
+      solve();
+      scheduleRun();
+    });
+  });
+  [el.smT, el.smQuality, el.smSeed].forEach(function (n) {
+    n.addEventListener(n === el.smQuality ? 'change' : 'input', function () {
+      solve();
+      scheduleRun();
+    });
+  });
+  [el.smVO, el.smGeoVal].forEach(function (n) {
+    n.addEventListener('input', solve);
+  });
+  el.smGeoMode.addEventListener('change', function () {
+    if (el.smGeoMode.value === 'bet') {
+      var g = SM.geometry(DATA, { d_um: num(el.smGeoVal, 0.9) });
+      el.smGeoVal.value = g.area_m2_g.toFixed(2);
+      el.smGeoUnit.textContent = 'm²/g (BET)';
+    } else {
+      el.smGeoVal.value = DATA.defaults.particle_diameter_um;
+      el.smGeoUnit.textContent = 'μm (spherical particle)';
+    }
+    solve();
+  });
+
+  /* ---------------------------------------------------------- init */
+
+  el.smT.value = DATA.defaults.T_C;
+  el.smVO.value = DATA.defaults.VO_total_umol_g;
+  el.smGeoVal.value = DATA.defaults.particle_diameter_um;
+  el.smSeed.value = DATA.defaults.mc.seed;
+  fillPreset(DATA.vacancy_energetics.default_preset);
+  var ar = DATA.surface_ordering.pair_eV.along_row;
+  el.smV1.value = ar[0];
+  el.smV2.value = ar[1];
+  el.smV3.value = ar[2];
 })();
 </script>
 </body>
