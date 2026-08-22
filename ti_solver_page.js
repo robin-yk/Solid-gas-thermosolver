@@ -480,19 +480,6 @@
     });
   });
 
-  $('themeBtn').addEventListener('click', function () {
-    var r = document.documentElement;
-    var dark = r.getAttribute('data-theme') === 'dark';
-    if (dark) r.removeAttribute('data-theme');
-    else r.setAttribute('data-theme', 'dark');
-    try { localStorage.setItem('tio_theme', dark ? 'light' : 'dark'); } catch (e) {}
-  });
-  try {
-    if (localStorage.getItem('tio_theme') === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
-  } catch (e) {}
-
   $('rawSrc').textContent = [
     'mu0Gas', 'mu0Solid', 'buildCharge', 'solveCandidate',
     'enumerateCandidates', 'tripleProbes', 'solve',

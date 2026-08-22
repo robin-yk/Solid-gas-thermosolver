@@ -44,10 +44,18 @@
   },
 
   "dielectric_correlation": {
-    "a_per_umol_g": null,
-    "b": null,
+    "form": "power_law",
+    "log10_intercept": -3.07028,
+    "log10_intercept_err": 0.695,
+    "exponent": 1.22355,
+    "exponent_err": 0.2302,
     "eps_prime": null,
-    "note": "Empirical correlation from this work: eps'' = a * VO_total + b; tan delta = eps''/eps'. Set a and b (and eps_prime) from the experimental fit; the card stays blank until they are set."
+    "fit_stats": {"pearson_r": 0.96637, "r_squared": 0.93388,
+                  "adj_r_squared": 0.90082, "residual_ss": 0.18029,
+                  "n_points": 4},
+    "fit_range_umol_g": [95, 5000],
+    "note": "Empirical dielectric loss factor of this work: linear regression of log10(eps'') on log10(VO_total), i.e. eps'' = 10^a * VO^b with a = -3.07028 +/- 0.695 and b = 1.22355 +/- 0.2302 (OriginLab, no weighting, N = 4, Pearson r 0.96637, R^2 0.93388, adj. R^2 0.90082, RSS 0.18029). Fitted over roughly 95-5000 umol-O/g; below that range the value is an extrapolation and the card marks it. Set eps_prime to display tan delta.",
+    "provenance": "Measured in this work (Kwak et al.): dielectric loss factor vs total oxygen-vacancy content from H2O-integration titration of reduced rutile."
   },
 
   "experimental_recovery": {
@@ -61,8 +69,8 @@
     "bulk_c_axis": 0.65,
     "surface_001": 1.19,
     "surface_crossrow_concerted": 0.91,
-    "note": "Stored for a later kinetic version; not used by the equilibrium model. The surface-to-subsurface exchange barrier is a different path and is not any of these numbers.",
-    "provenance": "Bulk: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a. Surface (unstrained rutile 110): Wang et al., Phys. Rev. B 82 (2010) 165309."
+    "note": "Stored for a later kinetic version; not used by the equilibrium model. The surface-to-subsurface exchange barrier is a different path and is not any of these numbers. The planned kinetic layer follows the coarse-grained kinetic Monte Carlo framework of the group: radial coarse cells over the particle, Arrhenius exchange rates, detailed balance against the same Gibbs measure, q^2 time coarse-graining.",
+    "provenance": "Bulk: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a. Surface (unstrained rutile 110): Wang et al., Phys. Rev. B 82 (2010) 165309. Coarse-grained KMC framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003)."
   },
 
   "defaults": {

@@ -204,6 +204,20 @@ equilibrium form. Warnings mark the model's edges: surface at the
 reconstruction cap, subsurface beyond the dilute regime (a heavily reduced
 shell, not isolated point defects), and x approaching the shear-plane range.
 
+A particle cross-section panel puts the distribution in real space. The
+disc is the particle to scale - deliberately: the 0.65 nm shell is not
+resolvable on a 0.9 um sphere, which is the message. A magnified window
+shows the outer nanometres with the surface row taken from the sampled
+Monte Carlo configuration (its 4-5-site spacing statistics survive into
+the picture; each isotherm point carries its closing surface snapshot,
+parity-tested as integers), the subsurface layer as a nearly continuous
+band at 96% occupancy - the reduced shell, literally visible - and the
+dilute bulk at expected-count seeded positions. A depth profile with an
+axis break restates it quantitatively: 57.6% of the flagship inventory
+within 0.65 nm of the surface at 81% local depletion. A toggle recolours
+vacancies by CO2 refill probability, and the figure exports as a
+standalone SVG with theme variables resolved.
+
 The two workspaces are bridged. An "Oxygen environment" card in the defect
 rail takes the equilibrium workspace's charge - gas, pressure, volume,
 solid - re-solves it with the gas-solid Gibbs engine at the defect
@@ -227,10 +241,20 @@ values, since deeper classes are transport-limited - and a test refuses to
 let that disclosure disappear. The workspace's main figure sweeps total
 inventory: surface plateaus at the cap, subsurface saturates, bulk takes
 the balance, and the accessible curve falls away from the total; a slot for
-measured CO2-recovery points overlays experiment on the same axes, and an
-empirical eps'' = a*VO + b card stays blank until the fit coefficients are
-set in the JSON. Equations (S1)-(S12) are typeset into the Model panel from
-equations_registry_statmech.py.
+measured CO2-recovery points overlays experiment on the same axes. The
+dielectric card carries the correlation measured in this work: a linear
+regression of log10(eps'') on log10(VO) - i.e. the power law
+eps'' = 10^-3.07 * VO^1.224 (OriginLab, no weighting, N = 4, Pearson r
+0.966, R^2 0.934, fitted over ~95-5000 umol-O/g; below that range the card
+flags the value as an extrapolation). Equations (S1)-(S12) are typeset
+into the Model panel from equations_registry_statmech.py. The planned
+kinetic transport layer will follow the group's coarse-grained kinetic
+Monte Carlo framework (Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412
+(2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, PNAS 100,
+782 (2003)): radial coarse cells over the particle, Arrhenius exchange
+rates in detailed balance with the same Gibbs measure - so its t -> inf
+limit must reproduce this tab's equilibrium split - and q^2 time
+coarse-graining to reach 300 s of real exposure.
 
 Every parameter is data, not code: `rutile_dft.json` holds the layer energies
 (Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), sX and GGA presets - the

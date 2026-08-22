@@ -22,7 +22,8 @@
    'smTable', 'smSpacing', 'smNotes',
    'smEaS', 'smEaSS', 'smEaB', 'smAS', 'smASS', 'smAB', 'smKinT', 'smExp',
    'smPCO2', 'smAccKpis', 'smSweep', 'smTip', 'smSweepLegend', 'smAccNote',
-   'smCoupledNote', 'smEnv'].forEach(function (id) { el[id] = $(id); });
+   'smCoupledNote', 'smEnv', 'smParticle', 'smPvAcc', 'smPvDl',
+   'smPvLegend', 'smPvNote'].forEach(function (id) { el[id] = $(id); });
 
   /* ------------------------------------------- workspace switching */
 
@@ -444,15 +445,23 @@
       + '<div class="v">' + pctf(acc.f_recoverable) + '</div>'
       + '<div class="u">V<sub>O,acc</sub> / V<sub>O,tot</sub> at '
       + acc.params.T_reox_C + ' °C, ' + acc.params.exposure_s + ' s</div></div>';
+    var dc = DATA.dielectric_correlation;
     if (di) {
-      k += '<div class="kpi"><div class="k">ε″ (empirical)</div>'
-        + '<div class="v">' + di.eps2.toFixed(3) + '</div><div class="u">'
+      k += '<div class="kpi"><div class="k">ε″ (this work)</div>'
+        + '<div class="v">'
+        + (di.eps2 >= 10 ? di.eps2.toFixed(1) : di.eps2.toFixed(3))
+        + '</div><div class="u">'
         + (di.tan_delta != null
            ? 'tan δ = ' + di.tan_delta.toFixed(3) + ' · ' : '')
-        + 'from ε″ = a·V<sub>O</sub> + b</div></div>';
+        + (di.extrapolated
+           ? 'outside the ' + dc.fit_range_umol_g[0] + '–'
+             + dc.fit_range_umol_g[1] + ' fit range'
+           : 'power-law fit, R² = ' + dc.fit_stats.r_squared.toFixed(2))
+        + '</div></div>';
     } else {
-      k += '<div class="kpi"><div class="k">ε″ (empirical)</div>'
-        + '<div class="v">—</div><div class="u">correlation not set</div></div>';
+      k += '<div class="kpi"><div class="k">ε″ (this work)</div>'
+        + '<div class="v">—</div><div class="u">needs V<sub>O</sub> &gt; 0'
+        + '</div></div>';
     }
     el.smAccKpis.innerHTML = k;
 
@@ -463,10 +472,17 @@
       + probf(acc.P.bulk) + '. Placeholder kinetics — the prefactors are '
       + 'effective values, not literature numbers.';
 
-    el.smCoupledNote.innerHTML = di ? '' : '<div class="readout">'
-      + 'The dielectric card stays blank until the experimental fit is set: '
-      + 'add a, b (and ε′ for tan δ) to <code>dielectric_correlation</code> '
-      + 'in <code>rutile_dft.json</code>.</div>';
+    el.smCoupledNote.innerHTML = '<div class="readout">Dielectric '
+      + 'correlation (measured in this work): ε″ = 10<sup>'
+      + dc.log10_intercept.toFixed(2) + '</sup> · V<sub>O</sub><sup>'
+      + dc.exponent.toFixed(2) + '</sup> — linear fit of log ε″ against '
+      + 'log V<sub>O</sub>, N = ' + dc.fit_stats.n_points + ', Pearson r = '
+      + dc.fit_stats.pearson_r.toFixed(3) + ', R² = '
+      + dc.fit_stats.r_squared.toFixed(3) + ' (OriginLab, no weighting), '
+      + 'fitted over ~' + dc.fit_range_umol_g[0] + '–'
+      + dc.fit_range_umol_g[1] + ' μmol-O/g; below that range the value is '
+      + 'an extrapolation. tan δ appears when ε′ is set in '
+      + '<code>rutile_dft.json</code>.</div>';
 
     var vo = out.VO_total_umol_g;
     var xmax = 150;
@@ -476,6 +492,8 @@
     var rows = SM.sweep(DATA, ctx.tC, ctx.geom, voList,
                         { theta_s_fn: ctx.fn, eps: ctx.eps, kin: ctx.kin });
     drawSweep(rows, vo, xmax);
+
+    renderParticle(out, acc, fresh);
   }
 
   function probf(v) {
@@ -723,6 +741,325 @@
     el.smTip.style.display = 'none';
   }
 
+  /* ------------------------------------------ particle cross-section */
+
+  var lastPv = null;
+
+  function tx(x, y, str, style, anchor, parent) {
+    var t = sv('text', { x: x, y: y,
+      'text-anchor': anchor || 'start', style: style }, parent);
+    t.textContent = str;
+    return t;
+  }
+
+  function vacDot(x, y, cls, prob, accMode, parent) {
+    var varn = cls === 'surface' ? '--cSurf'
+      : cls === 'subsurface' ? '--cSub' : '--cBulk';
+    var attrs = { cx: x, cy: y, r: 2.6, 'data-cls': cls, 'data-kind': 'vac' };
+    if (!accMode) {
+      attrs.style = 'fill:var(' + varn + ')';
+    } else if (prob >= 0.05) {
+      attrs.style = 'fill:var(' + varn + ');fill-opacity:'
+        + Math.max(0.3, prob).toFixed(2);
+    } else {
+      attrs.style = 'fill:none;stroke:var(' + varn + ');stroke-width:1.3';
+      attrs['data-locked'] = '1';
+    }
+    return sv('circle', attrs, parent);
+  }
+
+  function surfacePattern(nCols, thS, fresh) {
+    if (fresh && iso) {
+      var best = null;
+      iso.forEach(function (q) {
+        if (q.mu_eV == null || !q.surf_vac) return;
+        var d = Math.abs(q.theta_s - thS);
+        if (!best || d < best[0]) best = [d, q];
+      });
+      if (best) {
+        var q = best[1];
+        var occ = new Uint8Array(q.rows * q.row_sites);
+        q.surf_vac.forEach(function (v) { occ[v] = 1; });
+        var arr = [];
+        for (var r = 0; r < q.rows && arr.length < nCols; r++) {
+          for (var k = 0; k < q.row_sites && arr.length < nCols; k++) {
+            arr.push(occ[r * q.row_sites + k]);
+          }
+        }
+        return { arr: arr, sampled: true };
+      }
+    }
+    var prng = SM.makeRng(4242);
+    var arr2 = [];
+    for (var j = 0; j < nCols; j++) arr2.push(prng() < thS ? 1 : 0);
+    return { arr: arr2, sampled: false };
+  }
+
+  function renderParticle(out, acc, fresh) {
+    lastPv = { out: out, acc: acc, fresh: fresh };
+    var svg = el.smParticle;
+    if (!svg) return;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var accMode = el.smPvAcc.checked;
+    var geom = out.geometry;
+    var aA = DATA.lattice_constants_A.a;
+    var cA = DATA.lattice_constants_A.c;
+    var t1 = aA / Math.sqrt(2) / 10;                 // d110, nm
+    var tShell = 2 * t1;
+    var rho = SM.densityGCm3(DATA);
+    var dUm = 6 / (rho * geom.area_m2_g * 1e4) * 1e4;
+    var Rnm = dUm * 1000 / 2;
+    var nO = 4 / (aA * aA * cA) * 1000;              // sites per nm^3
+    var prng = SM.makeRng(777);
+
+    /* ------------------------------------------- true-scale disc */
+    var cx = 182, cy = 208, Rpx = 158;
+    sv('circle', { cx: cx, cy: cy, r: Rpx,
+      style: 'fill:var(--code);stroke:none' }, svg);
+    sv('circle', { cx: cx, cy: cy, r: Rpx,
+      style: 'fill:none;stroke:var(--cSurf);stroke-width:1.3' }, svg);
+    sv('circle', { cx: cx, cy: cy, r: Rpx - 1.6,
+      style: 'fill:none;stroke:var(--cSub);stroke-width:1.1;opacity:.9' },
+       svg);
+
+    var sliceVac = Math.PI * Rnm * Rnm * tShell * nO * out.theta.bulk;
+    var ratio = 1, li = 0;
+    var ladder = [1, 2, 5];
+    while (sliceVac / ratio > 220) {
+      li++;
+      ratio = ladder[li % 3] * Math.pow(10, Math.floor(li / 3));
+    }
+    var nDots = Math.round(sliceVac / ratio);
+    for (var i = 0; i < nDots; i++) {
+      var rr = (Rpx - 5) * Math.sqrt(prng());
+      var an = 2 * Math.PI * prng();
+      sv('circle', { cx: cx + rr * Math.cos(an), cy: cy + rr * Math.sin(an),
+        r: 1.6, 'data-kind': 'discdot',
+        style: 'fill:var(--cBulk);opacity:.8' }, svg);
+    }
+
+    /* zoom marker + leaders to the window frame */
+    var x0 = 386, y0 = 24, fw = 331, fh = 250;
+    var boxW = 16, boxH = 9;
+    sv('rect', { x: cx - boxW / 2, y: cy - Rpx - 2, width: boxW,
+      height: boxH, style: 'fill:none;stroke:var(--ink);stroke-width:1.1' },
+       svg);
+    ['M' + (cx + boxW / 2) + ',' + (cy - Rpx - 2) + ' L' + x0 + ',' + y0,
+     'M' + (cx + boxW / 2) + ',' + (cy - Rpx + boxH - 2) + ' L' + x0 + ','
+       + (y0 + fh)].forEach(function (d) {
+      sv('path', { d: d, 'stroke-dasharray': '4 4',
+        style: 'stroke:var(--muted);stroke-width:1;fill:none;opacity:.7' },
+         svg);
+    });
+
+    var sb = Math.max(20, Math.round(Rnm / 4 / 50) * 50) || 50;
+    var sbPx = sb * Rpx / Rnm;
+    sv('line', { x1: cx - Rpx, x2: cx - Rpx + sbPx, y1: cy + Rpx + 22,
+      y2: cy + Rpx + 22, style: 'stroke:var(--ink);stroke-width:2' }, svg);
+    tx(cx - Rpx + sbPx / 2, cy + Rpx + 36, sb + ' nm',
+       'fill:var(--muted);font-size:11px', 'middle', svg);
+    tx(cx + 24, cy + Rpx + 36, 'd = ' + dUm.toFixed(2) + ' μm',
+       'fill:var(--muted);font-size:11px', 'middle', svg);
+    tx(cx, y0 + 6, 'shell 0.65 nm — not resolvable at this scale',
+       'fill:var(--muted);font-size:10.5px', 'middle', svg);
+
+    /* -------------------------------------------- magnified window */
+    var nCols = 46;
+    var sitePx = fw / nCols;
+    var gasH = 24;
+    var pxNm = 27.5;
+    sv('rect', { x: x0, y: y0, width: fw, height: fh,
+      style: 'fill:var(--panel);stroke:var(--line)' }, svg);
+    sv('rect', { x: x0, y: y0, width: fw, height: gasH,
+      style: 'fill:var(--code);opacity:.7' }, svg);
+    tx(x0 + fw - 6, y0 + 16, 'gas', 'fill:var(--muted);font-size:10.5px',
+       'end', svg);
+
+    var surfY = y0 + gasH + 10;
+    var rowY = function (k) { return surfY + k * t1 * pxNm; };
+    var nRows = Math.floor((y0 + fh - 8 - surfY) / (t1 * pxNm)) + 1;
+    for (var k = 0; k < nRows; k++) {
+      sv('line', { x1: x0 + sitePx / 2 - 0.8, x2: x0 + fw - 2,
+        y1: rowY(k), y2: rowY(k),
+        'stroke-dasharray': '1.6 ' + (sitePx - 1.6).toFixed(2),
+        style: 'stroke:var(--muted);stroke-width:1.6;opacity:.25' }, svg);
+    }
+    var siteX = function (j) { return x0 + (j + 0.5) * sitePx; };
+
+    /* Surface: the sampled configuration. Deeper layers: expected counts
+       at seeded positions - a Bernoulli draw at theta_b ~ 0.2% would show
+       an empty window one time in five, which reads as "no bulk
+       vacancies"; rounding the expectation keeps the density honest. */
+    function pickCells(n, kk, rng2) {
+      var idx = [];
+      var t;
+      for (t = 0; t < n; t++) idx.push(t);
+      for (t = 0; t < kk && t < n; t++) {
+        var swap = t + Math.floor(rng2() * (n - t));
+        var tmp = idx[t];
+        idx[t] = idx[swap];
+        idx[swap] = tmp;
+      }
+      return idx.slice(0, Math.min(kk, n));
+    }
+    var pat = surfacePattern(nCols, out.theta.surface, fresh);
+    for (var j = 0; j < nCols; j++) {
+      if (pat.arr[j]) {
+        vacDot(siteX(j), rowY(0), 'surface', acc.P.surface, accMode, svg);
+      }
+    }
+    var nss = Math.round(nCols * out.theta.subsurface);
+    pickCells(nCols, nss, prng).forEach(function (jj) {
+      vacDot(siteX(jj), rowY(1), 'subsurface', acc.P.subsurface, accMode,
+             svg);
+    });
+    var bulkCells = nCols * (nRows - 2);
+    var nbk = Math.round(bulkCells * out.theta.bulk);
+    pickCells(bulkCells, nbk, prng).forEach(function (cell) {
+      vacDot(siteX(cell % nCols), rowY(2 + Math.floor(cell / nCols)),
+             'bulk', acc.P.bulk, accMode, svg);
+    });
+
+    sv('line', { x1: x0 + 10, x2: x0 + 10, y1: y0 + fh - 10 - pxNm,
+      y2: y0 + fh - 10, style: 'stroke:var(--ink);stroke-width:2' }, svg);
+    tx(x0 + 16, y0 + fh - 12, '1 nm', 'fill:var(--muted);font-size:10.5px',
+       'start', svg);
+
+    var lx = x0 + fw + 10;
+    var lab = function (y, cls, name, u, th, prob) {
+      sv('rect', { x: lx, y: y - 8, width: 9, height: 9, rx: 2,
+        style: 'fill:var(--c' + cls + ')' }, svg);
+      tx(lx + 14, y, name, 'fill:var(--navy);font-size:11.5px;'
+         + 'font-weight:bold', 'start', svg);
+      tx(lx + 14, y + 13, f2(u) + ' μmol/g · θ ' + thf(th),
+         'fill:var(--muted);font-size:10.5px', 'start', svg);
+      tx(lx + 14, y + 25, 'P(CO₂) ' + probf(prob),
+         'fill:var(--muted);font-size:10.5px', 'start', svg);
+    };
+    lab(rowY(0), 'Surf', 'Surface', out.umol_g.surface,
+        out.theta.surface, acc.P.surface);
+    lab(rowY(1) + 34, 'Sub', 'Subsurface', out.umol_g.subsurface,
+        out.theta.subsurface, acc.P.subsurface);
+    lab(rowY(1) + 108, 'Bulk', 'Bulk', out.umol_g.bulk,
+        out.theta.bulk, acc.P.bulk);
+
+    /* ------------------------------------------------ depth profile */
+    var px0 = 386, py0 = 316, pw2 = 474, ph2 = 128;
+    var papTop = py0 + 4, papBot = py0 + ph2 - 24;
+    var linW = 0.5 * pw2, logW = 0.42 * pw2;
+    var lgMax = Math.log10(Rnm);
+    var XD = function (dep) {
+      if (dep <= 1) return px0 + dep * linW;
+      return px0 + linW + 14 + Math.log10(dep) / lgMax * logW;
+    };
+    var YT = function (th) {
+      var lg = Math.log10(Math.max(th, 1e-4));
+      return papBot - (lg + 4) / 4 * (papBot - papTop);
+    };
+    [[1, '100%'], [0.01, '1%'], [0.0001, '0.01%']].forEach(function (g) {
+      var y = YT(g[0]);
+      sv('line', { x1: px0, x2: px0 + pw2, y1: y, y2: y,
+        style: 'stroke:var(--line);stroke-width:1' }, svg);
+      tx(px0 - 6, y + 3.5, g[1], 'fill:var(--muted);font-size:10px', 'end',
+         svg);
+    });
+    // axis break marks
+    var bx = px0 + linW + 7;
+    ['M' + (bx - 3) + ',' + (papBot + 5) + ' L' + (bx + 1) + ','
+     + (papBot - 3), 'M' + (bx + 2) + ',' + (papBot + 5) + ' L' + (bx + 6)
+     + ',' + (papBot - 3)].forEach(function (d) {
+      sv('path', { d: d, style: 'stroke:var(--muted);stroke-width:1.2;'
+        + 'fill:none' }, svg);
+    });
+    var segs = [[0, t1, out.theta.surface, '--cSurf'],
+                [t1, tShell, out.theta.subsurface, '--cSub'],
+                [tShell, Rnm, out.theta.bulk, '--cBulk']];
+    segs.forEach(function (s, si) {
+      var y = YT(s[2]);
+      if (si === 2) {
+        // the bulk segment spans the axis break: draw around the gap
+        sv('line', { x1: XD(s[0]), x2: px0 + linW, y1: y, y2: y,
+          style: 'stroke:var(' + s[3] + ');stroke-width:3' }, svg);
+        sv('line', { x1: px0 + linW + 14, x2: XD(s[1]), y1: y, y2: y,
+          style: 'stroke:var(' + s[3] + ');stroke-width:3' }, svg);
+      } else {
+        sv('line', { x1: XD(s[0]), x2: XD(s[1]), y1: y, y2: y,
+          style: 'stroke:var(' + s[3] + ');stroke-width:3' }, svg);
+      }
+      if (si) {
+        sv('line', { x1: XD(s[0]), x2: XD(s[0]), y1: YT(segs[si - 1][2]),
+          y2: y, style: 'stroke:var(--muted);stroke-width:1;opacity:.6' },
+           svg);
+      }
+    });
+    sv('line', { x1: px0, x2: px0 + pw2, y1: papBot, y2: papBot,
+      style: 'stroke:var(--muted);stroke-width:1' }, svg);
+    [[0, '0'], [t1, ''], [tShell, '0.65'], [1, '1']].forEach(function (g) {
+      tx(XD(g[0]), papBot + 13, g[1], 'fill:var(--muted);font-size:10px',
+         'middle', svg);
+    });
+    [[10, '10'], [100, '100'], [Rnm, Math.round(Rnm) + '']].forEach(
+      function (g) {
+        if (g[0] <= Rnm) {
+          tx(XD(g[0]), papBot + 13, g[1],
+             'fill:var(--muted);font-size:10px', 'middle', svg);
+        }
+      });
+    tx(px0 + pw2 / 2, papBot + 26, 'depth from surface (nm)',
+       'fill:var(--muted);font-size:10.5px', 'middle', svg);
+    var shellU = out.umol_g.surface + out.umol_g.subsurface;
+    var shellPct = out.matched_umol_g
+      ? shellU / out.matched_umol_g * 100 : 0;
+    tx(XD(tShell) + 8, papTop + 10, shellPct.toFixed(1)
+       + '% of the inventory within ' + tShell.toFixed(2) + ' nm',
+       'fill:var(--ink);font-size:11px', 'start', svg);
+
+    /* -------------------------------------------- legend + caption */
+    var lg2 = '';
+    [['Surface', '--cSurf'], ['Subsurface', '--cSub'],
+     ['Bulk', '--cBulk']].forEach(function (s) {
+      lg2 += '<span><span class="swatch" style="background:var(' + s[1]
+        + ')"></span>' + s[0] + '</span>';
+    });
+    lg2 += '<span>' + (accMode
+      ? 'fill strength = P(CO₂ refill); hollow = locked'
+      : 'dot = one vacancy (window)') + '</span>';
+    lg2 += '<span>1 disc dot ≈ ' + ratio + ' vacanc'
+      + (ratio === 1 ? 'y' : 'ies') + ' (0.65 nm slice)</span>';
+    el.smPvLegend.innerHTML = lg2;
+
+    var shellTheta = (geom.N_s + geom.N_ss)
+      ? shellU / (geom.N_s + geom.N_ss) : 0;
+    el.smPvNote.textContent = 'Shell (' + tShell.toFixed(2) + ' nm): '
+      + f2(shellU) + ' μmol-O/g = ' + shellPct.toFixed(1)
+      + '% of the inventory at ' + (shellTheta * 100).toFixed(0)
+      + '% local depletion; core (' + Math.round(Rnm) + ' nm): '
+      + f2(out.umol_g.bulk) + ' μmol-O/g at θ = ' + thf(out.theta.bulk)
+      + '. Surface row: ' + (pat.sampled
+        ? 'sampled Monte Carlo configuration.'
+        : 'ideal-preview draw — run the model for the sampled arrangement.');
+  }
+
+  function exportParticleSvg() {
+    var src = new XMLSerializer().serializeToString(el.smParticle);
+    var cs = getComputedStyle(document.documentElement);
+    ['--cSurf', '--cSub', '--cBulk', '--ink', '--muted', '--line',
+     '--navy', '--panel', '--code', '--bg'].forEach(function (v) {
+      var val = cs.getPropertyValue(v).trim();
+      if (val) src = src.split('var(' + v + ')').join(val);
+    });
+    var bg = cs.getPropertyValue('--bg').trim() || '#ffffff';
+    src = src.replace(/(<svg[^>]*>)/,
+                      '$1<rect width="880" height="470" fill="' + bg + '"/>');
+    var blob = new Blob([src], { type: 'image/svg+xml' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'particle_cross_section.svg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   /* --------------------------------------------------------- wiring */
 
   function fillPreset(key) {
@@ -760,6 +1097,10 @@
    el.smAB, el.smKinT, el.smExp, el.smPCO2].forEach(function (n) {
     n.addEventListener('input', solve);
   });
+  el.smPvAcc.addEventListener('change', function () {
+    if (lastPv) renderParticle(lastPv.out, lastPv.acc, lastPv.fresh);
+  });
+  el.smPvDl.addEventListener('click', exportParticleSvg);
   el.smGeoMode.addEventListener('change', function () {
     if (el.smGeoMode.value === 'bet') {
       var g = SM.geometry(DATA, { d_um: num(el.smGeoVal, 0.9) });
