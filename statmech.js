@@ -318,11 +318,16 @@
     var muW = widN ? -kt * Math.log((widSum / widN) / (nv + 1)) : null;
     var eCheck = totalEnergy(lat, occ, epsCls);
     var vacSorted = vac.slice().sort(function (x, y) { return x - y; });
+    var surfVac = [];
+    for (i = 0; i < vacSorted.length; i++) {
+      if (vacSorted[i] < lat.n_surf) surfVac.push(vacSorted[i]);
+    }
     return { theta_s: theta[0], theta_ss: theta[1], theta_b: theta[2],
              err_s: err[0], err_ss: err[1], err_b: err[2],
              mu_eV: muW, E_mean_eV: eSum / (blocks * bsize),
              E_drift_eV: Math.abs(es[0] - eCheck),
-             hist: hist, n_vac: nv, vac_sorted: vacSorted };
+             hist: hist, n_vac: nv, vac_sorted: vacSorted,
+             surf_vac: surfVac };
   }
 
   function isothermScan(p, tC, opts) {
@@ -356,6 +361,10 @@
                         blocks: d.blocks });
       res.filling = d.fillings[idx];
       delete res.vac_sorted;
+      /* the final surface configuration travels with the point: the
+         particle view draws the sampled arrangement, not synthetic noise */
+      res.rows = d.rows;
+      res.row_sites = d.row_sites;
       pts.push(res);
       if (opts.progress) opts.progress(idx + 1, d.fillings.length);
     }
@@ -592,10 +601,17 @@
   }
 
   function dielectric(p, voTotal) {
+    /* power law from the log10-log10 regression of this work's data */
     var c = p.dielectric_correlation;
-    if (c.a_per_umol_g == null || c.b == null) return null;
-    var e2 = c.a_per_umol_g * voTotal + c.b;
-    var out = { eps2: e2 };
+    if (c.log10_intercept == null || c.exponent == null || !(voTotal > 0)) {
+      return null;
+    }
+    var e2 = Math.pow(10.0, c.log10_intercept
+                      + c.exponent * Math.log10(voTotal));
+    var rng = c.fit_range_umol_g;
+    var out = { eps2: e2,
+                extrapolated: !!(rng && (voTotal < rng[0]
+                                         || voTotal > rng[1])) };
     if (c.eps_prime) out.tan_delta = e2 / c.eps_prime;
     return out;
   }

@@ -56,7 +56,8 @@ for (const c of spec.pipelines) {
     isotherm: res.isotherm.map(q => ({
       filling: q.filling, theta_s: q.theta_s, theta_ss: q.theta_ss,
       theta_b: q.theta_b, mu_eV: q.mu_eV, E_mean_eV: q.E_mean_eV,
-      E_drift_eV: q.E_drift_eV, hist: q.hist })),
+      E_drift_eV: q.E_drift_eV, hist: q.hist,
+      surf_vac: q.surf_vac, rows: q.rows, row_sites: q.row_sites })),
   });
 }
 
@@ -80,5 +81,7 @@ if (spec.validity_cases && spec.validity_cases.length) {
       active: R.active_condensed_phases });
   }
 }
+
+out.dielectric = [95, 10, 1000, 0].map(v => SM.dielectric(P, v));
 
 process.stdout.write(JSON.stringify(out));

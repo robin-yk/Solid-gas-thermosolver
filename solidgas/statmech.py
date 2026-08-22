@@ -337,7 +337,8 @@ def mc_run(lat, eps_cls, kt, occ, vac, sweeps_eq, sweeps_sample, rng,
             'mu_eV': mu_w, 'E_mean_eV': e_sum / (blocks * bsize),
             'E_drift_eV': abs(e_state[0] - e_check),
             'hist': hist, 'n_vac': nv,
-            'vac_sorted': sorted(vac)}
+            'vac_sorted': sorted(vac),
+            'surf_vac': sorted(v for v in vac if v < lat['n_surf'])}
 
 
 def isotherm_scan(p, t_c, seed=None, quality=1.0, preset=None, eps=None,
@@ -371,6 +372,10 @@ def isotherm_scan(p, t_c, seed=None, quality=1.0, preset=None, eps=None,
                      d['widom_every'], d['hist_every'], d['blocks'])
         res['filling'] = target
         del res['vac_sorted']
+        # the final surface configuration travels with the point: the
+        # particle view draws the sampled arrangement, not synthetic noise
+        res['rows'] = d['rows']
+        res['row_sites'] = d['row_sites']
         pts.append(res)
         if progress:
             progress(idx + 1, len(d['fillings']))
@@ -636,12 +641,21 @@ def accessibility(p, umol_by_class, kin=None):
 
 
 def dielectric(p, vo_total):
-    """Empirical eps'' = a*VO + b; None until the coefficients are set."""
+    """Empirical loss factor measured in this work.
+
+    The fit is a linear regression of log10(eps'') on log10(VO), so the
+    correlation is the power law eps'' = 10**a * VO**b; outside the fitted
+    inventory range the value is flagged as an extrapolation."""
     c = p['dielectric_correlation']
-    if c['a_per_umol_g'] is None or c['b'] is None:
+    if c.get('log10_intercept') is None or c.get('exponent') is None \
+            or vo_total <= 0:
         return None
-    e2 = c['a_per_umol_g'] * vo_total + c['b']
-    out = {'eps2': e2}
+    e2 = 10.0 ** (c['log10_intercept']
+                  + c['exponent'] * math.log10(vo_total))
+    rng = c.get('fit_range_umol_g')
+    out = {'eps2': e2,
+           'extrapolated': bool(rng and (vo_total < rng[0]
+                                         or vo_total > rng[1]))}
     if c.get('eps_prime'):
         out['tan_delta'] = e2 / c['eps_prime']
     return out

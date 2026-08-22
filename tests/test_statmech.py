@@ -231,6 +231,19 @@ def test_isotherm_theta_s_is_monotone_in_filling():
         assert b['theta_s'] >= a['theta_s'] - 3 * (a['err_s'] + b['err_s'])
 
 
+def test_isotherm_points_carry_a_valid_surface_snapshot():
+    pts = S.isotherm_scan(P, 600.0, mc=MC_SMALL)
+    n_surf = MC_SMALL['rows'] * MC_SMALL['row_sites']
+    for q in pts:
+        assert q['rows'] == MC_SMALL['rows']
+        assert q['row_sites'] == MC_SMALL['row_sites']
+        sv = q['surf_vac']
+        assert sv == sorted(set(sv))
+        assert all(0 <= v < n_surf for v in sv)
+        # the closing configuration sits near the run's own average
+        assert abs(len(sv) / n_surf - q['theta_s']) < 0.12
+
+
 def test_spacing_statistics_sit_in_the_literature_window():
     """Near critical coverage: modal gap 4-5 bridging sites, close pairs
     suppressed - the constraints the pair table was calibrated to."""
@@ -313,15 +326,28 @@ def test_sweep_tells_the_accessibility_story():
     assert all(b >= a for a, b in zip(acc, acc[1:]))
 
 
-def test_dielectric_blank_until_coefficients_set():
+def test_dielectric_power_law_of_this_work():
+    """The measured loss-factor fit: a log10-log10 regression, so the
+    correlation is eps'' = 10^a * VO^b, and the provenance stays intact."""
     import copy
-    assert S.dielectric(P, 95.0) is None
+    c = P['dielectric_correlation']
+    d = S.dielectric(P, 95.0)
+    assert d['eps2'] == pytest.approx(
+        10.0 ** (c['log10_intercept']
+                 + c['exponent'] * math.log10(95.0)), rel=1e-12)
+    assert d['eps2'] == pytest.approx(0.2238, abs=2e-3)
+    assert d['extrapolated'] is False
+    assert 'tan_delta' not in d                 # eps_prime not measured yet
+    assert S.dielectric(P, 10.0)['extrapolated'] is True
+    assert S.dielectric(P, 0.0) is None
     q = copy.deepcopy(P)
-    q['dielectric_correlation'].update(
-        a_per_umol_g=0.0012, b=0.03, eps_prime=2.0)
-    d = S.dielectric(q, 95.0)
-    assert d['eps2'] == pytest.approx(0.0012 * 95 + 0.03)
-    assert d['tan_delta'] == pytest.approx((0.0012 * 95 + 0.03) / 2.0)
+    q['dielectric_correlation']['eps_prime'] = 2.0
+    assert S.dielectric(q, 95.0)['tan_delta'] == pytest.approx(
+        d['eps2'] / 2.0)
+    note = c['note']
+    for token in ('OriginLab', '1.22355', '-3.07028', '0.93388'):
+        assert token in note, token
+    assert 'this work' in c['provenance']
 
 
 def test_kinetics_are_declared_placeholders():

@@ -174,6 +174,10 @@ def test_pipelines_agree_end_to_end(pair):
                 assert a[k] == b[k], k
             assert a['hist'] == b['hist']
             assert a['mu_eV'] == pytest.approx(b['mu_eV'], abs=1e-9)
+            # the sampled surface configuration the particle view draws
+            assert a['surf_vac'] == b['surf_vac']
+            assert a['rows'] == b['rows']
+            assert a['row_sites'] == b['row_sites']
 
 
 def test_shipped_configuration_reproduces_the_oracle_flagship(pair):
@@ -281,6 +285,17 @@ def test_phase_validity_parity_on_real_equilibria(pair):
     assert by_name['boundary_h2_h2o']['tier'] == 'boundary'
 
 
+def test_dielectric_parity(pair):
+    _, js = pair
+    for v, row in zip([95.0, 10.0, 1000.0, 0.0], js['dielectric']):
+        ref = S.dielectric(P, v)
+        if ref is None:
+            assert row is None
+            continue
+        assert row['eps2'] == pytest.approx(ref['eps2'], rel=1e-12)
+        assert row['extrapolated'] == ref['extrapolated']
+
+
 # ------------------------------------------------------------ page gates
 
 def test_page_inlines_the_statmech_stack():
@@ -307,7 +322,10 @@ def test_page_carries_the_defect_workspace_and_disclosures():
                    'rutile_dft.json', 'Widom insertion',
                    'Placeholder kinetics', 'Recoverable fraction',
                    '-accessible inventory', '(S1)', '(S12)',
-                   'Oxygen environment', 'ThermoBridge', 'phaseValidity'):
+                   'Oxygen environment', 'ThermoBridge', 'phaseValidity',
+                   'Particle cross-section', 'not resolvable',
+                   'Monte Carlo arrangement', 'Katsoulakis',
+                   'OriginLab, no weighting'):
         assert phrase in html, f'disclosure lost: {phrase}'
     # the dataset is swappable, and the page says so
     assert 'replaced' in html and 're-fitted' in html
