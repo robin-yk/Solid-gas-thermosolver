@@ -515,6 +515,36 @@
              P_gap_le_2: near / tot, pairs_sampled: tot };
   }
 
+  /* ---------------------------------------------- thermodynamic bridge */
+
+  function phaseValidity(active, reducedCosts, isReduced) {
+    var redActive = [];
+    var i;
+    for (i = 0; i < active.length; i++) {
+      if (isReduced[active[i]]) redActive.push(active[i]);
+    }
+    if (redActive.length) {
+      var tier = active.indexOf('TiO2') >= 0 ? 'boundary' : 'invalid';
+      return { tier: tier, reduced_active: redActive,
+               nearest_phase: redActive[0],
+               margin_per_mol_O_kJ: tier === 'boundary' ? 0.0 : null };
+    }
+    var bestS = null, bestR = null;
+    var names = [];
+    for (var s in reducedCosts) names.push(s);
+    names.sort();
+    for (i = 0; i < names.length; i++) {
+      s = names[i];
+      if (!isReduced[s]) continue;
+      var rc = reducedCosts[s];
+      var r = (rc && typeof rc === 'object') ? rc.per_mol_O_kJ : rc;
+      if (r == null || !isFinite(r)) continue;
+      if (bestR === null || r < bestR) { bestR = r; bestS = s; }
+    }
+    return { tier: 'stable', reduced_active: [],
+             nearest_phase: bestS, margin_per_mol_O_kJ: bestR };
+  }
+
   /* ------------------------------------------------------- CO2 layer */
 
   function co2KineticsParams(p, kin) {
@@ -621,5 +651,5 @@
            distribute: distribute, spacingSummary: spacingSummary,
            co2KineticsParams: co2KineticsParams,
            accessibility: accessibility, dielectric: dielectric,
-           sweep: sweep, runFull: runFull };
+           sweep: sweep, phaseValidity: phaseValidity, runFull: runFull };
 });

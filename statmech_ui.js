@@ -22,7 +22,7 @@
    'smTable', 'smSpacing', 'smNotes',
    'smEaS', 'smEaSS', 'smEaB', 'smAS', 'smASS', 'smAB', 'smKinT', 'smExp',
    'smPCO2', 'smAccKpis', 'smSweep', 'smTip', 'smSweepLegend', 'smAccNote',
-   'smCoupledNote'].forEach(function (id) { el[id] = $(id); });
+   'smCoupledNote', 'smEnv'].forEach(function (id) { el[id] = $(id); });
 
   /* ------------------------------------------- workspace switching */
 
@@ -36,10 +36,13 @@
       ['ws-thermo', 'ws-defect'].forEach(function (ws) {
         $(ws).style.display = ws === btn.dataset.ws ? '' : 'none';
       });
-      if (btn.dataset.ws === 'ws-defect' && !started) {
-        started = true;
-        solve();
-        launch();
+      if (btn.dataset.ws === 'ws-defect') {
+        if (!started) {
+          started = true;
+          solve();
+          launch();
+        }
+        updateEnv();      // the charge may have been edited over there
       }
     });
   });
@@ -165,6 +168,131 @@
     if (running) stopRun('run cancelled'); else launch();
   });
 
+  /* ------------------------------------------- thermodynamic bridge */
+
+  var env = null, envKey = '', envTimer = null;
+
+  function scheduleEnv() {
+    clearTimeout(envTimer);
+    envTimer = setTimeout(updateEnv, 400);
+  }
+
+  function updateEnv() {
+    if (!el.smEnv) return;
+    var TB = window.ThermoBridge;
+    var tC = currentT();
+    if (!TB) {
+      env = null;
+      el.smEnv.innerHTML = '<div class="readout">The equilibrium workspace '
+        + 'is unavailable on this page.</div>';
+      return;
+    }
+    var desc = TB.describe();
+    if (!desc) {
+      env = null;
+      el.smEnv.innerHTML = '<div class="readout">The equilibrium '
+        + "workspace's gas charge sums to zero.</div>";
+      return;
+    }
+    var key = tC + '|' + desc;
+    if (key === envKey && env) { renderEnv(); return; }
+    envKey = key;
+    if (tC < 300 || tC > 1650) {
+      env = { outOfRange: true, T_C: tC, desc: desc, thermoT: TB.T_C() };
+      renderEnv();
+      solve();
+      return;
+    }
+    try {
+      var R = TB.solveAt(tC);
+      if (!R) throw new Error('no solution returned');
+      var v = SM.phaseValidity(R.active_condensed_phases,
+                               R.inactive_phase_reduced_costs,
+                               TB.isReduced());
+      env = { T_C: tC, desc: desc, mu_O: R.lambda_kJ_per_mol.O,
+              active: R.active_condensed_phases, v: v, thermoT: TB.T_C() };
+    } catch (e) {
+      env = { error: String(e && e.message ? e.message : e), T_C: tC,
+              desc: desc, thermoT: TB.T_C() };
+    }
+    renderEnv();
+    solve();                       // the validity note lives in the results
+  }
+
+  function subHtml(s) {
+    return String(s).replace(/(\d+)/g, '<sub>$1</sub>');
+  }
+
+  function renderEnv() {
+    var box = el.smEnv;
+    if (!env) return;
+    var h = '';
+    if (env.outOfRange) {
+      h = '<div class="note calm">' + env.T_C + ' °C is outside the '
+        + 'equilibrium data range (300–1650 °C); no verdict at this '
+        + 'temperature.</div>';
+    } else if (env.error) {
+      h = '<div class="note">Equilibrium solve failed: ' + esc(env.error)
+        + '</div>';
+    } else {
+      var v = env.v;
+      h = '<div style="font-size:13px;line-height:1.8">'
+        + '<div><span class="k2">Charge</span> ' + env.desc + '</div>'
+        + '<div><span class="k2">Oxygen potential</span> μ<sub>O</sub> = '
+        + env.mu_O.toFixed(2) + ' kJ/mol-O at ' + env.T_C + ' °C</div>'
+        + '<div><span class="k2">Equilibrium phases</span> '
+        + env.active.map(subHtml).join(' + ') + '</div>';
+      if (v.tier === 'stable') {
+        h += '<div><span class="k2">Nearest reduced</span> '
+          + subHtml(v.nearest_phase) + ' at r = +'
+          + v.margin_per_mol_O_kJ.toFixed(1) + ' kJ/mol-O</div>';
+      }
+      h += '</div>';
+      if (v.tier === 'stable') {
+        h += '<div class="note calm" style="margin:10px 0 4px"><b>Rutile '
+          + 'stable</b> under this charge at ' + env.T_C + ' °C, with a +'
+          + v.margin_per_mol_O_kJ.toFixed(1) + ' kJ/mol-O margin to '
+          + subHtml(v.nearest_phase) + '.</div>';
+      } else if (v.tier === 'boundary') {
+        h += '<div class="note" style="margin:10px 0 4px"><b>On the '
+          + 'reduction boundary.</b> TiO<sub>2</sub> coexists with '
+          + v.reduced_active.map(subHtml).join(' + ')
+          + ' at equilibrium; reduction begins at this condition.</div>';
+      } else {
+        h += '<div class="note" style="margin:10px 0 4px;border-left-color:'
+          + 'var(--red)"><b>Single-phase rutile model invalid at '
+          + 'equilibrium.</b> Thermodynamics predicts '
+          + v.reduced_active.map(subHtml).join(' + ')
+          + ' — not rutile — under this charge at ' + env.T_C + ' °C.</div>';
+      }
+    }
+    h += '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
+      + '<button type="button" class="mini" id="smEnvOpen">Edit charge in '
+      + 'equilibrium workspace</button>';
+    if (env.thermoT != null && Math.abs(env.thermoT - env.T_C) > 1e-9) {
+      h += '<button type="button" class="mini" id="smEnvMatch">Use '
+        + 'equilibrium T (' + env.thermoT + ' °C)</button>';
+    }
+    h += '</div>';
+    box.innerHTML = h;
+    var open = $('smEnvOpen');
+    if (open) {
+      open.onclick = function () {
+        var b = document.querySelector('#wstabs .wstab[data-ws="ws-thermo"]');
+        if (b) b.click();
+      };
+    }
+    var match = $('smEnvMatch');
+    if (match) {
+      match.onclick = function () {
+        el.smT.value = env.thermoT;
+        solve();
+        scheduleRun();
+        scheduleEnv();
+      };
+    }
+  }
+
   /* ------------------------------------------------ solve + render */
 
   function solve() {
@@ -275,6 +403,24 @@
     }
 
     var notes = '';
+    if (env && env.v && env.T_C === out.T_C) {
+      if (env.v.tier === 'invalid') {
+        notes += '<div class="note" style="border-left-color:var(--red)">'
+          + '<b>Phase validity.</b> Under the equilibrium workspace&rsquo;s '
+          + 'charge, thermodynamics predicts '
+          + env.v.reduced_active.map(subHtml).join(' + ')
+          + ' — not rutile — at ' + env.T_C + ' °C. The single-phase rutile '
+          + 'defect model does not hold at equilibrium there; a fixed '
+          + 'measured inventory in rutile is metastable at best (Oxygen '
+          + 'environment card).</div>';
+      } else if (env.v.tier === 'boundary') {
+        notes += '<div class="note"><b>Phase validity.</b> The equilibrium '
+          + 'charge sits on the TiO<sub>2</sub> / '
+          + env.v.reduced_active.map(subHtml).join(' + ')
+          + ' boundary at ' + env.T_C + ' °C — reduction begins at this '
+          + 'condition (Oxygen environment card).</div>';
+      }
+    }
     out.warnings.forEach(function (w) {
       var calm = w.kind === 'surface_cap' || w.kind === 'x_near';
       notes += '<div class="note' + (calm ? ' calm' : '') + '">'
@@ -609,6 +755,7 @@
       scheduleRun();
     });
   });
+  el.smT.addEventListener('input', scheduleEnv);
   [el.smVO, el.smGeoVal, el.smEaS, el.smEaSS, el.smEaB, el.smAS, el.smASS,
    el.smAB, el.smKinT, el.smExp, el.smPCO2].forEach(function (n) {
     n.addEventListener('input', solve);

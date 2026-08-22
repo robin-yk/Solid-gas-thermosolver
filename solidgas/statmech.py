@@ -554,6 +554,45 @@ def spacing_summary(points, theta_s):
             'P_gap_le_2': near / tot, 'pairs_sampled': tot}
 
 
+# ------------------------------------------------- thermodynamic bridge
+
+def phase_validity(active, reduced_costs, is_reduced):
+    """Tier the gas-solid equilibrium verdict for the rutile defect model.
+
+    invalid  - the equilibrium assemblage is a reduced phase with no
+               rutile: the host lattice itself is not the stable phase,
+               so a fixed-inventory rutile description is metastable at
+               best.
+    boundary - rutile coexists with a reduced phase: the charge sits on
+               the reduction boundary (this includes the trace-buffer
+               states under near-inert gas).
+    stable   - rutile alone; the margin is the smallest reduced-phase
+               KKT reduced cost per mole of oxygen.
+
+    Pure function of the equilibrium result, ported verbatim to the
+    browser; the caller supplies which phases count as reduced."""
+    red_active = [s for s in active if is_reduced.get(s)]
+    if red_active:
+        tier = 'boundary' if 'TiO2' in active else 'invalid'
+        return {'tier': tier, 'reduced_active': red_active,
+                'nearest_phase': red_active[0],
+                'margin_per_mol_O_kJ': 0.0 if tier == 'boundary' else None}
+    best_s = None
+    best_r = None
+    for s in sorted(reduced_costs):
+        if not is_reduced.get(s):
+            continue
+        rc = reduced_costs[s]
+        r = rc['per_mol_O_kJ'] if isinstance(rc, dict) else rc
+        if r is None or math.isinf(r):
+            continue
+        if best_r is None or r < best_r:
+            best_r = float(r)
+            best_s = s
+    return {'tier': 'stable', 'reduced_active': [],
+            'nearest_phase': best_s, 'margin_per_mol_O_kJ': best_r}
+
+
 # ------------------------------------------------------------ CO2 layer
 
 def co2_kinetics_params(p, kin=None):

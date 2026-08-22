@@ -106,6 +106,8 @@ a{color:var(--blue)}
        font-variant-numeric:tabular-nums}
 .legrow{display:flex;flex-wrap:wrap;gap:14px;margin-top:6px;font-size:12px;color:var(--muted)}
 .legrow .swatch{margin-right:5px}
+.k2{display:inline-block;min-width:116px;color:var(--muted);font-size:11px;
+    font-weight:700;letter-spacing:.04em;text-transform:uppercase;vertical-align:top}
 </style>
 </head>
 <body>
@@ -389,8 +391,19 @@ a{color:var(--blue)}
           </label>
         </div>
         <div class="readout">The second mode arrives with absolute DFT formation free
-        energies and the bridge to the equilibrium workspace.</div>
+        energies; the phase-validity bridge below already reads the equilibrium
+        workspace.</div>
       </div>
+    </div>
+
+    <div class="panel pad">
+      <h3 style="margin-top:0">Oxygen environment</h3>
+      <div class="readout" style="margin-bottom:8px">The equilibrium workspace's
+      charge &mdash; gas, pressure, volume, solid &mdash; evaluated by the
+      gas&ndash;solid Gibbs engine at the defect temperature. It bounds this tab:
+      the defect model describes point defects in rutile, and the equilibrium
+      verdict says whether rutile is the phase to be in.</div>
+      <div id="smEnv"></div>
     </div>
 
     <div class="panel pad">

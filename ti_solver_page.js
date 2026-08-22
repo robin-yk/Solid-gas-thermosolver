@@ -501,6 +501,38 @@
       + ActiveSet.Solver.prototype[f].toString();
   }).join('\n\n');
 
+  /* Bridge for the defect workspace: this workspace's charge - gas,
+     pressure, volume, solid - re-evaluated at any temperature, plus the
+     fields the oxygen-environment card shows. Read-only over the DOM
+     inputs; nothing here changes a solve. */
+  window.ThermoBridge = {
+    T_C: function () { return parseFloat($('T').value) || null; },
+    describe: function () {
+      var f = feedFromInputs();
+      if (!(f.total > 0)) return null;
+      var parts = [];
+      D.gases.forEach(function (g) {
+        if (f.feed[g]) {
+          parts.push(sub(g) + ' ' + (+f.feed[g].toPrecision(4)));
+        }
+      });
+      return parts.join(' : ') + ' &middot; ' + ($('P').value || 1)
+        + ' atm &middot; ' + ($('V').value || 25) + ' mL &middot; '
+        + ($('mass').value || 100) + ' mg ' + sub($('solid0').value);
+    },
+    solveAt: function (T_C) {
+      var opts = currentOpts();
+      if (!opts) return null;
+      opts.T_K = T_C + 273.15;
+      return solver.solve(opts);
+    },
+    isReduced: function () {
+      var m = {};
+      D.solids.forEach(function (s) { m[s] = D.ti3[s] > 0; });
+      return m;
+    },
+  };
+
   $('run').addEventListener('click', run);
   renderCoefs();
   setFeed(PRESETS.rwgs.gas);

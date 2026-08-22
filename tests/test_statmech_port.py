@@ -77,6 +77,20 @@ def _py_mc(c):
 
 SWEEP_VO = [10.0, 60.0, 95.0, 150.0]
 
+_HP_REF = json.loads(
+    (ROOT / 'reference_results_high_precision.json').read_text())
+_RATIO = float(_HP_REF['boundary_validation']['h2_h2o_boundary']
+               ['H2O_over_H2_critical_ratio'])
+
+VALIDITY_CASES = [
+    {'name': 'stable_rwgs', 'feed': {'CO2': 1, 'H2': 1},
+     'T_K': 873.15, 'mass_g': 0.1},
+    {'name': 'invalid_hot_h2', 'feed': {'H2': 1},
+     'T_K': 1473.15, 'mass_g': 0.002},
+    {'name': 'boundary_h2_h2o', 'feed': {'H2': 1, 'H2O': _RATIO * (1 - 1e-3)},
+     'T_K': 1173.15, 'mass_g': 0.1},
+]
+
 
 @pytest.fixture(scope='module')
 def pair(tmp_path_factory):
@@ -85,7 +99,8 @@ def pair(tmp_path_factory):
     spec = tmp_path_factory.mktemp('spec') / 'statmech_spec.json'
     spec.write_text(json.dumps({'mc_cases': MC_CASES,
                                 'pipelines': PIPELINES,
-                                'sweep_vo': SWEEP_VO}))
+                                'sweep_vo': SWEEP_VO,
+                                'validity_cases': VALIDITY_CASES}))
     r = subprocess.run(['node', str(HARNESS), str(ROOT), str(spec)],
                        capture_output=True, text=True, timeout=600)
     assert r.returncode == 0, f'harness failed:\n{r.stderr[-2000:]}'
@@ -237,6 +252,35 @@ def test_shipped_accessibility_matches_the_oracle(pair):
                                        rel=1e-9), k
 
 
+def test_phase_validity_parity_on_real_equilibria(pair):
+    """The bridge's verdict, computed by the JS thermo engine + JS tiering
+    against the Python pair - the exact chain the oxygen-environment card
+    runs in the browser."""
+    from solidgas import activeset as A
+    _, js = pair
+    is_red = {s: A.STOICH[s][1] / A.STOICH[s][0] < 2.0 - 1e-12
+              for s in A.SOLIDS}
+    by_name = {r['name']: r for r in js['validity']}
+    for c in VALIDITY_CASES:
+        r = A.solve(c['feed'], c['T_K'], mass_g=c['mass_g'])
+        v = S.phase_validity(r['active_condensed_phases'],
+                             r['inactive_phase_reduced_costs'], is_red)
+        jrow = by_name[c['name']]
+        assert jrow['tier'] == v['tier'], c['name']
+        assert jrow['active'] == r['active_condensed_phases'], c['name']
+        assert jrow['nearest_phase'] == v['nearest_phase'], c['name']
+        if v['margin_per_mol_O_kJ'] is None:
+            assert jrow['margin_per_mol_O_kJ'] is None
+        else:
+            assert jrow['margin_per_mol_O_kJ'] == pytest.approx(
+                v['margin_per_mol_O_kJ'], abs=1e-9), c['name']
+        assert jrow['mu_O_kJ_mol'] == pytest.approx(
+            r['lambda_kJ_per_mol']['O'], abs=1e-9), c['name']
+    assert by_name['stable_rwgs']['tier'] == 'stable'
+    assert by_name['invalid_hot_h2']['tier'] == 'invalid'
+    assert by_name['boundary_h2_h2o']['tier'] == 'boundary'
+
+
 # ------------------------------------------------------------ page gates
 
 def test_page_inlines_the_statmech_stack():
@@ -262,7 +306,8 @@ def test_page_carries_the_defect_workspace_and_disclosures():
                    'reconstruction threshold', 'not reduction kinetics',
                    'rutile_dft.json', 'Widom insertion',
                    'Placeholder kinetics', 'Recoverable fraction',
-                   '-accessible inventory', '(S1)', '(S12)'):
+                   '-accessible inventory', '(S1)', '(S12)',
+                   'Oxygen environment', 'ThermoBridge', 'phaseValidity'):
         assert phrase in html, f'disclosure lost: {phrase}'
     # the dataset is swappable, and the page says so
     assert 'replaced' in html and 're-fitted' in html

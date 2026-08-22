@@ -204,6 +204,20 @@ equilibrium form. Warnings mark the model's edges: surface at the
 reconstruction cap, subsurface beyond the dilute regime (a heavily reduced
 shell, not isolated point defects), and x approaching the shear-plane range.
 
+The two workspaces are bridged. An "Oxygen environment" card in the defect
+rail takes the equilibrium workspace's charge - gas, pressure, volume,
+solid - re-solves it with the gas-solid Gibbs engine at the defect
+temperature, and tiers the verdict for the defect model
+(solidgas/statmech.py::phase_validity, ported to the browser and
+parity-tested on real equilibria): rutile alone is "stable" with the
+smallest reduced-phase KKT cost per mole of oxygen as the margin; rutile
+coexisting with a reduced phase is "on the reduction boundary"; an
+assemblage without rutile is "invalid" - thermodynamics predicts a Magneli
+phase, so a fixed measured inventory in rutile is metastable at best, and
+the results panel says so in red. This is what keeps the tab from being a
+toy Monte Carlo: the defect model is bounded by the phase thermodynamics
+next door.
+
 A CO2-accessibility layer sits on top of the distribution: first-order
 refill per class, k_c = A_c p^m exp(-Ea_c/kT), P_c = 1 - exp(-k_c t), with
 the recoverable fraction f_rec as the headline output (39.3% at the

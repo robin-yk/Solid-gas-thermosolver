@@ -331,6 +331,63 @@ def test_kinetics_are_declared_placeholders():
     assert 'EFFECTIVE' in note or 'effective' in note
 
 
+# ------------------------------------------------- thermodynamic bridge
+
+def _is_reduced():
+    from solidgas import activeset as A
+    return {s: A.STOICH[s][1] / A.STOICH[s][0] < 2.0 - 1e-12
+            for s in A.SOLIDS}
+
+
+def test_phase_validity_stable_under_rwgs():
+    from solidgas import activeset as A
+    r = A.solve({'CO2': 1, 'H2': 1}, 873.15)
+    v = S.phase_validity(r['active_condensed_phases'],
+                         r['inactive_phase_reduced_costs'], _is_reduced())
+    assert v['tier'] == 'stable'
+    assert v['nearest_phase'] == 'Ti10O19'
+    assert v['margin_per_mol_O_kJ'] == pytest.approx(66.6399, abs=0.01)
+    assert r['lambda_kJ_per_mol']['O'] < 0
+
+
+def test_phase_validity_invalid_under_hot_dry_hydrogen():
+    from solidgas import activeset as A
+    r = A.solve({'H2': 1}, 1473.15, mass_g=0.002)
+    v = S.phase_validity(r['active_condensed_phases'],
+                         r['inactive_phase_reduced_costs'], _is_reduced())
+    assert v['tier'] == 'invalid'
+    assert 'TiO2' not in r['active_condensed_phases']
+    assert v['reduced_active'] == r['active_condensed_phases']
+
+
+def test_phase_validity_boundary_at_the_h2_h2o_flip():
+    import json as _json
+    from solidgas import activeset as A
+    ref = _json.loads(
+        (pathlib.Path(__file__).resolve().parent.parent
+         / 'reference_results_high_precision.json').read_text())
+    ratio = float(ref['boundary_validation']['h2_h2o_boundary']
+                  ['H2O_over_H2_critical_ratio'])
+    r = A.solve({'H2': 1, 'H2O': ratio * (1 - 1e-3)}, 1173.15)
+    v = S.phase_validity(r['active_condensed_phases'],
+                         r['inactive_phase_reduced_costs'], _is_reduced())
+    assert v['tier'] == 'boundary'
+    assert v['margin_per_mol_O_kJ'] == 0.0
+
+
+def test_phase_validity_skips_divergent_costs():
+    """-inf sentinels (dry-gas divergence) must not become the margin."""
+    v = S.phase_validity(
+        ['TiO2'],
+        {'Ti10O19': {'per_mol_O_kJ': 12.5},
+         'Ti4O7': {'per_mol_O_kJ': -math.inf},
+         'Ti2O3': {'per_mol_O_kJ': None}},
+        {'TiO2': False, 'Ti10O19': True, 'Ti4O7': True, 'Ti2O3': True})
+    assert v['tier'] == 'stable'
+    assert v['nearest_phase'] == 'Ti10O19'
+    assert v['margin_per_mol_O_kJ'] == 12.5
+
+
 def test_mode_note_discloses_scope():
     out = S.run_full(P, mc=MC_SMALL)
     assert out['method'] == 'canonical_statmech'

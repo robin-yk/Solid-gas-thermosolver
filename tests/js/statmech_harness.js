@@ -60,4 +60,25 @@ for (const c of spec.pipelines) {
   });
 }
 
+if (spec.validity_cases && spec.validity_cases.length) {
+  const AS = require(path.join(root, 'activeset.js'));
+  const AD = JSON.parse(fs.readFileSync(
+    path.join(root, 'activeset_data.json'), 'utf8'));
+  const thermo = new AS.Solver(AD);
+  const isRed = {};
+  AD.solids.forEach(s => { isRed[s] = AD.ti3[s] > 0; });
+  out.validity = [];
+  for (const c of spec.validity_cases) {
+    const R = thermo.solve({ feed: c.feed, T_K: c.T_K, mass_g: c.mass_g });
+    const v = SM.phaseValidity(R.active_condensed_phases,
+                               R.inactive_phase_reduced_costs, isRed);
+    out.validity.push({ name: c.name, tier: v.tier,
+      nearest_phase: v.nearest_phase,
+      margin_per_mol_O_kJ: v.margin_per_mol_O_kJ,
+      reduced_active: v.reduced_active,
+      mu_O_kJ_mol: R.lambda_kJ_per_mol.O,
+      active: R.active_condensed_phases });
+  }
+}
+
 process.stdout.write(JSON.stringify(out));
