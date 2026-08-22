@@ -1,0 +1,60 @@
+{
+  "version": "0.1-M1",
+  "material": "rutile TiO2",
+  "facet": "(110)",
+  "lattice_constants_A": {"a": 4.5937, "c": 2.9587},
+  "molar_mass_g_mol": 79.866,
+
+  "vacancy_energetics": {
+    "reference_state": "surface bridging O vacancy",
+    "default_preset": "sx",
+    "presets": {
+      "sx": {"label": "sX hybrid, Li et al. 2015",
+             "surface_eV": 0.0, "subsurface_eV": 0.59, "bulk_eV": 1.31},
+      "gga": {"label": "GGA, Li et al. 2015",
+              "surface_eV": 0.0, "subsurface_eV": 0.39, "bulk_eV": 1.08}
+    },
+    "provenance": "Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), DOI 10.1021/acs.jpcc.5b02430. Absolute neutral V_O formation energies on rutile (110): sX 4.39 / 4.98 / 5.70 eV, GGA 3.71 / 4.10 / 4.79 eV (surface / first subsurface / bulk). Relative values are used; the oxygen chemical potential cancels in the canonical ensemble. Site energies are polaron-relaxed: Ti3+ small polarons are not explicit variables (context: Reticcioli et al., Phys. Rev. B 98 (2018) 045306)."
+  },
+
+  "surface_ordering": {
+    "pair_eV": {"along_row": [0.40, 0.20, 0.05], "cross_row": [0.05, 0.02]},
+    "interaction_cutoff_A": 10.0,
+    "critical_coverage": 0.17,
+    "reconstruction_coverage": 0.20,
+    "disfavored_spacing_sites": [1, 2],
+    "preferred_spacing_sites": [4, 5],
+    "pair_table_note": "Pair energies are calibrated, not computed: chosen so that spacings of 1-2 bridging sites are suppressed and the modal spacing near critical coverage is 4-5 sites, with the ordering energy scale of the published low-energy configurations (~0.2-0.3 eV). Replace with project DFT configuration energies when available.",
+    "provenance": "Birschitzky, Reticcioli et al., npj Comput. Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4. DFT+U (U = 3.9 eV) + ML + Metropolis MC on rutile (110): computed critical coverage 16.7%, reconstruction threshold ~20%, interaction range ~10 A, in-row spacings of 1-2 sites nearly absent, most probable spacing 4-5 sites."
+  },
+
+  "saturation": {
+    "surface_cap_coverage": 0.20,
+    "subsurface_dilute_warn": 0.25,
+    "x_max_shear": 0.008,
+    "note": "Beyond ~20% bridging-O vacancy coverage the (1x2) reconstruction takes over; the model pins surface content at the threshold instead of describing the reconstructed phase. x_max is the approximate rutile point-defect range before crystallographic shear planes."
+  },
+
+  "diffusion_eV": {
+    "bulk_c_axis": 0.65,
+    "surface_001": 1.19,
+    "surface_crossrow_concerted": 0.91,
+    "note": "Stored for a later kinetic version; not used by the equilibrium model. The surface-to-subsurface exchange barrier is a different path and is not any of these numbers.",
+    "provenance": "Bulk: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a. Surface (unstrained rutile 110): Wang et al., Phys. Rev. B 82 (2010) 165309."
+  },
+
+  "defaults": {
+    "T_C": 600,
+    "VO_total_umol_g": 95.0,
+    "particle_diameter_um": 0.90,
+    "subsurface_layers": 1,
+    "energetics_preset": "sx",
+    "mc": {
+      "seed": 12345,
+      "rows": 8, "row_sites": 25, "ss_layers": 1, "bulk_layers": 8,
+      "fillings": [2, 4, 7, 12, 20, 32, 50, 75, 110, 160],
+      "equil_sweeps": 2500, "warm_equil_sweeps": 1000, "sample_sweeps": 4000,
+      "widom_every": 10, "hist_every": 25, "blocks": 20
+    }
+  }
+}

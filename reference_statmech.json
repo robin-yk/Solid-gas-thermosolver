@@ -1,0 +1,736 @@
+{
+ "generated_by": "oracle_statmech.py",
+ "precision_dps": 50,
+ "geometry_0p9um": {
+  "area_m2_g": 1.5692563848378798,
+  "N_s": 13.557026439021374,
+  "N_ss": 54.2281057560855,
+  "N_b": 24974.160126112558,
+  "N_O_total": 25041.945258307664
+ },
+ "geometry_bet_1p60": {
+  "area_m2_g": 1.6,
+  "N_s": 13.822624850862166,
+  "N_ss": 55.29049940344866,
+  "N_b": 24972.832134053355,
+  "N_O_total": 25041.945258307664
+ },
+ "rng_sfc32_seed12345_first8": [
+  0.32587812445126474,
+  0.019479799084365368,
+  0.27737857401371,
+  0.2809333000332117,
+  0.6093230419792235,
+  0.7210241928696632,
+  0.32752802316099405,
+  0.5482565488200635
+ ],
+ "analytic_grid": [
+  {
+   "T_C": 400,
+   "VO_total_umol_g": 1.0,
+   "preset": "sx",
+   "mu_V_eV": -0.14678580516455095,
+   "theta": {
+    "surface": 0.07375027952641618,
+    "subsurface": 3.0464094982268313e-06,
+    "bulk": 1.2395160092867343e-11
+   },
+   "umol_g": {
+    "surface": 0.9998344894248409,
+    "subsurface": 0.00016520101644618796,
+    "bulk": 3.095587129480692e-07
+   },
+   "fractions": {
+    "surface": 0.9998344894248409,
+    "subsurface": 0.00016520101644618796,
+    "bulk": 3.095587129480692e-07
+   },
+   "x_TiO2mx": 7.9866e-05,
+   "Ti3_frac": 0.000159732,
+   "surface_cap_bound": false,
+   "warn_kinds": []
+  },
+  {
+   "T_C": 400,
+   "VO_total_umol_g": 10.0,
+   "preset": "sx",
+   "mu_V_eV": 0.48181319818658036,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.1341159851568179,
+    "bulk": 6.302067997775597e-07
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 7.272855826665515,
+    "bulk": 0.015738885530209735
+   },
+   "fractions": {
+    "surface": 0.2711405287804275,
+    "subsurface": 0.7272855826665515,
+    "bulk": 0.0015738885530209733
+   },
+   "x_TiO2mx": 0.00079866,
+   "Ti3_frac": 0.00159732,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap"
+   ]
+  },
+  {
+   "T_C": 400,
+   "VO_total_umol_g": 38.0,
+   "preset": "sx",
+   "mu_V_eV": 0.6252229123461873,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.6473046161559657,
+    "bulk": 7.467379481270175e-06
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 35.10210318130804,
+    "bulk": 0.1864915308876887
+   },
+   "fractions": {
+    "surface": 0.07135277073169144,
+    "subsurface": 0.9237395574028431,
+    "bulk": 0.0049076718654654915
+   },
+   "x_TiO2mx": 0.003034908,
+   "Ti3_frac": 0.006069816,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense"
+   ]
+  },
+  {
+   "T_C": 400,
+   "VO_total_umol_g": 95.0,
+   "preset": "sx",
+   "mu_V_eV": 0.9340457656007495,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.9973513381035202,
+    "bulk": 0.0015297459726623228
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 54.08447383865107,
+    "bulk": 38.20412087354465
+   },
+   "fractions": {
+    "surface": 0.02854110829267658,
+    "subsurface": 0.5693102509331692,
+    "bulk": 0.4021486407741542
+   },
+   "x_TiO2mx": 0.00758727,
+   "Ti3_frac": 0.01517454,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense",
+    "x_near"
+   ]
+  },
+  {
+   "T_C": 400,
+   "VO_total_umol_g": 150.0,
+   "preset": "sx",
+   "mu_V_eV": 0.9858548641020686,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.9989140267731528,
+    "bulk": 0.0037286290612728126
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 54.169215485091755,
+    "bulk": 93.11937922710398
+   },
+   "fractions": {
+    "surface": 0.0180760352520285,
+    "subsurface": 0.361128103233945,
+    "bulk": 0.6207958615140264
+   },
+   "x_TiO2mx": 0.0119799,
+   "Ti3_frac": 0.0239598,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense",
+    "x_max"
+   ]
+  },
+  {
+   "T_C": 600,
+   "VO_total_umol_g": 1.0,
+   "preset": "sx",
+   "mu_V_eV": -0.19052617572744654,
+   "theta": {
+    "surface": 0.07363347296132151,
+    "subsurface": 3.1248439226326564e-05,
+    "bulk": 2.1829202281713313e-09
+   },
+   "umol_g": {
+    "surface": 0.9982509397336012,
+    "subsurface": 0.0016945436670778476,
+    "bulk": 5.4516599320880986e-05
+   },
+   "fractions": {
+    "surface": 0.9982509397336012,
+    "subsurface": 0.0016945436670778476,
+    "bulk": 5.4516599320880986e-05
+   },
+   "x_TiO2mx": 7.9866e-05,
+   "Ti3_frac": 0.000159732,
+   "surface_cap_bound": false,
+   "warn_kinds": []
+  },
+  {
+   "T_C": 600,
+   "VO_total_umol_g": 10.0,
+   "preset": "sx",
+   "mu_V_eV": 0.446711454485363,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.12961546923614953,
+    "bulk": 1.040248550987414e-05
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 7.028801373362563,
+    "bulk": 0.2597933388331624
+   },
+   "fractions": {
+    "surface": 0.2711405287804275,
+    "subsurface": 0.7028801373362562,
+    "bulk": 0.025979333883316243
+   },
+   "x_TiO2mx": 0.00079866,
+   "Ti3_frac": 0.00159732,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap"
+   ]
+  },
+  {
+   "T_C": 600,
+   "VO_total_umol_g": 38.0,
+   "preset": "sx",
+   "mu_V_eV": 0.6211587150160045,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.6020734428285061,
+    "bulk": 0.00010568092653499889
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 32.649302330634725,
+    "bulk": 2.639292381561
+   },
+   "fractions": {
+    "surface": 0.07135277073169144,
+    "subsurface": 0.8591921665956507,
+    "bulk": 0.06945506267265789
+   },
+   "x_TiO2mx": 0.003034908,
+   "Ti3_frac": 0.006069816,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense"
+   ]
+  },
+  {
+   "T_C": 600,
+   "VO_total_umol_g": 95.0,
+   "preset": "sx",
+   "mu_V_eV": 0.8263832596861009,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.9585776319383309,
+    "bulk": 0.001613937978634239
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 51.98184920016981,
+    "bulk": 40.30674551202591
+   },
+   "fractions": {
+    "surface": 0.02854110829267658,
+    "subsurface": 0.5471773600017875,
+    "bulk": 0.42428153170553595
+   },
+   "x_TiO2mx": 0.00758727,
+   "Ti3_frac": 0.01517454,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense",
+    "x_near"
+   ]
+  },
+  {
+   "T_C": 600,
+   "VO_total_umol_g": 150.0,
+   "preset": "sx",
+   "mu_V_eV": 0.8902945087214228,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.9818547752311276,
+    "bulk": 0.0037656709834863787
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 53.24412458835115,
+    "bulk": 94.04447012384458
+   },
+   "fractions": {
+    "surface": 0.0180760352520285,
+    "subsurface": 0.3549608305890076,
+    "bulk": 0.6269631341589639
+   },
+   "x_TiO2mx": 0.0119799,
+   "Ti3_frac": 0.0239598,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense",
+    "x_max"
+   ]
+  },
+  {
+   "T_C": 800,
+   "VO_total_umol_g": 1.0,
+   "preset": "sx",
+   "mu_V_eV": -0.2348585635374679,
+   "theta": {
+    "surface": 0.07312520410837484,
+    "subsurface": 0.0001337216773904695,
+    "bulk": 5.55855041173081e-08
+   },
+   "umol_g": {
+    "surface": 0.9913603254560721,
+    "subsurface": 0.007251473263411527,
+    "bulk": 0.0013882012805163414
+   },
+   "fractions": {
+    "surface": 0.9913603254560721,
+    "subsurface": 0.007251473263411527,
+    "bulk": 0.0013882012805163414
+   },
+   "x_TiO2mx": 7.9866e-05,
+   "Ti3_frac": 0.000159732,
+   "surface_cap_bound": false,
+   "warn_kinds": []
+  },
+  {
+   "T_C": 800,
+   "VO_total_umol_g": 10.0,
+   "preset": "sx",
+   "mu_V_eV": 0.397223732762918,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.11060382849354182,
+    "bulk": 5.168376422278167e-05
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 5.997836108575728,
+    "bulk": 1.2907586036199967
+   },
+   "fractions": {
+    "surface": 0.2711405287804275,
+    "subsurface": 0.5997836108575728,
+    "bulk": 0.12907586036199967
+   },
+   "x_TiO2mx": 0.00079866,
+   "Ti3_frac": 0.00159732,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap"
+   ]
+  },
+  {
+   "T_C": 800,
+   "VO_total_umol_g": 38.0,
+   "preset": "sx",
+   "mu_V_eV": 0.5813188749640714,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.4765488610320668,
+    "bulk": 0.00037824105517485945
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 25.84234203398901,
+    "bulk": 9.446252678206715
+   },
+   "fractions": {
+    "surface": 0.07135277073169144,
+    "subsurface": 0.680061632473395,
+    "bulk": 0.24858559679491354
+   },
+   "x_TiO2mx": 0.003034908,
+   "Ti3_frac": 0.006069816,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense"
+   ]
+  },
+  {
+   "T_C": 800,
+   "VO_total_umol_g": 95.0,
+   "preset": "sx",
+   "mu_V_eV": 0.7312709947663067,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.8216600664385041,
+    "bulk": 0.0019112364737306627
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 44.557068978379434,
+    "bulk": 47.73152573381629
+   },
+   "fractions": {
+    "surface": 0.02854110829267658,
+    "subsurface": 0.4690217787197835,
+    "bulk": 0.5024371129875399
+   },
+   "x_TiO2mx": 0.00758727,
+   "Ti3_frac": 0.01517454,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense",
+    "x_near"
+   ]
+  },
+  {
+   "T_C": 800,
+   "VO_total_umol_g": 150.0,
+   "preset": "sx",
+   "mu_V_eV": 0.7981961004739045,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.904765247131358,
+    "bulk": 0.003933060760014241
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 49.06370550587011,
+    "bulk": 98.22488920632561
+   },
+   "fractions": {
+    "surface": 0.0180760352520285,
+    "subsurface": 0.3270913700391341,
+    "bulk": 0.6548325947088374
+   },
+   "x_TiO2mx": 0.0119799,
+   "Ti3_frac": 0.0239598,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense",
+    "x_max"
+   ]
+  },
+  {
+   "T_C": 1000,
+   "VO_total_umol_g": 1.0,
+   "preset": "sx",
+   "mu_V_eV": -0.2814217601492703,
+   "theta": {
+    "surface": 0.07141822363689866,
+    "subsurface": 0.00035506936973735153,
+    "bulk": 5.015790132883113e-07
+   },
+   "umol_g": {
+    "surface": 0.9682187460733764,
+    "subsurface": 0.019254739332863723,
+    "bulk": 0.012526514593759823
+   },
+   "fractions": {
+    "surface": 0.9682187460733764,
+    "subsurface": 0.019254739332863723,
+    "bulk": 0.012526514593759823
+   },
+   "x_TiO2mx": 7.9866e-05,
+   "Ti3_frac": 0.000159732,
+   "surface_cap_bound": false,
+   "warn_kinds": []
+  },
+  {
+   "T_C": 1000,
+   "VO_total_umol_g": 10.0,
+   "preset": "sx",
+   "mu_V_eV": 0.32023030177285766,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.07879020812258256,
+    "bulk": 0.00012076285882490616
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 4.272643738615393,
+    "bulk": 3.0159509735803316
+   },
+   "fractions": {
+    "surface": 0.2711405287804275,
+    "subsurface": 0.4272643738615393,
+    "bulk": 0.3015950973580332
+   },
+   "x_TiO2mx": 0.00079866,
+   "Ti3_frac": 0.00159732,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap"
+   ]
+  },
+  {
+   "T_C": 1000,
+   "VO_total_umol_g": 38.0,
+   "preset": "sx",
+   "mu_V_eV": 0.5124358545427637,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.330265981296684,
+    "bulk": 0.0006958750990240793
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 17.909698561393935,
+    "bulk": 17.37889615080179
+   },
+   "fractions": {
+    "surface": 0.07135277073169144,
+    "subsurface": 0.4713078568787878,
+    "bulk": 0.45733937238952077
+   },
+   "x_TiO2mx": 0.003034908,
+   "Ti3_frac": 0.006069816,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense"
+   ]
+  },
+  {
+   "T_C": 1000,
+   "VO_total_umol_g": 95.0,
+   "preset": "sx",
+   "mu_V_eV": 0.6456677638687032,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.6241970092744555,
+    "bulk": 0.002340001545017918
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 33.84902143156745,
+    "bulk": 58.439573280628274
+   },
+   "fractions": {
+    "surface": 0.02854110829267658,
+    "subsurface": 0.3563054887533416,
+    "bulk": 0.6151534029539818
+   },
+   "x_TiO2mx": 0.00758727,
+   "Ti3_frac": 0.01517454,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense",
+    "x_near"
+   ]
+  },
+  {
+   "T_C": 1000,
+   "VO_total_umol_g": 150.0,
+   "preset": "sx",
+   "mu_V_eV": 0.711730059494948,
+   "theta": {
+    "surface": 0.2,
+    "subsurface": 0.7520444901617811,
+    "bulk": 0.004264673807991634
+   },
+   "umol_g": {
+    "surface": 2.711405287804275,
+    "subsurface": 40.781948145774464,
+    "bulk": 106.50664656642125
+   },
+   "fractions": {
+    "surface": 0.0180760352520285,
+    "subsurface": 0.2718796543051631,
+    "bulk": 0.7100443104428084
+   },
+   "x_TiO2mx": 0.0119799,
+   "Ti3_frac": 0.0239598,
+   "surface_cap_bound": true,
+   "warn_kinds": [
+    "surface_cap",
+    "subsurface_dense",
+    "x_max"
+   ]
+  }
+ ],
+ "flagship": {
+  "T_C": 600,
+  "VO_total_umol_g": 95.0,
+  "preset": "sx",
+  "mu_V_eV": 0.8263832596861009,
+  "theta": {
+   "surface": 0.2,
+   "subsurface": 0.9585776319383309,
+   "bulk": 0.001613937978634239
+  },
+  "umol_g": {
+   "surface": 2.711405287804275,
+   "subsurface": 51.98184920016981,
+   "bulk": 40.30674551202591
+  },
+  "fractions": {
+   "surface": 0.02854110829267658,
+   "subsurface": 0.5471773600017875,
+   "bulk": 0.42428153170553595
+  },
+  "x_TiO2mx": 0.00758727,
+  "Ti3_frac": 0.01517454,
+  "surface_cap_bound": true,
+  "warn_kinds": [
+   "surface_cap",
+   "subsurface_dense",
+   "x_near"
+  ]
+ },
+ "flagship_gga": {
+  "T_C": 600,
+  "VO_total_umol_g": 95.0,
+  "preset": "gga",
+  "mu_V_eV": 0.5981605874269413,
+  "theta": {
+   "surface": 0.2,
+   "subsurface": 0.9408406286211091,
+   "bulk": 0.0016524515497343402
+  },
+  "umol_g": {
+   "surface": 2.711405287804275,
+   "subsurface": 51.02000510848746,
+   "bulk": 41.268589603708264
+  },
+  "fractions": {
+   "surface": 0.02854110829267658,
+   "subsurface": 0.5370526853524996,
+   "bulk": 0.4344062063548238
+  },
+  "x_TiO2mx": 0.00758727,
+  "Ti3_frac": 0.01517454,
+  "surface_cap_bound": true,
+  "warn_kinds": [
+   "surface_cap",
+   "subsurface_dense",
+   "x_near"
+  ]
+ },
+ "bet_case": {
+  "T_C": 600,
+  "VO_total_umol_g": 95.0,
+  "preset": "sx",
+  "mu_V_eV": 0.8244654097918788,
+  "theta": {
+   "surface": 0.2,
+   "subsurface": 0.957553637677018,
+   "bulk": 0.0015733840673800592
+  },
+  "umol_g": {
+   "surface": 2.7645249701724333,
+   "subsurface": 52.943618832751255,
+   "bulk": 39.29185619707631
+  },
+  "fractions": {
+   "surface": 0.02910026284392035,
+   "subsurface": 0.5573012508710659,
+   "bulk": 0.4135984862850138
+  },
+  "x_TiO2mx": 0.00758727,
+  "Ti3_frac": 0.01517454,
+  "surface_cap_bound": true,
+  "warn_kinds": [
+   "surface_cap",
+   "subsurface_dense",
+   "x_near"
+  ]
+ },
+ "ideal_ensemble": {
+  "m_by_class": [
+   48,
+   48,
+   96
+  ],
+  "eps_eV": [
+   0.0,
+   0.59,
+   1.31
+  ],
+  "T_C": 600,
+  "n_vac": 14,
+  "theta_exact": [
+   0.29150952549264236,
+   0.0001571192198615491,
+   1.097708138259083e-08
+  ],
+  "mu_exact_eV": -0.06162993620959941
+ },
+ "ring_case": {
+  "row_sites": 10,
+  "n_vac": 3,
+  "pair_eV": [
+   0.4,
+   0.2,
+   0.05
+  ],
+  "T_C": 600,
+  "E_mean_eV": 0.15669161456324993,
+  "gap_probs": [
+   0.0,
+   0.011890869444426045,
+   0.1189309072685886,
+   0.4734784387625691,
+   0.32368876015865444,
+   0.06395495504371188,
+   0.007778287585564694,
+   0.00027646219442441596,
+   1.319542060821406e-06,
+   0.0,
+   0.0
+  ],
+  "mu_exact_eV": 0.35644874125736553
+ },
+ "micro3_case": {
+  "row_sites": 8,
+  "n_vac": 4,
+  "pair_eV": [
+   0.4,
+   0.2,
+   0.05
+  ],
+  "eps_eV": [
+   0.0,
+   0.59,
+   1.31
+  ],
+  "T_C": 600,
+  "theta_exact": [
+   0.39713659944373103,
+   0.10285611878356174,
+   7.281772707235153e-06
+  ],
+  "E_mean_eV": 0.9386331294087757,
+  "mu_exact_eV": 0.4779671294438069
+ }
+}
