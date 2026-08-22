@@ -33,6 +33,9 @@ def test_oracle_reproduces_committed_reference():
         assert row['fractions'][k] == pytest.approx(
             ref['fractions'][k], rel=1e-12)
     assert row['warn_kinds'] == ref['warn_kinds']
+    assert row['regime'] == 'unresolved'
+    assert row['VO_valid_max_umol_g'] == pytest.approx(
+        ref['VO_valid_max_umol_g'], rel=1e-12)
 
 
 def test_rng_matches_the_specification():
@@ -72,9 +75,12 @@ def _assert_row(row, ref):
             ref['fractions'][k], rel=1e-9, abs=1e-12), k
         assert row['umol_g'][k] == pytest.approx(
             ref['umol_g'][k], rel=1e-9, abs=1e-12), k
-    assert row['surface_cap_bound'] == ref['surface_cap_bound']
+    assert row['validity']['regime'] == ref['regime']
+    assert row['validity']['binding'] == ref['binding']
+    assert row['validity']['VO_valid_max_umol_g'] == pytest.approx(
+        ref['VO_valid_max_umol_g'], rel=1e-6)
     assert [w['kind'] for w in row['warnings']
-            if w['kind'] != 'unresolved'] == ref['warn_kinds']
+            if w['kind'] != 'not_converged'] == ref['warn_kinds']
 
 
 def test_analytic_grid_matches_oracle():
@@ -178,12 +184,15 @@ MC_SMALL = {'rows': 4, 'row_sites': 12, 'ss_layers': 1, 'bulk_layers': 2,
 
 
 def test_pipeline_with_zero_pairs_reproduces_the_analytic_solution():
-    out = S.run_full(P, zero_pairs=True, mc=MC_SMALL)
-    ref = REF['flagship']
-    assert out['mu_V_eV'] == pytest.approx(ref['mu_V_eV'], abs=1e-9)
+    """Inside the resolved regime and the sampled mu-range, the J = 0
+    Monte Carlo isotherm is the ideal one, so the full pipeline lands on
+    the analytic partition to sampling noise."""
+    out = S.run_full(P, vo_total=1.8, zero_pairs=True, mc=MC_SMALL)
+    ref = S.distribute(P, 600.0, 1.8, S.geometry(P))
+    assert out['validity']['regime'] == 'valid'
     for k in ('surface', 'subsurface', 'bulk'):
         assert out['fractions'][k] == pytest.approx(
-            ref['fractions'][k], rel=1e-9), k
+            ref['fractions'][k], abs=0.02), k
 
 
 def test_pipeline_is_deterministic_for_a_seed():
@@ -195,13 +204,51 @@ def test_pipeline_is_deterministic_for_a_seed():
 
 
 def test_low_loading_lives_on_the_surface():
-    """Below the surface capacity the equilibrium expectation is
+    """Below the validity boundary the equilibrium expectation is
     surface-first: the sX energies put subsurface 0.59 eV up."""
     g = S.geometry(P)
     r = S.distribute(P, 600.0, 1.0, g)
     assert r['fractions']['surface'] > 0.995
     assert r['fractions']['bulk'] < 1e-3
-    assert not r['surface_cap_bound']
+    assert r['validity']['regime'] == 'valid'
+
+
+def test_validity_boundary_brackets_the_regimes():
+    """The resolved regime ends where the unconstrained surface coverage
+    crosses the reconstruction boundary - nothing is pinned beyond it,
+    the split is simply declared unresolved."""
+    g = S.geometry(P)
+    vmax = S.validity_boundary(P, 600.0, g)
+    assert vmax == pytest.approx(REF['flagship']['VO_valid_max_umol_g'],
+                                 rel=1e-6)
+    assert vmax == pytest.approx(2.309, abs=0.01)
+    below = S.distribute(P, 600.0, vmax * 0.98, g)
+    above = S.distribute(P, 600.0, vmax * 1.02, g)
+    assert below['validity']['regime'] == 'valid'
+    assert above['validity']['regime'] == 'unresolved'
+    assert above['validity']['binding'] == 'surface'
+    kinds = [w['kind'] for w in above['warnings']]
+    assert 'surface_reconstruction_regime' in kinds
+    # hotter surface holds relatively less before the boundary at fixed
+    # coverage threshold, but the deeper classes activate: the boundary
+    # inventory grows with temperature
+    assert S.validity_boundary(P, 1000.0, g) > vmax
+
+
+def test_unresolved_extrapolation_is_labelled_not_pinned():
+    """At the flagship inventory the model must say 'unresolved', carry
+    the breakdown warnings verbatim, and leave the unconstrained numbers
+    as an extrapolation - no pinning, no reassignment."""
+    g = S.geometry(P)
+    r = S.distribute(P, 600.0, 95.0, g)
+    assert r['validity']['regime'] == 'unresolved'
+    assert r['validity']['binding'] == 'surface'
+    texts = ' '.join(w['text'] for w in r['warnings'])
+    assert 'cannot be assigned quantitatively' in texts
+    assert 'dilute-defect approximation fails' in texts
+    # unconstrained: the surface is NOT pinned at any threshold
+    assert r['theta']['surface'] > 0.9
+    assert r['matched_umol_g'] == pytest.approx(95.0, rel=1e-9)
 
 
 def test_high_temperature_limit_is_proportional_to_site_counts():
@@ -310,20 +357,20 @@ def test_sweep_agrees_with_pointwise_solutions():
         assert row['accessible'] == a['accessible_umol_g']
 
 
-def test_sweep_tells_the_accessibility_story():
-    """Surface plateaus at the reconstruction cap and the recoverable
-    fraction falls as the inventory is forced deeper - the paper's story
-    as a curve."""
+def test_sweep_carries_the_validity_split():
+    """The sweep is the paper's panel: solid within the resolved regime,
+    declared unresolved beyond the boundary - and inside the resolved
+    regime the inventory is essentially all surface."""
     g = S.geometry(P)
-    rows = S.sweep(P, 600.0, g, [2.0, 20.0, 60.0, 95.0, 150.0])
-    cap_umol = P['saturation']['surface_cap_coverage'] * g['N_s']
-    assert rows[-1]['surface'] == pytest.approx(cap_umol, rel=1e-9)
-    assert rows[-2]['surface'] == pytest.approx(cap_umol, rel=1e-9)
-    fr = [r['f_recoverable'] for r in rows]
-    assert fr[0] > 0.95
-    assert fr[-1] < fr[-2] < fr[2]
+    vmax = S.validity_boundary(P, 600.0, g)
+    rows = S.sweep(P, 600.0, g,
+                   [0.5 * vmax, 0.9 * vmax, 20.0, 95.0, 150.0])
+    assert rows[0]['valid'] and rows[1]['valid']
+    assert not rows[2]['valid'] and not rows[4]['valid']
+    assert rows[0]['surface'] / (0.5 * vmax) > 0.99
+    assert rows[0]['f_recoverable'] > 0.95
     acc = [r['accessible'] for r in rows]
-    assert all(b >= a for a, b in zip(acc, acc[1:]))
+    assert all(b >= a - 1e-9 for a, b in zip(acc, acc[1:]))
 
 
 def test_dielectric_power_law_of_this_work():
@@ -417,6 +464,6 @@ def test_phase_validity_skips_divergent_costs():
 def test_mode_note_discloses_scope():
     out = S.run_full(P, mc=MC_SMALL)
     assert out['method'] == 'canonical_statmech'
-    assert out['surface_cap_bound'] is True
+    assert out['validity']['regime'] == 'unresolved'
     kinds = [w['kind'] for w in out['warnings']]
-    assert 'surface_cap' in kinds and 'subsurface_dense' in kinds
+    assert 'surface_reconstruction_regime' in kinds

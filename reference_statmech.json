@@ -48,90 +48,98 @@
    },
    "x_TiO2mx": 7.9866e-05,
    "Ti3_frac": 0.000159732,
-   "surface_cap_bound": false,
+   "regime": "valid",
+   "binding": null,
+   "VO_valid_max_umol_g": 2.305120248812823,
    "warn_kinds": []
   },
   {
    "T_C": 400,
    "VO_total_umol_g": 10.0,
    "preset": "sx",
-   "mu_V_eV": 0.48181319818658036,
+   "mu_V_eV": 0.05983129088594801,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.1341159851568179,
-    "bulk": 6.302067997775597e-07
+    "surface": 0.7371948201535085,
+    "subsurface": 0.00010731384826037302,
+    "bulk": 4.3668162081496855e-10
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 7.272855826665515,
-    "bulk": 0.015738885530209735
+    "surface": 9.994169667530722,
+    "subsurface": 0.005819426712556019,
+    "bulk": 1.090575672236339e-05
    },
    "fractions": {
-    "surface": 0.2711405287804275,
-    "subsurface": 0.7272855826665515,
-    "bulk": 0.0015738885530209733
+    "surface": 0.9994169667530721,
+    "subsurface": 0.000581942671255602,
+    "bulk": 1.0905756722363392e-06
    },
    "x_TiO2mx": 0.00079866,
    "Ti3_frac": 0.00159732,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.305120248812823,
    "warn_kinds": [
-    "surface_cap"
+    "surface_reconstruction_regime"
    ]
   },
   {
    "T_C": 400,
    "VO_total_umol_g": 38.0,
    "preset": "sx",
-   "mu_V_eV": 0.6252229123461873,
+   "mu_V_eV": 0.5781783838935552,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.6473046161559657,
-    "bulk": 7.467379481270175e-06
+    "surface": 0.9999530927030575,
+    "subsurface": 0.44922701993235337,
+    "bulk": 3.3185956461460314e-06
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 35.10210318130804,
-    "bulk": 0.1864915308876887
+    "surface": 13.556390515556544,
+    "subsurface": 24.360730345382784,
+    "bulk": 0.08287913906067096
    },
    "fractions": {
-    "surface": 0.07135277073169144,
-    "subsurface": 0.9237395574028431,
-    "bulk": 0.0049076718654654915
+    "surface": 0.35674711883043536,
+    "subsurface": 0.6410718511942838,
+    "bulk": 0.002181029975280815
    },
    "x_TiO2mx": 0.003034908,
    "Ti3_frac": 0.006069816,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.305120248812823,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense"
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface"
    ]
   },
   {
    "T_C": 400,
    "VO_total_umol_g": 95.0,
    "preset": "sx",
-   "mu_V_eV": 0.9340457656007495,
+   "mu_V_eV": 0.914770480390158,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.9973513381035202,
-    "bulk": 0.0015297459726623228
+    "surface": 0.999999858341178,
+    "subsurface": 0.9963112036579242,
+    "bulk": 0.001097730855615509
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 54.08447383865107,
-    "bulk": 38.20412087354465
+    "surface": 13.55702451854898,
+    "subsurface": 54.02806931793475,
+    "bulk": 27.41490616351627
    },
    "fractions": {
-    "surface": 0.02854110829267658,
-    "subsurface": 0.5693102509331692,
-    "bulk": 0.4021486407741542
+    "surface": 0.142705521247884,
+    "subsurface": 0.5687165191361553,
+    "bulk": 0.2885779596159607
    },
    "x_TiO2mx": 0.00758727,
    "Ti3_frac": 0.01517454,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.305120248812823,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense",
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface",
     "x_near"
    ]
   },
@@ -139,28 +147,30 @@
    "T_C": 400,
    "VO_total_umol_g": 150.0,
    "preset": "sx",
-   "mu_V_eV": 0.9858548641020686,
+   "mu_V_eV": 0.9786519998783643,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.9989140267731528,
-    "bulk": 0.0037286290612728126
+    "surface": 0.9999999529053224,
+    "subsurface": 0.9987706272361176,
+    "bulk": 0.00329466675091821
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 54.169215485091755,
-    "bulk": 93.11937922710398
+    "surface": 13.557025800557586,
+    "subsurface": 54.16143919983204,
+    "bulk": 82.28153499961037
    },
    "fractions": {
-    "surface": 0.0180760352520285,
-    "subsurface": 0.361128103233945,
-    "bulk": 0.6207958615140264
+    "surface": 0.09038017200371723,
+    "subsurface": 0.3610762613322136,
+    "bulk": 0.5485435666640692
    },
    "x_TiO2mx": 0.0119799,
    "Ti3_frac": 0.0239598,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.305120248812823,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense",
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface",
     "x_max"
    ]
   },
@@ -186,90 +196,98 @@
    },
    "x_TiO2mx": 7.9866e-05,
    "Ti3_frac": 0.000159732,
-   "surface_cap_bound": false,
+   "regime": "valid",
+   "binding": null,
+   "VO_valid_max_umol_g": 2.3092012339844077,
    "warn_kinds": []
   },
   {
    "T_C": 600,
    "VO_total_umol_g": 10.0,
    "preset": "sx",
-   "mu_V_eV": 0.446711454485363,
+   "mu_V_eV": 0.07605213448228874,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.12961546923614953,
-    "bulk": 1.040248550987414e-05
+    "surface": 0.7331695907452707,
+    "subsurface": 0.0010790702149761455,
+    "bulk": 7.545960442309654e-08
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 7.028801373362563,
-    "bulk": 0.2597933388331624
+    "surface": 9.939599526020116,
+    "subsurface": 0.058515933735968334,
+    "bulk": 0.0018845402439155244
    },
    "fractions": {
-    "surface": 0.2711405287804275,
-    "subsurface": 0.7028801373362562,
-    "bulk": 0.025979333883316243
+    "surface": 0.9939599526020116,
+    "subsurface": 0.005851593373596834,
+    "bulk": 0.00018845402439155245
    },
    "x_TiO2mx": 0.00079866,
    "Ti3_frac": 0.00159732,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.3092012339844077,
    "warn_kinds": [
-    "surface_cap"
+    "surface_reconstruction_regime"
    ]
   },
   {
    "T_C": 600,
    "VO_total_umol_g": 38.0,
    "preset": "sx",
-   "mu_V_eV": 0.6211587150160045,
+   "mu_V_eV": 0.5678439637744724,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.6020734428285061,
-    "bulk": 0.00010568092653499889
+    "surface": 0.9994725225907923,
+    "subsurface": 0.42691167208050784,
+    "bulk": 5.2034313767109215e-05
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 32.649302330634725,
-    "bulk": 2.639292381561
+    "surface": 13.54987541383876,
+    "subsurface": 23.15061130208907,
+    "bulk": 1.2995132840721688
    },
    "fractions": {
-    "surface": 0.07135277073169144,
-    "subsurface": 0.8591921665956507,
-    "bulk": 0.06945506267265789
+    "surface": 0.3565756687852305,
+    "subsurface": 0.6092266132128703,
+    "bulk": 0.03419771800189918
    },
    "x_TiO2mx": 0.003034908,
    "Ti3_frac": 0.006069816,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.3092012339844077,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense"
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface"
    ]
   },
   {
    "T_C": 600,
    "VO_total_umol_g": 95.0,
    "preset": "sx",
-   "mu_V_eV": 0.8263832596861009,
+   "mu_V_eV": 0.804571112807971,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.9585776319383309,
-    "bulk": 0.001613937978634239
+    "surface": 0.9999772989540987,
+    "subsurface": 0.9454084132430646,
+    "bulk": 0.0012082718198026265
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 51.98184920016981,
-    "bulk": 40.30674551202591
+    "surface": 13.556718680341897,
+    "subsurface": 51.267707416037894,
+    "bulk": 30.17557390362021
    },
    "fractions": {
-    "surface": 0.02854110829267658,
-    "subsurface": 0.5471773600017875,
-    "bulk": 0.42428153170553595
+    "surface": 0.14270230189833577,
+    "subsurface": 0.5396600780635568,
+    "bulk": 0.3176376200381075
    },
    "x_TiO2mx": 0.00758727,
    "Ti3_frac": 0.01517454,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.3092012339844077,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense",
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface",
     "x_near"
    ]
   },
@@ -277,28 +295,30 @@
    "T_C": 600,
    "VO_total_umol_g": 150.0,
    "preset": "sx",
-   "mu_V_eV": 0.8902945087214228,
+   "mu_V_eV": 0.8811549400486167,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.9818547752311276,
-    "bulk": 0.0037656709834863787
+    "surface": 0.9999917962175031,
+    "subsurface": 0.9795591525869498,
+    "bulk": 0.0033363863704840525
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 53.24412458835115,
-    "bulk": 94.04447012384458
+    "surface": 13.556915220125164,
+    "subsurface": 53.11963732082661,
+    "bulk": 83.32344745904823
    },
    "fractions": {
-    "surface": 0.0180760352520285,
-    "subsurface": 0.3549608305890076,
-    "bulk": 0.6269631341589639
+    "surface": 0.09037943480083442,
+    "subsurface": 0.3541309154721774,
+    "bulk": 0.5554896497269882
    },
    "x_TiO2mx": 0.0119799,
    "Ti3_frac": 0.0239598,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.3092012339844077,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense",
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface",
     "x_max"
    ]
   },
@@ -324,90 +344,98 @@
    },
    "x_TiO2mx": 7.9866e-05,
    "Ti3_frac": 0.000159732,
-   "surface_cap_bound": false,
+   "regime": "valid",
+   "binding": null,
+   "VO_valid_max_umol_g": 2.3271201114236013,
    "warn_kinds": []
   },
   {
    "T_C": 800,
    "VO_total_umol_g": 10.0,
    "preset": "sx",
-   "mu_V_eV": 0.397223732762918,
+   "mu_V_eV": 0.08606479263846174,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.11060382849354182,
-    "bulk": 5.168376422278167e-05
+    "surface": 0.7172096700139234,
+    "subsurface": 0.004280872638436039,
+    "bulk": 1.7868839996481546e-06
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 5.997836108575728,
-    "bulk": 1.2907586036199967
+    "surface": 9.723230458700556,
+    "subsurface": 0.2321436141654423,
+    "bulk": 0.044625927134001465
    },
    "fractions": {
-    "surface": 0.2711405287804275,
-    "subsurface": 0.5997836108575728,
-    "bulk": 0.12907586036199967
+    "surface": 0.9723230458700556,
+    "subsurface": 0.02321436141654423,
+    "bulk": 0.004462592713400147
    },
    "x_TiO2mx": 0.00079866,
    "Ti3_frac": 0.00159732,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.3271201114236013,
    "warn_kinds": [
-    "surface_cap"
+    "surface_reconstruction_regime"
    ]
   },
   {
    "T_C": 800,
    "VO_total_umol_g": 38.0,
    "preset": "sx",
-   "mu_V_eV": 0.5813188749640714,
+   "mu_V_eV": 0.5323293691918901,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.4765488610320668,
-    "bulk": 0.00037824105517485945
+    "surface": 0.9968473330616999,
+    "subsurface": 0.3489581475410279,
+    "bulk": 0.0002227252084804292
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 25.84234203398901,
-    "bulk": 9.446252678206715
+    "surface": 13.514285649985412,
+    "subsurface": 18.923339329302546,
+    "bulk": 5.562375020712041
    },
    "fractions": {
-    "surface": 0.07135277073169144,
-    "subsurface": 0.680061632473395,
-    "bulk": 0.24858559679491354
+    "surface": 0.3556390960522477,
+    "subsurface": 0.4979826139290144,
+    "bulk": 0.14637829001873792
    },
    "x_TiO2mx": 0.003034908,
    "Ti3_frac": 0.006069816,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.3271201114236013,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense"
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface"
    ]
   },
   {
    "T_C": 800,
    "VO_total_umol_g": 95.0,
    "preset": "sx",
-   "mu_V_eV": 0.7312709947663067,
+   "mu_V_eV": 0.7117930585371398,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.8216600664385041,
-    "bulk": 0.0019112364737306627
+    "surface": 0.9995460099879885,
+    "subsurface": 0.7886838918292615,
+    "bulk": 0.0015488126377828726
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 44.557068978379434,
-    "bulk": 47.73152573381629
+    "surface": 13.550871684425482,
+    "subsurface": 42.76883349423829,
+    "bulk": 38.68029482133623
    },
    "fractions": {
-    "surface": 0.02854110829267658,
-    "subsurface": 0.4690217787197835,
-    "bulk": 0.5024371129875399
+    "surface": 0.14264075457289982,
+    "subsurface": 0.45019824730777147,
+    "bulk": 0.4071609981193287
    },
    "x_TiO2mx": 0.00758727,
    "Ti3_frac": 0.01517454,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.3271201114236013,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense",
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface",
     "x_near"
    ]
   },
@@ -415,28 +443,30 @@
    "T_C": 800,
    "VO_total_umol_g": 150.0,
    "preset": "sx",
-   "mu_V_eV": 0.7981961004739045,
+   "mu_V_eV": 0.7879140542129158,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.904765247131358,
-    "bulk": 0.003933060760014241
+    "surface": 0.9998006235480142,
+    "subsurface": 0.8947443214962985,
+    "bulk": 0.0035206544035135735
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 49.06370550587011,
-    "bulk": 98.22488920632561
+    "surface": 13.554323487190485,
+    "subsurface": 48.52028969075823,
+    "bulk": 87.92538682205128
    },
    "fractions": {
-    "surface": 0.0180760352520285,
-    "subsurface": 0.3270913700391341,
-    "bulk": 0.6548325947088374
+    "surface": 0.0903621565812699,
+    "subsurface": 0.3234685979383882,
+    "bulk": 0.5861692454803419
    },
    "x_TiO2mx": 0.0119799,
    "Ti3_frac": 0.0239598,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.3271201114236013,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense",
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface",
     "x_max"
    ]
   },
@@ -462,90 +492,98 @@
    },
    "x_TiO2mx": 7.9866e-05,
    "Ti3_frac": 0.000159732,
-   "surface_cap_bound": false,
+   "regime": "valid",
+   "binding": null,
+   "VO_valid_max_umol_g": 2.38929978462727,
    "warn_kinds": []
   },
   {
    "T_C": 1000,
    "VO_total_umol_g": 10.0,
    "preset": "sx",
-   "mu_V_eV": 0.32023030177285766,
+   "mu_V_eV": 0.08005884590152469,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.07879020812258256,
-    "bulk": 0.00012076285882490616
+    "surface": 0.6747440513313324,
+    "subsurface": 0.009489675817380474,
+    "bulk": 1.3528779787056127e-05
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 4.272643738615393,
-    "bulk": 3.0159509735803316
+    "surface": 9.14752294347127,
+    "subsurface": 0.5146071438158755,
+    "bulk": 0.33786991271285466
    },
    "fractions": {
-    "surface": 0.2711405287804275,
-    "subsurface": 0.4272643738615393,
-    "bulk": 0.3015950973580332
+    "surface": 0.914752294347127,
+    "subsurface": 0.051460714381587544,
+    "bulk": 0.03378699127128547
    },
    "x_TiO2mx": 0.00079866,
    "Ti3_frac": 0.00159732,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.38929978462727,
    "warn_kinds": [
-    "surface_cap"
+    "surface_reconstruction_regime"
    ]
   },
   {
    "T_C": 1000,
    "VO_total_umol_g": 38.0,
    "preset": "sx",
-   "mu_V_eV": 0.5124358545427637,
+   "mu_V_eV": 0.4660594240711535,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.330265981296684,
-    "bulk": 0.0006958750990240793
+    "surface": 0.9859092017215149,
+    "subsurface": 0.24421746878400666,
+    "bulk": 0.00045609350238667585
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 17.909698561393935,
-    "bulk": 17.37889615080179
+    "surface": 13.365997114213036,
+    "subsurface": 13.243450724702623,
+    "bulk": 11.390552161084344
    },
    "fractions": {
-    "surface": 0.07135277073169144,
-    "subsurface": 0.4713078568787878,
-    "bulk": 0.45733937238952077
+    "surface": 0.3517367661635009,
+    "subsurface": 0.3485118611763848,
+    "bulk": 0.2997513726601143
    },
    "x_TiO2mx": 0.003034908,
    "Ti3_frac": 0.006069816,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.38929978462727,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense"
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface"
    ]
   },
   {
    "T_C": 1000,
    "VO_total_umol_g": 95.0,
    "preset": "sx",
-   "mu_V_eV": 0.6456677638687032,
+   "mu_V_eV": 0.6279288426423153,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.6241970092744555,
-    "bulk": 0.002340001545017918
+    "surface": 0.9967422355714811,
+    "subsurface": 0.5855778816906486,
+    "bulk": 0.001991352646559026
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 33.84902143156745,
-    "bulk": 58.439573280628274
+    "surface": 13.51286084053184,
+    "subsurface": 31.754779296745014,
+    "bulk": 49.73235986272314
    },
    "fractions": {
-    "surface": 0.02854110829267658,
-    "subsurface": 0.3563054887533416,
-    "bulk": 0.6151534029539818
+    "surface": 0.14224064042665094,
+    "subsurface": 0.3342608347025791,
+    "bulk": 0.52349852487077
    },
    "x_TiO2mx": 0.00758727,
    "Ti3_frac": 0.01517454,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.38929978462727,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense",
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface",
     "x_near"
    ]
   },
@@ -553,28 +591,30 @@
    "T_C": 1000,
    "VO_total_umol_g": 150.0,
    "preset": "sx",
-   "mu_V_eV": 0.711730059494948,
+   "mu_V_eV": 0.7010772771145124,
    "theta": {
-    "surface": 0.2,
-    "subsurface": 0.7520444901617811,
-    "bulk": 0.004264673807991634
+    "surface": 0.9983248649465544,
+    "subsurface": 0.7334989693817381,
+    "bulk": 0.0038715785932067317
    },
    "umol_g": {
-    "surface": 2.711405287804275,
-    "subsurface": 40.781948145774464,
-    "bulk": 106.50664656642125
+    "surface": 13.534316588812882,
+    "subsurface": 39.776259683612615,
+    "bulk": 96.6894237275745
    },
    "fractions": {
-    "surface": 0.0180760352520285,
-    "subsurface": 0.2718796543051631,
-    "bulk": 0.7100443104428084
+    "surface": 0.09022877725875254,
+    "subsurface": 0.2651750645574174,
+    "bulk": 0.6445961581838301
    },
    "x_TiO2mx": 0.0119799,
    "Ti3_frac": 0.0239598,
-   "surface_cap_bound": true,
+   "regime": "unresolved",
+   "binding": "surface",
+   "VO_valid_max_umol_g": 2.38929978462727,
    "warn_kinds": [
-    "surface_cap",
-    "subsurface_dense",
+    "surface_reconstruction_regime",
+    "dilute_breakdown_subsurface",
     "x_max"
    ]
   }
@@ -583,28 +623,30 @@
   "T_C": 600,
   "VO_total_umol_g": 95.0,
   "preset": "sx",
-  "mu_V_eV": 0.8263832596861009,
+  "mu_V_eV": 0.804571112807971,
   "theta": {
-   "surface": 0.2,
-   "subsurface": 0.9585776319383309,
-   "bulk": 0.001613937978634239
+   "surface": 0.9999772989540987,
+   "subsurface": 0.9454084132430646,
+   "bulk": 0.0012082718198026265
   },
   "umol_g": {
-   "surface": 2.711405287804275,
-   "subsurface": 51.98184920016981,
-   "bulk": 40.30674551202591
+   "surface": 13.556718680341897,
+   "subsurface": 51.267707416037894,
+   "bulk": 30.17557390362021
   },
   "fractions": {
-   "surface": 0.02854110829267658,
-   "subsurface": 0.5471773600017875,
-   "bulk": 0.42428153170553595
+   "surface": 0.14270230189833577,
+   "subsurface": 0.5396600780635568,
+   "bulk": 0.3176376200381075
   },
   "x_TiO2mx": 0.00758727,
   "Ti3_frac": 0.01517454,
-  "surface_cap_bound": true,
+  "regime": "unresolved",
+  "binding": "surface",
+  "VO_valid_max_umol_g": 2.3092012339844077,
   "warn_kinds": [
-   "surface_cap",
-   "subsurface_dense",
+   "surface_reconstruction_regime",
+   "dilute_breakdown_subsurface",
    "x_near"
   ]
  },
@@ -612,28 +654,30 @@
   "T_C": 600,
   "VO_total_umol_g": 95.0,
   "preset": "gga",
-  "mu_V_eV": 0.5981605874269413,
+  "mu_V_eV": 0.5774864308450144,
   "theta": {
-   "surface": 0.2,
-   "subsurface": 0.9408406286211091,
-   "bulk": 0.0016524515497343402
+   "surface": 0.9995359384556848,
+   "subsurface": 0.9235629059602907,
+   "bulk": 0.0012559460562598052
   },
   "umol_g": {
-   "surface": 2.711405287804275,
-   "subsurface": 51.02000510848746,
-   "bulk": 41.268589603708264
+   "surface": 13.55073514439576,
+   "subsurface": 50.083066936812294,
+   "bulk": 31.366197918791947
   },
   "fractions": {
-   "surface": 0.02854110829267658,
-   "subsurface": 0.5370526853524996,
-   "bulk": 0.4344062063548238
+   "surface": 0.14263931730942905,
+   "subsurface": 0.5271901782822347,
+   "bulk": 0.3301705044083363
   },
   "x_TiO2mx": 0.00758727,
   "Ti3_frac": 0.01517454,
-  "surface_cap_bound": true,
+  "regime": "unresolved",
+  "binding": "surface",
+  "VO_valid_max_umol_g": 2.369916139695263,
   "warn_kinds": [
-   "surface_cap",
-   "subsurface_dense",
+   "surface_reconstruction_regime",
+   "dilute_breakdown_subsurface",
    "x_near"
   ]
  },
@@ -641,28 +685,30 @@
   "T_C": 600,
   "VO_total_umol_g": 95.0,
   "preset": "sx",
-  "mu_V_eV": 0.8244654097918788,
+  "mu_V_eV": 0.8016311632293446,
   "theta": {
-   "surface": 0.2,
-   "subsurface": 0.957553637677018,
-   "bulk": 0.0015733840673800592
+   "surface": 0.999976394417805,
+   "subsurface": 0.9433563446447248,
+   "bulk": 0.0011620251108746043
   },
   "umol_g": {
-   "surface": 2.7645249701724333,
-   "subsurface": 52.943618832751255,
-   "bulk": 39.29185619707631
+   "surface": 13.822298559755097,
+   "subsurface": 52.15864341081867,
+   "bulk": 29.01905802942623
   },
   "fractions": {
-   "surface": 0.02910026284392035,
-   "subsurface": 0.5573012508710659,
-   "bulk": 0.4135984862850138
+   "surface": 0.14549787957636945,
+   "subsurface": 0.5490383516928281,
+   "bulk": 0.30546376873080244
   },
   "x_TiO2mx": 0.00758727,
   "Ti3_frac": 0.01517454,
-  "surface_cap_bound": true,
+  "regime": "unresolved",
+  "binding": "surface",
+  "VO_valid_max_umol_g": 2.3544384968327705,
   "warn_kinds": [
-   "surface_cap",
-   "subsurface_dense",
+   "surface_reconstruction_regime",
+   "dilute_breakdown_subsurface",
    "x_near"
   ]
  },
@@ -743,8 +789,8 @@
     "subsurface": 0.10392612229298022,
     "bulk": 4.540002045947473e-07
    },
-   "accessible_umol_g": 8.113695604067088,
-   "f_recoverable": 0.08540732214807462
+   "accessible_umol_g": 18.884786410658506,
+   "f_recoverable": 0.1987872253753527
   },
   {
    "T_reox_C": 600,
@@ -755,8 +801,8 @@
     "subsurface": 0.6662370158093471,
     "bulk": 4.539992770730343e-06
    },
-   "accessible_umol_g": 37.34382036751014,
-   "f_recoverable": 0.393092845973791
+   "accessible_umol_g": 47.71330007347709,
+   "f_recoverable": 0.5022452639313378
   },
   {
    "T_reox_C": 600,
@@ -767,8 +813,8 @@
     "subsurface": 0.999982845356463,
     "bulk": 4.539900019948636e-05
    },
-   "accessible_umol_g": 54.6941926438282,
-   "f_recoverable": 0.5757283436192443
+   "accessible_umol_g": 64.82491655801978,
+   "f_recoverable": 0.6823675427159976
   },
   {
    "T_reox_C": 700,
@@ -779,8 +825,74 @@
     "subsurface": 0.9976414785127019,
     "bulk": 7.990820816463331e-05
    },
-   "accessible_umol_g": 54.57387501949681,
-   "f_recoverable": 0.5744618423104928
+   "accessible_umol_g": 64.70592138287553,
+   "f_recoverable": 0.6811149619250055
   }
- ]
+ ],
+ "cgmc_linear": {
+  "spec": {
+   "q": [
+    1000000000000.0,
+    1000000000000.0,
+    1000000000000.0
+   ],
+   "eps": [
+    0.0,
+    0.05,
+    0.1
+   ],
+   "lam": [
+    1e-11,
+    2e-11
+   ],
+   "k_fill": 5.0,
+   "eta0": [
+    0.0,
+    0.0,
+    1000.0
+   ],
+   "T_C": 600,
+   "times_s": [
+    0.001,
+    0.01,
+    0.1,
+    1.0
+   ]
+  },
+  "rows": [
+   {
+    "t_s": 0.001,
+    "eta": [
+     0.6988619759976782,
+     70.69536419205059,
+     928.6045946303659
+    ]
+   },
+   {
+    "t_s": 0.01,
+    "eta": [
+     46.18189040307319,
+     408.08430576339856,
+     544.8702064508147
+    ]
+   },
+   {
+    "t_s": 0.1,
+    "eta": [
+     382.484791680539,
+     316.59957991839605,
+     174.92157913063193
+    ]
+   },
+   {
+    "t_s": 1.0,
+    "eta": [
+     46.30581001139641,
+     29.733210317400836,
+     15.826308789417302
+    ]
+   }
+  ],
+  "eq_ratio_cell0_over_cell1": 1.943557986595559
+ }
 }

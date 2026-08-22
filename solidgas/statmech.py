@@ -439,19 +439,23 @@ def theta_s_interp(points, eps_s, kt):
 
 
 def distribute(p, t_c, vo_total, geom, theta_s_fn=None, preset=None, eps=None):
-    """Split the total inventory over the real site counts at common mu."""
+    """Split the total inventory over the real site counts at common mu.
+
+    The partition is UNCONSTRAINED - nothing is pinned and no remainder is
+    reassigned. Instead the result carries a validity verdict: quantitative
+    only while the unreconstructed dilute-defect description holds (surface
+    coverage below the reconstruction boundary, subsurface occupancy inside
+    the dilute range). Beyond a boundary the numbers are still returned,
+    flagged as an extrapolation of an out-of-scope model, and the UI and
+    the paper report the regime, not the split."""
     kt = KB_EV * (t_c + 273.15)
     if eps is None:
         eps = energetics(p, preset)['eps']
-    cap = p['saturation']['surface_cap_coverage']
     if theta_s_fn is None:
         theta_s_fn = lambda mu: fd(mu, eps[0], kt)  # noqa: E731
 
     def parts(mu):
-        ts = theta_s_fn(mu)
-        if ts > cap:
-            ts = cap
-        return ts, fd(mu, eps[1], kt), fd(mu, eps[2], kt)
+        return theta_s_fn(mu), fd(mu, eps[1], kt), fd(mu, eps[2], kt)
 
     def total(mu):
         ts, tss, tb = parts(mu)
@@ -480,34 +484,54 @@ def distribute(p, t_c, vo_total, geom, theta_s_fn=None, preset=None, eps=None):
     tot = us + uss + ub
     mol_ti = 1e6 / p['molar_mass_g_mol']
     x = vo_total / mol_ti
-    sat = p['saturation']
+    val = p['validity']
+    stop_s = val['surface_theta_stop']
+    stop_ss = val['subsurface_theta_stop']
+    binding = None
+    if ts > stop_s:
+        binding = 'surface'
+    elif tss > stop_ss:
+        binding = 'subsurface'
+    regime = 'valid' if binding is None else 'unresolved'
+    vo_max = validity_boundary(p, t_c, geom, theta_s_fn=theta_s_fn, eps=eps)
+
     warnings = []
-    if ts >= cap - 1e-12:
-        warnings.append({'kind': 'surface_cap',
-                         'text': 'Surface pinned at the %.0f%% reconstruction '
-                                 'threshold (%.2f of %.2f umol-O/g capacity); '
-                                 'coverage beyond it is not modelled.'
-                                 % (cap * 100, us, geom['N_s'])})
-    if tss > sat['subsurface_dilute_warn']:
-        warnings.append({'kind': 'subsurface_dense',
-                         'text': 'Subsurface layer occupancy %.0f%% is far '
-                                 'beyond the dilute-defect regime; read this '
-                                 'as a heavily reduced near-surface shell '
-                                 '(extended defects), not isolated vacancies.'
+    if binding == 'surface':
+        warnings.append({'kind': 'surface_reconstruction_regime',
+                         'text': 'Surface reconstruction regime: the '
+                                 'unconstrained partition wants theta_s = '
+                                 '%.1f%%, beyond the %.0f-%.0f%% validity '
+                                 'boundary of the unreconstructed (1x1) '
+                                 'model. The equilibrium partition beyond '
+                                 'this point is unresolved - reconstructed-'
+                                 'surface states are not in the model, so '
+                                 'additional vacancies cannot be assigned '
+                                 'quantitatively.'
+                                 % (ts * 100, stop_s * 100,
+                                    val['surface_theta_reconstruction']
+                                    * 100)})
+    if tss > stop_ss:
+        warnings.append({'kind': 'dilute_breakdown_subsurface',
+                         'text': 'The dilute-defect approximation fails at '
+                                 'this inventory: the calculated occupancy '
+                                 'of the first subsurface class reaches '
+                                 '%.0f%%. Local reconstruction, vacancy-'
+                                 'vacancy interaction, Ti interstitials and '
+                                 'shear structures are outside the model.'
                                  % (tss * 100)})
-    if x >= sat['x_max_shear']:
+    if x >= val['x_max_shear']:
         warnings.append({'kind': 'x_max',
                          'text': 'x = %.4f in TiO2-x exceeds the rutile '
                                  'point-defect range (~%.3f); crystallographic '
                                  'shear planes are expected.'
-                                 % (x, sat['x_max_shear'])})
-    elif x >= 0.8 * sat['x_max_shear']:
+                                 % (x, val['x_max_shear'])})
+    elif x >= 0.8 * val['x_max_shear']:
         warnings.append({'kind': 'x_near',
                          'text': 'x = %.4f in TiO2-x is near the rutile '
                                  'point-defect range (~%.3f).'
-                                 % (x, sat['x_max_shear'])})
+                                 % (x, val['x_max_shear'])})
     if vo_total > 0 and abs(tot - vo_total) > 1e-6 * vo_total:
-        warnings.append({'kind': 'unresolved',
+        warnings.append({'kind': 'not_converged',
                          'text': 'Inventory not matched within tolerance; '
                                  'check the isotherm range.'})
     return {'method': 'canonical_statmech',
@@ -520,8 +544,45 @@ def distribute(p, t_c, vo_total, geom, theta_s_fn=None, preset=None, eps=None):
                           'bulk': ub / tot if tot else 0.0},
             'matched_umol_g': tot,
             'x_TiO2mx': x, 'Ti3_frac': 2.0 * x,
-            'surface_cap_bound': ts >= cap - 1e-12,
+            'validity': {'regime': regime, 'binding': binding,
+                         'VO_valid_max_umol_g': vo_max,
+                         'surface_theta_stop': stop_s,
+                         'surface_theta_reconstruction':
+                             val['surface_theta_reconstruction'],
+                         'subsurface_theta_stop': stop_ss},
             'warnings': warnings}
+
+
+def validity_boundary(p, t_c, geom, theta_s_fn=None, preset=None, eps=None):
+    """The largest inventory the dilute unreconstructed model resolves.
+
+    Bisection on the total inventory for the point where the unconstrained
+    partition first hits a validity threshold (in practice the surface
+    boundary, since the surface fills first)."""
+    kt = KB_EV * (t_c + 273.15)
+    if eps is None:
+        eps = energetics(p, preset)['eps']
+    if theta_s_fn is None:
+        theta_s_fn = lambda mu: fd(mu, eps[0], kt)  # noqa: E731
+    val = p['validity']
+    stop_s = val['surface_theta_stop']
+    stop_ss = val['subsurface_theta_stop']
+
+    def over(mu):
+        return (theta_s_fn(mu) > stop_s
+                or fd(mu, eps[1], kt) > stop_ss)
+
+    lo, hi = -6.0, 6.0
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if over(mid):
+            hi = mid
+        else:
+            lo = mid
+    mu = lo
+    ts = theta_s_fn(mu)
+    return (geom['N_s'] * ts + geom['N_ss'] * fd(mu, eps[1], kt)
+            + geom['N_b'] * fd(mu, eps[2], kt))
 
 
 def spacing_summary(points, theta_s):
@@ -680,7 +741,8 @@ def sweep(p, t_c, geom, vo_list, theta_s_fn=None, preset=None, eps=None,
                      'bulk': d['umol_g']['bulk'],
                      'accessible': a['accessible_umol_g'],
                      'f_recoverable': a['f_recoverable'],
-                     'mu_V_eV': d['mu_V_eV']})
+                     'mu_V_eV': d['mu_V_eV'],
+                     'valid': d['validity']['regime'] == 'valid'})
     return rows
 
 
@@ -694,16 +756,23 @@ def run_full(p, t_c=None, vo_total=None, d_um=None, bet_m2_g=None,
     if vo_total is None:
         vo_total = p['defaults']['VO_total_umol_g']
     geom = geometry(p, d_um=d_um, bet_m2_g=bet_m2_g, ss_layers=ss_layers)
-    kt = KB_EV * (t_c + 273.15)
     if eps is None:
         eps = energetics(p, preset)['eps']
     pts = isotherm_scan(p, t_c, seed=seed, quality=quality, eps=eps,
                         zero_pairs=zero_pairs, ordering=ordering, mc=mc,
                         progress=progress)
-    fn = theta_s_interp(pts, eps[0], kt)
-    out = distribute(p, t_c, vo_total, geom, theta_s_fn=fn, eps=eps)
+    # decoupled by design: the layer partition uses the formation energies
+    # alone (analytic site-exclusion isotherms); the sampled surface
+    # isotherm feeds only the ordering exhibit below, because the pair
+    # interactions are effective parameters constrained to reproduce
+    # arrangement statistics, not layer energetics
+    out = distribute(p, t_c, vo_total, geom, eps=eps)
     out['geometry'] = geom
     out['isotherm'] = pts
-    out['spacing'] = spacing_summary(pts, out['theta']['surface'])
+    # the ordering exhibit reports the arrangement near the coverage the
+    # model can still speak for, not the unresolved extrapolation
+    out['spacing'] = spacing_summary(
+        pts, min(out['theta']['surface'],
+                 p['validity']['surface_theta_stop']))
     out['accessibility'] = accessibility(p, out['umol_g'], kin)
     return out

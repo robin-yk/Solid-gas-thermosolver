@@ -23,7 +23,9 @@
    'smEaS', 'smEaSS', 'smEaB', 'smAS', 'smASS', 'smAB', 'smKinT', 'smExp',
    'smPCO2', 'smAccKpis', 'smSweep', 'smTip', 'smSweepLegend', 'smAccNote',
    'smCoupledNote', 'smEnv', 'smParticle', 'smPvAcc', 'smPvDl',
-   'smPvLegend', 'smPvNote'].forEach(function (id) { el[id] = $(id); });
+   'smPvLegend', 'smPvNote', 'cgEm', 'cgCells', 'cgTarget', 'cgFit',
+   'cgFitOut', 'cgKpis', 'cgChart', 'cgLegend', 'cgProf', 'cgProfLegend',
+   'cgNote'].forEach(function (id) { el[id] = $(id); });
 
   /* ------------------------------------------- workspace switching */
 
@@ -494,6 +496,7 @@
     drawSweep(rows, vo, xmax);
 
     renderParticle(out, acc, fresh);
+    renderCg(out, acc, ctx);
   }
 
   function probf(v) {
@@ -1060,6 +1063,210 @@
     document.body.removeChild(a);
   }
 
+  /* ------------------------------------------ reoxidation kinetics */
+
+  var cgFitVal = null;
+
+  function tfmt(t) {
+    if (t == null) return '—';
+    if (t < 1e-3) return (t * 1e6).toPrecision(2) + ' μs';
+    if (t < 1.0) return (t * 1e3).toPrecision(2) + ' ms';
+    if (t < 600.0) return t.toPrecision(3) + ' s';
+    return Math.round(t) + ' s';
+  }
+
+  function effDiameterUm(geom) {
+    var rho = SM.densityGCm3(DATA);
+    return 6 / (rho * geom.area_m2_g * 1e4) * 1e4;
+  }
+
+  function renderCg(out, acc, ctx) {
+    if (!window.CGMC || !el.cgKpis) return;
+    var tEnd = Math.max(num(el.smExp, 300), 1e-3);
+    var sys = CGMC.build(DATA, {
+      vo_total: out.VO_total_umol_g, d_um: effDiameterUm(out.geometry),
+      kin: ctx.kin, eps: ctx.eps,
+      cg: { E_m_bulk_eV: num(el.cgEm, 0.65),
+            n_cells: Math.max(6, Math.round(num(el.cgCells, 28))) },
+      dist_fractions: out.fractions });
+    var r = CGMC.run(sys, tEnd, {});
+    var t50 = null;
+    for (var i = 0; i < r.t_s.length; i++) {
+      if (r.recovery[i] >= 0.5) { t50 = r.t_s[i]; break; }
+    }
+    var k = '<div class="kpi"><div class="k">CGMC recovery</div><div '
+      + 'class="v">' + pctf(r.recovered_fraction) + '</div><div class="u">'
+      + 'at ' + tfmt(tEnd) + ', E<sub>m</sub> = '
+      + num(el.cgEm, 0.65).toFixed(2) + ' eV</div></div>';
+    k += '<div class="kpi"><div class="k">t(50% recovered)</div><div '
+      + 'class="v">' + tfmt(t50) + '</div><div class="u">'
+      + (t50 == null ? 'not reached in this exposure'
+         : 'transport + surface exchange') + '</div></div>';
+    k += '<div class="kpi"><div class="k">First-order layer</div><div '
+      + 'class="v">' + pctf(acc.f_recoverable) + '</div><div class="u">'
+      + 'per-class refill, no transport</div></div>';
+    k += '<div class="kpi"><div class="k">Fitted E<sub>m,eff</sub></div>'
+      + '<div class="v">' + (cgFitVal == null ? '—'
+        : cgFitVal.toFixed(2)) + '</div><div class="u">'
+      + (cgFitVal == null ? 'enter a measured recovery and fit'
+        : 'eV, from the measured recovery') + '</div></div>';
+    el.cgKpis.innerHTML = k;
+    drawCgChart(r, tEnd, acc);
+    drawCgProf(r, sys);
+    el.cgNote.textContent = 'Closed-system check: with the gas channel '
+      + 'shut, this transport network relaxes to the equilibrium split of '
+      + 'the distribution panel (enforced by tests/test_cgmc.py). '
+      + 'Deterministic mean of the CGMC process; fluctuations scale as '
+      + '1/√N ≈ 0.01% at the ~10⁸ vacancies of one particle. '
+      + 'E_m = 0.65 eV is the neutral-vacancy bulk barrier (Iddir et al.); '
+      + 'an effective fitted barrier above it points at charged migration, '
+      + 'trapping or defect aggregation rather than neutral hops.';
+  }
+
+  function drawCgChart(r, tEnd, acc) {
+    var svg = el.cgChart;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var W = 720, H = 330, L = 56, R = 128, T = 18, B = 46;
+    var pw = W - L - R, ph = H - T - B;
+    var lgLo = -6;
+    var lgHi = Math.ceil(Math.log10(tEnd));
+    if (lgHi <= lgLo) lgHi = lgLo + 1;
+    var X = function (t) {
+      var lg = Math.log10(Math.max(t, Math.pow(10, lgLo)));
+      return L + pw * (lg - lgLo) / (lgHi - lgLo);
+    };
+    var Y = function (f) { return T + ph - ph * f; };
+    var i;
+    for (i = 0; i <= 4; i++) {
+      var y = Y(i / 4);
+      sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
+        style: 'stroke:var(--line);stroke-width:1' }, svg);
+      tx(L - 8, y + 4, (i * 25) + '%',
+         'fill:var(--muted);font-size:11px', 'end', svg);
+    }
+    for (var n = lgLo; n <= lgHi; n++) {
+      var xx = X(Math.pow(10, n));
+      sv('line', { x1: xx, x2: xx, y1: T, y2: T + ph,
+        style: 'stroke:var(--line);stroke-width:1;opacity:.6' }, svg);
+      var lab = n === -6 ? '1 μs' : n === -3 ? '1 ms' : n === 0 ? '1 s'
+        : n === 3 ? '1000 s' : '1e' + n;
+      tx(xx, T + ph + 16, lab, 'fill:var(--muted);font-size:10.5px',
+         'middle', svg);
+    }
+    tx(L + pw / 2, T + ph + 34, 'exposure time',
+       'fill:var(--muted);font-size:11px', 'middle', svg);
+
+    var fo = acc.f_recoverable;
+    sv('line', { x1: L, x2: L + pw, y1: Y(fo), y2: Y(fo),
+      'stroke-dasharray': '6 4',
+      style: 'stroke:var(--cSub);stroke-width:1.6;opacity:.9' }, svg);
+    tx(L + pw + 6, Y(fo) + 4, 'first-order',
+       'fill:var(--muted);font-size:10.5px', 'start', svg);
+    var tgt = num(el.cgTarget, NaN);
+    if (tgt > 0 && tgt < 100) {
+      sv('line', { x1: L, x2: L + pw, y1: Y(tgt / 100), y2: Y(tgt / 100),
+        'stroke-dasharray': '2 4',
+        style: 'stroke:var(--orange);stroke-width:1.6' }, svg);
+      tx(L + pw + 6, Y(tgt / 100) + 4, 'measured',
+         'fill:var(--orange);font-size:10.5px', 'start', svg);
+    }
+    var d = '';
+    var started = false;
+    for (i = 0; i < r.t_s.length; i++) {
+      if (r.t_s[i] < Math.pow(10, lgLo)) continue;
+      d += (started ? 'L' : 'M') + X(r.t_s[i]).toFixed(2) + ','
+        + Y(r.recovery[i]).toFixed(2);
+      started = true;
+    }
+    sv('path', { d: d, fill: 'none',
+      style: 'stroke:var(--ink);stroke-width:2.2' }, svg);
+    sv('circle', { cx: X(tEnd), cy: Y(r.recovered_fraction), r: 4.5,
+      style: 'fill:var(--ink);stroke:var(--panel);stroke-width:2' }, svg);
+    tx(L + pw + 6, Y(r.recovered_fraction) + 4,
+       pctf(r.recovered_fraction) + ' CGMC',
+       'fill:var(--ink);font-size:10.5px;font-weight:bold', 'start', svg);
+    sv('line', { x1: L, x2: L + pw, y1: T + ph, y2: T + ph,
+      style: 'stroke:var(--muted);stroke-width:1' }, svg);
+
+    el.cgLegend.innerHTML = '<span><svg width="20" height="6" '
+      + 'style="vertical-align:middle;margin-right:5px"><line x1="0" '
+      + 'x2="20" y1="3" y2="3" style="stroke:var(--ink);stroke-width:2.2"'
+      + '/></svg>CGMC recovery</span><span><svg width="20" height="6" '
+      + 'style="vertical-align:middle;margin-right:5px"><line x1="0" '
+      + 'x2="20" y1="3" y2="3" stroke-dasharray="6 4" '
+      + 'style="stroke:var(--cSub);stroke-width:1.6"/></svg>first-order '
+      + 'layer at the same exposure</span>'
+      + (tgt > 0 && tgt < 100 ? '<span><svg width="20" height="6" '
+        + 'style="vertical-align:middle;margin-right:5px"><line x1="0" '
+        + 'x2="20" y1="3" y2="3" stroke-dasharray="2 4" '
+        + 'style="stroke:var(--orange);stroke-width:1.6"/></svg>measured'
+        + '</span>' : '');
+  }
+
+  function drawCgProf(r, sys) {
+    var svg = el.cgProf;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var W = 720, H = 300, L = 56, R = 128, T = 16, B = 46;
+    var pw = W - L - R, ph = H - T - B;
+    var depths = r.depth_nm;
+    var lgLo = Math.log10(Math.max(depths[0] * 0.7, 0.05));
+    var lgHi = Math.log10(depths[depths.length - 1] * 1.15);
+    var X = function (dep) {
+      return L + pw * (Math.log10(dep) - lgLo) / (lgHi - lgLo);
+    };
+    var Y = function (th) {
+      var lg = Math.log10(Math.max(th, 1e-6));
+      return T + ph - (lg + 6) / 6 * ph;
+    };
+    [[1, '100%'], [1e-2, '1%'], [1e-4, '0.01%'],
+     [1e-6, '1e-4%']].forEach(function (g) {
+      var y = Y(g[0]);
+      sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
+        style: 'stroke:var(--line);stroke-width:1' }, svg);
+      tx(L - 8, y + 4, g[1], 'fill:var(--muted);font-size:10.5px', 'end',
+         svg);
+    });
+    [0.3, 1, 10, 100].forEach(function (dep) {
+      if (Math.log10(dep) > lgLo && Math.log10(dep) < lgHi) {
+        tx(X(dep), T + ph + 16, dep + '',
+           'fill:var(--muted);font-size:10.5px', 'middle', svg);
+      }
+    });
+    tx(L + pw / 2, T + ph + 34, 'depth from surface (nm)',
+       'fill:var(--muted);font-size:11px', 'middle', svg);
+
+    function line(theta, style, dash) {
+      var d = '';
+      for (var kk = 0; kk < depths.length; kk++) {
+        d += (kk ? 'L' : 'M') + X(depths[kk]).toFixed(2) + ','
+          + Y(theta[kk]).toFixed(2);
+      }
+      var pth = sv('path', { d: d, fill: 'none', style: style }, svg);
+      if (dash) pth.setAttribute('stroke-dasharray', dash);
+      return pth;
+    }
+    var init = [];
+    for (var kk = 0; kk < sys.q.length; kk++) {
+      init.push(sys.eta0[kk] / sys.q[kk]);
+    }
+    line(init, 'stroke:var(--muted);stroke-width:1.6', '5 4');
+    var ops = [0.3, 0.5, 0.75, 1.0];
+    r.profiles.forEach(function (pr, pi) {
+      line(pr.theta, 'stroke:var(--ink);stroke-width:2;opacity:'
+        + ops[Math.min(pi, ops.length - 1)]);
+      tx(L + pw + 6, Y(pr.theta[pr.theta.length - 1]) + 4 + pi * 12,
+         tfmt(pr.t_s), 'fill:var(--muted);font-size:10px', 'start', svg);
+    });
+    sv('line', { x1: L, x2: L + pw, y1: T + ph, y2: T + ph,
+      style: 'stroke:var(--muted);stroke-width:1' }, svg);
+    el.cgProfLegend.innerHTML = '<span><svg width="20" height="6" '
+      + 'style="vertical-align:middle;margin-right:5px"><line x1="0" '
+      + 'x2="20" y1="3" y2="3" stroke-dasharray="5 4" '
+      + 'style="stroke:var(--muted);stroke-width:1.6"/></svg>initial '
+      + 'state</span><span><span class="swatch" style="background:'
+      + 'var(--ink)"></span>θ per cell, darker = later time</span>';
+  }
+
   /* --------------------------------------------------------- wiring */
 
   function fillPreset(key) {
@@ -1101,6 +1308,33 @@
     if (lastPv) renderParticle(lastPv.out, lastPv.acc, lastPv.fresh);
   });
   el.smPvDl.addEventListener('click', exportParticleSvg);
+  [el.cgEm, el.cgCells, el.cgTarget].forEach(function (n) {
+    if (n) n.addEventListener('input', solve);
+  });
+  if (el.cgFit) {
+    el.cgFit.addEventListener('click', function () {
+      var tgt = num(el.cgTarget, NaN);
+      if (!(tgt > 0 && tgt < 100)) {
+        el.cgFitOut.textContent = 'enter a measured % first';
+        return;
+      }
+      el.cgFitOut.textContent = 'fitting…';
+      setTimeout(function () {
+        var geom = currentGeom();
+        var em = CGMC.effectiveBarrier(DATA, tgt / 100,
+          Math.max(num(el.smExp, 300), 1e-3),
+          { vo_total: num(el.smVO, DATA.defaults.VO_total_umol_g),
+            d_um: effDiameterUm(geom), kin: currentKin(),
+            eps: currentEps(),
+            cg: { n_cells: Math.max(6, Math.round(num(el.cgCells, 28))) } });
+        cgFitVal = em;
+        el.cgEm.value = em.toFixed(3);
+        el.cgFitOut.textContent = 'effective Eₘ = ' + em.toFixed(2)
+          + ' eV';
+        solve();
+      }, 30);
+    });
+  }
   el.smGeoMode.addEventListener('change', function () {
     if (el.smGeoMode.value === 'bet') {
       var g = SM.geometry(DATA, { d_um: num(el.smGeoVal, 0.9) });
@@ -1134,4 +1368,8 @@
   el.smKinT.value = kj.defaults.T_reox_C;
   el.smExp.value = kj.defaults.exposure_s;
   el.smPCO2.value = kj.defaults.p_CO2_atm;
+  if (el.cgEm) {
+    el.cgEm.value = DATA.kinetics_cgmc.E_m_bulk_eV;
+    el.cgCells.value = DATA.kinetics_cgmc.n_cells;
+  }
 })();

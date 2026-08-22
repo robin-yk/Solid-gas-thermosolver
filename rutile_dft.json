@@ -28,11 +28,12 @@
     "provenance": "Birschitzky, Reticcioli et al., npj Comput. Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4. DFT+U (U = 3.9 eV) + ML + Metropolis MC on rutile (110): computed critical coverage 16.7%, reconstruction threshold ~20%, interaction range ~10 A, in-row spacings of 1-2 sites nearly absent, most probable spacing 4-5 sites."
   },
 
-  "saturation": {
-    "surface_cap_coverage": 0.20,
-    "subsurface_dilute_warn": 0.25,
+  "validity": {
+    "surface_theta_stop": 0.17,
+    "surface_theta_reconstruction": 0.20,
+    "subsurface_theta_stop": 0.20,
     "x_max_shear": 0.008,
-    "note": "Beyond ~20% bridging-O vacancy coverage the (1x2) reconstruction takes over; the model pins surface content at the threshold instead of describing the reconstructed phase. x_max is the approximate rutile point-defect range before crystallographic shear planes."
+    "note": "Model-VALIDITY boundaries, not physical caps: nothing is pinned and no remainder is reassigned. The partition is quantitative only while the unreconstructed dilute-defect description holds. surface_theta_stop is the experimental critical bridging-O vacancy coverage (~17%); DFT places the reconstruction at ~20% (surface_theta_reconstruction) - the pair is the uncertainty band of the boundary (Birschitzky et al. 2024). subsurface_theta_stop is a sensitivity parameter for the dilute-defect approximation. Beyond either threshold the equilibrium partition is UNRESOLVED: reconstructed-surface states, strong vacancy-vacancy interaction, Ti interstitials and extended/shear structures are not in the model, so additional vacancies cannot be assigned quantitatively."
   },
 
   "co2_kinetics": {
@@ -63,6 +64,16 @@
     "schema": {"VO_total_umol_g": "x", "recovered_umol_g": "y",
                "label": "optional"},
     "note": "Measured CO2 recovery for the overlay on the sweep plot; empty until digitised from experiment."
+  },
+
+  "kinetics_cgmc": {
+    "nu0_per_s": 1e13,
+    "E_m_bulk_eV": 0.65,
+    "n_cells": 28,
+    "eps_ctrl": 0.08,
+    "stochastic_column_counts": 200000,
+    "note": "Coarse-grained KMC of reoxidation transport, after the group's framework: radial coarse cells over the particle, exchange rates R(k->l) = Lambda_kl eta_k (q_l - eta_l) exp(beta eps_k) with a symmetric kernel Lambda_kl = nu0 a^2 A_kl exp(-beta E_TS) / (d_kl v_O q_k q_l) and a common saddle E_TS = E_m + eps_bulk, so the activation to leave cell k is E_TS - eps_k. This satisfies detailed balance against the product-binomial Gibbs measure with H = sum eps_k eta_k (the closed system relaxes exactly to the equilibrium workspace's split) and reduces in the dilute limit to the finite-volume discretisation of spherical diffusion with D = a^2 nu0 exp(-beta E_m). Surface refill (CO2) is the one irreversible channel and uses the surface entry of co2_kinetics. E_m defaults to the neutral-vacancy bulk barrier; with it, transport is NOT rate-limiting at 600 C - a measured partial recovery therefore reads back as an EFFECTIVE barrier (charged migration, trapping, aggregation), which the panel can fit.",
+    "provenance": "Framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003). E_m default: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a (neutral V_O, c-axis)."
   },
 
   "diffusion_eV": {

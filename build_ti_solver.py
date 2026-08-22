@@ -63,6 +63,8 @@ def main():
         sm_data = fh.read().strip()
     with open(os.path.join(HERE, 'statmech.js')) as fh:
         sm_engine = fh.read()
+    with open(os.path.join(HERE, 'cgmc.js')) as fh:
+        cg_engine = fh.read()
     with open(os.path.join(HERE, 'statmech_worker.js')) as fh:
         sm_worker = fh.read()
     with open(os.path.join(HERE, 'statmech_ui.js')) as fh:
@@ -74,6 +76,7 @@ def main():
                         ('__EQS__', eqs), ('__SM_EQS__', sm_eqs),
                         ('__SM_DATA__', sm_data),
                         ('__SM_ENGINE__', sm_engine),
+                        ('__CG_ENGINE__', cg_engine),
                         ('__SM_WORKER__', sm_worker), ('__SM_UI__', sm_ui)):
         assert token in html, f'{token} missing from the template'
         html = html.replace(token, body)

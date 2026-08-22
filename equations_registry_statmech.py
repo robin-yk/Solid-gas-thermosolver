@@ -34,5 +34,12 @@ R.append(('boxeq', r'$V_O^{\mathrm{acc}} \;=\; \sum_c N_c\, \theta_c\, P_c\,,\qq
 R.append(('note', r'first-order refill per class; $A_c$ are effective prefactors (deeper classes are transport-limited), to be replaced by fitted or DFT values'))
 
 R.append(('head', '4 · Dielectric correlation (empirical)'))
-R.append(('eq', r"$\varepsilon'' \;=\; a\, V_O^{\mathrm{tot}} + b\,,\qquad \tan\delta \;=\; \varepsilon'' / \varepsilon'$", 'S12'))
-R.append(('note', r'coefficients from the experimental fit of this work; blank until set in rutile_dft.json'))
+R.append(('eq', r"$\varepsilon'' \;=\; 10^{\,a}\ \left(V_O^{\mathrm{tot}}\right)^{b}\,,\qquad a = -3.070 \pm 0.695\,,\ \ b = 1.224 \pm 0.230\,,\qquad \tan\delta \;=\; \varepsilon'' / \varepsilon'$", 'S12'))
+R.append(('note', r'linear regression of $\log_{10}\varepsilon''$ on $\log_{10}V_O$ measured in this work ($N = 4$, $R^2 = 0.934$); an extrapolation below the fitted 95-5000 $\mu\mathrm{mol\text{-}O/g}$ range'))
+
+R.append(('head', '5 · Reoxidation transport — coarse-grained KMC'))
+R.append(('eq', r'$R(k \to l) \;=\; \Lambda_{kl}\ \eta_k\ (q_l - \eta_l)\ e^{\,\beta \epsilon_k}\,,\qquad \Lambda_{kl} \;=\; \frac{\nu_0\ a^2 A_{kl}\ e^{-\beta E_{TS}}}{d_{kl}\ v_O\ q_k\ q_l}$', 'S13'))
+R.append(('note', r'radial coarse cells over the particle, occupancies $\eta_k \leq q_k$ (generalised exclusion); framework: Katsoulakis and Vlachos, J. Chem. Phys. 119, 9412 (2003)'))
+R.append(('eq', r'$E_{TS} = E_m + \epsilon_b\,, \quad E_{\mathrm{act}}(k \to l) = E_{TS} - \epsilon_k\,;\qquad D = a^2 \nu_0\, e^{-\beta E_m}\ \ \mathrm{(dilute\ limit)}$', 'S14'))
+R.append(('boxeq', r'$R(k \to l)\,\mu(\eta) \;=\; R(l \to k)\,\mu(\eta + \delta_l - \delta_k)\,,\qquad \eta_0 \rightarrow \eta_0 - 1\ \ \mathrm{at}\ \ k_{\mathrm{fill}} = A_s\, p_{\mathrm{CO_2}}^{\,m} e^{-\beta E_{a,s}}$', 'S15'))
+R.append(('note', r'detailed balance against $\prod_k \mathrm{Bin}(q_k) \times e^{-\beta \sum_k \epsilon_k \eta_k}$ - the closed system relaxes to the equilibrium split above; the surface refill is the one irreversible channel'))
