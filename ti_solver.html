@@ -6,64 +6,59 @@
 <title>Ti-O Gas-Solid Gibbs Equilibrium Solver</title>
 <meta name="description" content="Active-set Gibbs energy minimisation for a CO2/H2/CO/H2O/N2/O2 gas in contact with titanium oxides. Free gas composition, exact zeros for absent phases, KKT reduced costs. Self-contained, no external requests.">
 <style>
-/* White ground, light only - the print-like face the paper shows. */
-:root{--blue:#0078d4;--navy:#153b56;--ink:#18232d;--muted:#5f6b76;--line:#dde4ea;
-      --bg:#ffffff;--panel:#ffffff;--orange:#d96b00;--green:#107c41;--red:#c0392b;
-      --code:#f6f8fa;--shadow:0 1px 3px #0000000f;color-scheme:light;
-      --cSurf:#0078d4;--cSub:#d96b00;--cBulk:#7a52c2}
+:root{--blue:#087bd8;--navy:#12334d;--ink:#1c2b36;--muted:#657482;--line:#dbe5ed;
+      --bg:#ffffff;--panel:#ffffff;--orange:#d66b13;--green:#16844b;--red:#c0392b;
+      --code:#f4f7fa;--soft:#f6f9fb;--shadow:0 12px 32px #12334d0b;color-scheme:light;
+      --cSurf:#087bd8;--cSub:#d66b13;--cBulk:#7652c5}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Helvetica,Arial,sans-serif}
-header{background:var(--panel);border-bottom:1px solid var(--line);padding:22px clamp(18px,5vw,64px) 30px}
-.back{display:inline-flex;align-items:center;gap:7px;margin-bottom:18px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.06em;text-decoration:none;text-transform:uppercase}
-.back:hover{color:var(--blue)}
-.eyebrow{color:var(--blue);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
-h1{margin:8px 0;color:var(--navy);font-size:clamp(24px,4vw,34px);line-height:1.15;letter-spacing:-.02em}
-header p{max-width:920px;margin:0;color:var(--muted);font-size:15px}
-main{max-width:1240px;margin:auto;padding:26px 20px 60px}
-h2{margin:0 0 6px;color:var(--navy);font-size:21px;line-height:1.25}
-h3{margin:18px 0 6px;color:var(--navy);font-size:16px}
-.sub{margin:0 0 14px;color:var(--muted);font-size:13px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
-       box-shadow:var(--shadow);margin-bottom:18px}
-.pad{padding:20px}
-.grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;align-items:start}
-@media (max-width:940px){.grid{grid-template-columns:minmax(0,1fr)}}
-label,.flabel{display:block;font-size:12px;font-weight:700;color:var(--muted);
-       text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
-input,select,button{font:inherit;font-size:13px;color:var(--ink);background:var(--panel);
-       border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Helvetica,Arial,sans-serif}
+.app-header{background:var(--panel);border-bottom:1px solid var(--line);padding:22px clamp(22px,5vw,72px) 34px}
+.app-head-inner{max-width:1480px;margin:auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:30px}
+.back,.model-link{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.07em;text-decoration:none;text-transform:uppercase}
+.model-link{width:auto;border:0;background:transparent;padding:0;cursor:pointer}
+.back:hover,.model-link:hover{color:var(--blue)}
+.workspace-head{display:none}.workspace-head.active{display:block}
+.eyebrow{margin:0 0 9px;color:var(--blue);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
+h1{margin:0;color:var(--navy);font-size:clamp(38px,4.3vw,58px);line-height:1.02;letter-spacing:-.045em}
+.workspace-head>p:last-child{max-width:760px;margin:15px 0 0;color:var(--muted);font-size:18px;line-height:1.45}
+main{max-width:1480px;margin:auto;padding:30px clamp(18px,3vw,36px) 80px}
+h2{margin:0 0 7px;color:var(--navy);font-size:clamp(25px,2vw,32px);line-height:1.15;letter-spacing:-.025em}
+h3{margin:20px 0 8px;color:var(--navy);font-size:18px;line-height:1.25}
+.sub{margin:0 0 20px;color:var(--muted);font-size:14px;line-height:1.5}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:none;margin-bottom:22px}
+.pad{padding:26px}
+.grid{display:grid;grid-template-columns:380px minmax(0,1fr);gap:26px;align-items:start}
+.thermo-grid>aside{position:sticky;top:20px}
+label,.flabel{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+input,select,button{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid #ccd9e3;border-radius:9px;padding:11px 12px;width:100%}
+input:focus,select:focus,button:focus-visible{outline:3px solid #087bd826;outline-offset:1px;border-color:var(--blue)}
 input[type=range]{padding:0;border:0;background:transparent}
-.field{margin-bottom:13px}
-.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.gasgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.field{margin-bottom:18px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.gasgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .gasgrid .g{display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;align-items:center}
 .gasgrid .g span{font-size:12px;font-weight:700;color:var(--navy)}
-.readout{font-size:11px;color:var(--muted);margin-top:3px}
-button.act{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700;cursor:pointer}
-button.act:hover{filter:brightness(1.08)}
-button.mini{width:auto;padding:5px 10px;font-size:12px;cursor:pointer}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+.readout{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}
+button.act{background:var(--blue);color:#fff;border-color:var(--blue);font-size:15px;font-weight:700;cursor:pointer;padding:13px 15px}
+button.act:hover{background:#056fc5}button.mini{width:auto;padding:8px 12px;font-size:12px;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:22px}
+.kpi{min-height:132px;background:var(--soft);border:1px solid var(--line);border-radius:15px;padding:20px}
 /* No text-transform: these labels carry formulae, and uppercasing turns
    mu into Mu and Ti into TI. */
-.kpi .k{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em}
-.kpi .v{font-size:20px;font-weight:700;color:var(--navy);
-        font-variant-numeric:tabular-nums;margin:3px 0 1px;line-height:1.1}
-.kpi .u{font-size:11px;color:var(--muted)}
+.kpi .k{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.kpi .v{font-size:clamp(27px,2.4vw,38px);font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;margin:9px 0 4px;line-height:1}
+.kpi .u{font-size:12px;color:var(--muted)}
 .kpi.good .v{color:var(--green)} .kpi.warn .v{color:var(--orange)}
-.verdict{border-radius:10px;border:1px solid var(--line);padding:14px 16px;margin-bottom:14px;
-         font-size:14px;background:var(--panel)}
+.verdict{border-radius:15px;border:1px solid var(--line);padding:20px 22px;margin-bottom:18px;font-size:16px;background:var(--panel)}
 .verdict.red{border-left:5px solid var(--orange)}
 .verdict.none{border-left:5px solid var(--green)}
 .verdict b{color:var(--navy)}
-.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line);margin-bottom:0}
-.tab{width:auto;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;
-     background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;padding:9px 14px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line);margin:4px 0 0}
+.tab{width:auto;border:1px solid transparent;border-bottom:0;border-radius:9px 9px 0 0;background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;padding:11px 15px}
 .tab.active{background:var(--panel);border-color:var(--line);color:var(--navy)}
 .page{display:none} .page.active{display:block}
 table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
-th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:right}
+th,td{border-bottom:1px solid var(--line);padding:10px 11px;text-align:right}
 th:first-child,td:first-child{text-align:left}
 th{font-size:11px;letter-spacing:.04em;color:var(--muted);font-weight:700}
 .tablewrap{overflow-x:auto;max-width:100%}
@@ -88,7 +83,7 @@ a{color:var(--blue)}
 .eqnote svg{display:block}
 .eqbox{background:var(--code);border-left:3px solid var(--blue);
        border-radius:0 6px 6px 0;padding:6px 14px;margin:8px 0}
-.wstabs{display:flex;gap:8px;margin:0 0 18px}
+.wstabs{display:none}
 .wstab{width:auto;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer;
        border-radius:8px;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
 .wstab.active{color:#fff;background:var(--blue);border-color:var(--blue)}
@@ -104,20 +99,35 @@ a{color:var(--blue)}
 .legrow .swatch{margin-right:5px}
 .k2{display:inline-block;min-width:116px;color:var(--muted);font-size:11px;
     font-weight:700;letter-spacing:.04em;text-transform:uppercase;vertical-align:top}
+.model-notes{margin:0 0 22px;border:1px solid var(--line);border-radius:12px;background:var(--soft);overflow:hidden}
+.model-notes summary{cursor:pointer;padding:13px 17px;color:var(--navy);font-size:13px;font-weight:700;letter-spacing:.02em;list-style:none}
+.model-notes summary::-webkit-details-marker{display:none}.model-notes summary:after{content:'+';float:right;color:var(--blue);font-size:18px;line-height:1}.model-notes[open] summary:after{content:'−'}
+.model-notes .note{margin:0;border:0;border-top:1px solid var(--line);border-radius:0;background:#fff;padding:18px 20px}
+.technical-model{padding:0}.technical-model>summary{cursor:pointer;padding:22px 26px;color:var(--navy);font-size:18px;font-weight:700;list-style:none}.technical-model>summary::-webkit-details-marker{display:none}.technical-model>summary:after{content:'+';float:right;color:var(--blue);font-size:23px;line-height:1}.technical-model[open]>summary{border-bottom:1px solid var(--line)}.technical-model[open]>summary:after{content:'−'}.technical-model-body{padding:4px 26px 26px}
+.result-loading{display:grid;min-height:260px;place-items:center;color:var(--muted);font-size:14px;background:linear-gradient(110deg,#f6f9fb 20%,#fff 40%,#f6f9fb 60%);background-size:240% 100%;animation:pulse 1.6s linear infinite;border-radius:10px}
+@keyframes pulse{to{background-position:-240% 0}}
+@media (max-width:980px){.grid{grid-template-columns:1fr}.thermo-grid>aside{position:static}.app-header{padding-left:22px;padding-right:22px}.pad{padding:22px}}
+@media (max-width:620px){h1{font-size:38px}.workspace-head>p:last-child{font-size:16px}.pair,.trio{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{min-height:112px;padding:16px}.panel{border-radius:13px}}
 </style>
 </head>
 <body>
-<header>
-  <a class="back" href="index.html">← All tools</a>
-  <p class="eyebrow">Gas-solid equilibrium &middot; Ti&ndash;O and Hydrocarbons &middot; Vlachos Group</p>
-  <h1>Ti&ndash;O gas&ndash;solid equilibrium solver</h1>
-  <p>Gibbs energy minimisation for an ideal CO<sub>2</sub>/H<sub>2</sub>/CO/H<sub>2</sub>O/N<sub>2</sub>/O<sub>2</sub>
-  gas mixture in contact with titanium oxides at fixed temperature, pressure, and elemental
-  composition. Condensed phases are treated as an active set: an absent phase is held at
-  exactly zero moles and carries a KKT reduced cost measuring its distance from stability.
-  A second workspace distributes a measured oxygen-vacancy inventory over surface,
-  subsurface and bulk sites of rutile by canonical lattice statistical mechanics.
-  The page is self-contained and makes no external requests.</p>
+<header class="app-header">
+  <div class="app-head-inner">
+    <div class="topbar">
+      <a class="back" href="index.html">← All tools</a>
+      <button class="model-link" id="modelLink" type="button">Model notes ↓</button>
+    </div>
+    <div class="workspace-head active" id="head-thermo">
+      <p class="eyebrow">Ti–O thermodynamics · Vlachos Group</p>
+      <h1>Gas–solid equilibrium</h1>
+      <p>Calculates the equilibrium phase assemblage and gas composition for a specified Ti–O–gas inventory.</p>
+    </div>
+    <div class="workspace-head" id="head-defect">
+      <p class="eyebrow">Rutile defect thermodynamics · Vlachos Group</p>
+      <h1>Defect-state distribution</h1>
+      <p>Calculates the equilibrium distribution of a measured oxygen-vacancy inventory across rutile sites.</p>
+    </div>
+  </div>
 </header>
 
 <main>
@@ -127,7 +137,9 @@ a{color:var(--blue)}
 </div>
 
 <div id="ws-thermo">
-<div class="note calm" style="margin-top:0">
+<details class="model-notes" id="thermo-notes">
+<summary>Model scope and assumptions</summary>
+<div class="note calm">
   <b>Scope.</b> C&ndash;H&ndash;O&ndash;N / Ti&ndash;O Gibbs equilibrium. Gas registry in
   this version: CO<sub>2</sub>, H<sub>2</sub>, CO, H<sub>2</sub>O, N<sub>2</sub>, O<sub>2</sub>.
   Hydrocarbon species (CH<sub>4</sub>), graphite, nitrides, and the rutile
@@ -135,8 +147,9 @@ a{color:var(--blue)}
   a closed, finite-inventory equilibrium between one gas charge and one solid charge, not a
   flow-reactor steady state. Every reported value is <code>gibbs_min</code>.
 </div>
+</details>
 
-<div class="grid">
+<div class="grid thermo-grid">
 
   <aside>
     <div class="panel pad">
@@ -9185,7 +9198,9 @@ z
 </div>
 
 <div id="ws-defect" style="display:none">
-<div class="note calm" style="margin-top:0">
+<details class="model-notes" id="defect-notes">
+<summary>Model scope and assumptions</summary>
+<div class="note calm">
   <b>Scope.</b> Canonical lattice statistical mechanics for a measured oxygen-vacancy
   inventory in rutile TiO<sub>2</sub>: the total V<sub>O</sub> is fixed from experiment
   and distributed over (110) bridging-O, first-subsurface and bulk sites at equal vacancy
@@ -9196,6 +9211,7 @@ z
   distribution of a fixed inventory, not reduction kinetics; coupling to the gas-phase
   oxygen potential arrives with the thermodynamic bridge in a later version.
 </div>
+</details>
 
 <div class="grid">
 
@@ -9338,7 +9354,10 @@ z
       vacancy chemical potential, using the real geometric site counts of the particle
       &mdash; not the slab ratio of the sampling lattice.</p>
       <svg id="smChart" class="smchart" viewBox="0 0 560 300" role="img"
-           aria-label="Vacancy distribution over surface, subsurface and bulk sites"></svg>
+           aria-label="Vacancy distribution over surface, subsurface and bulk sites">
+        <text x="280" y="150" text-anchor="middle" fill="#657482"
+              font-family="Helvetica, Arial, sans-serif" font-size="14">Preparing vacancy distribution…</text>
+      </svg>
       <div class="tablewrap" style="margin-top:10px"><table id="smTable"></table></div>
       <div class="readout" id="smSpacing" style="margin-top:8px"></div>
       <div id="smNotes"></div>
@@ -9385,8 +9404,9 @@ z
       <div id="smCoupledNote"></div>
     </div>
 
-    <div class="panel pad">
-      <h2>Model</h2>
+    <details class="panel technical-model">
+      <summary>Model formulation and references</summary>
+      <div class="technical-model-body">
       <p>Three site classes hold the fixed total: rutile (110) bridging O, the first
       subsurface O layer, and bulk. The distribution equalises the vacancy chemical
       potential across the classes. Surface vacancies interact through a short-range
@@ -15035,7 +15055,8 @@ z
  </g>
 </svg>
 </div>
-    </div>
+      </div>
+    </details>
   </section>
 </div>
 </div>
@@ -17595,7 +17616,7 @@ self.onmessage = function (ev) {
         + '</div>';
     } else {
       var v = env.v;
-      h = '<div style="font-size:13px;line-height:1.8">'
+      h = '<div style="font-size:15px;line-height:1.8">'
         + '<div><span class="k2">Charge</span> ' + env.desc + '</div>'
         + '<div><span class="k2">Oxygen potential</span> μ<sub>O</sub> = '
         + env.mu_O.toFixed(2) + ' kJ/mol-O at ' + env.T_C + ' °C</div>'
@@ -17894,7 +17915,7 @@ self.onmessage = function (ev) {
       sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
                    style: 'stroke:var(--line);stroke-width:1' }, svg);
       var lab = sv('text', { x: L - 8, y: y + 4, 'text-anchor': 'end',
-        style: 'fill:var(--muted);font-size:11px' }, svg);
+        style: 'fill:var(--muted);font-size:15px' }, svg);
       lab.textContent = (Math.round(fv * 1000) / 10) + '%';
     }
     var bw = pw / 3;
@@ -17920,15 +17941,15 @@ self.onmessage = function (ev) {
         p.appendChild(tt);
       }
       var vt = sv('text', { x: x + barW / 2, y: y - 7, 'text-anchor': 'middle',
-        style: 'fill:var(--ink);font-size:13px;font-weight:700' }, svg);
+        style: 'fill:var(--ink);font-size:15px;font-weight:700' }, svg);
       vt.textContent = pctf(f);
       var nt = sv('text', { x: x + barW / 2, y: T + ph + 17,
         'text-anchor': 'middle',
-        style: 'fill:var(--navy);font-size:12px;font-weight:700' }, svg);
+        style: 'fill:var(--navy);font-size:14px;font-weight:700' }, svg);
       nt.textContent = c.label;
       var ut = sv('text', { x: x + barW / 2, y: T + ph + 33,
         'text-anchor': 'middle',
-        style: 'fill:var(--muted);font-size:10.5px' }, svg);
+        style: 'fill:var(--muted);font-size:12.5px' }, svg);
       ut.textContent = f2(out.umol_g[c.key]) + ' μmol-O/g';
     });
     sv('line', { x1: L, x2: L + pw, y1: T + ph, y2: T + ph,
@@ -17970,21 +17991,21 @@ self.onmessage = function (ev) {
       sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
                    style: 'stroke:var(--line);stroke-width:1' }, svg);
       var lb = sv('text', { x: L - 8, y: y + 4, 'text-anchor': 'end',
-        style: 'fill:var(--muted);font-size:11px' }, svg);
+        style: 'fill:var(--muted);font-size:15px' }, svg);
       lb.textContent = yv;
     }
     var yt = sv('text', { x: 6, y: 14,
-      style: 'fill:var(--muted);font-size:11px' }, svg);
+      style: 'fill:var(--muted);font-size:15px' }, svg);
     yt.textContent = 'μmol-O/g';
     for (i = 0; i <= 5; i++) {
       var xv = xmax * i / 5;
       var xl = sv('text', { x: X(xv), y: T + ph + 18, 'text-anchor': 'middle',
-        style: 'fill:var(--muted);font-size:11px' }, svg);
+        style: 'fill:var(--muted);font-size:15px' }, svg);
       xl.textContent = Math.round(xv);
     }
     var xt = sv('text', { x: L + pw / 2, y: T + ph + 38,
       'text-anchor': 'middle',
-      style: 'fill:var(--muted);font-size:11.5px' }, svg);
+      style: 'fill:var(--muted);font-size:13.5px' }, svg);
     xt.textContent = 'total Vₒ (μmol-O/g)';
 
     SWEEP.forEach(function (s) {
@@ -18007,7 +18028,7 @@ self.onmessage = function (ev) {
     }
     ends.forEach(function (e) {
       var t2 = sv('text', { x: L + pw + 8, y: e.y + 4,
-        style: 'fill:var(--ink);font-size:11.5px' }, svg);
+        style: 'fill:var(--ink);font-size:13.5px' }, svg);
       t2.textContent = e.label;
     });
 
@@ -18215,11 +18236,11 @@ self.onmessage = function (ev) {
     sv('line', { x1: cx - Rpx, x2: cx - Rpx + sbPx, y1: cy + Rpx + 22,
       y2: cy + Rpx + 22, style: 'stroke:var(--ink);stroke-width:2' }, svg);
     tx(cx - Rpx + sbPx / 2, cy + Rpx + 36, sb + ' nm',
-       'fill:var(--muted);font-size:11px', 'middle', svg);
+       'fill:var(--muted);font-size:15px', 'middle', svg);
     tx(cx + 24, cy + Rpx + 36, 'd = ' + dUm.toFixed(2) + ' μm',
-       'fill:var(--muted);font-size:11px', 'middle', svg);
+       'fill:var(--muted);font-size:15px', 'middle', svg);
     tx(cx, y0 + 6, 'shell 0.65 nm — not resolvable at this scale',
-       'fill:var(--muted);font-size:10.5px', 'middle', svg);
+       'fill:var(--muted);font-size:12.5px', 'middle', svg);
 
     /* -------------------------------------------- magnified window */
     var nCols = 46;
@@ -18230,7 +18251,7 @@ self.onmessage = function (ev) {
       style: 'fill:var(--panel);stroke:var(--line)' }, svg);
     sv('rect', { x: x0, y: y0, width: fw, height: gasH,
       style: 'fill:var(--code);opacity:.7' }, svg);
-    tx(x0 + fw - 6, y0 + 16, 'gas', 'fill:var(--muted);font-size:10.5px',
+    tx(x0 + fw - 6, y0 + 16, 'gas', 'fill:var(--muted);font-size:12.5px',
        'end', svg);
 
     var surfY = y0 + gasH + 10;
@@ -18280,19 +18301,19 @@ self.onmessage = function (ev) {
 
     sv('line', { x1: x0 + 10, x2: x0 + 10, y1: y0 + fh - 10 - pxNm,
       y2: y0 + fh - 10, style: 'stroke:var(--ink);stroke-width:2' }, svg);
-    tx(x0 + 16, y0 + fh - 12, '1 nm', 'fill:var(--muted);font-size:10.5px',
+    tx(x0 + 16, y0 + fh - 12, '1 nm', 'fill:var(--muted);font-size:12.5px',
        'start', svg);
 
     var lx = x0 + fw + 10;
     var lab = function (y, cls, name, u, th, prob) {
       sv('rect', { x: lx, y: y - 8, width: 9, height: 9, rx: 2,
         style: 'fill:var(--c' + cls + ')' }, svg);
-      tx(lx + 14, y, name, 'fill:var(--navy);font-size:11.5px;'
+      tx(lx + 14, y, name, 'fill:var(--navy);font-size:13.5px;'
          + 'font-weight:bold', 'start', svg);
       tx(lx + 14, y + 13, f2(u) + ' μmol/g · θ ' + thf(th),
-         'fill:var(--muted);font-size:10.5px', 'start', svg);
+         'fill:var(--muted);font-size:12.5px', 'start', svg);
       tx(lx + 14, y + 25, 'P(CO₂) ' + probf(prob),
-         'fill:var(--muted);font-size:10.5px', 'start', svg);
+         'fill:var(--muted);font-size:12.5px', 'start', svg);
     };
     lab(rowY(0), 'Surf', 'Surface', out.umol_g.surface,
         out.theta.surface, acc.P.surface);
@@ -18318,7 +18339,7 @@ self.onmessage = function (ev) {
       var y = YT(g[0]);
       sv('line', { x1: px0, x2: px0 + pw2, y1: y, y2: y,
         style: 'stroke:var(--line);stroke-width:1' }, svg);
-      tx(px0 - 6, y + 3.5, g[1], 'fill:var(--muted);font-size:10px', 'end',
+      tx(px0 - 6, y + 3.5, g[1], 'fill:var(--muted);font-size:14px', 'end',
          svg);
     });
     // axis break marks
@@ -18353,24 +18374,24 @@ self.onmessage = function (ev) {
     sv('line', { x1: px0, x2: px0 + pw2, y1: papBot, y2: papBot,
       style: 'stroke:var(--muted);stroke-width:1' }, svg);
     [[0, '0'], [t1, ''], [tShell, '0.65'], [1, '1']].forEach(function (g) {
-      tx(XD(g[0]), papBot + 13, g[1], 'fill:var(--muted);font-size:10px',
+      tx(XD(g[0]), papBot + 13, g[1], 'fill:var(--muted);font-size:14px',
          'middle', svg);
     });
     [[10, '10'], [100, '100'], [Rnm, Math.round(Rnm) + '']].forEach(
       function (g) {
         if (g[0] <= Rnm) {
           tx(XD(g[0]), papBot + 13, g[1],
-             'fill:var(--muted);font-size:10px', 'middle', svg);
+             'fill:var(--muted);font-size:14px', 'middle', svg);
         }
       });
     tx(px0 + pw2 / 2, papBot + 26, 'depth from surface (nm)',
-       'fill:var(--muted);font-size:10.5px', 'middle', svg);
+       'fill:var(--muted);font-size:12.5px', 'middle', svg);
     var shellU = out.umol_g.surface + out.umol_g.subsurface;
     var shellPct = out.matched_umol_g
       ? shellU / out.matched_umol_g * 100 : 0;
     tx(XD(tShell) + 8, papTop + 10, shellPct.toFixed(1)
        + '% of the inventory within ' + tShell.toFixed(2) + ' nm',
-       'fill:var(--ink);font-size:11px', 'start', svg);
+       'fill:var(--ink);font-size:15px', 'start', svg);
 
     /* -------------------------------------------- legend + caption */
     var lg2 = '';
@@ -18496,15 +18517,27 @@ self.onmessage = function (ev) {
 </script>
 <script>
   (function () {
+    var currentTarget = 'ws-thermo';
     function activateFromHash() {
-      var target = window.location.hash === '#defect' ? 'ws-defect' : 'ws-thermo';
-      document.querySelectorAll('#wstabs .wstab').forEach(function (button) {
-        button.classList.toggle('active', button.dataset.ws === target);
-      });
-      ['ws-thermo', 'ws-defect'].forEach(function (id) {
-        document.getElementById(id).style.display = id === target ? '' : 'none';
-      });
+      currentTarget = window.location.hash.indexOf('defect') !== -1
+        ? 'ws-defect' : 'ws-thermo';
+      var button = document.querySelector('#wstabs .wstab[data-ws="'
+        + currentTarget + '"]');
+      if (button) button.click();
+      document.getElementById('head-thermo').classList.toggle(
+        'active', currentTarget === 'ws-thermo');
+      document.getElementById('head-defect').classList.toggle(
+        'active', currentTarget === 'ws-defect');
+      document.title = currentTarget === 'ws-defect'
+        ? 'Defect-state distribution · Ti–O Thermodynamics'
+        : 'Gas–solid equilibrium · Ti–O Thermodynamics';
     }
+    document.getElementById('modelLink').addEventListener('click', function () {
+      var detail = document.getElementById(
+        currentTarget === 'ws-defect' ? 'defect-notes' : 'thermo-notes');
+      detail.open = true;
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     window.addEventListener('hashchange', activateFromHash);
     activateFromHash();
   }());
