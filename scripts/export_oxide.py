@@ -14,13 +14,16 @@ so the seven-coefficient evaluator reproduces this package's mu0 exactly.
 """
 
 import json
-import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+sys.path.insert(0, str(ROOT))
 
 from solidgas import waldner
 from solidgas.shomate import SHOMATE, BREAKPOINT, DEFAULT_BREAKPOINT, R_KJ, R_ATM
 from solidgas.equilibrium import FORMULAS, METAL_PHASES, ACTIVE_TI_PHASES
-
-HERE = os.path.dirname(os.path.abspath(__file__))
 
 GASES = ['CO2', 'H2', 'CO', 'H2O', 'CH4', 'O2']
 CE_SOLIDS = ['CeO2', 'Ce2O3']
@@ -62,10 +65,10 @@ def main():
                      'source': 'NIST-JANAF; one coefficient set across the range'},
         },
     }
-    out = os.path.join(HERE, 'oxide_data.json')
-    with open(out, 'w') as fh:
+    out = DATA / 'oxide_data.json'
+    with out.open('w') as fh:
         json.dump(data, fh, separators=(',', ':'), sort_keys=True)
-    print(f"oxide_data.json written ({os.path.getsize(out) / 1024:.1f} kB), "
+    print(f"data/oxide_data.json written ({out.stat().st_size / 1024:.1f} kB), "
           f"{len(data['shomate'])} Shomate + {len(data['calphad'])} CALPHAD entries")
 
 

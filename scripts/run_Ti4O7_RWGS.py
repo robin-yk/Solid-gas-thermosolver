@@ -7,6 +7,13 @@ Ti4O7 alone to the whole series does not change that. See README.
 """
 
 import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+ASSETS = ROOT / 'docs' / 'assets'
+sys.path.insert(0, str(ROOT))
 
 import numpy as np
 import matplotlib
@@ -95,11 +102,11 @@ ax3.set_ylim([-2, 102]); ax3.legend(fontsize=9)
 ax3.set_ylabel('Ti oxidation state (%)'); ax3.set_xlabel('T (C)')
 ax3.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig('Ti4O7_RWGS.png', dpi=120)
-print("\nfigure saved -> Ti4O7_RWGS.png")
+plt.savefig(ASSETS / 'Ti4O7_RWGS.png', dpi=120)
+print("\nfigure saved -> docs/assets/Ti4O7_RWGS.png")
 
-with open('results_rwgs.json', 'w') as fh:
+with (DATA / 'results_rwgs.json').open('w') as fh:
     json.dump({'conditions': {'P_atm': P_tot, 'V_cm3': V, 'm_TiO2_g': m,
                               'n0_TiO2_mol': n0_TiO2, 'phases': ACTIVE_TI_PHASES},
                'rows': results}, fh, indent=1)
-print("data saved -> results_rwgs.json")
+print("data saved -> data/results_rwgs.json")

@@ -22,6 +22,9 @@ import pytest
 from solidgas import activeset as A
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+WEB = ROOT / 'web'
+DOCS = ROOT / 'docs'
 HARNESS = ROOT / 'tests' / 'js' / 'activeset_harness.js'
 
 CASES = {
@@ -39,7 +42,7 @@ def pair():
     assert shutil.which('node') is not None, \
         'node is required to run the release gate'
     for f in ('activeset_data.json', 'reference_results_high_precision.json'):
-        assert (ROOT / f).exists(), f'{f} missing - run the exporters first'
+        assert (DATA / f).exists(), f'{f} missing - run the exporters first'
     r = subprocess.run(['node', str(HARNESS), str(ROOT)],
                        capture_output=True, text=True, timeout=600)
     assert r.returncode == 0, f'harness failed:\n{r.stderr[-2000:]}'
@@ -47,7 +50,7 @@ def pair():
     for row in json.loads(r.stdout):
         js[(row['case'], row.get('T_C_label'))] = row
     py = {}
-    doc = json.loads((ROOT / 'reference_results_high_precision.json').read_text())
+    doc = json.loads((DATA / 'reference_results_high_precision.json').read_text())
     for case, feed in CASES.items():
         for t in doc['temperatures_C']:
             py[(case, t)] = A.solve(feed, t + 273.15)
@@ -164,22 +167,24 @@ def test_permutation_invariance_in_the_port(pair):
 
 def test_exported_data_is_current():
     """The JSON the browser runs on must match the live package tables."""
-    import export_activeset
+    from scripts import export_activeset
     live = export_activeset.build()
-    on_disk = json.loads((ROOT / 'activeset_data.json').read_text())
+    on_disk = json.loads((DATA / 'activeset_data.json').read_text())
     assert live == on_disk, 'run python3 export_activeset.py'
 
 
 def test_page_is_built_and_fresh():
     """ti_solver.html inlines the data, the engine and the UI verbatim."""
-    page = (ROOT / 'ti_solver.html')
-    assert page.exists(), 'run python3 build_ti_solver.py'
+    page = DOCS / 'ti_solver.html'
+    assert page.exists(), 'run python3 scripts/build_ti_solver.py'
     html = page.read_text()
-    assert (ROOT / 'activeset_data.json').read_text().strip() in html, \
+    assert (DATA / 'activeset_data.json').read_text().strip() in html, \
         'page is stale against activeset_data.json - run build_ti_solver.py'
-    for src in ('activeset.js', 'ti_solver_page.js', 'equations_method.html'):
-        assert (ROOT / src).read_text() in html, \
-            f'page is stale against {src} - run build_ti_solver.py'
+    sources = (WEB / 'activeset.js', WEB / 'ti_solver_page.js',
+               WEB / 'generated' / 'equations_method.html')
+    for src in sources:
+        assert src.read_text() in html, \
+            f'page is stale against {src.name} - run build_ti_solver.py'
     for token in ('__DATA__', '__REF__', '__ENGINE__', '__PAGE__', '__EQS__'):
         assert token not in html
     assert 'gibbs_min' in html
@@ -188,7 +193,7 @@ def test_page_is_built_and_fresh():
 
 
 def test_page_has_no_external_requests():
-    html = (ROOT / 'ti_solver.html').read_text()
+    html = (DOCS / 'ti_solver.html').read_text()
     for bad in ('src="http', "src='http", 'href="http://', '@import',
                 'fetch(', 'XMLHttpRequest'):
         assert bad not in html, f'page reaches outside: {bad}'

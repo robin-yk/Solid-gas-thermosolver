@@ -4,15 +4,18 @@ Everything ends up inside one file: the coefficient tables, a slim copy of the
 80-digit reference (winner-level values for the Validation tab), the engine,
 and the UI. No external requests - a hard requirement, checked below.
 
-    python3 export_activeset.py   # activeset_data.json from the package
-    python3 oracle_tio.py         # reference_results_high_precision.json
-    python3 build_ti_solver.py    # ti_solver.html
+    python3 scripts/export_activeset.py
+    python3 scripts/oracle_tio.py
+    python3 scripts/build_ti_solver.py
 """
 
 import json
-import os
+from pathlib import Path
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = Path(__file__).resolve().parent.parent
+WEB = ROOT / 'web'
+DATA = ROOT / 'data'
+DOCS = ROOT / 'docs'
 
 CASES_FEEDS = {
     'rwgs_1_1': {'CO2': 1, 'H2': 1},
@@ -26,7 +29,7 @@ CASES_FEEDS = {
 
 def slim_reference():
     """Winner-level fields only: what the Validation tab diffs against."""
-    with open(os.path.join(HERE, 'reference_results_high_precision.json')) as fh:
+    with (DATA / 'reference_results_high_precision.json').open() as fh:
         doc = json.load(fh)
     rows = []
     for r in doc['rows']:
@@ -47,25 +50,25 @@ def slim_reference():
 
 
 def main():
-    with open(os.path.join(HERE, 'ti_solver_template.html')) as fh:
+    with (WEB / 'ti_solver_template.html').open() as fh:
         html = fh.read()
-    with open(os.path.join(HERE, 'activeset_data.json')) as fh:
+    with (DATA / 'activeset_data.json').open() as fh:
         data = fh.read().strip()
-    with open(os.path.join(HERE, 'activeset.js')) as fh:
+    with (WEB / 'activeset.js').open() as fh:
         engine = fh.read()
-    with open(os.path.join(HERE, 'ti_solver_page.js')) as fh:
+    with (WEB / 'ti_solver_page.js').open() as fh:
         page = fh.read()
-    with open(os.path.join(HERE, 'equations_method.html')) as fh:
+    with (WEB / 'generated' / 'equations_method.html').open() as fh:
         eqs = fh.read()
-    with open(os.path.join(HERE, 'equations_statmech.html')) as fh:
+    with (WEB / 'generated' / 'equations_statmech.html').open() as fh:
         sm_eqs = fh.read()
-    with open(os.path.join(HERE, 'rutile_dft.json')) as fh:
+    with (DATA / 'rutile_dft.json').open() as fh:
         sm_data = fh.read().strip()
-    with open(os.path.join(HERE, 'statmech.js')) as fh:
+    with (WEB / 'statmech.js').open() as fh:
         sm_engine = fh.read()
-    with open(os.path.join(HERE, 'statmech_worker.js')) as fh:
+    with (WEB / 'statmech_worker.js').open() as fh:
         sm_worker = fh.read()
-    with open(os.path.join(HERE, 'statmech_ui.js')) as fh:
+    with (WEB / 'statmech_ui.js').open() as fh:
         sm_ui = fh.read()
     ref = json.dumps(slim_reference(), separators=(',', ':'))
 
@@ -78,8 +81,8 @@ def main():
         assert token in html, f'{token} missing from the template'
         html = html.replace(token, body)
 
-    out = os.path.join(HERE, 'ti_solver.html')
-    with open(out, 'w') as fh:
+    out = DOCS / 'ti_solver.html'
+    with out.open('w') as fh:
         fh.write(html)
     # XML namespace URIs in the inlined SVGs are identifiers, not requests.
     checked = html.replace('http://www.w3.org/2000/svg', '') \
@@ -89,7 +92,7 @@ def main():
     n_ext = checked.count('https://') - checked.count('https://github.com')
     if n_ext:
         raise SystemExit('external request found beyond the repo link')
-    print(f'ti_solver.html written ({os.path.getsize(out) / 1024:.0f} kB)')
+    print(f'{out.relative_to(ROOT)} written ({out.stat().st_size / 1024:.0f} kB)')
 
 
 if __name__ == '__main__':

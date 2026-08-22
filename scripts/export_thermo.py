@@ -7,14 +7,16 @@ here would be invisible and would move every number on the page.
 """
 
 import json
-import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+sys.path.insert(0, str(ROOT))
 
 from solidgas import shomate as S
 from solidgas import waldner as W
 from solidgas.equilibrium import ACTIVE_TI_PHASES, FORMULAS, GASES, TI_PHASES
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-
 
 def main():
     gases = GASES + ['O2', 'N2']
@@ -38,10 +40,10 @@ def main():
                                 key=lambda p: -W._stoich(p)[1] / W._stoich(p)[0]),
         'ti7o13_printed': W.TI7O13_PRINTED,
     }
-    out = os.path.join(HERE, 'thermo_data.json')
-    with open(out, 'w') as fh:
+    out = DATA / 'thermo_data.json'
+    with out.open('w') as fh:
         json.dump(payload, fh, separators=(',', ':'))
-    print(f'thermo_data.json written ({os.path.getsize(out) / 1024:.1f} kB), '
+    print(f'data/thermo_data.json written ({out.stat().st_size / 1024:.1f} kB), '
           f'{len(payload["shomate"])} NIST entries, {len(payload["waldner"])} Waldner entries')
 
 

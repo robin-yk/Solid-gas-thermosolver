@@ -51,11 +51,16 @@ O-bearing gas plus that phase is -infinity (the xi*ln(xi) edge), so the
 candidate fails KKT with r = -inf. This is why a bone-dry reducing feed always
 sits on a two-phase buffer rather than on pure rutile.
 
-Run:  python3 oracle_tio.py          -> reference_results_high_precision.json
+Run: python3 scripts/oracle_tio.py -> data/reference_results_high_precision.json
 """
 
 import json
 import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+sys.path.insert(0, str(ROOT))
 
 from mpmath import mp, mpf, matrix, lu_solve, log, exp, sqrt, floor
 
@@ -781,7 +786,7 @@ def main():
         'rows': rows,
         'boundary_validation': bb,
     }
-    with open('reference_results_high_precision.json', 'w') as fh:
+    with (DATA / 'reference_results_high_precision.json').open('w') as fh:
         json.dump(doc, fh, indent=1)
     print(f'\n{len(rows)} points -> reference_results_high_precision.json')
     return 0

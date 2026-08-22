@@ -308,7 +308,7 @@ a{color:var(--blue)}
       <h3 style="margin-top:24px">Complete formulation</h3>
       <p class="sub">Equations (1)&ndash;(30), as implemented. Rendered at build time from
       <code>equations_registry.py</code>; a PDF version is in the repository
-      (<code>equations.pdf</code>).</p>
+      (<a href="assets/equations.pdf"><code>assets/equations.pdf</code></a>).</p>
       __EQS__
     </div>
 
@@ -444,7 +444,7 @@ a{color:var(--blue)}
           <div><input type="number" id="smV3" step="0.01"><div class="readout">&Delta; = 3, eV</div></div>
         </div>
         <div class="readout">Calibrated to the published ordering constraints; cross-row
-        terms and the 10 &Aring; cutoff are fixed in <code>rutile_dft.json</code>.</div>
+        terms and the 10 &Aring; cutoff are fixed in <code>data/rutile_dft.json</code>.</div>
       </div>
       <div class="readout" style="line-height:1.6">
         <b>Dataset.</b> Layer energetics: Li, Guo &amp; Robertson, J. Phys. Chem. C 119
@@ -603,7 +603,7 @@ a{color:var(--blue)}
       reconstruction interval and do not define a maximum vacancy capacity.
       The pair energies here are calibrated to those constraints. Project DFT
       configuration energies will replace them directly when those values
-      arrive. Every model parameter lives in <code>rutile_dft.json</code>. Dielectric
+      arrive. Every model parameter lives in <code>data/rutile_dft.json</code>. Dielectric
       correlation: measured in this work. The power-law fit and its statistics are
       shown on the accessibility panel. Diffusion barriers stored for kinetics:
       Iddir et al., J. Phys. Chem. C (2010); Wang et al., Phys. Rev. B 82, 165309
@@ -628,7 +628,7 @@ a{color:var(--blue)}
   Eriksson, Calphad 23 (1999) 189&ndash;218, Appendix pp. 216&ndash;218. Defect
   energetics: Li et al., J. Phys. Chem. C 119 (2015); Birschitzky et al., npj Comput.
   Mater. 10 (2024); Iddir et al.; Wang et al. Parameters are stored in
-  <code>rutile_dft.json</code>.
+  <code>data/rutile_dft.json</code>.
   Engines: <a href="https://github.com/robin-yk/Solid-gas-thermosolver">robin-yk/Solid-gas-thermosolver</a>
   (<code>solidgas/activeset.py</code>, <code>solidgas/statmech.py</code>); verified
   against the Python implementations, an 80-digit equilibrium reference and a 50-digit

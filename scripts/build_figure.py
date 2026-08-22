@@ -6,7 +6,12 @@ run; panel D's ledger values are the worst deviations measured this session
 """
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+ROOT = SCRIPT_DIR.parent
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(SCRIPT_DIR))
 
 import numpy as np
 import matplotlib
@@ -219,7 +224,6 @@ fig.text(0.065, 0.055,
          'D: solver-to-solver and solver-to-oracle agreement, with the gates the test suite enforces.',
          fontsize=8.6, color=INK2, va='top')
 
-out = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                   'verification_figure.png')
+out = ROOT / 'docs' / 'assets' / 'verification_figure.png'
 fig.savefig(out, facecolor=SURF)
 print('written', out)

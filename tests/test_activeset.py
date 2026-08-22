@@ -17,7 +17,7 @@ import pytest
 from solidgas import activeset as A
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-REF = ROOT / 'reference_results_high_precision.json'
+REF = ROOT / 'data' / 'reference_results_high_precision.json'
 
 CASES = {
     'rwgs_1_1': {'CO2': 1, 'H2': 1},

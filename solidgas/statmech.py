@@ -31,7 +31,7 @@ KB_EV = 8.617333262e-5          # eV / K
 N_AVO = 6.02214076e23
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_PATH = os.path.join(_ROOT, 'rutile_dft.json')
+DATA_PATH = os.path.join(_ROOT, 'data', 'rutile_dft.json')
 
 
 def load_params(path=DATA_PATH):
