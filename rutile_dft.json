@@ -1,5 +1,5 @@
 {
-  "version": "0.2-M2",
+  "version": "0.3-phase",
   "material": "rutile TiO2",
   "facet": "(110)",
   "lattice_constants_A": {"a": 4.5937, "c": 2.9587},
@@ -28,10 +28,18 @@
     "provenance": "Birschitzky et al., npj Comput. Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4. DFT+U (U = 3.9 eV) + ML + Metropolis MC on rutile (110): experiment reports an average reconstruction onset near 17%, DFT places the transition near 20%, and vacancy-rich local regions reach about 20%; these values mark a phase-change interval, not a maximum allowed coverage. Interaction range is ~10 A, in-row spacings of 1-2 sites are nearly absent, and the most probable spacing is 4-5 sites. Reconstruction mechanism: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053."
   },
 
+  "surface_phases": {
+    "theta_transition": 0.17,
+    "transition_interval": [0.17, 0.20],
+    "theta_reconstructed_eff": 0.5,
+    "note": "The (1x2) reconstruction is treated as a competing surface PHASE, not a cap and not an extrapolation: the (1x1) vacancy lattice gas holds up to theta_transition; there the added-row Ti2O3 phase takes over by a first-order transition (lever-rule coexistence at fixed mu_V), with a stoichiometric areal O deficiency of theta_reconstructed_eff = 0.5 in bridging-monolayer units (one added Ti2O3 unit per (1x2) cell = one O vacancy per two bridging sites). Declared idealisations: the reconstructed phase is a zero-width line compound (no configurational entropy; cross-linked (1x2) variants not distinguished), and no surface phase beyond theta_eff = 0.5 is modelled. theta_transition is the experimental onset; the DFT value 0.20 bounds the interval (sensitivity, not a second phase).",
+    "provenance": "Added-row Ti2O3 structure of the (1x2): Onishi & Iwasawa, Surf. Sci. 313 (1994) L783; confirmed stable under reduction by DFT+U: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053. Transition location: the 17-20% onset interval of Birschitzky et al. (see surface_ordering.provenance)."
+  },
+
   "saturation": {
     "subsurface_dilute_warn": 0.25,
     "x_max_shear": 0.008,
-    "note": "The 17-20% bridging-O vacancy interval marks onset of the rutile TiO2(110)-(1x2) reconstruction. It is not a saturation capacity. The model does not clip surface coverage; results in and above this interval are conditional extrapolations of the unreconstructed (1x1) Hamiltonian because reconstructed-phase energetics are not implemented. x_max is the approximate rutile point-defect range before crystallographic shear planes."
+    "note": "x_max_shear is the approximate rutile point-defect range before crystallographic shear (CS) planes; the partition uses it as the bulk solubility: theta_sol = x_max_shear/2 pins mu_V at the estimated rutile / CS-phase coexistence, and inventory beyond that total precipitates as extended defects by the lever rule (reported as its own output, not forced into the point-defect classes). The value is approximate and is labelled an estimate wherever it is used. subsurface_dilute_warn flags the first subsurface O layer leaving the dilute regime; read that as a heavily reduced near-surface shell, not isolated vacancies."
   },
 
   "co2_kinetics": {
@@ -55,6 +63,16 @@
     "fit_range_umol_g": [95, 5000],
     "note": "Empirical dielectric loss factor of this work: linear regression of log10(eps'') on log10(VO_total), i.e. eps'' = 10^a * VO^b with a = -3.07028 +/- 0.695 and b = 1.22355 +/- 0.2302 (OriginLab, no weighting, N = 4, Pearson r 0.96637, R^2 0.93388, adj. R^2 0.90082, RSS 0.18029). Fitted over roughly 95-5000 umol-O/g; below that range the value is an extrapolation and the card marks it. Set eps_prime to display tan delta.",
     "provenance": "Measured in this work (Kwak et al.): dielectric loss factor vs total oxygen-vacancy content from H2O-integration titration of reduced rutile."
+  },
+
+  "kinetics_cgmc": {
+    "nu0_per_s": 1e13,
+    "E_m_bulk_eV": 0.65,
+    "n_cells": 28,
+    "eps_ctrl": 0.08,
+    "stochastic_column_counts": 200000,
+    "note": "Coarse-grained KMC of reoxidation transport, after the group's framework: radial coarse cells over the particle, exchange rates R(k->l) = Lambda_kl eta_k (q_l - eta_l) exp(beta eps_k) with a symmetric kernel Lambda_kl = nu0 a^2 A_kl exp(-beta E_TS) / (d_kl v_O q_k q_l) and a common saddle E_TS = E_m + eps_bulk, so the activation to leave cell k is E_TS - eps_k. This satisfies detailed balance against the product-binomial Gibbs measure with H = sum eps_k eta_k (the closed system relaxes exactly to the (1x1) three-class equilibrium split) and reduces in the dilute limit to the finite-volume discretisation of spherical diffusion with D = a^2 nu0 exp(-beta E_m). Surface refill (CO2) is the one irreversible channel and uses the surface entry of co2_kinetics. Reconstruction kinetics are not modelled: the transport network uses the (1x1) site classes. E_m defaults to the neutral-vacancy bulk barrier; with it, transport is NOT rate-limiting at 600 C - a measured partial recovery therefore reads back as an EFFECTIVE barrier (charged migration, trapping, aggregation), which the panel can fit.",
+    "provenance": "Framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003). E_m default: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a (neutral V_O, c-axis)."
   },
 
   "experimental_recovery": {

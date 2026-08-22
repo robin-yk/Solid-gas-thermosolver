@@ -10,11 +10,15 @@ site-exclusion isotherm. The particle-scale balance then uses the real
 geometric site counts, not the slab's class ratio: a 0.9 um particle has
 ~0.05% of its O sites in the surface layer, the slab has 10%.
 
-The reported 17-20% onset interval for the (1x2) reconstruction is a model
-boundary, not a saturation capacity. Surface coverage is never clipped. A
-solution inside or above that interval is marked as a conditional extrapolation
-of the unreconstructed (1x1) Hamiltonian because reconstructed-phase
-energetics are not implemented.
+The (1x2) reconstruction is a competing surface PHASE, not a cap and not an
+extrapolation: at the reported onset the (1x1) vacancy lattice gas undergoes
+a first-order transition to the added-row Ti2O3 line phase (areal O
+deficiency 0.5 bridging-ML, Onishi-Iwasawa stoichiometry), handled by the
+lever rule at pinned mu_V. Beyond the bulk point-defect solubility the same
+construction pins mu_V at the estimated rutile / CS-phase coexistence and
+precipitates the excess as extended defects. Nothing is clipped and no
+remainder is silently reassigned; every branch is a standard phase
+construction with its idealisations declared in rutile_dft.json.
 
 statmech.js is a line-for-line port of this file. Loops, operation order and
 the RNG are kept identical so that a same-seed run is bit-reproducible across
@@ -455,94 +459,184 @@ def theta_s_interp(points, eps_s, kt):
     return f
 
 
-def distribute(p, t_c, vo_total, geom, theta_s_fn=None, preset=None, eps=None):
-    """Split the total inventory over the real site counts at common mu."""
+def phase_boundaries(p, t_c, geom, preset=None, eps=None):
+    """Closed-form mu and inventory boundaries of the phase construction.
+
+    Three certified rungs at a given temperature and geometry: the (1x2)
+    onset (surface leaves the (1x1) lattice gas), the completion of the
+    added-row reconstruction, and the estimated CS-precipitation ceiling
+    where the bulk point-defect solubility pins mu at rutile / CS-phase
+    coexistence. All are closed forms of the site-exclusion isotherm."""
     kt = KB_EV * (t_c + 273.15)
     if eps is None:
         eps = energetics(p, preset)['eps']
-    if theta_s_fn is None:
-        theta_s_fn = lambda mu: fd(mu, eps[0], kt)  # noqa: E731
+    sp = p['surface_phases']
+    th_t = sp['theta_transition']
+    th_r = sp['theta_reconstructed_eff']
+    th_sol = p['saturation']['x_max_shear'] / 2.0
+    mu_t = eps[0] + kt * math.log(th_t / (1.0 - th_t))
+    mu_cs = eps[2] + kt * math.log(th_sol / (1.0 - th_sol))
+    deep_t = (geom['N_ss'] * fd(mu_t, eps[1], kt)
+              + geom['N_b'] * fd(mu_t, eps[2], kt))
+    deep_cs = (geom['N_ss'] * fd(mu_cs, eps[1], kt)
+               + geom['N_b'] * fd(mu_cs, eps[2], kt))
+    return {'mu_t_eV': mu_t, 'mu_cs_eV': mu_cs,
+            'theta_transition': th_t, 'theta_reconstructed_eff': th_r,
+            'theta_sol': th_sol,
+            'VO_onset_umol_g': geom['N_s'] * th_t + deep_t,
+            'VO_recon_complete_umol_g': geom['N_s'] * th_r + deep_t,
+            'VO_cs_umol_g': geom['N_s'] * th_r + deep_cs}
 
-    def parts(mu):
-        return theta_s_fn(mu), fd(mu, eps[1], kt), fd(mu, eps[2], kt)
 
-    def total(mu):
-        ts, tss, tb = parts(mu)
-        return geom['N_s'] * ts + geom['N_ss'] * tss + geom['N_b'] * tb
+def distribute(p, t_c, vo_total, geom, preset=None, eps=None):
+    """Split the total inventory over the real site counts at common mu,
+    with the surface reconstruction and CS precipitation as PHASES.
 
-    lo, hi = -3.0, 3.0
-    for _ in range(40):                 # bracket even extreme temperatures
-        if total(lo) <= vo_total:
-            break
-        lo *= 2.0
-    for _ in range(40):
-        if total(hi) >= vo_total:
-            break
-        hi *= 2.0
-    for _ in range(200):
-        mid = 0.5 * (lo + hi)
-        if total(mid) < vo_total:
-            lo = mid
+    The construction (all branches thermodynamically standard, nothing
+    clipped, no remainder silently reassigned):
+
+    1. dilute            mu < mu_t: every class on its site-exclusion
+                         isotherm; surface is the (1x1) vacancy lattice gas.
+    2. surface           mu = mu_t exactly: first-order surface transition -
+       coexistence       the (1x1) gas at theta_t coexists with the (1x2)
+                         added-row Ti2O3 line phase at theta_eff = 0.5;
+                         the reconstructed area fraction phi is the lever
+                         rule, and mu stays pinned across the riser.
+    3. reconstructed     mu_t < mu < mu_cs: surface fully (1x2) at its
+                         stoichiometric deficiency; subsurface and bulk
+                         continue on their isotherms.
+    4. CS coexistence    mu = mu_cs (estimate from the declared point-defect
+                         solubility x_max_shear): mu pins at rutile /
+                         CS-phase coexistence and the excess inventory
+                         precipitates as extended defects (lever rule),
+                         reported as its own output class."""
+    kt = KB_EV * (t_c + 273.15)
+    if eps is None:
+        eps = energetics(p, preset)['eps']
+    b = phase_boundaries(p, t_c, geom, eps=eps)
+    n_s = geom['N_s']
+    th_t = b['theta_transition']
+    th_r = b['theta_reconstructed_eff']
+
+    def deep(mu):
+        return (geom['N_ss'] * fd(mu, eps[1], kt)
+                + geom['N_b'] * fd(mu, eps[2], kt))
+
+    u_ext = 0.0
+    if vo_total <= b['VO_onset_umol_g']:
+        regime, phase = 'dilute', '1x1'
+        lo, hi = -3.0, b['mu_t_eV']
+        for _ in range(60):             # bracket even extreme temperatures
+            if n_s * fd(lo, eps[0], kt) + deep(lo) <= vo_total:
+                break
+            lo = 2.0 * lo - hi
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            if n_s * fd(mid, eps[0], kt) + deep(mid) < vo_total:
+                lo = mid
+            else:
+                hi = mid
+        mu = 0.5 * (lo + hi)
+        ts = fd(mu, eps[0], kt)
+        us = n_s * ts
+        phi = 0.0
+    elif vo_total < b['VO_recon_complete_umol_g']:
+        regime, phase = 'surface_coexistence', 'coexistence'
+        mu = b['mu_t_eV']
+        us = vo_total - deep(mu)        # the surface takes the balance
+        ts = us / n_s
+        phi = (ts - th_t) / (th_r - th_t)
+    else:
+        mu_lo, mu_hi = b['mu_t_eV'], b['mu_cs_eV']
+        if vo_total <= b['VO_cs_umol_g']:
+            regime, phase = 'reconstructed', '1x2'
+            target = vo_total - n_s * th_r
+            for _ in range(200):
+                mid = 0.5 * (mu_lo + mu_hi)
+                if deep(mid) < target:
+                    mu_lo = mid
+                else:
+                    mu_hi = mid
+            mu = 0.5 * (mu_lo + mu_hi)
         else:
-            hi = mid
-    mu = 0.5 * (lo + hi)
-    ts, tss, tb = parts(mu)
-    us = geom['N_s'] * ts
+            regime, phase = 'cs_coexistence', '1x2'
+            mu = b['mu_cs_eV']
+            u_ext = vo_total - n_s * th_r - deep(mu)
+        ts = th_r
+        us = n_s * th_r
+        phi = 1.0
+    tss = fd(mu, eps[1], kt)
+    tb = fd(mu, eps[2], kt)
     uss = geom['N_ss'] * tss
     ub = geom['N_b'] * tb
-    tot = us + uss + ub
+    tot = us + uss + ub + u_ext
     mol_ti = 1e6 / p['molar_mass_g_mol']
     x = vo_total / mol_ti
+    x_diss = (us + uss + ub) / mol_ti
     sat = p['saturation']
-    onset_lo = p['surface_ordering']['critical_coverage']
-    onset_hi = p['surface_ordering']['reconstruction_coverage']
     warnings = []
-    if ts >= onset_lo:
-        relation = ('is inside' if ts < onset_hi else 'exceeds')
+    if phase == 'coexistence':
         warnings.append({
-            'kind': 'surface_reconstruction',
-            'text': ('Surface bridging-O vacancy coverage %.1f%% %s the '
-                     'reported %.0f-%.0f%% onset interval for the rutile '
-                     'TiO2(110)-(1x2) reconstruction. The value is not '
-                     'clipped. This distribution is a conditional '
-                     'extrapolation of the unreconstructed (1x1) surface '
-                     'Hamiltonian; reconstructed-phase energetics are not '
-                     'implemented.'
-                     % (ts * 100, relation, onset_lo * 100,
-                        onset_hi * 100))})
+            'kind': 'surface_phase',
+            'text': ('Surface is in (1x1)/(1x2) two-phase coexistence at '
+                     'mu_V = %.3f eV: %.0f%% of the area is reconstructed '
+                     'to the added-row Ti2O3 phase (lever rule between '
+                     'theta = %.2f and the line-phase deficiency 0.5). The '
+                     '(1x2) branch is a zero-width line compound; '
+                     'cross-linked variants are not distinguished.'
+                     % (mu, phi * 100, th_t))})
+    elif phase == '1x2':
+        warnings.append({
+            'kind': 'surface_phase',
+            'text': ('Surface is fully reconstructed to the (1x2) added-row '
+                     'Ti2O3 phase: areal O deficiency 0.5 bridging-ML '
+                     '= %.2f umol-O/g at this geometry (Onishi-Iwasawa '
+                     'stoichiometry). Surface phases beyond theta_eff = 0.5 '
+                     'are not modelled; the (1x2) branch is a zero-width '
+                     'line compound.' % us)})
     if tss > sat['subsurface_dilute_warn']:
         warnings.append({'kind': 'subsurface_dense',
-                         'text': 'Subsurface layer occupancy %.0f%% is far '
-                                 'beyond the dilute-defect regime; read this '
-                                 'as a heavily reduced near-surface shell '
-                                 '(extended defects), not isolated vacancies.'
-                                 % (tss * 100)})
-    if x >= sat['x_max_shear']:
-        warnings.append({'kind': 'x_max',
-                         'text': 'x = %.4f in TiO2-x exceeds the rutile '
-                                 'point-defect range (~%.3f); crystallographic '
-                                 'shear planes are expected.'
-                                 % (x, sat['x_max_shear'])})
+                         'text': 'Subsurface layer occupancy %.0f%%: the '
+                                 'dilute-defect approximation fails for this '
+                                 'class; read it as a heavily reduced '
+                                 'near-surface shell (extended defects), not '
+                                 'isolated vacancies.' % (tss * 100)})
+    if regime == 'cs_coexistence':
+        warnings.append({
+            'kind': 'cs_precipitation',
+            'text': ('Total inventory exceeds the estimated point-defect '
+                     'solubility (x_sol ~ %.3f, approximate): mu_V pins at '
+                     'the rutile / CS-phase coexistence estimate and '
+                     '%.1f umol-O/g precipitates as extended defects '
+                     '(crystallographic shear planes).'
+                     % (sat['x_max_shear'], u_ext))})
     elif x >= 0.8 * sat['x_max_shear']:
         warnings.append({'kind': 'x_near',
                          'text': 'x = %.4f in TiO2-x is near the rutile '
-                                 'point-defect range (~%.3f).'
-                                 % (x, sat['x_max_shear'])})
+                                 'point-defect range (~%.3f); the CS '
+                                 'ceiling sits at %.1f umol-O/g.'
+                                 % (x, sat['x_max_shear'],
+                                    b['VO_cs_umol_g'])})
     if vo_total > 0 and abs(tot - vo_total) > 1e-6 * vo_total:
         warnings.append({'kind': 'unresolved',
                          'text': 'Inventory not matched within tolerance; '
-                                 'check the isotherm range.'})
+                                 'check the solver bracket.'})
     return {'method': 'canonical_statmech',
             'T_C': t_c, 'VO_total_umol_g': vo_total,
             'mu_V_eV': mu,
             'theta': {'surface': ts, 'subsurface': tss, 'bulk': tb},
+            'surface_phase': {'phase': phase, 'phi_reconstructed': phi},
+            'regime': regime,
             'umol_g': {'surface': us, 'subsurface': uss, 'bulk': ub},
+            'extended_defects_umol_g': u_ext,
             'fractions': {'surface': us / tot if tot else 0.0,
                           'subsurface': uss / tot if tot else 0.0,
-                          'bulk': ub / tot if tot else 0.0},
+                          'bulk': ub / tot if tot else 0.0,
+                          'extended': u_ext / tot if tot else 0.0},
             'matched_umol_g': tot,
-            'x_TiO2mx': x, 'Ti3_frac': 2.0 * x,
-            'surface_reconstruction_regime': ts >= onset_lo,
+            'x_TiO2mx': x, 'x_dissolved': x_diss, 'Ti3_frac': 2.0 * x,
+            'phase_boundaries': b,
+            'surface_reconstruction_regime': phase != '1x1',
             'warnings': warnings}
 
 
@@ -551,8 +645,9 @@ def spacing_summary(points, theta_s):
 
     The literature constraints (modal spacing 4-5 sites, 1-2 suppressed) are
     statements about the arrangement at a given coverage, so the comparison
-    point is chosen by theta_s. Solutions past the reconstruction onset remain
-    conditional on the unreconstructed surface Hamiltonian."""
+    point is chosen by theta_s. Past the transition the surviving (1x1)
+    patches sit at theta_transition (two-phase coexistence), so the caller
+    clamps the comparison coverage there."""
     best = None
     for q in points:
         if q['mu_eV'] is None:
@@ -641,9 +736,13 @@ def co2_kinetics_params(p, kin=None):
     return d
 
 
-def accessibility(p, umol_by_class, kin=None):
+def accessibility(p, umol_by_class, kin=None, total_umol=None):
     """First-order refill of each site class during one CO2 exposure:
-    k_c = A_c p^m exp(-Ea_c/kT), P_c(t) = 1 - exp(-k_c t)."""
+    k_c = A_c p^m exp(-Ea_c/kT), P_c(t) = 1 - exp(-k_c t).
+
+    total_umol, when given, is the denominator of f_recoverable - pass the
+    full inventory so precipitated extended defects (not refillable by a
+    first-order site channel) count against the recoverable fraction."""
     d = co2_kinetics_params(p, kin)
     kt = KB_EV * (d['T_reox_C'] + 273.15)
     pf = d['p_CO2_atm'] ** d['p_order_m']
@@ -657,6 +756,8 @@ def accessibility(p, umol_by_class, kin=None):
         probs[c] = prob
         acc += umol_by_class[c] * prob
         tot += umol_by_class[c]
+    if total_umol is not None:
+        tot = total_umol
     return {'P': probs, 'accessible_umol_g': acc,
             'f_recoverable': acc / tot if tot else 0.0,
             'params': d}
@@ -683,26 +784,27 @@ def dielectric(p, vo_total):
     return out
 
 
-def sweep(p, t_c, geom, vo_list, theta_s_fn=None, preset=None, eps=None,
-          kin=None):
+def sweep(p, t_c, geom, vo_list, preset=None, eps=None, kin=None):
     """Distribution and accessibility along a total-inventory axis.
 
-    Instant once the isotherm exists - each point is one scalar matching
-    solve. The surface follows the sampled isotherm without a hard coverage
-    cap; subsurface and bulk take the remaining inventory, and the accessible
-    curve falls away from the total."""
+    Each point is one analytic phase-aware matching solve, so the figure is
+    instant: the surface crosses the (1x2) coexistence riser and holds at
+    the line-phase deficiency, subsurface and bulk fill their isotherms,
+    extended defects appear beyond the CS ceiling, and the accessible curve
+    falls away from the total."""
     rows = []
     for vo in vo_list:
-        d = distribute(p, t_c, vo, geom, theta_s_fn=theta_s_fn,
-                       preset=preset, eps=eps)
-        a = accessibility(p, d['umol_g'], kin)
+        d = distribute(p, t_c, vo, geom, preset=preset, eps=eps)
+        a = accessibility(p, d['umol_g'], kin, total_umol=vo)
         rows.append({'VO_total_umol_g': vo,
                      'surface': d['umol_g']['surface'],
                      'subsurface': d['umol_g']['subsurface'],
                      'bulk': d['umol_g']['bulk'],
+                     'extended': d['extended_defects_umol_g'],
                      'accessible': a['accessible_umol_g'],
                      'f_recoverable': a['f_recoverable'],
-                     'mu_V_eV': d['mu_V_eV']})
+                     'mu_V_eV': d['mu_V_eV'],
+                     'regime': d['regime']})
     return rows
 
 
@@ -716,19 +818,24 @@ def run_full(p, t_c=None, vo_total=None, d_um=None, bet_m2_g=None,
     if vo_total is None:
         vo_total = p['defaults']['VO_total_umol_g']
     geom = geometry(p, d_um=d_um, bet_m2_g=bet_m2_g, ss_layers=ss_layers)
-    kt = KB_EV * (t_c + 273.15)
     if eps is None:
         eps = energetics(p, preset)['eps']
     pts = isotherm_scan(p, t_c, seed=seed, quality=quality, eps=eps,
                         zero_pairs=zero_pairs, ordering=ordering, mc=mc,
                         progress=progress)
-    if zero_pairs:
-        fn = lambda mu: fd(mu, eps[0], kt)  # exact ideal surface isotherm
-    else:
-        fn = theta_s_interp(pts, eps[0], kt)
-    out = distribute(p, t_c, vo_total, geom, theta_s_fn=fn, eps=eps)
+    # decoupled by design: the layer partition is the analytic phase-aware
+    # solve on the formation energies alone. The sampled interacting
+    # isotherm feeds only the ordering exhibit - the pair table is an
+    # effective parameterisation of arrangement statistics, not of layer
+    # energetics, and past the transition the surviving (1x1) patches sit
+    # exactly at theta_transition (coexistence), which is where the
+    # arrangement snapshot is taken.
+    out = distribute(p, t_c, vo_total, geom, eps=eps)
     out['geometry'] = geom
     out['isotherm'] = pts
-    out['spacing'] = spacing_summary(pts, out['theta']['surface'])
-    out['accessibility'] = accessibility(p, out['umol_g'], kin)
+    out['spacing'] = spacing_summary(
+        pts, min(out['theta']['surface'],
+                 p['surface_phases']['theta_transition']))
+    out['accessibility'] = accessibility(p, out['umol_g'], kin,
+                                         total_umol=vo_total)
     return out

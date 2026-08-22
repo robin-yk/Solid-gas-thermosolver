@@ -63,37 +63,91 @@ def eps_of(preset):
             mpf(str(q['bulk_eV']))]
 
 
-def match(t_c, vo, geom, preset):
+def boundaries(t_c, geom, preset):
+    """Closed-form phase boundaries: (1x2) onset, reconstruction complete,
+    CS-precipitation ceiling. Independent re-derivation at 50 digits."""
     kt = KB_EV * (mpf(str(t_c)) + mpf('273.15'))
     eps = eps_of(preset)
-    def total(mu):
-        ts = fd(mu, eps[0], kt)
-        return (geom['N_s'] * ts + geom['N_ss'] * fd(mu, eps[1], kt)
+    sp = P['surface_phases']
+    th_t = mpf(str(sp['theta_transition']))
+    th_r = mpf(str(sp['theta_reconstructed_eff']))
+    th_sol = mpf(str(P['saturation']['x_max_shear'])) / 2
+    mu_t = eps[0] + kt * mlog(th_t / (1 - th_t))
+    mu_cs = eps[2] + kt * mlog(th_sol / (1 - th_sol))
+    deep_t = (geom['N_ss'] * fd(mu_t, eps[1], kt)
+              + geom['N_b'] * fd(mu_t, eps[2], kt))
+    deep_cs = (geom['N_ss'] * fd(mu_cs, eps[1], kt)
+               + geom['N_b'] * fd(mu_cs, eps[2], kt))
+    return {'mu_t': mu_t, 'mu_cs': mu_cs, 'th_t': th_t, 'th_r': th_r,
+            'th_sol': th_sol, 'kt': kt, 'eps': eps,
+            'vo_onset': geom['N_s'] * th_t + deep_t,
+            'vo_recon': geom['N_s'] * th_r + deep_t,
+            'vo_cs': geom['N_s'] * th_r + deep_cs}
+
+
+def match(t_c, vo, geom, preset):
+    """Phase-aware matching: (1x1) lattice gas, first-order (1x2)
+    coexistence riser, reconstructed line phase, mu pinned at the CS
+    coexistence estimate with lever-rule precipitation."""
+    b = boundaries(t_c, geom, preset)
+    kt, eps = b['kt'], b['eps']
+    vo_mp = mpf(str(vo))
+
+    def deep(mu):
+        return (geom['N_ss'] * fd(mu, eps[1], kt)
                 + geom['N_b'] * fd(mu, eps[2], kt))
-    lo, hi = mpf(-3), mpf(3)
-    for _ in range(220):
-        mid = (lo + hi) / 2
-        if total(mid) < mpf(str(vo)):
-            lo = mid
+    ext = mpf(0)
+    if vo_mp <= b['vo_onset']:
+        regime, phase = 'dilute', '1x1'
+        lo, hi = mpf(-40), b['mu_t']
+        for _ in range(240):
+            mid = (lo + hi) / 2
+            if geom['N_s'] * fd(mid, eps[0], kt) + deep(mid) < vo_mp:
+                lo = mid
+            else:
+                hi = mid
+        mu = (lo + hi) / 2
+        ts = fd(mu, eps[0], kt)
+        us = geom['N_s'] * ts
+        phi = mpf(0)
+    elif vo_mp < b['vo_recon']:
+        regime, phase = 'surface_coexistence', 'coexistence'
+        mu = b['mu_t']
+        us = vo_mp - deep(mu)
+        ts = us / geom['N_s']
+        phi = (ts - b['th_t']) / (b['th_r'] - b['th_t'])
+    else:
+        if vo_mp <= b['vo_cs']:
+            regime, phase = 'reconstructed', '1x2'
+            lo, hi = b['mu_t'], b['mu_cs']
+            target = vo_mp - geom['N_s'] * b['th_r']
+            for _ in range(240):
+                mid = (lo + hi) / 2
+                if deep(mid) < target:
+                    lo = mid
+                else:
+                    hi = mid
+            mu = (lo + hi) / 2
         else:
-            hi = mid
-    mu = (lo + hi) / 2
-    ts = fd(mu, eps[0], kt)
-    onset = mpf(str(P['surface_ordering']['critical_coverage']))
-    reconstruction_regime = ts >= onset
+            regime, phase = 'cs_coexistence', '1x2'
+            mu = b['mu_cs']
+            ext = vo_mp - geom['N_s'] * b['th_r'] - deep(mu)
+        ts = b['th_r']
+        us = geom['N_s'] * b['th_r']
+        phi = mpf(1)
     tss = fd(mu, eps[1], kt)
     tb = fd(mu, eps[2], kt)
-    us, uss, ub = geom['N_s'] * ts, geom['N_ss'] * tss, geom['N_b'] * tb
-    tot = us + uss + ub
-    x = mpf(str(vo)) / (mpf('1e6') / mpf(str(P['molar_mass_g_mol'])))
+    uss, ub = geom['N_ss'] * tss, geom['N_b'] * tb
+    tot = us + uss + ub + ext
+    x = vo_mp / (mpf('1e6') / mpf(str(P['molar_mass_g_mol'])))
     sat = P['saturation']
     warn = []
-    if reconstruction_regime:
-        warn.append('surface_reconstruction')
+    if phase != '1x1':
+        warn.append('surface_phase')
     if tss > mpf(str(sat['subsurface_dilute_warn'])):
         warn.append('subsurface_dense')
-    if x >= mpf(str(sat['x_max_shear'])):
-        warn.append('x_max')
+    if regime == 'cs_coexistence':
+        warn.append('cs_precipitation')
     elif x >= mpf('0.8') * mpf(str(sat['x_max_shear'])):
         warn.append('x_near')
     return {'T_C': t_c, 'VO_total_umol_g': vo, 'preset': preset,
@@ -102,11 +156,21 @@ def match(t_c, vo, geom, preset):
                       'bulk': float(tb)},
             'umol_g': {'surface': float(us), 'subsurface': float(uss),
                        'bulk': float(ub)},
+            'extended_defects_umol_g': float(ext),
             'fractions': {'surface': float(us / tot),
                           'subsurface': float(uss / tot),
-                          'bulk': float(ub / tot)},
+                          'bulk': float(ub / tot),
+                          'extended': float(ext / tot)},
             'x_TiO2mx': float(x), 'Ti3_frac': float(2 * x),
-            'surface_reconstruction_regime': bool(reconstruction_regime),
+            'regime': regime,
+            'surface_phase': {'phase': phase,
+                              'phi_reconstructed': float(phi)},
+            'boundaries': {'mu_t_eV': float(b['mu_t']),
+                           'mu_cs_eV': float(b['mu_cs']),
+                           'VO_onset_umol_g': float(b['vo_onset']),
+                           'VO_recon_complete_umol_g': float(b['vo_recon']),
+                           'VO_cs_umol_g': float(b['vo_cs'])},
+            'surface_reconstruction_regime': phase != '1x1',
             'warn_kinds': warn}
 
 
