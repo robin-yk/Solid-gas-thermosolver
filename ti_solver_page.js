@@ -247,7 +247,7 @@
       } else {
         var rc = R.inactive_phase_reduced_costs[s];
         status = 'excluded, exactly 0; r = '
-          + (rc.per_mol_O_kJ === null ? '—'
+          + (rc.per_mol_O_kJ === null ? 'N/A'
              : !isFinite(rc.per_mol_O_kJ) ? '−∞'
              : '+' + sci(rc.per_mol_O_kJ, 4)) + ' kJ/mol O';
       }
@@ -289,15 +289,15 @@
       var rc = R.inactive_phase_reduced_costs[s];
       if (!rc) return;
       var pf = rc.per_formula_kJ, po = rc.per_mol_O_kJ;
-      var reading = pf === null ? '—'
+      var reading = pf === null ? 'N/A'
         : !isFinite(pf) ? 'oxygen-free gas; formation direction unbounded'
         : Math.abs(po) < R.solver_tolerance.degeneracy_kJ_per_mol_O
           ? 'on the boundary (degenerate)'
         : pf > 0 ? 'absent (exactly zero)' : 'negative reduced cost (not expected)';
       h += '<tr><td>' + sub(s) + '</td><td>'
-        + (pf === null ? '—' : !isFinite(pf) ? '−∞' : sci(pf, 5))
+        + (pf === null ? 'N/A' : !isFinite(pf) ? '−∞' : sci(pf, 5))
         + '</td><td>'
-        + (po === null ? '—' : !isFinite(po) ? '−∞' : sci(po, 5))
+        + (po === null ? 'N/A' : !isFinite(po) ? '−∞' : sci(po, 5))
         + '</td><td>' + rc.oxygen_removed_per_extent + '</td><td>' + reading
         + '</td></tr>';
     });
@@ -317,7 +317,7 @@
         + c.active.map(sub).join(' + ') + (isWin ? ' ← selected' : '')
         + '</td><td>' + (c.feasible ? '<span class="ok">yes</span>' : 'no')
         + '</td><td>' + (c.kkt_ok ? '<span class="ok">clean</span>' : 'fails')
-        + '</td><td>' + (c.worst_inactive_r_kJ === null ? '−∞ / —'
+        + '</td><td>' + (c.worst_inactive_r_kJ === null ? '−∞ / N/A'
                          : sci(c.worst_inactive_r_kJ, 4))
         + '</td><td>' + c.reason + '</td></tr>';
     });

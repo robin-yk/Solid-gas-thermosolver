@@ -48,9 +48,7 @@
    },
    "x_TiO2mx": 7.9866e-05,
    "Ti3_frac": 0.000159732,
-   "regime": "valid",
-   "binding": null,
-   "VO_valid_max_umol_g": 2.305120248812823,
+   "surface_reconstruction_regime": false,
    "warn_kinds": []
   },
   {
@@ -75,11 +73,9 @@
    },
    "x_TiO2mx": 0.00079866,
    "Ti3_frac": 0.00159732,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.305120248812823,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime"
+    "surface_reconstruction"
    ]
   },
   {
@@ -104,12 +100,10 @@
    },
    "x_TiO2mx": 0.003034908,
    "Ti3_frac": 0.006069816,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.305120248812823,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface"
+    "surface_reconstruction",
+    "subsurface_dense"
    ]
   },
   {
@@ -134,12 +128,10 @@
    },
    "x_TiO2mx": 0.00758727,
    "Ti3_frac": 0.01517454,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.305120248812823,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface",
+    "surface_reconstruction",
+    "subsurface_dense",
     "x_near"
    ]
   },
@@ -165,12 +157,10 @@
    },
    "x_TiO2mx": 0.0119799,
    "Ti3_frac": 0.0239598,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.305120248812823,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface",
+    "surface_reconstruction",
+    "subsurface_dense",
     "x_max"
    ]
   },
@@ -196,9 +186,7 @@
    },
    "x_TiO2mx": 7.9866e-05,
    "Ti3_frac": 0.000159732,
-   "regime": "valid",
-   "binding": null,
-   "VO_valid_max_umol_g": 2.3092012339844077,
+   "surface_reconstruction_regime": false,
    "warn_kinds": []
   },
   {
@@ -223,11 +211,9 @@
    },
    "x_TiO2mx": 0.00079866,
    "Ti3_frac": 0.00159732,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.3092012339844077,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime"
+    "surface_reconstruction"
    ]
   },
   {
@@ -252,12 +238,10 @@
    },
    "x_TiO2mx": 0.003034908,
    "Ti3_frac": 0.006069816,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.3092012339844077,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface"
+    "surface_reconstruction",
+    "subsurface_dense"
    ]
   },
   {
@@ -282,12 +266,10 @@
    },
    "x_TiO2mx": 0.00758727,
    "Ti3_frac": 0.01517454,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.3092012339844077,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface",
+    "surface_reconstruction",
+    "subsurface_dense",
     "x_near"
    ]
   },
@@ -313,12 +295,10 @@
    },
    "x_TiO2mx": 0.0119799,
    "Ti3_frac": 0.0239598,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.3092012339844077,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface",
+    "surface_reconstruction",
+    "subsurface_dense",
     "x_max"
    ]
   },
@@ -344,9 +324,7 @@
    },
    "x_TiO2mx": 7.9866e-05,
    "Ti3_frac": 0.000159732,
-   "regime": "valid",
-   "binding": null,
-   "VO_valid_max_umol_g": 2.3271201114236013,
+   "surface_reconstruction_regime": false,
    "warn_kinds": []
   },
   {
@@ -371,11 +349,9 @@
    },
    "x_TiO2mx": 0.00079866,
    "Ti3_frac": 0.00159732,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.3271201114236013,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime"
+    "surface_reconstruction"
    ]
   },
   {
@@ -400,12 +376,10 @@
    },
    "x_TiO2mx": 0.003034908,
    "Ti3_frac": 0.006069816,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.3271201114236013,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface"
+    "surface_reconstruction",
+    "subsurface_dense"
    ]
   },
   {
@@ -430,12 +404,10 @@
    },
    "x_TiO2mx": 0.00758727,
    "Ti3_frac": 0.01517454,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.3271201114236013,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface",
+    "surface_reconstruction",
+    "subsurface_dense",
     "x_near"
    ]
   },
@@ -461,12 +433,10 @@
    },
    "x_TiO2mx": 0.0119799,
    "Ti3_frac": 0.0239598,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.3271201114236013,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface",
+    "surface_reconstruction",
+    "subsurface_dense",
     "x_max"
    ]
   },
@@ -492,9 +462,7 @@
    },
    "x_TiO2mx": 7.9866e-05,
    "Ti3_frac": 0.000159732,
-   "regime": "valid",
-   "binding": null,
-   "VO_valid_max_umol_g": 2.38929978462727,
+   "surface_reconstruction_regime": false,
    "warn_kinds": []
   },
   {
@@ -519,11 +487,9 @@
    },
    "x_TiO2mx": 0.00079866,
    "Ti3_frac": 0.00159732,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.38929978462727,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime"
+    "surface_reconstruction"
    ]
   },
   {
@@ -548,12 +514,9 @@
    },
    "x_TiO2mx": 0.003034908,
    "Ti3_frac": 0.006069816,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.38929978462727,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface"
+    "surface_reconstruction"
    ]
   },
   {
@@ -578,12 +541,10 @@
    },
    "x_TiO2mx": 0.00758727,
    "Ti3_frac": 0.01517454,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.38929978462727,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface",
+    "surface_reconstruction",
+    "subsurface_dense",
     "x_near"
    ]
   },
@@ -609,12 +570,10 @@
    },
    "x_TiO2mx": 0.0119799,
    "Ti3_frac": 0.0239598,
-   "regime": "unresolved",
-   "binding": "surface",
-   "VO_valid_max_umol_g": 2.38929978462727,
+   "surface_reconstruction_regime": true,
    "warn_kinds": [
-    "surface_reconstruction_regime",
-    "dilute_breakdown_subsurface",
+    "surface_reconstruction",
+    "subsurface_dense",
     "x_max"
    ]
   }
@@ -641,12 +600,10 @@
   },
   "x_TiO2mx": 0.00758727,
   "Ti3_frac": 0.01517454,
-  "regime": "unresolved",
-  "binding": "surface",
-  "VO_valid_max_umol_g": 2.3092012339844077,
+  "surface_reconstruction_regime": true,
   "warn_kinds": [
-   "surface_reconstruction_regime",
-   "dilute_breakdown_subsurface",
+   "surface_reconstruction",
+   "subsurface_dense",
    "x_near"
   ]
  },
@@ -672,12 +629,10 @@
   },
   "x_TiO2mx": 0.00758727,
   "Ti3_frac": 0.01517454,
-  "regime": "unresolved",
-  "binding": "surface",
-  "VO_valid_max_umol_g": 2.369916139695263,
+  "surface_reconstruction_regime": true,
   "warn_kinds": [
-   "surface_reconstruction_regime",
-   "dilute_breakdown_subsurface",
+   "surface_reconstruction",
+   "subsurface_dense",
    "x_near"
   ]
  },
@@ -703,12 +658,10 @@
   },
   "x_TiO2mx": 0.00758727,
   "Ti3_frac": 0.01517454,
-  "regime": "unresolved",
-  "binding": "surface",
-  "VO_valid_max_umol_g": 2.3544384968327705,
+  "surface_reconstruction_regime": true,
   "warn_kinds": [
-   "surface_reconstruction_regime",
-   "dilute_breakdown_subsurface",
+   "surface_reconstruction",
+   "subsurface_dense",
    "x_near"
   ]
  },
@@ -828,71 +781,5 @@
    "accessible_umol_g": 64.70592138287553,
    "f_recoverable": 0.6811149619250055
   }
- ],
- "cgmc_linear": {
-  "spec": {
-   "q": [
-    1000000000000.0,
-    1000000000000.0,
-    1000000000000.0
-   ],
-   "eps": [
-    0.0,
-    0.05,
-    0.1
-   ],
-   "lam": [
-    1e-11,
-    2e-11
-   ],
-   "k_fill": 5.0,
-   "eta0": [
-    0.0,
-    0.0,
-    1000.0
-   ],
-   "T_C": 600,
-   "times_s": [
-    0.001,
-    0.01,
-    0.1,
-    1.0
-   ]
-  },
-  "rows": [
-   {
-    "t_s": 0.001,
-    "eta": [
-     0.6988619759976782,
-     70.69536419205059,
-     928.6045946303659
-    ]
-   },
-   {
-    "t_s": 0.01,
-    "eta": [
-     46.18189040307319,
-     408.08430576339856,
-     544.8702064508147
-    ]
-   },
-   {
-    "t_s": 0.1,
-    "eta": [
-     382.484791680539,
-     316.59957991839605,
-     174.92157913063193
-    ]
-   },
-   {
-    "t_s": 1.0,
-    "eta": [
-     46.30581001139641,
-     29.733210317400836,
-     15.826308789417302
-    ]
-   }
-  ],
-  "eq_ratio_cell0_over_cell1": 1.943557986595559
- }
+ ]
 }

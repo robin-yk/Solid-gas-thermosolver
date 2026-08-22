@@ -73,7 +73,7 @@ def render_svg(tex, fontsize, prefix, glyphs, glyph_prefix):
         svg = svg.replace(m.group(0),
                           f'width="{wpt:.0f}" height="{hpt:.0f}" '
                           f'style="max-width:100%;height:auto"', 1)
-    return svg
+    return '\n'.join(line.rstrip() for line in svg.splitlines())
 
 
 def build_fragment(rows, id_prefix='', glyph_prefix=''):
@@ -106,7 +106,8 @@ def build_fragment(rows, id_prefix='', glyph_prefix=''):
         glyph_prefix else g for gid, g in glyphs.items())
     pool = ('<svg width="0" height="0" style="position:absolute" '
             'aria-hidden="true"><defs>' + pool + '</defs></svg>')
-    return pool + '\n' + '\n'.join(out)
+    fragment = pool + '\n' + '\n'.join(out)
+    return '\n'.join(line.rstrip() for line in fragment.splitlines())
 
 
 def main():

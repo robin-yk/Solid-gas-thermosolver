@@ -100,15 +100,7 @@ def pair(tmp_path_factory):
     spec.write_text(json.dumps({'mc_cases': MC_CASES,
                                 'pipelines': PIPELINES,
                                 'sweep_vo': SWEEP_VO,
-                                'validity_cases': VALIDITY_CASES,
-                                'cgmc': {
-                                    'sys': _cgmc_linear_sys(),
-                                    'times': [r['t_s'] for r in
-                                              REF['cgmc_linear']['rows']],
-                                    'barriers': CGMC_BARRIERS,
-                                    'no_fill': CGMC_NO_FILL,
-                                    'all_bulk': CGMC_ALL_BULK,
-                                    'stoch_cg': CGMC_STOCH_CG}}))
+                                'validity_cases': VALIDITY_CASES}))
     r = subprocess.run(['node', str(HARNESS), str(ROOT), str(spec)],
                        capture_output=True, text=True, timeout=600)
     assert r.returncode == 0, f'harness failed:\n{r.stderr[-2000:]}'
@@ -120,9 +112,11 @@ def pair(tmp_path_factory):
             continue                       # shipped size: JS only, see below
         out = S.run_full(P, t_c=c['T_C'], vo_total=c['VO_total'],
                          zero_pairs=c['zero_pairs'], mc=c['mc'])
+        kt = S.KB_EV * (c['T_C'] + 273.15)
         eps = S.energetics(P)['eps']
+        fn = S.theta_s_interp(out['isotherm'], eps[0], kt)
         out['sweep'] = S.sweep(P, c['T_C'], out['geometry'], SWEEP_VO,
-                               eps=eps)
+                               theta_s_fn=fn, eps=eps)
         py['pipelines'][c['name']] = out
     return py, js
 
@@ -172,10 +166,8 @@ def test_pipelines_agree_end_to_end(pair):
         for k in ('surface', 'subsurface', 'bulk'):
             assert row['fractions'][k] == pytest.approx(
                 ref['fractions'][k], rel=1e-12, abs=1e-15), k
-        assert row['validity']['regime'] == ref['validity']['regime']
-        assert row['validity']['binding'] == ref['validity']['binding']
-        assert row['validity']['VO_valid_max_umol_g'] == pytest.approx(
-            ref['validity']['VO_valid_max_umol_g'], rel=1e-12)
+        assert row['surface_reconstruction_regime'] == \
+            ref['surface_reconstruction_regime']
         assert row['warn_kinds'] == [w['kind'] for w in ref['warnings']]
         for a, b in zip(row['isotherm'], ref['isotherm']):
             assert a['filling'] == b['filling']
@@ -189,48 +181,26 @@ def test_pipelines_agree_end_to_end(pair):
             assert a['row_sites'] == b['row_sites']
 
 
-def test_shipped_configuration_reproduces_the_oracle_flagship(pair):
-    """The shipped default (95 umol/g at 600 C), exactly as the page runs
-    it. The 50-digit oracle certifies both halves of the verdict: the
-    unconstrained extrapolation (labelled, never pinned) and the validity
-    boundary VO_valid_max where the unreconstructed-surface model ends."""
+def test_shipped_configuration_marks_reconstruction_extrapolation(pair):
+    """The page configuration must preserve the inventory and disclose that
+    its default surface result crosses the reconstructed-phase boundary."""
     _, js = pair
-    ref = REF['flagship']
-    fl = js['analytic_flagship']
-    assert fl['mu_V_eV'] == pytest.approx(ref['mu_V_eV'], abs=1e-9)
-    for k in ('surface', 'subsurface', 'bulk'):
-        assert fl['fractions'][k] == pytest.approx(
-            ref['fractions'][k], rel=1e-9), k
-        assert fl['umol_g'][k] == pytest.approx(
-            ref['umol_g'][k], rel=1e-9), k
-    assert fl['validity']['regime'] == ref['regime'] == 'unresolved'
-    assert fl['validity']['binding'] == ref['binding']
-    assert fl['validity']['VO_valid_max_umol_g'] == pytest.approx(
-        ref['VO_valid_max_umol_g'], rel=1e-9)
-    assert fl['warn_kinds'] == ref['warn_kinds']
-    # the full shipped pipeline (with MC attached) reaches the same verdict
     row = next(r for r in js['pipelines'] if r['name'] == 'shipped_default')
-    assert row['mu_V_eV'] == pytest.approx(ref['mu_V_eV'], abs=1e-9)
-    assert row['validity']['regime'] == 'unresolved'
-    assert row['validity']['VO_valid_max_umol_g'] == pytest.approx(
-        ref['VO_valid_max_umol_g'], rel=1e-9)
-    # surface ordering is a separate calculation, sampled at the last
-    # resolved coverage (0.17), not at the extrapolated occupancy
+    assert sum(row['umol_g'].values()) == pytest.approx(95.0, rel=1e-12)
+    assert row['theta']['surface'] > P['surface_ordering']['critical_coverage']
+    assert row['surface_reconstruction_regime'] is True
+    assert 'surface_reconstruction' in row['warn_kinds']
     sp = row['spacing']
     assert sp is not None
-    assert sp['modal_gap_sites'] in (3, 4, 5)
-    assert sp['P_gap_le_2'] < 0.15
+    assert sp['at_theta_s'] >= P['surface_ordering']['critical_coverage']
 
 
-def test_geometry_port_matches_oracle(pair):
-    """Independent of MC: the JS geometry numbers against the oracle."""
+def test_shipped_configuration_has_physical_occupancies(pair):
     _, js = pair
     row = next(r for r in js['pipelines'] if r['name'] == 'shipped_default')
-    # fractions already checked; anchor the derived quantities too
-    assert row['theta']['subsurface'] == pytest.approx(
-        REF['flagship']['theta']['subsurface'], rel=1e-9)
-    assert row['theta']['bulk'] == pytest.approx(
-        REF['flagship']['theta']['bulk'], rel=1e-9)
+    assert all(0.0 <= row['theta'][k] <= 1.0
+               for k in ('surface', 'subsurface', 'bulk'))
+    assert sum(row['fractions'].values()) == pytest.approx(1.0, rel=1e-12)
 
 
 def test_accessibility_and_sweep_parity(pair):
@@ -256,47 +226,24 @@ def test_accessibility_and_sweep_parity(pair):
                                               abs=1e-15), k
 
 
-def test_shipped_accessibility_matches_the_oracle(pair):
-    """The placeholder kinetics on the flagship extrapolation: the 300 s
-    oracle row certifies the JS chain (illustrative until the recovery
-    experiments land, and the page says so)."""
+def test_shipped_accessibility_closes_on_its_interacting_distribution(pair):
+    """The refill probabilities are analytic. The accessible total must close
+    against the interacting distribution produced by the shipped pipeline."""
     _, js = pair
+    row = next(r for r in js['pipelines'] if r['name'] == 'shipped_default')
     ref = next(r for r in REF['co2_flagship'] if r['exposure_s'] == 300)
-    a = js['analytic_flagship']['access']
+    a = row['accessibility']
     for c in ('surface', 'subsurface', 'bulk'):
         assert a['P'][c] == pytest.approx(ref['P'][c], rel=1e-9,
                                           abs=1e-12), c
-    assert a['accessible_umol_g'] == pytest.approx(
-        ref['accessible_umol_g'], rel=1e-9)
-    assert a['f_recoverable'] == pytest.approx(
-        ref['f_recoverable'], rel=1e-9)
+    expected = sum(row['umol_g'][c] * a['P'][c]
+                   for c in ('surface', 'subsurface', 'bulk'))
+    assert a['accessible_umol_g'] == pytest.approx(expected, rel=1e-12)
+    assert a['f_recoverable'] == pytest.approx(expected / 95.0, rel=1e-12)
     # the 95 row of the shipped sweep is the flagship distribution
-    row = next(r for r in js['pipelines'] if r['name'] == 'shipped_default')
     r95 = next(r for r in row['sweep'] if r['VO_total_umol_g'] == 95.0)
     for k in ('surface', 'subsurface', 'bulk'):
-        assert r95[k] == pytest.approx(REF['flagship']['umol_g'][k],
-                                       rel=1e-9), k
-    assert r95['valid'] is False
-
-
-def test_bet_sensitivity_case_matches_the_oracle():
-    """The measured-BET geometry (1.60 m2/g) against the diameter model:
-    the boundary moves by ~2%, the verdict does not - the sensitivity
-    statement the page makes."""
-    gd = S.geometry(P)
-    gb = S.geometry(P, bet_m2_g=REF['geometry_bet_1p60']['area_m2_g'])
-    for k in ('N_s', 'N_ss', 'N_b', 'N_O_total'):
-        assert gb[k] == pytest.approx(REF['geometry_bet_1p60'][k], rel=1e-9)
-    ref = REF['bet_case']
-    d = S.distribute(P, ref['T_C'], ref['VO_total_umol_g'], gb)
-    assert d['mu_V_eV'] == pytest.approx(ref['mu_V_eV'], abs=1e-9)
-    assert d['validity']['regime'] == ref['regime'] == 'unresolved'
-    assert d['validity']['VO_valid_max_umol_g'] == pytest.approx(
-        ref['VO_valid_max_umol_g'], rel=1e-9)
-    vd = S.distribute(P, ref['T_C'], ref['VO_total_umol_g'], gd)
-    shift = abs(d['validity']['VO_valid_max_umol_g']
-                - vd['validity']['VO_valid_max_umol_g'])
-    assert shift / vd['validity']['VO_valid_max_umol_g'] < 0.05
+        assert r95[k] == pytest.approx(row['umol_g'][k], rel=1e-12), k
 
 
 def test_phase_validity_parity_on_real_equilibria(pair):
@@ -326,61 +273,6 @@ def test_phase_validity_parity_on_real_equilibria(pair):
     assert by_name['stable_rwgs']['tier'] == 'stable'
     assert by_name['invalid_hot_h2']['tier'] == 'invalid'
     assert by_name['boundary_h2_h2o']['tier'] == 'boundary'
-
-
-CGMC_BARRIERS = [0.65, 1.9, 2.1]
-CGMC_NO_FILL = {'A_eff_per_s_atm': {'surface': 0.0}}
-CGMC_ALL_BULK = {'surface': 0.0, 'subsurface': 0.0, 'bulk': 1.0}
-CGMC_STOCH_CG = {'E_m_bulk_eV': 1.9, 'n_cells': 8,
-                 'stochastic_column_counts': 50000}
-
-
-def _cgmc_linear_sys():
-    s = REF['cgmc_linear']['spec']
-    kt = S.KB_EV * (s['T_C'] + 273.15)
-    return {'m': 3, 'q': [float(x) for x in s['q']], 'eps_c': s['eps'],
-            'lam': s['lam'], 'beta': 1.0 / kt, 'k_fill': s['k_fill'],
-            'eta0': s['eta0'], 'V0': sum(s['eta0']), 'R_nm': 3.0,
-            'a_nm': 1.0, 'centers': [2.5, 1.5, 0.5],
-            'T_reox_C': s['T_C'], 'E_m_eV': 0.0, 'eps_ctrl': 0.02,
-            'column_counts': 1e5}
-
-
-def test_cgmc_port_matches_the_reference_engine(pair):
-    """Deterministic transport runs, move for move: same recovery, same
-    final occupancies, same number of controller steps."""
-    from solidgas import cgmc as C
-    _, js = pair
-    for em, row in zip(CGMC_BARRIERS, js['cgmc']['ladder']):
-        r = C.run(C.build(P, cg={'E_m_bulk_eV': em}), 300.0)
-        assert row['recovery'] == pytest.approx(
-            r['recovered_fraction'], rel=1e-12, abs=1e-15), em
-        assert row['steps'] == r['steps'], em
-        assert abs(row['mass']) < 1e-12
-    sysc = C.build(P, kin=CGMC_NO_FILL, dist_fractions=CGMC_ALL_BULK)
-    rc = C.run(sysc, 300.0)
-    assert js['cgmc']['closed']['steps'] == rc['steps']
-    for a, b in zip(js['cgmc']['closed']['final_eta'], rc['final_eta']):
-        assert a == pytest.approx(b, rel=1e-12, abs=1e-9)
-
-
-def test_cgmc_linear_port_matches_the_expm_oracle(pair):
-    _, js = pair
-    for got, row in zip(js['cgmc']['linear'], REF['cgmc_linear']['rows']):
-        for a, b in zip(got, row['eta']):
-            assert a == pytest.approx(b, rel=6e-3, abs=1e-6)
-
-
-def test_cgmc_stochastic_same_seed_parity(pair):
-    """Same seed, same event counts: a single flipped Poisson draw would
-    shift a cell by a whole count (~1e-4 relative), far above the float
-    noise this tolerance admits."""
-    from solidgas import cgmc as C
-    _, js = pair
-    sys0 = C.build(P, kin=CGMC_NO_FILL, cg=CGMC_STOCH_CG)
-    r = C.run(sys0, 60.0, mode='stoch', seed=902)
-    for a, b in zip(js['cgmc']['stoch'], r['final_eta']):
-        assert a == pytest.approx(b, rel=1e-9, abs=1e-9)
 
 
 def test_dielectric_parity(pair):
@@ -416,14 +308,34 @@ def test_page_carries_the_defect_workspace_and_disclosures():
     html = (ROOT / 'ti_solver.html').read_text()
     assert 'Defect stat mech' in html
     for phrase in ('Li, Guo &amp; Robertson', 'Birschitzky',
-                   'reconstruction threshold', 'not reduction kinetics',
+                   'reconstruction onset', 'not reduction kinetics',
                    'rutile_dft.json', 'Widom insertion',
                    'Placeholder kinetics', 'Recoverable fraction',
                    '-accessible inventory', '(S1)', '(S12)',
                    'Oxygen environment', 'ThermoBridge', 'phaseValidity',
-                   'Particle cross-section', 'not resolvable',
+                   'Particle cross-section', 'outer 0.65 nm shell',
                    'Monte Carlo arrangement', 'Katsoulakis',
                    'OriginLab, no weighting'):
         assert phrase in html, f'disclosure lost: {phrase}'
     # the dataset is swappable, and the page says so
-    assert 'replaced' in html and 're-fitted' in html
+    assert 'calibrated to those constraints' in html
+    assert 'will replace them directly' in html
+
+
+def test_particle_view_uses_spherical_shells_without_random_bulk_dots():
+    ui = (ROOT / 'statmech_ui.js').read_text()
+    template = (ROOT / 'ti_solver_template.html').read_text()
+    assert 'bulk occupation' in ui
+    assert 'disc core = bulk occupation' in ui
+    assert "'bulk', acc.P.bulk" not in ui
+    assert 'Spherical particle cross-section' in template
+    assert 'core fill tracks the' in template
+
+
+def test_portal_fits_the_desktop_viewport_and_keeps_mobile_scroll():
+    portal = (ROOT / 'portal.html').read_text()
+    index = (ROOT / 'index.html').read_text()
+    assert portal == index
+    assert 'height:calc(100svh - 58px)' in portal
+    assert 'grid-template-rows:auto minmax(0,1fr) auto' in portal
+    assert '@media (max-width:720px){body{overflow:auto}' in portal

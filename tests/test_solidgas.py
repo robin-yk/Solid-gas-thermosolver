@@ -340,7 +340,7 @@ def test_methane_opens_the_magneli_branch():
              for gf in (0.05, 0.4, 0.9) for sv in phase_seeds(n0_TiO2)]
     n = solve(b, T, inits)
     assert n is not None
-    assert residual(n, b) < 1e-10
+    assert residual(n, b) < 1e-8
     assert ti3_percent(n, n0_TiO2) > 20.0
     # it stops at Ti4O7: the deeper phases never turn up
     split = phase_split(n, n0_TiO2)

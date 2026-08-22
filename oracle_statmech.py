@@ -3,8 +3,9 @@
 Shares only rutile_dft.json with the production code - no import of
 solidgas.statmech, no shared solver code. Three kinds of certified values:
 
-1. Analytic matching grid: the three-class site-exclusion distribution with
-   the surface reconstruction cap, solved by mpmath bisection at 50 digits.
+1. Analytic matching grid: the uncapped three-class site-exclusion
+   distribution, solved by mpmath bisection at 50 digits. The reported
+   reconstruction interval is retained as a validity warning.
 2. Exact ideal-lattice canonical ensemble (generating polynomial): finite-
    lattice class occupancies and the exact chemical potential
    mu = -kT ln(Z(N+1)/Z(N)) that Widom insertion estimates.
@@ -63,15 +64,11 @@ def eps_of(preset):
 
 
 def match(t_c, vo, geom, preset):
-    """Unconstrained common-mu partition with the validity verdict:
-    nothing is pinned; beyond a boundary the split is flagged unresolved
-    (the extrapolated numbers are still certified for the engine parity)."""
     kt = KB_EV * (mpf(str(t_c)) + mpf('273.15'))
     eps = eps_of(preset)
-
     def total(mu):
-        return (geom['N_s'] * fd(mu, eps[0], kt)
-                + geom['N_ss'] * fd(mu, eps[1], kt)
+        ts = fd(mu, eps[0], kt)
+        return (geom['N_s'] * ts + geom['N_ss'] * fd(mu, eps[1], kt)
                 + geom['N_b'] * fd(mu, eps[2], kt))
     lo, hi = mpf(-3), mpf(3)
     for _ in range(220):
@@ -82,34 +79,22 @@ def match(t_c, vo, geom, preset):
             hi = mid
     mu = (lo + hi) / 2
     ts = fd(mu, eps[0], kt)
+    onset = mpf(str(P['surface_ordering']['critical_coverage']))
+    reconstruction_regime = ts >= onset
     tss = fd(mu, eps[1], kt)
     tb = fd(mu, eps[2], kt)
     us, uss, ub = geom['N_s'] * ts, geom['N_ss'] * tss, geom['N_b'] * tb
     tot = us + uss + ub
     x = mpf(str(vo)) / (mpf('1e6') / mpf(str(P['molar_mass_g_mol'])))
-    val = P['validity']
-    stop_s = mpf(str(val['surface_theta_stop']))
-    stop_ss = mpf(str(val['subsurface_theta_stop']))
-    binding = None
-    if ts > stop_s:
-        binding = 'surface'
-    elif tss > stop_ss:
-        binding = 'subsurface'
-    # the largest resolvable inventory: mu at which a threshold is first
-    # crossed (the surface, ordered below the subsurface, binds first for
-    # the literature energetics), evaluated in closed form
-    mu_s = eps[0] + kt * mlog(stop_s / (1 - stop_s))
-    mu_ss = eps[1] + kt * mlog(stop_ss / (1 - stop_ss))
-    mu_c = mu_s if mu_s < mu_ss else mu_ss
-    vo_max = total(mu_c)
+    sat = P['saturation']
     warn = []
-    if binding == 'surface':
-        warn.append('surface_reconstruction_regime')
-    if tss > stop_ss:
-        warn.append('dilute_breakdown_subsurface')
-    if x >= mpf(str(val['x_max_shear'])):
+    if reconstruction_regime:
+        warn.append('surface_reconstruction')
+    if tss > mpf(str(sat['subsurface_dilute_warn'])):
+        warn.append('subsurface_dense')
+    if x >= mpf(str(sat['x_max_shear'])):
         warn.append('x_max')
-    elif x >= mpf('0.8') * mpf(str(val['x_max_shear'])):
+    elif x >= mpf('0.8') * mpf(str(sat['x_max_shear'])):
         warn.append('x_near')
     return {'T_C': t_c, 'VO_total_umol_g': vo, 'preset': preset,
             'mu_V_eV': float(mu),
@@ -121,9 +106,7 @@ def match(t_c, vo, geom, preset):
                           'subsurface': float(uss / tot),
                           'bulk': float(ub / tot)},
             'x_TiO2mx': float(x), 'Ti3_frac': float(2 * x),
-            'regime': 'valid' if binding is None else 'unresolved',
-            'binding': binding,
-            'VO_valid_max_umol_g': float(vo_max),
+            'surface_reconstruction_regime': bool(reconstruction_regime),
             'warn_kinds': warn}
 
 
@@ -276,52 +259,6 @@ def co2_accessibility(umol_by_class, t_reox_c, exposure_s, p_co2_atm):
             'f_recoverable': float(acc / tot)}
 
 
-# --------------------------------------------- CGMC linear-limit anchor
-
-CGMC_SPEC = {
-    'q': [1e12, 1e12, 1e12],
-    'eps': [0.0, 0.05, 0.10],
-    'lam': [1e-11, 2e-11],
-    'k_fill': 5.0,
-    'eta0': [0.0, 0.0, 1000.0],
-    'T_C': 600,
-    'times_s': [0.001, 0.01, 0.1, 1.0],
-}
-
-
-def cgmc_linear():
-    """The dilute limit of the coarse-grained transport network is linear:
-    d eta/dt = M eta with per-vacancy rates L(k->l) = lam_kl e^{beta eps_k}
-    q_l and the surface refill -k_fill on cell 0. expm at 50 digits."""
-    from mpmath import expm, matrix
-    s = CGMC_SPEC
-    kt = KB_EV * (mpf(str(s['T_C'])) + mpf('273.15'))
-    beta = 1 / kt
-    m = len(s['q'])
-    a = matrix(m, m)
-    for j in range(m - 1):
-        k, l = j, j + 1
-        lkl = (mpf(str(s['lam'][j])) * mexp(beta * mpf(str(s['eps'][k])))
-               * mpf(str(s['q'][l])))
-        llk = (mpf(str(s['lam'][j])) * mexp(beta * mpf(str(s['eps'][l])))
-               * mpf(str(s['q'][k])))
-        a[k, k] -= lkl
-        a[l, k] += lkl
-        a[l, l] -= llk
-        a[k, l] += llk
-    a[0, 0] -= mpf(str(s['k_fill']))
-    eta0 = matrix([mpf(str(x)) for x in s['eta0']])
-    rows = []
-    for t in s['times_s']:
-        et = expm(a * mpf(str(t))) * eta0
-        rows.append({'t_s': t, 'eta': [float(et[i]) for i in range(m)]})
-    # closed two-cell equilibrium ratio in the same dilute limit
-    ratio = (mpf(str(s['q'][0])) / mpf(str(s['q'][1]))
-             * mexp(-beta * (mpf(str(s['eps'][0])) - mpf(str(s['eps'][1])))))
-    return {'spec': s, 'rows': rows,
-            'eq_ratio_cell0_over_cell1': float(ratio)}
-
-
 # ------------------------------------------------------------ sfc32 spec
 
 def sfc32_first(seed, count):
@@ -387,7 +324,6 @@ def main():
         'ring_case': ring_case(10, 3, pair, 600),
         'micro3_case': micro3_case(8, 4, pair, eps_sx, 600),
         'co2_flagship': co2_rows,
-        'cgmc_linear': cgmc_linear(),
     }
     with open('reference_statmech.json', 'w') as fh:
         json.dump(doc, fh, indent=1)

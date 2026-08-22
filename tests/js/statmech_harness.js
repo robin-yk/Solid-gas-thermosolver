@@ -37,16 +37,18 @@ for (const c of spec.mc_cases) {
 for (const c of spec.pipelines) {
   const res = SM.runFull(P, { T_C: c.T_C, VO_total: c.VO_total,
                               zero_pairs: !!c.zero_pairs, mc: c.mc });
+  const kt = SM.KB_EV * (c.T_C + 273.15);
   const eps = SM.energetics(P).eps;
+  const fn = SM.thetaSInterp(res.isotherm, eps[0], kt);
   const sw = SM.sweep(P, c.T_C, res.geometry, spec.sweep_vo,
-                      { eps: eps });
+                      { theta_s_fn: fn, eps: eps });
   out.pipelines.push({
     name: c.name,
     mu_V_eV: res.mu_V_eV,
     fractions: res.fractions,
     umol_g: res.umol_g,
     theta: res.theta,
-    validity: res.validity,
+    surface_reconstruction_regime: res.surface_reconstruction_regime,
     warn_kinds: res.warnings.map(w => w.kind),
     spacing: res.spacing,
     accessibility: res.accessibility,
@@ -81,35 +83,5 @@ if (spec.validity_cases && spec.validity_cases.length) {
 }
 
 out.dielectric = [95, 10, 1000, 0].map(v => SM.dielectric(P, v));
-
-out.analytic_flagship = (() => {
-  const g = SM.geometry(P, {});
-  const d = SM.distribute(P, 600.0, 95.0, g, {});
-  return { mu_V_eV: d.mu_V_eV, fractions: d.fractions, umol_g: d.umol_g,
-           validity: d.validity, warn_kinds: d.warnings.map(w => w.kind),
-           access: SM.accessibility(P, d.umol_g, null) };
-})();
-
-if (spec.cgmc) {
-  const CG = require(path.join(root, 'cgmc.js'));
-  const c = spec.cgmc;
-  out.cgmc = {
-    linear: c.times.map(t => CG.run(c.sys, t, { n_out: 8 }).final_eta),
-    ladder: c.barriers.map(em => {
-      const r = CG.run(CG.build(P, { cg: { E_m_bulk_eV: em } }), 300.0, {});
-      return { recovery: r.recovered_fraction, steps: r.steps,
-               mass: r.mass_check };
-    }),
-    closed: (() => {
-      const sys = CG.build(P, { kin: c.no_fill, dist_fractions: c.all_bulk });
-      const r = CG.run(sys, 300.0, {});
-      return { final_eta: r.final_eta, steps: r.steps };
-    })(),
-    stoch: (() => {
-      const sys = CG.build(P, { kin: c.no_fill, cg: c.stoch_cg });
-      return CG.run(sys, 60.0, { mode: 'stoch', seed: 902 }).final_eta;
-    })(),
-  };
-}
 
 process.stdout.write(JSON.stringify(out));

@@ -407,7 +407,18 @@
         var t = fd(mu, epsS, kt);
         return t < ths[0] ? t : ths[0];
       }
-      if (mu >= mus[mus.length - 1]) return ths[ths.length - 1];
+      if (mu >= mus[mus.length - 1]) {
+        var n = mus.length;
+        if (n < 2 || mus[n - 1] <= mus[n - 2]) return ths[n - 1];
+        var tiny = 1e-12;
+        var t0 = Math.min(1 - tiny, Math.max(tiny, ths[n - 2]));
+        var t1 = Math.min(1 - tiny, Math.max(tiny, ths[n - 1]));
+        var l0 = Math.log(t0 / (1 - t0));
+        var l1 = Math.log(t1 / (1 - t1));
+        var slope = Math.max(0, (l1 - l0) / (mus[n - 1] - mus[n - 2]));
+        var z = l1 + slope * (mu - mus[n - 1]);
+        return z > 700 ? 1 : 1 / (1 + Math.exp(-z));
+      }
       var lo = 0, hi = mus.length - 1;
       while (hi - lo > 1) {
         var mid = (lo + hi) >> 1;
@@ -419,15 +430,10 @@
   }
 
   function distribute(p, tC, voTotal, geom, opts) {
-    /* Unconstrained common-mu partition plus a validity verdict: nothing
-       is pinned and no remainder is reassigned - beyond a boundary the
-       numbers are an extrapolation of an out-of-scope model and are
-       flagged as such (see the Python reference for the reasoning). */
     opts = opts || {};
     var kt = KB_EV * (tC + 273.15);
     var eps = opts.eps != null ? opts.eps : energetics(p, opts.preset).eps;
-    var thetaSFn = opts.theta_s_fn
-      || function (mu) { return fd(mu, eps[0], kt); };
+    var thetaSFn = opts.theta_s_fn || function (mu) { return fd(mu, eps[0], kt); };
 
     function parts(mu) {
       return [thetaSFn(mu), fd(mu, eps[1], kt), fd(mu, eps[2], kt)];
@@ -458,48 +464,40 @@
     var tot = us + uss + ub;
     var molTi = 1e6 / p.molar_mass_g_mol;
     var x = voTotal / molTi;
-    var val = p.validity;
-    var stopS = val.surface_theta_stop;
-    var stopSS = val.subsurface_theta_stop;
-    var binding = null;
-    if (ts > stopS) binding = 'surface';
-    else if (tss > stopSS) binding = 'subsurface';
-    var regime = binding === null ? 'valid' : 'unresolved';
-    var voMax = validityBoundary(p, tC, geom,
-                                 { theta_s_fn: thetaSFn, eps: eps });
-
+    var sat = p.saturation;
+    var onsetLo = p.surface_ordering.critical_coverage;
+    var onsetHi = p.surface_ordering.reconstruction_coverage;
     var warnings = [];
-    if (binding === 'surface') {
-      warnings.push({ kind: 'surface_reconstruction_regime',
-        text: 'Surface reconstruction regime: the unconstrained partition '
-          + 'wants theta_s = ' + (ts * 100).toFixed(1) + '%, beyond the '
-          + (stopS * 100).toFixed(0) + '-'
-          + (val.surface_theta_reconstruction * 100).toFixed(0)
-          + '% validity boundary of the unreconstructed (1x1) model. The '
-          + 'equilibrium partition beyond this point is unresolved - '
-          + 'reconstructed-surface states are not in the model, so '
-          + 'additional vacancies cannot be assigned quantitatively.' });
+    if (ts >= onsetLo) {
+      var relation = ts < onsetHi ? 'is inside' : 'exceeds';
+      warnings.push({ kind: 'surface_reconstruction',
+        text: 'Surface bridging-O vacancy coverage ' + (ts * 100).toFixed(1)
+          + '% ' + relation + ' the reported ' + (onsetLo * 100).toFixed(0)
+          + '-' + (onsetHi * 100).toFixed(0) + '% onset interval for the '
+          + 'rutile TiO2(110)-(1x2) reconstruction. The value is not clipped. '
+          + 'This distribution is a conditional extrapolation of the '
+          + 'unreconstructed (1x1) surface Hamiltonian; reconstructed-phase '
+          + 'energetics are not implemented.' });
     }
-    if (tss > stopSS) {
-      warnings.push({ kind: 'dilute_breakdown_subsurface',
-        text: 'The dilute-defect approximation fails at this inventory: '
-          + 'the calculated occupancy of the first subsurface class '
-          + 'reaches ' + (tss * 100).toFixed(0) + '%. Local '
-          + 'reconstruction, vacancy-vacancy interaction, Ti interstitials '
-          + 'and shear structures are outside the model.' });
+    if (tss > sat.subsurface_dilute_warn) {
+      warnings.push({ kind: 'subsurface_dense',
+        text: 'Subsurface layer occupancy ' + (tss * 100).toFixed(0)
+          + '% is far beyond the dilute-defect regime; read this as a '
+          + 'heavily reduced near-surface shell (extended defects), not '
+          + 'isolated vacancies.' });
     }
-    if (x >= val.x_max_shear) {
+    if (x >= sat.x_max_shear) {
       warnings.push({ kind: 'x_max',
         text: 'x = ' + x.toFixed(4) + ' in TiO2-x exceeds the rutile '
-          + 'point-defect range (~' + val.x_max_shear.toFixed(3)
+          + 'point-defect range (~' + sat.x_max_shear.toFixed(3)
           + '); crystallographic shear planes are expected.' });
-    } else if (x >= 0.8 * val.x_max_shear) {
+    } else if (x >= 0.8 * sat.x_max_shear) {
       warnings.push({ kind: 'x_near',
         text: 'x = ' + x.toFixed(4) + ' in TiO2-x is near the rutile '
-          + 'point-defect range (~' + val.x_max_shear.toFixed(3) + ').' });
+          + 'point-defect range (~' + sat.x_max_shear.toFixed(3) + ').' });
     }
     if (voTotal > 0 && Math.abs(tot - voTotal) > 1e-6 * voTotal) {
-      warnings.push({ kind: 'not_converged',
+      warnings.push({ kind: 'unresolved',
         text: 'Inventory not matched within tolerance; check the isotherm '
           + 'range.' });
     }
@@ -513,35 +511,8 @@
                           bulk: tot ? ub / tot : 0.0 },
              matched_umol_g: tot,
              x_TiO2mx: x, Ti3_frac: 2.0 * x,
-             validity: { regime: regime, binding: binding,
-                         VO_valid_max_umol_g: voMax,
-                         surface_theta_stop: stopS,
-                         surface_theta_reconstruction:
-                           val.surface_theta_reconstruction,
-                         subsurface_theta_stop: stopSS },
+             surface_reconstruction_regime: ts >= onsetLo,
              warnings: warnings };
-  }
-
-  function validityBoundary(p, tC, geom, opts) {
-    opts = opts || {};
-    var kt = KB_EV * (tC + 273.15);
-    var eps = opts.eps != null ? opts.eps : energetics(p, opts.preset).eps;
-    var thetaSFn = opts.theta_s_fn
-      || function (mu) { return fd(mu, eps[0], kt); };
-    var val = p.validity;
-    var stopS = val.surface_theta_stop;
-    var stopSS = val.subsurface_theta_stop;
-    function over(mu) {
-      return thetaSFn(mu) > stopS || fd(mu, eps[1], kt) > stopSS;
-    }
-    var lo = -6.0, hi = 6.0;
-    for (var it = 0; it < 200; it++) {
-      var mid = 0.5 * (lo + hi);
-      if (over(mid)) hi = mid; else lo = mid;
-    }
-    var mu = lo;
-    return geom.N_s * thetaSFn(mu) + geom.N_ss * fd(mu, eps[1], kt)
-      + geom.N_b * fd(mu, eps[2], kt);
   }
 
   function spacingSummary(points, thetaS) {
@@ -673,8 +644,7 @@
                   bulk: d.umol_g.bulk,
                   accessible: a.accessible_umol_g,
                   f_recoverable: a.f_recoverable,
-                  mu_V_eV: d.mu_V_eV,
-                  valid: d.validity.regime === 'valid' });
+                  mu_V_eV: d.mu_V_eV });
     }
     return rows;
   }
@@ -686,18 +656,19 @@
       : p.defaults.VO_total_umol_g;
     var geom = geometry(p, { d_um: opts.d_um, bet_m2_g: opts.bet_m2_g,
                              ss_layers: opts.ss_layers });
+    var kt = KB_EV * (tC + 273.15);
     var eps = opts.eps != null ? opts.eps : energetics(p, opts.preset).eps;
     var pts = isothermScan(p, tC, { seed: opts.seed, quality: opts.quality,
                                     eps: eps, zero_pairs: opts.zero_pairs,
                                     ordering: opts.ordering, mc: opts.mc,
                                     progress: opts.progress });
-    // decoupled by design: the layer partition uses the formation energies
-    // alone; the sampled isotherm feeds only the ordering exhibit
-    var out = distribute(p, tC, vo, geom, { eps: eps });
+    var fn = opts.zero_pairs
+      ? function (mu) { return fd(mu, eps[0], kt); }
+      : thetaSInterp(pts, eps[0], kt);
+    var out = distribute(p, tC, vo, geom, { theta_s_fn: fn, eps: eps });
     out.geometry = geom;
     out.isotherm = pts;
-    out.spacing = spacingSummary(pts,
-      Math.min(out.theta.surface, p.validity.surface_theta_stop));
+    out.spacing = spacingSummary(pts, out.theta.surface);
     out.accessibility = accessibility(p, out.umol_g, opts.kin);
     return out;
   }
@@ -709,8 +680,7 @@
            totalEnergy: totalEnergy, adjustFilling: adjustFilling,
            mcRun: mcRun, isothermScan: isothermScan, fd: fd,
            energetics: energetics, thetaSInterp: thetaSInterp,
-           distribute: distribute, validityBoundary: validityBoundary,
-           spacingSummary: spacingSummary,
+           distribute: distribute, spacingSummary: spacingSummary,
            co2KineticsParams: co2KineticsParams,
            accessibility: accessibility, dielectric: dielectric,
            sweep: sweep, phaseValidity: phaseValidity, runFull: runFull };
