@@ -12,8 +12,10 @@
       --code:#f6f8fa;--shadow:0 1px 3px #0000000f;color-scheme:light;
       --cSurf:#0078d4;--cSub:#d96b00;--cBulk:#7a52c2}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Arial,Helvetica,sans-serif}
-header{background:var(--panel);border-bottom:1px solid var(--line);padding:30px clamp(18px,5vw,64px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Helvetica,Arial,sans-serif}
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:22px clamp(18px,5vw,64px) 30px}
+.back{display:inline-flex;align-items:center;gap:7px;margin-bottom:18px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.06em;text-decoration:none;text-transform:uppercase}
+.back:hover{color:var(--blue)}
 .eyebrow{color:var(--blue);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
 h1{margin:8px 0;color:var(--navy);font-size:clamp(24px,4vw,34px);line-height:1.15;letter-spacing:-.02em}
 header p{max-width:920px;margin:0;color:var(--muted);font-size:15px}
@@ -106,6 +108,7 @@ a{color:var(--blue)}
 </head>
 <body>
 <header>
+  <a class="back" href="index.html">← All tools</a>
   <p class="eyebrow">Gas-solid equilibrium &middot; Ti&ndash;O and Hydrocarbons &middot; Vlachos Group</p>
   <h1>Ti&ndash;O gas&ndash;solid equilibrium solver</h1>
   <p>Gibbs energy minimisation for an ideal CO<sub>2</sub>/H<sub>2</sub>/CO/H<sub>2</sub>O/N<sub>2</sub>/O<sub>2</sub>
@@ -18490,6 +18493,21 @@ self.onmessage = function (ev) {
   el.smExp.value = kj.defaults.exposure_s;
   el.smPCO2.value = kj.defaults.p_CO2_atm;
 })();
+</script>
+<script>
+  (function () {
+    function activateFromHash() {
+      var target = window.location.hash === '#defect' ? 'ws-defect' : 'ws-thermo';
+      document.querySelectorAll('#wstabs .wstab').forEach(function (button) {
+        button.classList.toggle('active', button.dataset.ws === target);
+      });
+      ['ws-thermo', 'ws-defect'].forEach(function (id) {
+        document.getElementById(id).style.display = id === target ? '' : 'none';
+      });
+    }
+    window.addEventListener('hashchange', activateFromHash);
+    activateFromHash();
+  }());
 </script>
 </body>
 </html>
