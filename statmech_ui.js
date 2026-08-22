@@ -237,7 +237,7 @@
         + '</div>';
     } else {
       var v = env.v;
-      h = '<div style="font-size:13px;line-height:1.8">'
+      h = '<div style="font-size:15px;line-height:1.8">'
         + '<div><span class="k2">Charge</span> ' + env.desc + '</div>'
         + '<div><span class="k2">Oxygen potential</span> μ<sub>O</sub> = '
         + env.mu_O.toFixed(2) + ' kJ/mol-O at ' + env.T_C + ' °C</div>'
@@ -536,7 +536,7 @@
       sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
                    style: 'stroke:var(--line);stroke-width:1' }, svg);
       var lab = sv('text', { x: L - 8, y: y + 4, 'text-anchor': 'end',
-        style: 'fill:var(--muted);font-size:11px' }, svg);
+        style: 'fill:var(--muted);font-size:15px' }, svg);
       lab.textContent = (Math.round(fv * 1000) / 10) + '%';
     }
     var bw = pw / 3;
@@ -562,15 +562,15 @@
         p.appendChild(tt);
       }
       var vt = sv('text', { x: x + barW / 2, y: y - 7, 'text-anchor': 'middle',
-        style: 'fill:var(--ink);font-size:13px;font-weight:700' }, svg);
+        style: 'fill:var(--ink);font-size:15px;font-weight:700' }, svg);
       vt.textContent = pctf(f);
       var nt = sv('text', { x: x + barW / 2, y: T + ph + 17,
         'text-anchor': 'middle',
-        style: 'fill:var(--navy);font-size:12px;font-weight:700' }, svg);
+        style: 'fill:var(--navy);font-size:14px;font-weight:700' }, svg);
       nt.textContent = c.label;
       var ut = sv('text', { x: x + barW / 2, y: T + ph + 33,
         'text-anchor': 'middle',
-        style: 'fill:var(--muted);font-size:10.5px' }, svg);
+        style: 'fill:var(--muted);font-size:12.5px' }, svg);
       ut.textContent = f2(out.umol_g[c.key]) + ' μmol-O/g';
     });
     sv('line', { x1: L, x2: L + pw, y1: T + ph, y2: T + ph,
@@ -612,21 +612,21 @@
       sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
                    style: 'stroke:var(--line);stroke-width:1' }, svg);
       var lb = sv('text', { x: L - 8, y: y + 4, 'text-anchor': 'end',
-        style: 'fill:var(--muted);font-size:11px' }, svg);
+        style: 'fill:var(--muted);font-size:15px' }, svg);
       lb.textContent = yv;
     }
     var yt = sv('text', { x: 6, y: 14,
-      style: 'fill:var(--muted);font-size:11px' }, svg);
+      style: 'fill:var(--muted);font-size:15px' }, svg);
     yt.textContent = 'μmol-O/g';
     for (i = 0; i <= 5; i++) {
       var xv = xmax * i / 5;
       var xl = sv('text', { x: X(xv), y: T + ph + 18, 'text-anchor': 'middle',
-        style: 'fill:var(--muted);font-size:11px' }, svg);
+        style: 'fill:var(--muted);font-size:15px' }, svg);
       xl.textContent = Math.round(xv);
     }
     var xt = sv('text', { x: L + pw / 2, y: T + ph + 38,
       'text-anchor': 'middle',
-      style: 'fill:var(--muted);font-size:11.5px' }, svg);
+      style: 'fill:var(--muted);font-size:13.5px' }, svg);
     xt.textContent = 'total Vₒ (μmol-O/g)';
 
     SWEEP.forEach(function (s) {
@@ -649,7 +649,7 @@
     }
     ends.forEach(function (e) {
       var t2 = sv('text', { x: L + pw + 8, y: e.y + 4,
-        style: 'fill:var(--ink);font-size:11.5px' }, svg);
+        style: 'fill:var(--ink);font-size:13.5px' }, svg);
       t2.textContent = e.label;
     });
 
@@ -857,11 +857,11 @@
     sv('line', { x1: cx - Rpx, x2: cx - Rpx + sbPx, y1: cy + Rpx + 22,
       y2: cy + Rpx + 22, style: 'stroke:var(--ink);stroke-width:2' }, svg);
     tx(cx - Rpx + sbPx / 2, cy + Rpx + 36, sb + ' nm',
-       'fill:var(--muted);font-size:11px', 'middle', svg);
+       'fill:var(--muted);font-size:15px', 'middle', svg);
     tx(cx + 24, cy + Rpx + 36, 'd = ' + dUm.toFixed(2) + ' μm',
-       'fill:var(--muted);font-size:11px', 'middle', svg);
+       'fill:var(--muted);font-size:15px', 'middle', svg);
     tx(cx, y0 + 6, 'shell 0.65 nm — not resolvable at this scale',
-       'fill:var(--muted);font-size:10.5px', 'middle', svg);
+       'fill:var(--muted);font-size:12.5px', 'middle', svg);
 
     /* -------------------------------------------- magnified window */
     var nCols = 46;
@@ -872,7 +872,7 @@
       style: 'fill:var(--panel);stroke:var(--line)' }, svg);
     sv('rect', { x: x0, y: y0, width: fw, height: gasH,
       style: 'fill:var(--code);opacity:.7' }, svg);
-    tx(x0 + fw - 6, y0 + 16, 'gas', 'fill:var(--muted);font-size:10.5px',
+    tx(x0 + fw - 6, y0 + 16, 'gas', 'fill:var(--muted);font-size:12.5px',
        'end', svg);
 
     var surfY = y0 + gasH + 10;
@@ -922,19 +922,19 @@
 
     sv('line', { x1: x0 + 10, x2: x0 + 10, y1: y0 + fh - 10 - pxNm,
       y2: y0 + fh - 10, style: 'stroke:var(--ink);stroke-width:2' }, svg);
-    tx(x0 + 16, y0 + fh - 12, '1 nm', 'fill:var(--muted);font-size:10.5px',
+    tx(x0 + 16, y0 + fh - 12, '1 nm', 'fill:var(--muted);font-size:12.5px',
        'start', svg);
 
     var lx = x0 + fw + 10;
     var lab = function (y, cls, name, u, th, prob) {
       sv('rect', { x: lx, y: y - 8, width: 9, height: 9, rx: 2,
         style: 'fill:var(--c' + cls + ')' }, svg);
-      tx(lx + 14, y, name, 'fill:var(--navy);font-size:11.5px;'
+      tx(lx + 14, y, name, 'fill:var(--navy);font-size:13.5px;'
          + 'font-weight:bold', 'start', svg);
       tx(lx + 14, y + 13, f2(u) + ' μmol/g · θ ' + thf(th),
-         'fill:var(--muted);font-size:10.5px', 'start', svg);
+         'fill:var(--muted);font-size:12.5px', 'start', svg);
       tx(lx + 14, y + 25, 'P(CO₂) ' + probf(prob),
-         'fill:var(--muted);font-size:10.5px', 'start', svg);
+         'fill:var(--muted);font-size:12.5px', 'start', svg);
     };
     lab(rowY(0), 'Surf', 'Surface', out.umol_g.surface,
         out.theta.surface, acc.P.surface);
@@ -960,7 +960,7 @@
       var y = YT(g[0]);
       sv('line', { x1: px0, x2: px0 + pw2, y1: y, y2: y,
         style: 'stroke:var(--line);stroke-width:1' }, svg);
-      tx(px0 - 6, y + 3.5, g[1], 'fill:var(--muted);font-size:10px', 'end',
+      tx(px0 - 6, y + 3.5, g[1], 'fill:var(--muted);font-size:14px', 'end',
          svg);
     });
     // axis break marks
@@ -995,24 +995,24 @@
     sv('line', { x1: px0, x2: px0 + pw2, y1: papBot, y2: papBot,
       style: 'stroke:var(--muted);stroke-width:1' }, svg);
     [[0, '0'], [t1, ''], [tShell, '0.65'], [1, '1']].forEach(function (g) {
-      tx(XD(g[0]), papBot + 13, g[1], 'fill:var(--muted);font-size:10px',
+      tx(XD(g[0]), papBot + 13, g[1], 'fill:var(--muted);font-size:14px',
          'middle', svg);
     });
     [[10, '10'], [100, '100'], [Rnm, Math.round(Rnm) + '']].forEach(
       function (g) {
         if (g[0] <= Rnm) {
           tx(XD(g[0]), papBot + 13, g[1],
-             'fill:var(--muted);font-size:10px', 'middle', svg);
+             'fill:var(--muted);font-size:14px', 'middle', svg);
         }
       });
     tx(px0 + pw2 / 2, papBot + 26, 'depth from surface (nm)',
-       'fill:var(--muted);font-size:10.5px', 'middle', svg);
+       'fill:var(--muted);font-size:12.5px', 'middle', svg);
     var shellU = out.umol_g.surface + out.umol_g.subsurface;
     var shellPct = out.matched_umol_g
       ? shellU / out.matched_umol_g * 100 : 0;
     tx(XD(tShell) + 8, papTop + 10, shellPct.toFixed(1)
        + '% of the inventory within ' + tShell.toFixed(2) + ' nm',
-       'fill:var(--ink);font-size:11px', 'start', svg);
+       'fill:var(--ink);font-size:15px', 'start', svg);
 
     /* -------------------------------------------- legend + caption */
     var lg2 = '';
