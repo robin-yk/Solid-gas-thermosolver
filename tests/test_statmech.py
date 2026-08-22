@@ -72,7 +72,8 @@ def _assert_row(row, ref):
             ref['fractions'][k], rel=1e-9, abs=1e-12), k
         assert row['umol_g'][k] == pytest.approx(
             ref['umol_g'][k], rel=1e-9, abs=1e-12), k
-    assert row['surface_cap_bound'] == ref['surface_cap_bound']
+    assert row['surface_reconstruction_regime'] == \
+        ref['surface_reconstruction_regime']
     assert [w['kind'] for w in row['warnings']
             if w['kind'] != 'unresolved'] == ref['warn_kinds']
 
@@ -201,7 +202,7 @@ def test_low_loading_lives_on_the_surface():
     r = S.distribute(P, 600.0, 1.0, g)
     assert r['fractions']['surface'] > 0.995
     assert r['fractions']['bulk'] < 1e-3
-    assert not r['surface_cap_bound']
+    assert not r['surface_reconstruction_regime']
 
 
 def test_high_temperature_limit_is_proportional_to_site_counts():
@@ -310,15 +311,16 @@ def test_sweep_agrees_with_pointwise_solutions():
         assert row['accessible'] == a['accessible_umol_g']
 
 
-def test_sweep_tells_the_accessibility_story():
-    """Surface plateaus at the reconstruction cap and the recoverable
-    fraction falls as the inventory is forced deeper - the paper's story
-    as a curve."""
+def test_sweep_has_no_reconstruction_hard_cap():
+    """The 17-20% reconstruction interval is a warning boundary. It must
+    not clip the numerical surface occupation."""
     g = S.geometry(P)
     rows = S.sweep(P, 600.0, g, [2.0, 20.0, 60.0, 95.0, 150.0])
-    cap_umol = P['saturation']['surface_cap_coverage'] * g['N_s']
-    assert rows[-1]['surface'] == pytest.approx(cap_umol, rel=1e-9)
-    assert rows[-2]['surface'] == pytest.approx(cap_umol, rel=1e-9)
+    onset_umol = P['surface_ordering']['reconstruction_coverage'] * g['N_s']
+    surface = [r['surface'] for r in rows]
+    assert surface[-1] > onset_umol
+    assert surface[-1] <= g['N_s']
+    assert all(b >= a for a, b in zip(surface, surface[1:]))
     fr = [r['f_recoverable'] for r in rows]
     assert fr[0] > 0.95
     assert fr[-1] < fr[-2] < fr[2]
@@ -417,6 +419,10 @@ def test_phase_validity_skips_divergent_costs():
 def test_mode_note_discloses_scope():
     out = S.run_full(P, mc=MC_SMALL)
     assert out['method'] == 'canonical_statmech'
-    assert out['surface_cap_bound'] is True
+    assert out['surface_reconstruction_regime'] is True
     kinds = [w['kind'] for w in out['warnings']]
-    assert 'surface_cap' in kinds and 'subsurface_dense' in kinds
+    assert 'surface_reconstruction' in kinds and 'subsurface_dense' in kinds
+    warning = next(w['text'] for w in out['warnings']
+                   if w['kind'] == 'surface_reconstruction')
+    assert 'not clipped' in warning
+    assert 'conditional extrapolation' in warning

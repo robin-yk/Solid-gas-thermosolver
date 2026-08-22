@@ -3,8 +3,9 @@
 Shares only rutile_dft.json with the production code - no import of
 solidgas.statmech, no shared solver code. Three kinds of certified values:
 
-1. Analytic matching grid: the three-class site-exclusion distribution with
-   the surface reconstruction cap, solved by mpmath bisection at 50 digits.
+1. Analytic matching grid: the uncapped three-class site-exclusion
+   distribution, solved by mpmath bisection at 50 digits. The reported
+   reconstruction interval is retained as a validity warning.
 2. Exact ideal-lattice canonical ensemble (generating polynomial): finite-
    lattice class occupancies and the exact chemical potential
    mu = -kT ln(Z(N+1)/Z(N)) that Widom insertion estimates.
@@ -65,12 +66,8 @@ def eps_of(preset):
 def match(t_c, vo, geom, preset):
     kt = KB_EV * (mpf(str(t_c)) + mpf('273.15'))
     eps = eps_of(preset)
-    cap = mpf(str(P['saturation']['surface_cap_coverage']))
-
     def total(mu):
         ts = fd(mu, eps[0], kt)
-        if ts > cap:
-            ts = cap
         return (geom['N_s'] * ts + geom['N_ss'] * fd(mu, eps[1], kt)
                 + geom['N_b'] * fd(mu, eps[2], kt))
     lo, hi = mpf(-3), mpf(3)
@@ -82,9 +79,8 @@ def match(t_c, vo, geom, preset):
             hi = mid
     mu = (lo + hi) / 2
     ts = fd(mu, eps[0], kt)
-    cap_bound = ts >= cap
-    if cap_bound:
-        ts = cap
+    onset = mpf(str(P['surface_ordering']['critical_coverage']))
+    reconstruction_regime = ts >= onset
     tss = fd(mu, eps[1], kt)
     tb = fd(mu, eps[2], kt)
     us, uss, ub = geom['N_s'] * ts, geom['N_ss'] * tss, geom['N_b'] * tb
@@ -92,8 +88,8 @@ def match(t_c, vo, geom, preset):
     x = mpf(str(vo)) / (mpf('1e6') / mpf(str(P['molar_mass_g_mol'])))
     sat = P['saturation']
     warn = []
-    if cap_bound:
-        warn.append('surface_cap')
+    if reconstruction_regime:
+        warn.append('surface_reconstruction')
     if tss > mpf(str(sat['subsurface_dilute_warn'])):
         warn.append('subsurface_dense')
     if x >= mpf(str(sat['x_max_shear'])):
@@ -110,7 +106,8 @@ def match(t_c, vo, geom, preset):
                           'subsurface': float(uss / tot),
                           'bulk': float(ub / tot)},
             'x_TiO2mx': float(x), 'Ti3_frac': float(2 * x),
-            'surface_cap_bound': bool(cap_bound), 'warn_kinds': warn}
+            'surface_reconstruction_regime': bool(reconstruction_regime),
+            'warn_kinds': warn}
 
 
 # ------------------------------------------------ exact ideal ensemble

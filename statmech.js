@@ -407,7 +407,18 @@
         var t = fd(mu, epsS, kt);
         return t < ths[0] ? t : ths[0];
       }
-      if (mu >= mus[mus.length - 1]) return ths[ths.length - 1];
+      if (mu >= mus[mus.length - 1]) {
+        var n = mus.length;
+        if (n < 2 || mus[n - 1] <= mus[n - 2]) return ths[n - 1];
+        var tiny = 1e-12;
+        var t0 = Math.min(1 - tiny, Math.max(tiny, ths[n - 2]));
+        var t1 = Math.min(1 - tiny, Math.max(tiny, ths[n - 1]));
+        var l0 = Math.log(t0 / (1 - t0));
+        var l1 = Math.log(t1 / (1 - t1));
+        var slope = Math.max(0, (l1 - l0) / (mus[n - 1] - mus[n - 2]));
+        var z = l1 + slope * (mu - mus[n - 1]);
+        return z > 700 ? 1 : 1 / (1 + Math.exp(-z));
+      }
       var lo = 0, hi = mus.length - 1;
       while (hi - lo > 1) {
         var mid = (lo + hi) >> 1;
@@ -422,13 +433,10 @@
     opts = opts || {};
     var kt = KB_EV * (tC + 273.15);
     var eps = opts.eps != null ? opts.eps : energetics(p, opts.preset).eps;
-    var cap = p.saturation.surface_cap_coverage;
     var thetaSFn = opts.theta_s_fn || function (mu) { return fd(mu, eps[0], kt); };
 
     function parts(mu) {
-      var ts = thetaSFn(mu);
-      if (ts > cap) ts = cap;
-      return [ts, fd(mu, eps[1], kt), fd(mu, eps[2], kt)];
+      return [thetaSFn(mu), fd(mu, eps[1], kt), fd(mu, eps[2], kt)];
     }
     function total(mu) {
       var t = parts(mu);
@@ -457,13 +465,19 @@
     var molTi = 1e6 / p.molar_mass_g_mol;
     var x = voTotal / molTi;
     var sat = p.saturation;
+    var onsetLo = p.surface_ordering.critical_coverage;
+    var onsetHi = p.surface_ordering.reconstruction_coverage;
     var warnings = [];
-    if (ts >= cap - 1e-12) {
-      warnings.push({ kind: 'surface_cap',
-        text: 'Surface pinned at the ' + (cap * 100).toFixed(0)
-          + '% reconstruction threshold (' + us.toFixed(2) + ' of '
-          + geom.N_s.toFixed(2) + ' umol-O/g capacity); coverage beyond it '
-          + 'is not modelled.' });
+    if (ts >= onsetLo) {
+      var relation = ts < onsetHi ? 'is inside' : 'exceeds';
+      warnings.push({ kind: 'surface_reconstruction',
+        text: 'Surface bridging-O vacancy coverage ' + (ts * 100).toFixed(1)
+          + '% ' + relation + ' the reported ' + (onsetLo * 100).toFixed(0)
+          + '-' + (onsetHi * 100).toFixed(0) + '% onset interval for the '
+          + 'rutile TiO2(110)-(1x2) reconstruction. The value is not clipped. '
+          + 'This distribution is a conditional extrapolation of the '
+          + 'unreconstructed (1x1) surface Hamiltonian; reconstructed-phase '
+          + 'energetics are not implemented.' });
     }
     if (tss > sat.subsurface_dilute_warn) {
       warnings.push({ kind: 'subsurface_dense',
@@ -497,7 +511,7 @@
                           bulk: tot ? ub / tot : 0.0 },
              matched_umol_g: tot,
              x_TiO2mx: x, Ti3_frac: 2.0 * x,
-             surface_cap_bound: ts >= cap - 1e-12,
+             surface_reconstruction_regime: ts >= onsetLo,
              warnings: warnings };
   }
 
@@ -648,7 +662,9 @@
                                     eps: eps, zero_pairs: opts.zero_pairs,
                                     ordering: opts.ordering, mc: opts.mc,
                                     progress: opts.progress });
-    var fn = thetaSInterp(pts, eps[0], kt);
+    var fn = opts.zero_pairs
+      ? function (mu) { return fd(mu, eps[0], kt); }
+      : thetaSInterp(pts, eps[0], kt);
     var out = distribute(p, tC, vo, geom, { theta_s_fn: fn, eps: eps });
     out.geometry = geom;
     out.isotherm = pts;

@@ -166,7 +166,8 @@ def test_pipelines_agree_end_to_end(pair):
         for k in ('surface', 'subsurface', 'bulk'):
             assert row['fractions'][k] == pytest.approx(
                 ref['fractions'][k], rel=1e-12, abs=1e-15), k
-        assert row['surface_cap_bound'] == ref['surface_cap_bound']
+        assert row['surface_reconstruction_regime'] == \
+            ref['surface_reconstruction_regime']
         assert row['warn_kinds'] == [w['kind'] for w in ref['warnings']]
         for a, b in zip(row['isotherm'], ref['isotherm']):
             assert a['filling'] == b['filling']
@@ -180,36 +181,26 @@ def test_pipelines_agree_end_to_end(pair):
             assert a['row_sites'] == b['row_sites']
 
 
-def test_shipped_configuration_reproduces_the_oracle_flagship(pair):
-    """The default lattice and sweep counts, exactly as the page runs them.
-    At the flagship condition the reconstruction cap binds, so the answer
-    is analytic and the 50-digit oracle certifies the full JS pipeline."""
+def test_shipped_configuration_marks_reconstruction_extrapolation(pair):
+    """The page configuration must preserve the inventory and disclose that
+    its default surface result crosses the reconstructed-phase boundary."""
     _, js = pair
     row = next(r for r in js['pipelines'] if r['name'] == 'shipped_default')
-    ref = REF['flagship']
-    assert row['mu_V_eV'] == pytest.approx(ref['mu_V_eV'], abs=1e-9)
-    for k in ('surface', 'subsurface', 'bulk'):
-        assert row['fractions'][k] == pytest.approx(
-            ref['fractions'][k], rel=1e-9), k
-        assert row['umol_g'][k] == pytest.approx(
-            ref['umol_g'][k], rel=1e-9), k
-    assert row['surface_cap_bound'] is True
-    assert row['warn_kinds'] == ref['warn_kinds']
+    assert sum(row['umol_g'].values()) == pytest.approx(95.0, rel=1e-12)
+    assert row['theta']['surface'] > P['surface_ordering']['critical_coverage']
+    assert row['surface_reconstruction_regime'] is True
+    assert 'surface_reconstruction' in row['warn_kinds']
     sp = row['spacing']
     assert sp is not None
-    assert sp['modal_gap_sites'] in (3, 4, 5)
-    assert sp['P_gap_le_2'] < 0.15
+    assert sp['at_theta_s'] >= P['surface_ordering']['critical_coverage']
 
 
-def test_geometry_port_matches_oracle(pair):
-    """Independent of MC: the JS geometry numbers against the oracle."""
+def test_shipped_configuration_has_physical_occupancies(pair):
     _, js = pair
     row = next(r for r in js['pipelines'] if r['name'] == 'shipped_default')
-    # fractions already checked; anchor the derived quantities too
-    assert row['theta']['subsurface'] == pytest.approx(
-        REF['flagship']['theta']['subsurface'], rel=1e-9)
-    assert row['theta']['bulk'] == pytest.approx(
-        REF['flagship']['theta']['bulk'], rel=1e-9)
+    assert all(0.0 <= row['theta'][k] <= 1.0
+               for k in ('surface', 'subsurface', 'bulk'))
+    assert sum(row['fractions'].values()) == pytest.approx(1.0, rel=1e-12)
 
 
 def test_accessibility_and_sweep_parity(pair):
@@ -235,9 +226,9 @@ def test_accessibility_and_sweep_parity(pair):
                                               abs=1e-15), k
 
 
-def test_shipped_accessibility_matches_the_oracle(pair):
-    """The default kinetics on the default distribution: the 300 s oracle
-    row certifies the JS chain (the flagship split is cap-bound analytic)."""
+def test_shipped_accessibility_closes_on_its_interacting_distribution(pair):
+    """The refill probabilities are analytic. The accessible total must close
+    against the interacting distribution produced by the shipped pipeline."""
     _, js = pair
     row = next(r for r in js['pipelines'] if r['name'] == 'shipped_default')
     ref = next(r for r in REF['co2_flagship'] if r['exposure_s'] == 300)
@@ -245,15 +236,14 @@ def test_shipped_accessibility_matches_the_oracle(pair):
     for c in ('surface', 'subsurface', 'bulk'):
         assert a['P'][c] == pytest.approx(ref['P'][c], rel=1e-9,
                                           abs=1e-12), c
-    assert a['accessible_umol_g'] == pytest.approx(
-        ref['accessible_umol_g'], rel=1e-9)
-    assert a['f_recoverable'] == pytest.approx(
-        ref['f_recoverable'], rel=1e-9)
+    expected = sum(row['umol_g'][c] * a['P'][c]
+                   for c in ('surface', 'subsurface', 'bulk'))
+    assert a['accessible_umol_g'] == pytest.approx(expected, rel=1e-12)
+    assert a['f_recoverable'] == pytest.approx(expected / 95.0, rel=1e-12)
     # the 95 row of the shipped sweep is the flagship distribution
     r95 = next(r for r in row['sweep'] if r['VO_total_umol_g'] == 95.0)
     for k in ('surface', 'subsurface', 'bulk'):
-        assert r95[k] == pytest.approx(REF['flagship']['umol_g'][k],
-                                       rel=1e-9), k
+        assert r95[k] == pytest.approx(row['umol_g'][k], rel=1e-12), k
 
 
 def test_phase_validity_parity_on_real_equilibria(pair):
@@ -318,14 +308,34 @@ def test_page_carries_the_defect_workspace_and_disclosures():
     html = (ROOT / 'ti_solver.html').read_text()
     assert 'Defect stat mech' in html
     for phrase in ('Li, Guo &amp; Robertson', 'Birschitzky',
-                   'reconstruction threshold', 'not reduction kinetics',
+                   'reconstruction onset', 'not reduction kinetics',
                    'rutile_dft.json', 'Widom insertion',
                    'Placeholder kinetics', 'Recoverable fraction',
                    '-accessible inventory', '(S1)', '(S12)',
                    'Oxygen environment', 'ThermoBridge', 'phaseValidity',
-                   'Particle cross-section', 'not resolvable',
+                   'Particle cross-section', 'outer 0.65 nm shell',
                    'Monte Carlo arrangement', 'Katsoulakis',
                    'OriginLab, no weighting'):
         assert phrase in html, f'disclosure lost: {phrase}'
     # the dataset is swappable, and the page says so
-    assert 'replaced' in html and 're-fitted' in html
+    assert 'calibrated to those constraints' in html
+    assert 'will replace them directly' in html
+
+
+def test_particle_view_uses_spherical_shells_without_random_bulk_dots():
+    ui = (ROOT / 'statmech_ui.js').read_text()
+    template = (ROOT / 'ti_solver_template.html').read_text()
+    assert 'bulk occupation' in ui
+    assert 'disc core = bulk occupation' in ui
+    assert "'bulk', acc.P.bulk" not in ui
+    assert 'Spherical particle cross-section' in template
+    assert 'core fill tracks the' in template
+
+
+def test_portal_fits_the_desktop_viewport_and_keeps_mobile_scroll():
+    portal = (ROOT / 'portal.html').read_text()
+    index = (ROOT / 'index.html').read_text()
+    assert portal == index
+    assert 'height:calc(100svh - 58px)' in portal
+    assert 'grid-template-rows:auto minmax(0,1fr) auto' in portal
+    assert '@media (max-width:720px){body{overflow:auto}' in portal

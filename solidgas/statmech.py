@@ -10,8 +10,11 @@ site-exclusion isotherm. The particle-scale balance then uses the real
 geometric site counts, not the slab's class ratio: a 0.9 um particle has
 ~0.05% of its O sites in the surface layer, the slab has 10%.
 
-Coverage beyond the (1x2) reconstruction threshold is not modelled; surface
-content is pinned at the threshold when the inventory demands more.
+The reported 17-20% onset interval for the (1x2) reconstruction is a model
+boundary, not a saturation capacity. Surface coverage is never clipped. A
+solution inside or above that interval is marked as a conditional extrapolation
+of the unreconstructed (1x1) Hamiltonian because reconstructed-phase
+energetics are not implemented.
 
 statmech.js is a line-for-line port of this file. Loops, operation order and
 the RNG are kept identical so that a same-seed run is bit-reproducible across
@@ -405,8 +408,11 @@ def theta_s_interp(points, eps_s, kt):
     """Monotone interpolant of the sampled surface isotherm.
 
     Below the sampled range the surface is dilute and near-ideal, so the
-    exact non-interacting isotherm continues the curve; above the range the
-    last value clamps (the reconstruction cap binds long before that)."""
+    exact non-interacting isotherm continues the curve. Above the sampled
+    range, the last two points continue linearly in logit(theta). This avoids
+    inventing a saturation plateau at the numerical scan boundary. Results
+    past the reconstruction onset are separately marked as extrapolations of
+    the unreconstructed surface Hamiltonian."""
     pts = [q for q in points if q['mu_eV'] is not None]
     pts = sorted(pts, key=lambda q: q['mu_eV'])
     mus = []
@@ -425,7 +431,18 @@ def theta_s_interp(points, eps_s, kt):
             t = fd(mu, eps_s, kt)
             return t if t < ths[0] else ths[0]
         if mu >= mus[-1]:
-            return ths[-1]
+            if len(mus) < 2 or mus[-1] <= mus[-2]:
+                return ths[-1]
+            tiny = 1e-12
+            t0 = min(1.0 - tiny, max(tiny, ths[-2]))
+            t1 = min(1.0 - tiny, max(tiny, ths[-1]))
+            l0 = math.log(t0 / (1.0 - t0))
+            l1 = math.log(t1 / (1.0 - t1))
+            slope = max(0.0, (l1 - l0) / (mus[-1] - mus[-2]))
+            z = l1 + slope * (mu - mus[-1])
+            if z > 700.0:
+                return 1.0
+            return 1.0 / (1.0 + math.exp(-z))
         lo, hi = 0, len(mus) - 1
         while hi - lo > 1:
             mid = (lo + hi) // 2
@@ -443,15 +460,11 @@ def distribute(p, t_c, vo_total, geom, theta_s_fn=None, preset=None, eps=None):
     kt = KB_EV * (t_c + 273.15)
     if eps is None:
         eps = energetics(p, preset)['eps']
-    cap = p['saturation']['surface_cap_coverage']
     if theta_s_fn is None:
         theta_s_fn = lambda mu: fd(mu, eps[0], kt)  # noqa: E731
 
     def parts(mu):
-        ts = theta_s_fn(mu)
-        if ts > cap:
-            ts = cap
-        return ts, fd(mu, eps[1], kt), fd(mu, eps[2], kt)
+        return theta_s_fn(mu), fd(mu, eps[1], kt), fd(mu, eps[2], kt)
 
     def total(mu):
         ts, tss, tb = parts(mu)
@@ -481,13 +494,22 @@ def distribute(p, t_c, vo_total, geom, theta_s_fn=None, preset=None, eps=None):
     mol_ti = 1e6 / p['molar_mass_g_mol']
     x = vo_total / mol_ti
     sat = p['saturation']
+    onset_lo = p['surface_ordering']['critical_coverage']
+    onset_hi = p['surface_ordering']['reconstruction_coverage']
     warnings = []
-    if ts >= cap - 1e-12:
-        warnings.append({'kind': 'surface_cap',
-                         'text': 'Surface pinned at the %.0f%% reconstruction '
-                                 'threshold (%.2f of %.2f umol-O/g capacity); '
-                                 'coverage beyond it is not modelled.'
-                                 % (cap * 100, us, geom['N_s'])})
+    if ts >= onset_lo:
+        relation = ('is inside' if ts < onset_hi else 'exceeds')
+        warnings.append({
+            'kind': 'surface_reconstruction',
+            'text': ('Surface bridging-O vacancy coverage %.1f%% %s the '
+                     'reported %.0f-%.0f%% onset interval for the rutile '
+                     'TiO2(110)-(1x2) reconstruction. The value is not '
+                     'clipped. This distribution is a conditional '
+                     'extrapolation of the unreconstructed (1x1) surface '
+                     'Hamiltonian; reconstructed-phase energetics are not '
+                     'implemented.'
+                     % (ts * 100, relation, onset_lo * 100,
+                        onset_hi * 100))})
     if tss > sat['subsurface_dilute_warn']:
         warnings.append({'kind': 'subsurface_dense',
                          'text': 'Subsurface layer occupancy %.0f%% is far '
@@ -520,7 +542,7 @@ def distribute(p, t_c, vo_total, geom, theta_s_fn=None, preset=None, eps=None):
                           'bulk': ub / tot if tot else 0.0},
             'matched_umol_g': tot,
             'x_TiO2mx': x, 'Ti3_frac': 2.0 * x,
-            'surface_cap_bound': ts >= cap - 1e-12,
+            'surface_reconstruction_regime': ts >= onset_lo,
             'warnings': warnings}
 
 
@@ -529,8 +551,8 @@ def spacing_summary(points, theta_s):
 
     The literature constraints (modal spacing 4-5 sites, 1-2 suppressed) are
     statements about the arrangement at a given coverage, so the comparison
-    point is chosen by theta_s - at a capped solution, the point nearest the
-    reconstruction threshold."""
+    point is chosen by theta_s. Solutions past the reconstruction onset remain
+    conditional on the unreconstructed surface Hamiltonian."""
     best = None
     for q in points:
         if q['mu_eV'] is None:
@@ -666,9 +688,9 @@ def sweep(p, t_c, geom, vo_list, theta_s_fn=None, preset=None, eps=None,
     """Distribution and accessibility along a total-inventory axis.
 
     Instant once the isotherm exists - each point is one scalar matching
-    solve. This is the figure the workspace is for: surface plateaus at
-    the reconstruction cap, subsurface saturates, bulk takes the balance,
-    and the accessible curve falls away from the total."""
+    solve. The surface follows the sampled isotherm without a hard coverage
+    cap; subsurface and bulk take the remaining inventory, and the accessible
+    curve falls away from the total."""
     rows = []
     for vo in vo_list:
         d = distribute(p, t_c, vo, geom, theta_s_fn=theta_s_fn,
@@ -700,7 +722,10 @@ def run_full(p, t_c=None, vo_total=None, d_um=None, bet_m2_g=None,
     pts = isotherm_scan(p, t_c, seed=seed, quality=quality, eps=eps,
                         zero_pairs=zero_pairs, ordering=ordering, mc=mc,
                         progress=progress)
-    fn = theta_s_interp(pts, eps[0], kt)
+    if zero_pairs:
+        fn = lambda mu: fd(mu, eps[0], kt)  # exact ideal surface isotherm
+    else:
+        fn = theta_s_interp(pts, eps[0], kt)
     out = distribute(p, t_c, vo_total, geom, theta_s_fn=fn, eps=eps)
     out['geometry'] = geom
     out['isotherm'] = pts

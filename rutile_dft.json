@@ -1,5 +1,5 @@
 {
-  "version": "0.1-M1",
+  "version": "0.2-M2",
   "material": "rutile TiO2",
   "facet": "(110)",
   "lattice_constants_A": {"a": 4.5937, "c": 2.9587},
@@ -25,14 +25,13 @@
     "disfavored_spacing_sites": [1, 2],
     "preferred_spacing_sites": [4, 5],
     "pair_table_note": "Pair energies are calibrated, not computed: chosen so that spacings of 1-2 bridging sites are suppressed and the modal spacing near critical coverage is 4-5 sites, with the ordering energy scale of the published low-energy configurations (~0.2-0.3 eV). Replace with project DFT configuration energies when available.",
-    "provenance": "Birschitzky, Reticcioli et al., npj Comput. Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4. DFT+U (U = 3.9 eV) + ML + Metropolis MC on rutile (110): computed critical coverage 16.7%, reconstruction threshold ~20%, interaction range ~10 A, in-row spacings of 1-2 sites nearly absent, most probable spacing 4-5 sites."
+    "provenance": "Birschitzky et al., npj Comput. Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4. DFT+U (U = 3.9 eV) + ML + Metropolis MC on rutile (110): experiment reports an average reconstruction onset near 17%, DFT places the transition near 20%, and vacancy-rich local regions reach about 20%; these values mark a phase-change interval, not a maximum allowed coverage. Interaction range is ~10 A, in-row spacings of 1-2 sites are nearly absent, and the most probable spacing is 4-5 sites. Reconstruction mechanism: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053."
   },
 
   "saturation": {
-    "surface_cap_coverage": 0.20,
     "subsurface_dilute_warn": 0.25,
     "x_max_shear": 0.008,
-    "note": "Beyond ~20% bridging-O vacancy coverage the (1x2) reconstruction takes over; the model pins surface content at the threshold instead of describing the reconstructed phase. x_max is the approximate rutile point-defect range before crystallographic shear planes."
+    "note": "The 17-20% bridging-O vacancy interval marks onset of the rutile TiO2(110)-(1x2) reconstruction. It is not a saturation capacity. The model does not clip surface coverage; results in and above this interval are conditional extrapolations of the unreconstructed (1x1) Hamiltonian because reconstructed-phase energetics are not implemented. x_max is the approximate rutile point-defect range before crystallographic shear planes."
   },
 
   "co2_kinetics": {

@@ -48,7 +48,7 @@ for (const c of spec.pipelines) {
     fractions: res.fractions,
     umol_g: res.umol_g,
     theta: res.theta,
-    surface_cap_bound: res.surface_cap_bound,
+    surface_reconstruction_regime: res.surface_reconstruction_regime,
     warn_kinds: res.warnings.map(w => w.kind),
     spacing: res.spacing,
     accessibility: res.accessibility,

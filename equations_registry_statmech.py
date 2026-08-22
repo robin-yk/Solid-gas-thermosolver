@@ -22,7 +22,7 @@ R.append(('note', r'Widom insertion on the sampling slab; verified against exact
 
 R.append(('head', '2 · Particle-scale matching'))
 R.append(('eq', r'$\theta_c(\mu_V) \;=\; \left[\, 1 + e^{(\epsilon_c - \mu_V)/k_B T} \right]^{-1} \ \ (c = ss,\, b)\,;\qquad \theta_s(\mu_V)\ \mathrm{from\ the\ MC\ isotherm}$', 'S5'))
-R.append(('eq', r'$\theta_s \;\leq\; \theta_{\mathrm{rec}} = 0.20 \qquad \mathrm{(1\!\times\!2\ reconstruction\ threshold;\ pinned,\ not\ modelled\ beyond)}$', 'S6'))
+R.append(('eq', r'$\theta_{\mathrm{rec}} \simeq 0.17\!\text{-}\!0.20 \qquad \mathrm{(reported\ onset\ interval\ for\ the\ 1\!\times\!2\ reconstruction;\ validity\ boundary,\ not\ a\ cap)}$', 'S6'))
 R.append(('boxeq', r'$N_s\,\theta_s(\mu_V) \;+\; N_{ss}\,\theta_{ss}(\mu_V) \;+\; N_b\,\theta_b(\mu_V) \;=\; N_V^{\mathrm{tot}}$', 'S7'))
 R.append(('eq', r'$N_s = A\,\sigma_{\mathrm{br}}\,,\qquad N_{ss} = A\,\sigma_{\mathrm{layer}}\,,\qquad A = \frac{6}{\rho\, d}\ \ \mathrm{or\ BET}$', 'S8'))
 R.append(('note', r'real geometric site counts, not the slab ratio: at $d = 0.9\ \mu\mathrm{m}$, $N_s = 13.6\ \mu\mathrm{mol\text{-}O/g}$ against $25\,042\ \mu\mathrm{mol\text{-}O/g}$ of O sites'))

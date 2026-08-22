@@ -95,7 +95,8 @@ def _fit_ti7o13():
                 ns.append(n_ti)
                 hs.append(d['dHf298'])
     slope, intercept = np.polyfit(ns, hs, 1)
-    return float(slope * 7 + intercept), float(slope), float(intercept)
+    fit = round(float(slope * 7 + intercept), 2)
+    return fit, float(slope), float(intercept)
 
 
 def _stoich(name):

@@ -264,7 +264,7 @@
           + 'var(--red)"><b>Single-phase rutile model invalid at '
           + 'equilibrium.</b> Thermodynamics predicts '
           + v.reduced_active.map(subHtml).join(' + ')
-          + ' — not rutile — under this charge at ' + env.T_C + ' °C.</div>';
+          + '. Rutile is absent under this charge at ' + env.T_C + ' °C.</div>';
       }
     }
     h += '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
@@ -360,7 +360,7 @@
       + ' μmol-O/g. Vacancy chemical potential μ<sub>V</sub> = '
       + out.mu_V_eV.toFixed(3) + ' eV.'
       + (fresh ? '' : ' <span style="color:var(--muted)">Ideal-surface '
-         + 'preview — the interacting isotherm is being sampled.</span>');
+         + 'preview. The interacting isotherm is being sampled.</span>');
 
     var k = '';
     CLASSES.forEach(function (c) {
@@ -397,8 +397,13 @@
       el.smSpacing.textContent = 'Surface pair statistics at θs = '
         + out.spacing.at_theta_s.toFixed(3) + ': modal spacing '
         + out.spacing.modal_gap_sites + ' bridging sites, P(spacing ≤ 2) '
-        + '= ' + (out.spacing.P_gap_le_2 * 100).toFixed(1)
-        + '%. Literature window: modal 4–5, close pairs suppressed.';
+        + '= ' + (out.spacing.P_gap_le_2 * 100).toFixed(1) + '%. '
+        + (out.surface_reconstruction_regime
+          ? 'The 4–5-site literature comparison applies near the 17–20% '
+            + 'reconstruction-onset interval; this higher-coverage (1×1) '
+            + 'snapshot is outside that validation range.'
+          : 'Near the reconstruction onset, the literature reports modal '
+            + 'spacing 4–5 with close pairs suppressed.');
     } else {
       el.smSpacing.textContent = '';
     }
@@ -410,7 +415,7 @@
           + '<b>Phase validity.</b> Under the equilibrium workspace&rsquo;s '
           + 'charge, thermodynamics predicts '
           + env.v.reduced_active.map(subHtml).join(' + ')
-          + ' — not rutile — at ' + env.T_C + ' °C. The single-phase rutile '
+          + '. Rutile is absent at ' + env.T_C + ' °C. The single-phase rutile '
           + 'defect model does not hold at equilibrium there; a fixed '
           + 'measured inventory in rutile is metastable at best (Oxygen '
           + 'environment card).</div>';
@@ -418,12 +423,12 @@
         notes += '<div class="note"><b>Phase validity.</b> The equilibrium '
           + 'charge sits on the TiO<sub>2</sub> / '
           + env.v.reduced_active.map(subHtml).join(' + ')
-          + ' boundary at ' + env.T_C + ' °C — reduction begins at this '
+          + ' boundary at ' + env.T_C + ' °C. Reduction begins at this '
           + 'condition (Oxygen environment card).</div>';
       }
     }
     out.warnings.forEach(function (w) {
-      var calm = w.kind === 'surface_cap' || w.kind === 'x_near';
+      var calm = w.kind === 'surface_reconstruction' || w.kind === 'x_near';
       notes += '<div class="note' + (calm ? ' calm' : '') + '">'
         + (w.kind === 'x_max' ? '<b>Model range.</b> ' : '')
         + esc(w.text) + '</div>';
@@ -460,7 +465,7 @@
         + '</div></div>';
     } else {
       k += '<div class="kpi"><div class="k">ε″ (this work)</div>'
-        + '<div class="v">—</div><div class="u">needs V<sub>O</sub> &gt; 0'
+        + '<div class="v">N/A</div><div class="u">needs V<sub>O</sub> &gt; 0'
         + '</div></div>';
     }
     el.smAccKpis.innerHTML = k;
@@ -469,13 +474,13 @@
       + acc.params.T_reox_C + ' °C, ' + acc.params.exposure_s + ' s, '
       + acc.params.p_CO2_atm + ' atm: surface ' + probf(acc.P.surface)
       + ', subsurface ' + probf(acc.P.subsurface) + ', bulk '
-      + probf(acc.P.bulk) + '. Placeholder kinetics — the prefactors are '
+      + probf(acc.P.bulk) + '. Placeholder kinetics. The prefactors are '
       + 'effective values, not literature numbers.';
 
     el.smCoupledNote.innerHTML = '<div class="readout">Dielectric '
       + 'correlation (measured in this work): ε″ = 10<sup>'
       + dc.log10_intercept.toFixed(2) + '</sup> · V<sub>O</sub><sup>'
-      + dc.exponent.toFixed(2) + '</sup> — linear fit of log ε″ against '
+      + dc.exponent.toFixed(2) + '</sup>. Linear fit of log ε″ against '
       + 'log V<sub>O</sub>, N = ' + dc.fit_stats.n_points + ', Pearson r = '
       + dc.fit_stats.pearson_r.toFixed(3) + ', R² = '
       + dc.fit_stats.r_squared.toFixed(3) + ' (OriginLab, no weighting), '
@@ -809,34 +814,27 @@
     var rho = SM.densityGCm3(DATA);
     var dUm = 6 / (rho * geom.area_m2_g * 1e4) * 1e4;
     var Rnm = dUm * 1000 / 2;
-    var nO = 4 / (aA * aA * cA) * 1000;              // sites per nm^3
     var prng = SM.makeRng(777);
 
     /* ------------------------------------------- true-scale disc */
     var cx = 182, cy = 208, Rpx = 158;
     sv('circle', { cx: cx, cy: cy, r: Rpx,
       style: 'fill:var(--code);stroke:none' }, svg);
+    var coreOpacity = Math.min(0.22, 0.035
+      + 0.18 * Math.sqrt(Math.max(0, out.theta.bulk)));
+    sv('circle', { cx: cx, cy: cy, r: Rpx - 3,
+      style: 'fill:var(--cBulk);opacity:' + coreOpacity.toFixed(3)
+        + ';stroke:none' }, svg);
     sv('circle', { cx: cx, cy: cy, r: Rpx,
       style: 'fill:none;stroke:var(--cSurf);stroke-width:1.3' }, svg);
     sv('circle', { cx: cx, cy: cy, r: Rpx - 1.6,
       style: 'fill:none;stroke:var(--cSub);stroke-width:1.1;opacity:.9' },
        svg);
 
-    var sliceVac = Math.PI * Rnm * Rnm * tShell * nO * out.theta.bulk;
-    var ratio = 1, li = 0;
-    var ladder = [1, 2, 5];
-    while (sliceVac / ratio > 220) {
-      li++;
-      ratio = ladder[li % 3] * Math.pow(10, Math.floor(li / 3));
-    }
-    var nDots = Math.round(sliceVac / ratio);
-    for (var i = 0; i < nDots; i++) {
-      var rr = (Rpx - 5) * Math.sqrt(prng());
-      var an = 2 * Math.PI * prng();
-      sv('circle', { cx: cx + rr * Math.cos(an), cy: cy + rr * Math.sin(an),
-        r: 1.6, 'data-kind': 'discdot',
-        style: 'fill:var(--cBulk);opacity:.8' }, svg);
-    }
+    tx(cx, cy - 4, 'bulk occupation',
+       'fill:var(--navy);font-size:13px;font-weight:bold', 'middle', svg);
+    tx(cx, cy + 13, 'θb = ' + thf(out.theta.bulk),
+       'fill:var(--muted);font-size:12px', 'middle', svg);
 
     /* zoom marker + leaders to the window frame */
     var x0 = 386, y0 = 24, fw = 331, fh = 250;
@@ -860,7 +858,7 @@
        'fill:var(--muted);font-size:15px', 'middle', svg);
     tx(cx + 24, cy + Rpx + 36, 'd = ' + dUm.toFixed(2) + ' μm',
        'fill:var(--muted);font-size:15px', 'middle', svg);
-    tx(cx, y0 + 6, 'shell 0.65 nm — not resolvable at this scale',
+    tx(cx, y0 + 6, 'shell 0.65 nm, not resolvable at this scale',
        'fill:var(--muted);font-size:12.5px', 'middle', svg);
 
     /* -------------------------------------------- magnified window */
@@ -886,10 +884,8 @@
     }
     var siteX = function (j) { return x0 + (j + 0.5) * sitePx; };
 
-    /* Surface: the sampled configuration. Deeper layers: expected counts
-       at seeded positions - a Bernoulli draw at theta_b ~ 0.2% would show
-       an empty window one time in five, which reads as "no bulk
-       vacancies"; rounding the expectation keeps the density honest. */
+    /* Surface: sampled configuration. Subsurface: expected count at seeded
+       sites. Bulk: continuous class-average shading. */
     function pickCells(n, kk, rng2) {
       var idx = [];
       var t;
@@ -913,12 +909,13 @@
       vacDot(siteX(jj), rowY(1), 'subsurface', acc.P.subsurface, accMode,
              svg);
     });
-    var bulkCells = nCols * (nRows - 2);
-    var nbk = Math.round(bulkCells * out.theta.bulk);
-    pickCells(bulkCells, nbk, prng).forEach(function (cell) {
-      vacDot(siteX(cell % nCols), rowY(2 + Math.floor(cell / nCols)),
-             'bulk', acc.P.bulk, accMode, svg);
-    });
+    var bulkTop = rowY(2) - 0.42 * t1 * pxNm;
+    var bulkBottom = Math.min(y0 + fh - 8,
+                              rowY(Math.max(2, nRows - 1)) + 0.42 * t1 * pxNm);
+    sv('rect', { x: x0 + 2, y: bulkTop, width: fw - 4,
+      height: Math.max(0, bulkBottom - bulkTop),
+      style: 'fill:var(--cBulk);opacity:' + coreOpacity.toFixed(3)
+        + ';stroke:none' }, svg);
 
     sv('line', { x1: x0 + 10, x2: x0 + 10, y1: y0 + fh - 10 - pxNm,
       y2: y0 + fh - 10, style: 'stroke:var(--ink);stroke-width:2' }, svg);
@@ -1024,8 +1021,7 @@
     lg2 += '<span>' + (accMode
       ? 'fill strength = P(CO₂ refill); hollow = locked'
       : 'dot = one vacancy (window)') + '</span>';
-    lg2 += '<span>1 disc dot ≈ ' + ratio + ' vacanc'
-      + (ratio === 1 ? 'y' : 'ies') + ' (0.65 nm slice)</span>';
+    lg2 += '<span>disc core = bulk occupation</span>';
     el.smPvLegend.innerHTML = lg2;
 
     var shellTheta = (geom.N_s + geom.N_ss)
@@ -1037,7 +1033,7 @@
       + f2(out.umol_g.bulk) + ' μmol-O/g at θ = ' + thf(out.theta.bulk)
       + '. Surface row: ' + (pat.sampled
         ? 'sampled Monte Carlo configuration.'
-        : 'ideal-preview draw — run the model for the sampled arrangement.');
+        : 'ideal-preview draw. Run the model for the sampled arrangement.');
   }
 
   function exportParticleSvg() {

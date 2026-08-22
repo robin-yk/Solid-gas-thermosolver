@@ -184,8 +184,8 @@ subsurface O layer, or bulk. Canonical, not grand-canonical: a 30-minute H2
 reduction is not guaranteed to be at equilibrium with the gas, so the total is
 taken as a fixed input rather than predicted.
 
-The architecture keeps the Monte Carlo honest about particle size. Surface
-vacancies interact (short-range pair table along and across the bridging-O
+The surface Monte Carlo is independent of particle size. Surface vacancies
+interact through a short-range pair table along and across the bridging-O
 rows), so the surface isotherm theta_s(mu_V) is sampled by canonical swap
 Metropolis on a representative slab with Widom insertion supplying mu_V. The
 particle-scale split then equalises mu_V over the *real* geometric site
@@ -196,50 +196,42 @@ the exact site-exclusion isotherm. Because the isotherm depends only on
 temperature and energetics, one run serves every inventory and particle size;
 inventory and geometry changes re-solve instantly in the browser.
 
-At the flagship condition (95 umol-O/g, 600 C, sX energies) the model gives
-surface 2.7 (pinned at the 20% reconstruction threshold), subsurface 52.0,
-bulk 40.3 umol-O/g at mu_V = 0.826 eV - the surface saturates early and the
-inventory is forced deep, which is the accessibility story of the paper in
-equilibrium form. Warnings mark the model's edges: surface at the
-reconstruction cap, subsurface beyond the dilute regime (a heavily reduced
-shell, not isolated point defects), and x approaching the shear-plane range.
+At the flagship condition (95 umol-O/g, 600 C, sX energies), the calculated
+surface occupation crosses the reported 17-20% reconstruction-onset interval.
+The engine does not clip the coverage. It reports the distribution as a
+conditional extrapolation of the unreconstructed (1x1) surface Hamiltonian,
+because reconstructed-phase energetics have not been implemented. Additional
+warnings mark subsurface occupation beyond the dilute regime (a heavily
+reduced shell, not isolated point defects) and x approaching the shear-plane
+range.
 
-A particle cross-section panel puts the distribution in real space. The
-disc is the particle to scale - deliberately: the 0.65 nm shell is not
-resolvable on a 0.9 um sphere, which is the message. A magnified window
-shows the outer nanometres with the surface row taken from the sampled
-Monte Carlo configuration (its 4-5-site spacing statistics survive into
-the picture; each isotherm point carries its closing surface snapshot,
-parity-tested as integers), the subsurface layer as a nearly continuous
-band at 96% occupancy - the reduced shell, literally visible - and the
-dilute bulk at expected-count seeded positions. A depth profile with an
-axis break restates it quantitatively: 57.6% of the flagship inventory
-within 0.65 nm of the surface at 81% local depletion. A toggle recolours
-vacancies by CO2 refill probability, and the figure exports as a
-standalone SVG with theme variables resolved.
+A particle cross-section panel shows the three equilibrium site classes as
+concentric regions of a spherical particle. The surface row comes from the
+sampled Monte Carlo configuration. The subsurface row uses its calculated
+class occupancy. The core uses a continuous fill keyed to the bulk-class
+occupancy. A depth plot reports the same three class averages. A toggle
+recolours vacancies by CO2 refill probability, and the figure exports as a
+standalone SVG.
 
 The two workspaces are bridged. An "Oxygen environment" card in the defect
-rail takes the equilibrium workspace's charge - gas, pressure, volume,
-solid - re-solves it with the gas-solid Gibbs engine at the defect
+rail takes the equilibrium workspace's gas, pressure, volume and solid,
+then re-solves the charge with the gas-solid Gibbs engine at the defect
 temperature, and tiers the verdict for the defect model
 (solidgas/statmech.py::phase_validity, ported to the browser and
 parity-tested on real equilibria): rutile alone is "stable" with the
 smallest reduced-phase KKT cost per mole of oxygen as the margin; rutile
 coexisting with a reduced phase is "on the reduction boundary"; an
-assemblage without rutile is "invalid" - thermodynamics predicts a Magneli
-phase, so a fixed measured inventory in rutile is metastable at best, and
-the results panel says so in red. This is what keeps the tab from being a
-toy Monte Carlo: the defect model is bounded by the phase thermodynamics
-next door.
+assemblage without rutile is "invalid". Thermodynamics then predicts a
+Magneli phase, and a fixed measured inventory in rutile is metastable. The
+results panel reports that condition in red.
 
 A CO2-accessibility layer sits on top of the distribution: first-order
 refill per class, k_c = A_c p^m exp(-Ea_c/kT), P_c = 1 - exp(-k_c t), with
-the recoverable fraction f_rec as the headline output (39.3% at the
-flagship with the placeholder kinetics). The kinetics are declared
-placeholders in the JSON and on the page - the prefactors are effective
-values, since deeper classes are transport-limited - and a test refuses to
-let that disclosure disappear. The workspace's main figure sweeps total
-inventory: surface plateaus at the cap, subsurface saturates, bulk takes
+the recoverable fraction f_rec as the headline output. The JSON and page
+identify the kinetics as placeholders. The prefactors are effective values
+because deeper classes are transport-limited. A test preserves that
+disclosure. The workspace's main figure sweeps total
+inventory: surface follows the sampled isotherm, subsurface and bulk take
 the balance, and the accessible curve falls away from the total; a slot for
 measured CO2-recovery points overlays experiment on the same axes. The
 dielectric card carries the correlation measured in this work: a linear
@@ -261,7 +253,8 @@ Every parameter is data, not code: `rutile_dft.json` holds the layer energies
 surface < subsurface < bulk ordering survives the functional), the surface
 ordering constraints the pair table is calibrated to (Birschitzky et al., npj
 Comput. Mater. 10 (2024): spacings of 1-2 sites suppressed, modal 4-5,
-critical coverage ~17%, reconstruction ~20%, cutoff ~10 A), and diffusion
+experimental average reconstruction onset ~17%, DFT transition ~20%, local
+vacancy-rich coverage up to ~20%, cutoff ~10 A), and diffusion
 barriers stored for a later kinetic version (Iddir et al. 2010; Wang et al.
 2010). When project DFT numbers arrive they replace the JSON; nothing is
 re-fitted in code. Explicit Ti3+ polaron variables, CO2-accessibility
@@ -387,14 +380,14 @@ The legacy pages below remain reachable from the solver's **Legacy** tab, labell
 with why they are retired; `portal.html` stays in the tree for history but is no
 longer the root.
 
-**`oxide_tool.html` &mdash; oxide reduction under a reacting gas.** The Gibbs minimisation, in the
+**`oxide_tool.html`: oxide reduction under a reacting gas.** The Gibbs minimisation, in the
 browser. Ti&ndash;O and Ce&ndash;O under a CO2/H2 feed; the phase assemblage is an output. Carries
 its own verification tab (the same condition solved by the oxygen-potential route, with the
 difference shown), the coefficients it is actually running on, the element balance, the solver's
 own state, the full derivation, and the solver source printed from the running page. Self-contained:
 no external requests.
 
-**`tiox.html` &mdash; the oxygen-potential dashboard.** The fast route, swept continuously across
+**`tiox.html`: the oxygen-potential dashboard.** The fast route, swept continuously across
 temperature with the phase boundaries drawn. Its reported values are read from `results.json`, not
 recomputed there, and a test compares the embedded copy against the file so the page and the table
 cannot drift apart.
