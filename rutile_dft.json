@@ -35,6 +35,28 @@
     "note": "Beyond ~20% bridging-O vacancy coverage the (1x2) reconstruction takes over; the model pins surface content at the threshold instead of describing the reconstructed phase. x_max is the approximate rutile point-defect range before crystallographic shear planes."
   },
 
+  "co2_kinetics": {
+    "Ea_eV": {"surface": 0.45, "subsurface": 1.25, "bulk": 2.10},
+    "A_eff_per_s_atm": {"surface": 1e13, "subsurface": 3e5, "bulk": 1e5},
+    "p_order_m": 1.0,
+    "defaults": {"exposure_s": 300, "p_CO2_atm": 0.20, "T_reox_C": 600},
+    "note": "Placeholder effective kinetics: k_c = A_c p^m exp(-Ea_c/kT), P_c(t) = 1 - exp(-k_c t). The barriers are the first-sketch values; the prefactors are EFFECTIVE, far below an attempt frequency for the deeper classes because subsurface and bulk refill are transport-limited, and are set to give a plausible recovery pattern at 600 C / 300 s / 0.2 atm (surface complete, subsurface partial, bulk negligible). Replace with fitted or DFT values; none of these numbers is a literature result."
+  },
+
+  "dielectric_correlation": {
+    "a_per_umol_g": null,
+    "b": null,
+    "eps_prime": null,
+    "note": "Empirical correlation from this work: eps'' = a * VO_total + b; tan delta = eps''/eps'. Set a and b (and eps_prime) from the experimental fit; the card stays blank until they are set."
+  },
+
+  "experimental_recovery": {
+    "points": [],
+    "schema": {"VO_total_umol_g": "x", "recovered_umol_g": "y",
+               "label": "optional"},
+    "note": "Measured CO2 recovery for the overlay on the sweep plot; empty until digitised from experiment."
+  },
+
   "diffusion_eV": {
     "bulk_c_axis": 0.65,
     "surface_001": 1.19,

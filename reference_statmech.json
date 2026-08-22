@@ -732,5 +732,55 @@
   ],
   "E_mean_eV": 0.9386331294087757,
   "mu_exact_eV": 0.4779671294438069
- }
+ },
+ "co2_flagship": [
+  {
+   "T_reox_C": 600,
+   "exposure_s": 30,
+   "p_CO2_atm": 0.2,
+   "P": {
+    "surface": 1.0,
+    "subsurface": 0.10392612229298022,
+    "bulk": 4.540002045947473e-07
+   },
+   "accessible_umol_g": 8.113695604067088,
+   "f_recoverable": 0.08540732214807462
+  },
+  {
+   "T_reox_C": 600,
+   "exposure_s": 300,
+   "p_CO2_atm": 0.2,
+   "P": {
+    "surface": 1.0,
+    "subsurface": 0.6662370158093471,
+    "bulk": 4.539992770730343e-06
+   },
+   "accessible_umol_g": 37.34382036751014,
+   "f_recoverable": 0.393092845973791
+  },
+  {
+   "T_reox_C": 600,
+   "exposure_s": 3000,
+   "p_CO2_atm": 0.2,
+   "P": {
+    "surface": 1.0,
+    "subsurface": 0.999982845356463,
+    "bulk": 4.539900019948636e-05
+   },
+   "accessible_umol_g": 54.6941926438282,
+   "f_recoverable": 0.5757283436192443
+  },
+  {
+   "T_reox_C": 700,
+   "exposure_s": 300,
+   "p_CO2_atm": 0.2,
+   "P": {
+    "surface": 1.0,
+    "subsurface": 0.9976414785127019,
+    "bulk": 7.990820816463331e-05
+   },
+   "accessible_umol_g": 54.57387501949681,
+   "f_recoverable": 0.5744618423104928
+  }
+ ]
 }

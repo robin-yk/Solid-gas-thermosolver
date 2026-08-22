@@ -37,6 +37,11 @@ for (const c of spec.mc_cases) {
 for (const c of spec.pipelines) {
   const res = SM.runFull(P, { T_C: c.T_C, VO_total: c.VO_total,
                               zero_pairs: !!c.zero_pairs, mc: c.mc });
+  const kt = SM.KB_EV * (c.T_C + 273.15);
+  const eps = SM.energetics(P).eps;
+  const fn = SM.thetaSInterp(res.isotherm, eps[0], kt);
+  const sw = SM.sweep(P, c.T_C, res.geometry, spec.sweep_vo,
+                      { theta_s_fn: fn, eps: eps });
   out.pipelines.push({
     name: c.name,
     mu_V_eV: res.mu_V_eV,
@@ -46,6 +51,8 @@ for (const c of spec.pipelines) {
     surface_cap_bound: res.surface_cap_bound,
     warn_kinds: res.warnings.map(w => w.kind),
     spacing: res.spacing,
+    accessibility: res.accessibility,
+    sweep: sw,
     isotherm: res.isotherm.map(q => ({
       filling: q.filling, theta_s: q.theta_s, theta_ss: q.theta_ss,
       theta_b: q.theta_b, mu_eV: q.mu_eV, E_mean_eV: q.E_mean_eV,

@@ -239,6 +239,29 @@ def micro3_case(ls, n_vac, pair, eps, t_c):
             'mu_exact_eV': float(-kt * mlog(z1 / z))}
 
 
+# ------------------------------------------------- CO2 accessibility
+
+def co2_accessibility(umol_by_class, t_reox_c, exposure_s, p_co2_atm):
+    """Same closed form as the engine, evaluated at 50 digits."""
+    kin = P['co2_kinetics']
+    kt = KB_EV * (mpf(str(t_reox_c)) + mpf('273.15'))
+    pf = mpf(str(p_co2_atm)) ** mpf(str(kin['p_order_m']))
+    probs = {}
+    acc = mpf(0)
+    tot = mpf(0)
+    for c in ('surface', 'subsurface', 'bulk'):
+        k = (mpf(str(kin['A_eff_per_s_atm'][c])) * pf
+             * mexp(-mpf(str(kin['Ea_eV'][c])) / kt))
+        prob = 1 - mexp(-k * mpf(str(exposure_s)))
+        probs[c] = float(prob)
+        acc += mpf(str(umol_by_class[c])) * prob
+        tot += mpf(str(umol_by_class[c]))
+    return {'T_reox_C': t_reox_c, 'exposure_s': exposure_s,
+            'p_CO2_atm': p_co2_atm, 'P': probs,
+            'accessible_umol_g': float(acc),
+            'f_recoverable': float(acc / tot)}
+
+
 # ------------------------------------------------------------ sfc32 spec
 
 def sfc32_first(seed, count):
@@ -280,6 +303,12 @@ def main():
 
     eps_sx = [float(e) for e in eps_of('sx')]
     pair = P['surface_ordering']['pair_eV']['along_row']
+    kin_d = P['co2_kinetics']['defaults']
+    co2_rows = [co2_accessibility(flagship['umol_g'], kin_d['T_reox_C'],
+                                  t, kin_d['p_CO2_atm'])
+                for t in (30, 300, 3000)]
+    co2_rows.append(co2_accessibility(flagship['umol_g'], 700, 300,
+                                      kin_d['p_CO2_atm']))
 
     doc = {
         'generated_by': 'oracle_statmech.py',
@@ -297,6 +326,7 @@ def main():
             **ideal_ensemble([48, 48, 96], eps_sx, 600, 14)),
         'ring_case': ring_case(10, 3, pair, 600),
         'micro3_case': micro3_case(8, 4, pair, eps_sx, 600),
+        'co2_flagship': co2_rows,
     }
     with open('reference_statmech.json', 'w') as fh:
         json.dump(doc, fh, indent=1)

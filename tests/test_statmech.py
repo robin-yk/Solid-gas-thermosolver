@@ -247,6 +247,90 @@ def test_spacing_statistics_sit_in_the_literature_window():
     assert (hist[1] + hist[2]) / tot < 0.08
 
 
+# --------------------------------------------------------- CO2 layer
+
+def test_accessibility_matches_oracle_at_flagship():
+    for ref in REF['co2_flagship']:
+        a = S.accessibility(P, REF['flagship']['umol_g'],
+                            kin={'exposure_s': ref['exposure_s'],
+                                 'T_reox_C': ref['T_reox_C'],
+                                 'p_CO2_atm': ref['p_CO2_atm']})
+        for c in ('surface', 'subsurface', 'bulk'):
+            assert a['P'][c] == pytest.approx(ref['P'][c], rel=1e-12,
+                                              abs=1e-15), c
+        assert a['accessible_umol_g'] == pytest.approx(
+            ref['accessible_umol_g'], rel=1e-12)
+        assert a['f_recoverable'] == pytest.approx(
+            ref['f_recoverable'], rel=1e-12)
+
+
+def test_accessibility_limits():
+    u = REF['flagship']['umol_g']
+    z = S.accessibility(P, u, kin={'exposure_s': 0})
+    assert all(v == 0.0 for v in z['P'].values())
+    assert z['accessible_umol_g'] == 0.0
+    full = S.accessibility(P, u, kin={'exposure_s': 1e30})
+    assert full['P']['surface'] == 1.0
+    assert full['P']['subsurface'] == 1.0
+    off = S.accessibility(P, u, kin={'A_eff_per_s_atm': {
+        'surface': 0.0, 'subsurface': 0.0, 'bulk': 0.0}})
+    assert off['accessible_umol_g'] == 0.0
+
+
+def test_accessibility_rises_with_reoxidation_temperature():
+    u = REF['flagship']['umol_g']
+    lo = S.accessibility(P, u, kin={'T_reox_C': 500})
+    hi = S.accessibility(P, u, kin={'T_reox_C': 700})
+    assert hi['P']['subsurface'] > lo['P']['subsurface']
+    assert hi['f_recoverable'] > lo['f_recoverable']
+
+
+def test_sweep_agrees_with_pointwise_solutions():
+    g = S.geometry(P)
+    rows = S.sweep(P, 600.0, g, [10.0, 95.0, 150.0])
+    for row in rows:
+        d = S.distribute(P, 600.0, row['VO_total_umol_g'], g)
+        a = S.accessibility(P, d['umol_g'])
+        assert row['surface'] == d['umol_g']['surface']
+        assert row['subsurface'] == d['umol_g']['subsurface']
+        assert row['bulk'] == d['umol_g']['bulk']
+        assert row['accessible'] == a['accessible_umol_g']
+
+
+def test_sweep_tells_the_accessibility_story():
+    """Surface plateaus at the reconstruction cap and the recoverable
+    fraction falls as the inventory is forced deeper - the paper's story
+    as a curve."""
+    g = S.geometry(P)
+    rows = S.sweep(P, 600.0, g, [2.0, 20.0, 60.0, 95.0, 150.0])
+    cap_umol = P['saturation']['surface_cap_coverage'] * g['N_s']
+    assert rows[-1]['surface'] == pytest.approx(cap_umol, rel=1e-9)
+    assert rows[-2]['surface'] == pytest.approx(cap_umol, rel=1e-9)
+    fr = [r['f_recoverable'] for r in rows]
+    assert fr[0] > 0.95
+    assert fr[-1] < fr[-2] < fr[2]
+    acc = [r['accessible'] for r in rows]
+    assert all(b >= a for a, b in zip(acc, acc[1:]))
+
+
+def test_dielectric_blank_until_coefficients_set():
+    import copy
+    assert S.dielectric(P, 95.0) is None
+    q = copy.deepcopy(P)
+    q['dielectric_correlation'].update(
+        a_per_umol_g=0.0012, b=0.03, eps_prime=2.0)
+    d = S.dielectric(q, 95.0)
+    assert d['eps2'] == pytest.approx(0.0012 * 95 + 0.03)
+    assert d['tan_delta'] == pytest.approx((0.0012 * 95 + 0.03) / 2.0)
+
+
+def test_kinetics_are_declared_placeholders():
+    """The JSON must keep saying these are not literature numbers."""
+    note = P['co2_kinetics']['note']
+    assert 'Placeholder' in note or 'placeholder' in note
+    assert 'EFFECTIVE' in note or 'effective' in note
+
+
 def test_mode_note_discloses_scope():
     out = S.run_full(P, mc=MC_SMALL)
     assert out['method'] == 'canonical_statmech'

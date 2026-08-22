@@ -515,6 +515,80 @@
              P_gap_le_2: near / tot, pairs_sampled: tot };
   }
 
+  /* ------------------------------------------------------- CO2 layer */
+
+  function co2KineticsParams(p, kin) {
+    var base = p.co2_kinetics;
+    var d = { Ea_eV: { surface: base.Ea_eV.surface,
+                       subsurface: base.Ea_eV.subsurface,
+                       bulk: base.Ea_eV.bulk },
+              A_eff_per_s_atm: { surface: base.A_eff_per_s_atm.surface,
+                                 subsurface: base.A_eff_per_s_atm.subsurface,
+                                 bulk: base.A_eff_per_s_atm.bulk },
+              p_order_m: base.p_order_m,
+              exposure_s: base.defaults.exposure_s,
+              p_CO2_atm: base.defaults.p_CO2_atm,
+              T_reox_C: base.defaults.T_reox_C };
+    if (kin) {
+      for (var k in kin) {
+        if (k === 'Ea_eV' || k === 'A_eff_per_s_atm') {
+          for (var c in kin[k]) d[k][c] = kin[k][c];
+        } else {
+          d[k] = kin[k];
+        }
+      }
+    }
+    return d;
+  }
+
+  function accessibility(p, umolByClass, kin) {
+    var d = co2KineticsParams(p, kin);
+    var kt = KB_EV * (d.T_reox_C + 273.15);
+    var pf = Math.pow(d.p_CO2_atm, d.p_order_m);
+    var probs = {};
+    var acc = 0.0, tot = 0.0;
+    var order = ['surface', 'subsurface', 'bulk'];
+    for (var i = 0; i < order.length; i++) {
+      var c = order[i];
+      var k = d.A_eff_per_s_atm[c] * pf * Math.exp(-d.Ea_eV[c] / kt);
+      var x = k * d.exposure_s;
+      var prob = x > 700.0 ? 1.0 : 1.0 - Math.exp(-x);
+      probs[c] = prob;
+      acc += umolByClass[c] * prob;
+      tot += umolByClass[c];
+    }
+    return { P: probs, accessible_umol_g: acc,
+             f_recoverable: tot ? acc / tot : 0.0, params: d };
+  }
+
+  function dielectric(p, voTotal) {
+    var c = p.dielectric_correlation;
+    if (c.a_per_umol_g == null || c.b == null) return null;
+    var e2 = c.a_per_umol_g * voTotal + c.b;
+    var out = { eps2: e2 };
+    if (c.eps_prime) out.tan_delta = e2 / c.eps_prime;
+    return out;
+  }
+
+  function sweep(p, tC, geom, voList, opts) {
+    opts = opts || {};
+    var rows = [];
+    for (var i = 0; i < voList.length; i++) {
+      var d = distribute(p, tC, voList[i], geom,
+                         { theta_s_fn: opts.theta_s_fn, preset: opts.preset,
+                           eps: opts.eps });
+      var a = accessibility(p, d.umol_g, opts.kin);
+      rows.push({ VO_total_umol_g: voList[i],
+                  surface: d.umol_g.surface,
+                  subsurface: d.umol_g.subsurface,
+                  bulk: d.umol_g.bulk,
+                  accessible: a.accessible_umol_g,
+                  f_recoverable: a.f_recoverable,
+                  mu_V_eV: d.mu_V_eV });
+    }
+    return rows;
+  }
+
   function runFull(p, opts) {
     opts = opts || {};
     var tC = opts.T_C != null ? opts.T_C : p.defaults.T_C;
@@ -533,6 +607,7 @@
     out.geometry = geom;
     out.isotherm = pts;
     out.spacing = spacingSummary(pts, out.theta.surface);
+    out.accessibility = accessibility(p, out.umol_g, opts.kin);
     return out;
   }
 
@@ -544,5 +619,7 @@
            mcRun: mcRun, isothermScan: isothermScan, fd: fd,
            energetics: energetics, thetaSInterp: thetaSInterp,
            distribute: distribute, spacingSummary: spacingSummary,
-           runFull: runFull };
+           co2KineticsParams: co2KineticsParams,
+           accessibility: accessibility, dielectric: dielectric,
+           sweep: sweep, runFull: runFull };
 });

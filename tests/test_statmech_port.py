@@ -75,13 +75,17 @@ def _py_mc(c):
                     hist_every=c['hist_every'], blocks=c['blocks'])
 
 
+SWEEP_VO = [10.0, 60.0, 95.0, 150.0]
+
+
 @pytest.fixture(scope='module')
 def pair(tmp_path_factory):
     assert shutil.which('node') is not None, \
         'node is required to run the release gate'
     spec = tmp_path_factory.mktemp('spec') / 'statmech_spec.json'
     spec.write_text(json.dumps({'mc_cases': MC_CASES,
-                                'pipelines': PIPELINES}))
+                                'pipelines': PIPELINES,
+                                'sweep_vo': SWEEP_VO}))
     r = subprocess.run(['node', str(HARNESS), str(ROOT), str(spec)],
                        capture_output=True, text=True, timeout=600)
     assert r.returncode == 0, f'harness failed:\n{r.stderr[-2000:]}'
@@ -91,9 +95,14 @@ def pair(tmp_path_factory):
     for c in PIPELINES:
         if c['mc'] is None:
             continue                       # shipped size: JS only, see below
-        py['pipelines'][c['name']] = S.run_full(
-            P, t_c=c['T_C'], vo_total=c['VO_total'],
-            zero_pairs=c['zero_pairs'], mc=c['mc'])
+        out = S.run_full(P, t_c=c['T_C'], vo_total=c['VO_total'],
+                         zero_pairs=c['zero_pairs'], mc=c['mc'])
+        kt = S.KB_EV * (c['T_C'] + 273.15)
+        eps = S.energetics(P)['eps']
+        fn = S.theta_s_interp(out['isotherm'], eps[0], kt)
+        out['sweep'] = S.sweep(P, c['T_C'], out['geometry'], SWEEP_VO,
+                               theta_s_fn=fn, eps=eps)
+        py['pipelines'][c['name']] = out
     return py, js
 
 
@@ -184,6 +193,50 @@ def test_geometry_port_matches_oracle(pair):
         REF['flagship']['theta']['bulk'], rel=1e-9)
 
 
+def test_accessibility_and_sweep_parity(pair):
+    """The CO2 layer and the sweep rows, port vs reference."""
+    py, js = pair
+    for row in js['pipelines']:
+        if row['name'] not in py['pipelines']:
+            continue
+        ref = py['pipelines'][row['name']]
+        a, b = row['accessibility'], ref['accessibility']
+        for c in ('surface', 'subsurface', 'bulk'):
+            assert a['P'][c] == pytest.approx(b['P'][c], rel=1e-12,
+                                              abs=1e-15), c
+        assert a['accessible_umol_g'] == pytest.approx(
+            b['accessible_umol_g'], rel=1e-12)
+        assert a['f_recoverable'] == pytest.approx(
+            b['f_recoverable'], rel=1e-12)
+        for ra, rb in zip(row['sweep'], ref['sweep']):
+            assert ra['VO_total_umol_g'] == rb['VO_total_umol_g']
+            for k in ('surface', 'subsurface', 'bulk', 'accessible',
+                      'f_recoverable'):
+                assert ra[k] == pytest.approx(rb[k], rel=1e-12,
+                                              abs=1e-15), k
+
+
+def test_shipped_accessibility_matches_the_oracle(pair):
+    """The default kinetics on the default distribution: the 300 s oracle
+    row certifies the JS chain (the flagship split is cap-bound analytic)."""
+    _, js = pair
+    row = next(r for r in js['pipelines'] if r['name'] == 'shipped_default')
+    ref = next(r for r in REF['co2_flagship'] if r['exposure_s'] == 300)
+    a = row['accessibility']
+    for c in ('surface', 'subsurface', 'bulk'):
+        assert a['P'][c] == pytest.approx(ref['P'][c], rel=1e-9,
+                                          abs=1e-12), c
+    assert a['accessible_umol_g'] == pytest.approx(
+        ref['accessible_umol_g'], rel=1e-9)
+    assert a['f_recoverable'] == pytest.approx(
+        ref['f_recoverable'], rel=1e-9)
+    # the 95 row of the shipped sweep is the flagship distribution
+    r95 = next(r for r in row['sweep'] if r['VO_total_umol_g'] == 95.0)
+    for k in ('surface', 'subsurface', 'bulk'):
+        assert r95[k] == pytest.approx(REF['flagship']['umol_g'][k],
+                                       rel=1e-9), k
+
+
 # ------------------------------------------------------------ page gates
 
 def test_page_inlines_the_statmech_stack():
@@ -193,11 +246,12 @@ def test_page_inlines_the_statmech_stack():
     html = page.read_text()
     assert (ROOT / 'rutile_dft.json').read_text().strip() in html, \
         'page is stale against rutile_dft.json - run build_ti_solver.py'
-    for src in ('statmech.js', 'statmech_worker.js', 'statmech_ui.js'):
+    for src in ('statmech.js', 'statmech_worker.js', 'statmech_ui.js',
+                'equations_statmech.html'):
         assert (ROOT / src).read_text() in html, \
             f'page is stale against {src} - run build_ti_solver.py'
     for token in ('__SM_DATA__', '__SM_ENGINE__', '__SM_WORKER__',
-                  '__SM_UI__'):
+                  '__SM_UI__', '__SM_EQS__'):
         assert token not in html
 
 
@@ -206,7 +260,9 @@ def test_page_carries_the_defect_workspace_and_disclosures():
     assert 'Defect stat mech' in html
     for phrase in ('Li, Guo &amp; Robertson', 'Birschitzky',
                    'reconstruction threshold', 'not reduction kinetics',
-                   'rutile_dft.json', 'Widom insertion'):
+                   'rutile_dft.json', 'Widom insertion',
+                   'Placeholder kinetics', 'Recoverable fraction',
+                   '-accessible inventory', '(S1)', '(S12)'):
         assert phrase in html, f'disclosure lost: {phrase}'
     # the dataset is swappable, and the page says so
     assert 'replaced' in html and 're-fitted' in html

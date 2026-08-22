@@ -554,9 +554,87 @@ def spacing_summary(points, theta_s):
             'P_gap_le_2': near / tot, 'pairs_sampled': tot}
 
 
+# ------------------------------------------------------------ CO2 layer
+
+def co2_kinetics_params(p, kin=None):
+    """Kinetics parameters with per-call overrides; all placeholders until
+    fitted - the JSON note says so and the UI repeats it."""
+    base = p['co2_kinetics']
+    d = {'Ea_eV': dict(base['Ea_eV']),
+         'A_eff_per_s_atm': dict(base['A_eff_per_s_atm']),
+         'p_order_m': base['p_order_m'],
+         'exposure_s': base['defaults']['exposure_s'],
+         'p_CO2_atm': base['defaults']['p_CO2_atm'],
+         'T_reox_C': base['defaults']['T_reox_C']}
+    if kin:
+        for k, v in kin.items():
+            if k in ('Ea_eV', 'A_eff_per_s_atm'):
+                d[k].update(v)
+            else:
+                d[k] = v
+    return d
+
+
+def accessibility(p, umol_by_class, kin=None):
+    """First-order refill of each site class during one CO2 exposure:
+    k_c = A_c p^m exp(-Ea_c/kT), P_c(t) = 1 - exp(-k_c t)."""
+    d = co2_kinetics_params(p, kin)
+    kt = KB_EV * (d['T_reox_C'] + 273.15)
+    pf = d['p_CO2_atm'] ** d['p_order_m']
+    probs = {}
+    acc = 0.0
+    tot = 0.0
+    for c in ('surface', 'subsurface', 'bulk'):
+        k = d['A_eff_per_s_atm'][c] * pf * math.exp(-d['Ea_eV'][c] / kt)
+        x = k * d['exposure_s']
+        prob = 1.0 if x > 700.0 else 1.0 - math.exp(-x)
+        probs[c] = prob
+        acc += umol_by_class[c] * prob
+        tot += umol_by_class[c]
+    return {'P': probs, 'accessible_umol_g': acc,
+            'f_recoverable': acc / tot if tot else 0.0,
+            'params': d}
+
+
+def dielectric(p, vo_total):
+    """Empirical eps'' = a*VO + b; None until the coefficients are set."""
+    c = p['dielectric_correlation']
+    if c['a_per_umol_g'] is None or c['b'] is None:
+        return None
+    e2 = c['a_per_umol_g'] * vo_total + c['b']
+    out = {'eps2': e2}
+    if c.get('eps_prime'):
+        out['tan_delta'] = e2 / c['eps_prime']
+    return out
+
+
+def sweep(p, t_c, geom, vo_list, theta_s_fn=None, preset=None, eps=None,
+          kin=None):
+    """Distribution and accessibility along a total-inventory axis.
+
+    Instant once the isotherm exists - each point is one scalar matching
+    solve. This is the figure the workspace is for: surface plateaus at
+    the reconstruction cap, subsurface saturates, bulk takes the balance,
+    and the accessible curve falls away from the total."""
+    rows = []
+    for vo in vo_list:
+        d = distribute(p, t_c, vo, geom, theta_s_fn=theta_s_fn,
+                       preset=preset, eps=eps)
+        a = accessibility(p, d['umol_g'], kin)
+        rows.append({'VO_total_umol_g': vo,
+                     'surface': d['umol_g']['surface'],
+                     'subsurface': d['umol_g']['subsurface'],
+                     'bulk': d['umol_g']['bulk'],
+                     'accessible': a['accessible_umol_g'],
+                     'f_recoverable': a['f_recoverable'],
+                     'mu_V_eV': d['mu_V_eV']})
+    return rows
+
+
 def run_full(p, t_c=None, vo_total=None, d_um=None, bet_m2_g=None,
              ss_layers=None, preset=None, eps=None, seed=None, quality=1.0,
-             zero_pairs=False, ordering=None, mc=None, progress=None):
+             zero_pairs=False, ordering=None, mc=None, kin=None,
+             progress=None):
     """Isotherm scan plus particle-scale matching in one call."""
     if t_c is None:
         t_c = p['defaults']['T_C']
@@ -574,4 +652,5 @@ def run_full(p, t_c=None, vo_total=None, d_um=None, bet_m2_g=None,
     out['geometry'] = geom
     out['isotherm'] = pts
     out['spacing'] = spacing_summary(pts, out['theta']['surface'])
+    out['accessibility'] = accessibility(p, out['umol_g'], kin)
     return out
