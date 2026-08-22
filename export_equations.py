@@ -1,10 +1,14 @@
-"""Render the equation registry as an inline-SVG HTML fragment for the page.
+"""Render the equation registries as inline-SVG HTML fragments for the page.
 
 Each equation is typeset by matplotlib mathtext (Computer Modern) and saved
 as a standalone SVG with the ink colour replaced by currentColor, so the
 glyphs follow the page theme. Element ids are prefixed per equation so the
-inlined SVGs cannot collide. Output: equations_method.html, inlined into
-ti_solver.html by build_ti_solver.py.
+inlined SVGs cannot collide; the stat-mech fragment additionally prefixes
+its glyph pool because both fragments live in the same document.
+
+Outputs, inlined by build_ti_solver.py:
+    equations_method.html     (1)-(30), thermodynamic workspace Method tab
+    equations_statmech.html   (S1)-(S12), defect workspace Model panel
 """
 
 import io
@@ -14,7 +18,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from equations_registry import R
+from equations_registry import R as R_THERMO
+from equations_registry_statmech import R as R_STATMECH
 
 INK = '#0b0b0b'
 
@@ -26,13 +31,11 @@ plt.rcParams.update({
 })
 
 
-GLYPHS = {}          # glyph id -> <path .../> definition, shared page-wide
-
-
-def render_svg(tex, fontsize, prefix):
-    """One equation as SVG. Glyph outlines are hoisted into the shared GLYPHS
-    pool (matplotlib's glyph ids are deterministic per glyph, so identical
-    ids carry identical outlines); only the structural ids are prefixed."""
+def render_svg(tex, fontsize, prefix, glyphs, glyph_prefix):
+    """One equation as SVG. Glyph outlines are hoisted into the fragment's
+    shared pool (matplotlib's glyph ids are deterministic per glyph, so
+    identical ids carry identical outlines); only the structural ids are
+    prefixed per equation."""
     fig = plt.figure(figsize=(0.1, 0.1))
     fig.patch.set_alpha(0.0)
     t = fig.text(0, 0, tex, fontsize=fontsize)
@@ -54,12 +57,14 @@ def render_svg(tex, fontsize, prefix):
 
     def hoist(mdefs):
         for pm in re.finditer(r'<path id="([^"]+)"[^>]*/>', mdefs.group(1)):
-            GLYPHS.setdefault(pm.group(1), pm.group(0))
+            glyphs.setdefault(pm.group(1), pm.group(0))
         return ''
     svg = re.sub(r'<defs>(.*?)</defs>', hoist, svg, flags=re.S)
 
     svg = re.sub(r'id="((?:figure|axes|patch|text)[^"]*)"',
                  f'id="{prefix}-\\1"', svg)
+    if glyph_prefix:
+        svg = svg.replace('href="#', f'href="#{glyph_prefix}')
     # Intrinsic size in px (SVG pt -> CSS px at the same number keeps the
     # 13 pt math close to the page's 15 px body text).
     m = re.search(r'width="([\d.]+)pt" height="([\d.]+)pt"', svg)
@@ -71,10 +76,11 @@ def render_svg(tex, fontsize, prefix):
     return svg
 
 
-def build_fragment():
+def build_fragment(rows, id_prefix='', glyph_prefix=''):
+    glyphs = {}
     out = []
     n = 0
-    for row in R:
+    for row in rows:
         kind = row[0]
         if kind in ('title', 'sub', 'gap'):
             continue                     # the page supplies its own heading
@@ -83,26 +89,35 @@ def build_fragment():
             out.append(f'<h3>{row[1]}</h3>')
         elif kind == 'note':
             out.append('<div class="eqnote">'
-                       + render_svg(row[1], 10.5, f'eqn{n}') + '</div>')
+                       + render_svg(row[1], 10.5, f'{id_prefix}eqn{n}',
+                                    glyphs, glyph_prefix) + '</div>')
         elif kind == 'eq':
             out.append('<div class="eqrow">'
-                       + render_svg(row[1], 13, f'eqn{n}')
+                       + render_svg(row[1], 13, f'{id_prefix}eqn{n}',
+                                    glyphs, glyph_prefix)
                        + f'<span class="eqno">({row[2]})</span></div>')
         elif kind == 'boxeq':
             out.append('<div class="eqbox"><div class="eqrow">'
-                       + render_svg(row[1], 13, f'eqn{n}')
+                       + render_svg(row[1], 13, f'{id_prefix}eqn{n}',
+                                    glyphs, glyph_prefix)
                        + f'<span class="eqno">({row[2]})</span></div></div>')
+    pool = ''.join(
+        g.replace(f'id="{gid}"', f'id="{glyph_prefix}{gid}"', 1) if
+        glyph_prefix else g for gid, g in glyphs.items())
     pool = ('<svg width="0" height="0" style="position:absolute" '
-            'aria-hidden="true"><defs>' + ''.join(GLYPHS.values())
-            + '</defs></svg>')
+            'aria-hidden="true"><defs>' + pool + '</defs></svg>')
     return pool + '\n' + '\n'.join(out)
 
 
 def main():
-    frag = build_fragment()
+    frag = build_fragment(R_THERMO)
     with open('equations_method.html', 'w') as fh:
         fh.write(frag)
     print(f'equations_method.html written ({len(frag) / 1024:.0f} kB)')
+    frag = build_fragment(R_STATMECH, id_prefix='sm-', glyph_prefix='sm-')
+    with open('equations_statmech.html', 'w') as fh:
+        fh.write(frag)
+    print(f'equations_statmech.html written ({len(frag) / 1024:.0f} kB)')
 
 
 if __name__ == '__main__':

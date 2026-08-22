@@ -204,6 +204,20 @@ equilibrium form. Warnings mark the model's edges: surface at the
 reconstruction cap, subsurface beyond the dilute regime (a heavily reduced
 shell, not isolated point defects), and x approaching the shear-plane range.
 
+A CO2-accessibility layer sits on top of the distribution: first-order
+refill per class, k_c = A_c p^m exp(-Ea_c/kT), P_c = 1 - exp(-k_c t), with
+the recoverable fraction f_rec as the headline output (39.3% at the
+flagship with the placeholder kinetics). The kinetics are declared
+placeholders in the JSON and on the page - the prefactors are effective
+values, since deeper classes are transport-limited - and a test refuses to
+let that disclosure disappear. The workspace's main figure sweeps total
+inventory: surface plateaus at the cap, subsurface saturates, bulk takes
+the balance, and the accessible curve falls away from the total; a slot for
+measured CO2-recovery points overlays experiment on the same axes, and an
+empirical eps'' = a*VO + b card stays blank until the fit coefficients are
+set in the JSON. Equations (S1)-(S12) are typeset into the Model panel from
+equations_registry_statmech.py.
+
 Every parameter is data, not code: `rutile_dft.json` holds the layer energies
 (Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), sX and GGA presets - the
 surface < subsurface < bulk ordering survives the functional), the surface

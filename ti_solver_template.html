@@ -98,6 +98,14 @@ a{color:var(--blue)}
 .wstab.active{color:#fff;background:var(--blue);border-color:var(--blue)}
 .swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
 .smchart{width:100%;height:auto;display:block;max-width:640px}
+.chartwrap{position:relative;max-width:820px}
+.chartwrap svg{max-width:100%}
+.smtip{position:absolute;background:var(--panel);border:1px solid var(--line);
+       border-radius:6px;padding:6px 10px;font-size:12px;pointer-events:none;
+       box-shadow:var(--shadow);white-space:nowrap;display:none;z-index:3;
+       font-variant-numeric:tabular-nums}
+.legrow{display:flex;flex-wrap:wrap;gap:14px;margin-top:6px;font-size:12px;color:var(--muted)}
+.legrow .swatch{margin-right:5px}
 </style>
 </head>
 <body>
@@ -420,6 +428,39 @@ a{color:var(--blue)}
     </div>
 
     <div class="panel pad">
+      <h3 style="margin-top:0">CO<sub>2</sub> reoxidation</h3>
+      <div class="field">
+        <label>Refill barrier E<sub>a</sub> (eV)</label>
+        <div class="trio">
+          <div><input type="number" id="smEaS" step="0.05"><div class="readout">surface</div></div>
+          <div><input type="number" id="smEaSS" step="0.05"><div class="readout">subsurface</div></div>
+          <div><input type="number" id="smEaB" step="0.05"><div class="readout">bulk</div></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Effective prefactor A (s<sup>&minus;1</sup> atm<sup>&minus;1</sup>)</label>
+        <div class="trio">
+          <div><input type="number" id="smAS" step="any"><div class="readout">surface</div></div>
+          <div><input type="number" id="smASS" step="any"><div class="readout">subsurface</div></div>
+          <div><input type="number" id="smAB" step="any"><div class="readout">bulk</div></div>
+        </div>
+      </div>
+      <div class="field pair">
+        <div><label for="smKinT">Reoxidation T</label><input type="number" id="smKinT" step="25"><div class="readout">&deg;C</div></div>
+        <div><label for="smExp">Exposure</label><input type="number" id="smExp" step="30" min="0"><div class="readout">s</div></div>
+      </div>
+      <div class="field pair">
+        <div><label for="smPCO2">CO<sub>2</sub> pressure</label><input type="number" id="smPCO2" step="0.05" min="0"><div class="readout">atm</div></div>
+        <div></div>
+      </div>
+      <div class="readout">Placeholder kinetics: first-order refill per class,
+      k<sub>c</sub> = A<sub>c</sub> p<sup>m</sup> e<sup>&minus;Ea/kT</sup>,
+      P<sub>c</sub> = 1 &minus; e<sup>&minus;kt</sup>. The prefactors are effective
+      &mdash; deeper classes are transport-limited &mdash; and none of these numbers
+      is a literature value; they are replaced when fitted or DFT kinetics arrive.</div>
+    </div>
+
+    <div class="panel pad">
       <h3 style="margin-top:0">Monte Carlo</h3>
       <div class="field pair">
         <div><label for="smQuality">Sampling</label>
@@ -453,6 +494,25 @@ a{color:var(--blue)}
       <div class="tablewrap" style="margin-top:10px"><table id="smTable"></table></div>
       <div class="readout" id="smSpacing" style="margin-top:8px"></div>
       <div id="smNotes"></div>
+    </div>
+
+    <div class="panel pad">
+      <h2>CO<sub>2</sub>-accessible inventory</h2>
+      <p class="sub">First-order refill of each site class during one CO<sub>2</sub>
+      exposure, applied to the distribution above. The curve carries the same
+      quantities along a total-inventory axis at the current temperature and
+      energetics: surface plateaus at the reconstruction threshold, the balance is
+      forced deeper, and the recoverable fraction falls.</p>
+      <div class="kpis" id="smAccKpis"></div>
+      <div class="chartwrap">
+        <svg id="smSweep" class="smchart" style="max-width:820px" viewBox="0 0 720 380"
+             role="img" aria-label="Site-class and CO2-accessible vacancy content
+             against total inventory"></svg>
+        <div class="smtip" id="smTip"></div>
+      </div>
+      <div class="legrow" id="smSweepLegend"></div>
+      <div class="readout" id="smAccNote" style="margin-top:8px"></div>
+      <div id="smCoupledNote"></div>
     </div>
 
     <div class="panel pad">
@@ -491,6 +551,10 @@ a{color:var(--blue)}
       (same-seed swap trajectories compared as integers) and to a 50-digit analytic
       oracle plus exact finite-lattice ensembles by the repository test suite
       (<code>tests/test_statmech.py</code>, <code>tests/test_statmech_port.py</code>).</div>
+      <h3 style="margin-top:24px">Formulation</h3>
+      <p class="sub">Equations (S1)&ndash;(S12), as implemented. Rendered at build time
+      from <code>equations_registry_statmech.py</code>.</p>
+      __SM_EQS__
     </div>
   </section>
 </div>
