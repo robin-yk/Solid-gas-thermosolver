@@ -429,89 +429,160 @@
     };
   }
 
-  function distribute(p, tC, voTotal, geom, opts) {
+  function phaseBoundaries(p, tC, geom, opts) {
+    /* Closed-form mu and inventory boundaries of the phase construction:
+       (1x2) onset, reconstruction complete, CS-precipitation ceiling. */
     opts = opts || {};
     var kt = KB_EV * (tC + 273.15);
     var eps = opts.eps != null ? opts.eps : energetics(p, opts.preset).eps;
-    var thetaSFn = opts.theta_s_fn || function (mu) { return fd(mu, eps[0], kt); };
+    var sp = p.surface_phases;
+    var thT = sp.theta_transition;
+    var thR = sp.theta_reconstructed_eff;
+    var thSol = p.saturation.x_max_shear / 2.0;
+    var muT = eps[0] + kt * Math.log(thT / (1.0 - thT));
+    var muCs = eps[2] + kt * Math.log(thSol / (1.0 - thSol));
+    var deepT = geom.N_ss * fd(muT, eps[1], kt)
+      + geom.N_b * fd(muT, eps[2], kt);
+    var deepCs = geom.N_ss * fd(muCs, eps[1], kt)
+      + geom.N_b * fd(muCs, eps[2], kt);
+    return { mu_t_eV: muT, mu_cs_eV: muCs,
+             theta_transition: thT, theta_reconstructed_eff: thR,
+             theta_sol: thSol,
+             VO_onset_umol_g: geom.N_s * thT + deepT,
+             VO_recon_complete_umol_g: geom.N_s * thR + deepT,
+             VO_cs_umol_g: geom.N_s * thR + deepCs };
+  }
 
-    function parts(mu) {
-      return [thetaSFn(mu), fd(mu, eps[1], kt), fd(mu, eps[2], kt)];
-    }
-    function total(mu) {
-      var t = parts(mu);
-      return geom.N_s * t[0] + geom.N_ss * t[1] + geom.N_b * t[2];
+  function distribute(p, tC, voTotal, geom, opts) {
+    /* Phase-aware matching: (1x1) lattice gas, first-order (1x2)
+       coexistence riser, reconstructed line phase, mu pinned at the CS
+       coexistence estimate with lever-rule precipitation. Line-for-line
+       port of solidgas/statmech.py::distribute. */
+    opts = opts || {};
+    var kt = KB_EV * (tC + 273.15);
+    var eps = opts.eps != null ? opts.eps : energetics(p, opts.preset).eps;
+    var b = phaseBoundaries(p, tC, geom, { eps: eps });
+    var nS = geom.N_s;
+    var thT = b.theta_transition;
+    var thR = b.theta_reconstructed_eff;
+
+    function deep(mu) {
+      return geom.N_ss * fd(mu, eps[1], kt) + geom.N_b * fd(mu, eps[2], kt);
     }
 
-    var lo = -3.0, hi = 3.0;
-    var it;
-    for (it = 0; it < 40; it++) {
-      if (total(lo) <= voTotal) break;
-      lo *= 2.0;
+    var uExt = 0.0;
+    var regime, phase, mu, ts, us, phi;
+    var it, mid;
+    if (voTotal <= b.VO_onset_umol_g) {
+      regime = 'dilute'; phase = '1x1';
+      var lo = -3.0, hi = b.mu_t_eV;
+      for (it = 0; it < 60; it++) {
+        if (nS * fd(lo, eps[0], kt) + deep(lo) <= voTotal) break;
+        lo = 2.0 * lo - hi;
+      }
+      for (it = 0; it < 200; it++) {
+        mid = 0.5 * (lo + hi);
+        if (nS * fd(mid, eps[0], kt) + deep(mid) < voTotal) lo = mid;
+        else hi = mid;
+      }
+      mu = 0.5 * (lo + hi);
+      ts = fd(mu, eps[0], kt);
+      us = nS * ts;
+      phi = 0.0;
+    } else if (voTotal < b.VO_recon_complete_umol_g) {
+      regime = 'surface_coexistence'; phase = 'coexistence';
+      mu = b.mu_t_eV;
+      us = voTotal - deep(mu);
+      ts = us / nS;
+      phi = (ts - thT) / (thR - thT);
+    } else {
+      var muLo = b.mu_t_eV, muHi = b.mu_cs_eV;
+      if (voTotal <= b.VO_cs_umol_g) {
+        regime = 'reconstructed'; phase = '1x2';
+        var target = voTotal - nS * thR;
+        for (it = 0; it < 200; it++) {
+          mid = 0.5 * (muLo + muHi);
+          if (deep(mid) < target) muLo = mid; else muHi = mid;
+        }
+        mu = 0.5 * (muLo + muHi);
+      } else {
+        regime = 'cs_coexistence'; phase = '1x2';
+        mu = b.mu_cs_eV;
+        uExt = voTotal - nS * thR - deep(mu);
+      }
+      ts = thR;
+      us = nS * thR;
+      phi = 1.0;
     }
-    for (it = 0; it < 40; it++) {
-      if (total(hi) >= voTotal) break;
-      hi *= 2.0;
-    }
-    for (it = 0; it < 200; it++) {
-      var mid = 0.5 * (lo + hi);
-      if (total(mid) < voTotal) lo = mid; else hi = mid;
-    }
-    var mu = 0.5 * (lo + hi);
-    var t3 = parts(mu);
-    var ts = t3[0], tss = t3[1], tb = t3[2];
-    var us = geom.N_s * ts, uss = geom.N_ss * tss, ub = geom.N_b * tb;
-    var tot = us + uss + ub;
+    var tss = fd(mu, eps[1], kt);
+    var tb = fd(mu, eps[2], kt);
+    var uss = geom.N_ss * tss;
+    var ub = geom.N_b * tb;
+    var tot = us + uss + ub + uExt;
     var molTi = 1e6 / p.molar_mass_g_mol;
     var x = voTotal / molTi;
+    var xDiss = (us + uss + ub) / molTi;
     var sat = p.saturation;
-    var onsetLo = p.surface_ordering.critical_coverage;
-    var onsetHi = p.surface_ordering.reconstruction_coverage;
     var warnings = [];
-    if (ts >= onsetLo) {
-      var relation = ts < onsetHi ? 'is inside' : 'exceeds';
-      warnings.push({ kind: 'surface_reconstruction',
-        text: 'Surface bridging-O vacancy coverage ' + (ts * 100).toFixed(1)
-          + '% ' + relation + ' the reported ' + (onsetLo * 100).toFixed(0)
-          + '-' + (onsetHi * 100).toFixed(0) + '% onset interval for the '
-          + 'rutile TiO2(110)-(1x2) reconstruction. The value is not clipped. '
-          + 'This distribution is a conditional extrapolation of the '
-          + 'unreconstructed (1x1) surface Hamiltonian; reconstructed-phase '
-          + 'energetics are not implemented.' });
+    if (phase === 'coexistence') {
+      warnings.push({ kind: 'surface_phase',
+        text: 'Surface is in (1x1)/(1x2) two-phase coexistence at mu_V = '
+          + mu.toFixed(3) + ' eV: ' + (phi * 100).toFixed(0)
+          + '% of the area is reconstructed to the added-row Ti2O3 phase '
+          + '(lever rule between theta = ' + thT.toFixed(2)
+          + ' and the line-phase deficiency 0.5). The (1x2) branch is a '
+          + 'zero-width line compound; cross-linked variants are not '
+          + 'distinguished.' });
+    } else if (phase === '1x2') {
+      warnings.push({ kind: 'surface_phase',
+        text: 'Surface is fully reconstructed to the (1x2) added-row Ti2O3 '
+          + 'phase: areal O deficiency 0.5 bridging-ML = ' + us.toFixed(2)
+          + ' umol-O/g at this geometry (Onishi-Iwasawa stoichiometry). '
+          + 'Surface phases beyond theta_eff = 0.5 are not modelled; the '
+          + '(1x2) branch is a zero-width line compound.' });
     }
     if (tss > sat.subsurface_dilute_warn) {
       warnings.push({ kind: 'subsurface_dense',
         text: 'Subsurface layer occupancy ' + (tss * 100).toFixed(0)
-          + '% is far beyond the dilute-defect regime; read this as a '
-          + 'heavily reduced near-surface shell (extended defects), not '
-          + 'isolated vacancies.' });
+          + '%: the dilute-defect approximation fails for this class; read '
+          + 'it as a heavily reduced near-surface shell (extended defects), '
+          + 'not isolated vacancies.' });
     }
-    if (x >= sat.x_max_shear) {
-      warnings.push({ kind: 'x_max',
-        text: 'x = ' + x.toFixed(4) + ' in TiO2-x exceeds the rutile '
-          + 'point-defect range (~' + sat.x_max_shear.toFixed(3)
-          + '); crystallographic shear planes are expected.' });
+    if (regime === 'cs_coexistence') {
+      warnings.push({ kind: 'cs_precipitation',
+        text: 'Total inventory exceeds the estimated point-defect '
+          + 'solubility (x_sol ~ ' + sat.x_max_shear.toFixed(3)
+          + ', approximate): mu_V pins at the rutile / CS-phase coexistence '
+          + 'estimate and ' + uExt.toFixed(1) + ' umol-O/g precipitates as '
+          + 'extended defects (crystallographic shear planes).' });
     } else if (x >= 0.8 * sat.x_max_shear) {
       warnings.push({ kind: 'x_near',
         text: 'x = ' + x.toFixed(4) + ' in TiO2-x is near the rutile '
-          + 'point-defect range (~' + sat.x_max_shear.toFixed(3) + ').' });
+          + 'point-defect range (~' + sat.x_max_shear.toFixed(3)
+          + '); the CS ceiling sits at ' + b.VO_cs_umol_g.toFixed(1)
+          + ' umol-O/g.' });
     }
     if (voTotal > 0 && Math.abs(tot - voTotal) > 1e-6 * voTotal) {
       warnings.push({ kind: 'unresolved',
-        text: 'Inventory not matched within tolerance; check the isotherm '
-          + 'range.' });
+        text: 'Inventory not matched within tolerance; check the solver '
+          + 'bracket.' });
     }
     return { method: 'canonical_statmech',
              T_C: tC, VO_total_umol_g: voTotal,
              mu_V_eV: mu,
              theta: { surface: ts, subsurface: tss, bulk: tb },
+             surface_phase: { phase: phase, phi_reconstructed: phi },
+             regime: regime,
              umol_g: { surface: us, subsurface: uss, bulk: ub },
+             extended_defects_umol_g: uExt,
              fractions: { surface: tot ? us / tot : 0.0,
                           subsurface: tot ? uss / tot : 0.0,
-                          bulk: tot ? ub / tot : 0.0 },
+                          bulk: tot ? ub / tot : 0.0,
+                          extended: tot ? uExt / tot : 0.0 },
              matched_umol_g: tot,
-             x_TiO2mx: x, Ti3_frac: 2.0 * x,
-             surface_reconstruction_regime: ts >= onsetLo,
+             x_TiO2mx: x, x_dissolved: xDiss, Ti3_frac: 2.0 * x,
+             phase_boundaries: b,
+             surface_reconstruction_regime: phase !== '1x1',
              warnings: warnings };
   }
 
@@ -594,7 +665,10 @@
     return d;
   }
 
-  function accessibility(p, umolByClass, kin) {
+  function accessibility(p, umolByClass, kin, totalUmol) {
+    /* totalUmol, when given, is the denominator of f_recoverable - pass
+       the full inventory so precipitated extended defects count against
+       the recoverable fraction. */
     var d = co2KineticsParams(p, kin);
     var kt = KB_EV * (d.T_reox_C + 273.15);
     var pf = Math.pow(d.p_CO2_atm, d.p_order_m);
@@ -610,6 +684,7 @@
       acc += umolByClass[c] * prob;
       tot += umolByClass[c];
     }
+    if (totalUmol != null) tot = totalUmol;
     return { P: probs, accessible_umol_g: acc,
              f_recoverable: tot ? acc / tot : 0.0, params: d };
   }
@@ -635,16 +710,17 @@
     var rows = [];
     for (var i = 0; i < voList.length; i++) {
       var d = distribute(p, tC, voList[i], geom,
-                         { theta_s_fn: opts.theta_s_fn, preset: opts.preset,
-                           eps: opts.eps });
-      var a = accessibility(p, d.umol_g, opts.kin);
+                         { preset: opts.preset, eps: opts.eps });
+      var a = accessibility(p, d.umol_g, opts.kin, voList[i]);
       rows.push({ VO_total_umol_g: voList[i],
                   surface: d.umol_g.surface,
                   subsurface: d.umol_g.subsurface,
                   bulk: d.umol_g.bulk,
+                  extended: d.extended_defects_umol_g,
                   accessible: a.accessible_umol_g,
                   f_recoverable: a.f_recoverable,
-                  mu_V_eV: d.mu_V_eV });
+                  mu_V_eV: d.mu_V_eV,
+                  regime: d.regime });
     }
     return rows;
   }
@@ -656,20 +732,21 @@
       : p.defaults.VO_total_umol_g;
     var geom = geometry(p, { d_um: opts.d_um, bet_m2_g: opts.bet_m2_g,
                              ss_layers: opts.ss_layers });
-    var kt = KB_EV * (tC + 273.15);
     var eps = opts.eps != null ? opts.eps : energetics(p, opts.preset).eps;
     var pts = isothermScan(p, tC, { seed: opts.seed, quality: opts.quality,
                                     eps: eps, zero_pairs: opts.zero_pairs,
                                     ordering: opts.ordering, mc: opts.mc,
                                     progress: opts.progress });
-    var fn = opts.zero_pairs
-      ? function (mu) { return fd(mu, eps[0], kt); }
-      : thetaSInterp(pts, eps[0], kt);
-    var out = distribute(p, tC, vo, geom, { theta_s_fn: fn, eps: eps });
+    /* decoupled by design: the layer partition is the analytic
+       phase-aware solve on the formation energies alone; the sampled
+       isotherm feeds only the ordering exhibit, taken at the coverage of
+       the surviving (1x1) patches once coexistence is reached */
+    var out = distribute(p, tC, vo, geom, { eps: eps });
     out.geometry = geom;
     out.isotherm = pts;
-    out.spacing = spacingSummary(pts, out.theta.surface);
-    out.accessibility = accessibility(p, out.umol_g, opts.kin);
+    out.spacing = spacingSummary(pts,
+      Math.min(out.theta.surface, p.surface_phases.theta_transition));
+    out.accessibility = accessibility(p, out.umol_g, opts.kin, vo);
     return out;
   }
 
@@ -680,6 +757,7 @@
            totalEnergy: totalEnergy, adjustFilling: adjustFilling,
            mcRun: mcRun, isothermScan: isothermScan, fd: fd,
            energetics: energetics, thetaSInterp: thetaSInterp,
+           phaseBoundaries: phaseBoundaries,
            distribute: distribute, spacingSummary: spacingSummary,
            co2KineticsParams: co2KineticsParams,
            accessibility: accessibility, dielectric: dielectric,
