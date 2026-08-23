@@ -59,5 +59,6 @@ Numerical methods and measured error bounds are documented in [docs/verification
 - CH4 calculations exclude graphite and should not be quoted.
 - CO2-refill kinetic parameters are placeholders.
 - The unreconstructed rutile (110) surface Hamiltonian is extrapolative beyond reconstruction onset.
+- The subsurface class thickness is a declared choice (one oxygen layer by default, four O per surface cell); the shell/bulk split moves with it and the workspace exposes the ladder.
 
 Data scope and planned extensions are tracked in [docs/thermodynamic-data.md](docs/thermodynamic-data.md) and [docs/roadmap.md](docs/roadmap.md).

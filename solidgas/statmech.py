@@ -101,7 +101,13 @@ def density_g_cm3(p):
 
 
 def geometry(p, d_um=None, bet_m2_g=None, ss_layers=None):
-    """Real site counts in umol-O/g for a spherical particle or a BET area."""
+    """Real site counts in umol-O/g for a spherical particle or a BET area.
+
+    ss_layers is the declared thickness of the subsurface class in d110
+    oxygen slabs, so the near-surface shell holds 1 + 4*ss_layers O per
+    (1x1) cell: the bridging row plus ss_layers full oxygen layers below
+    the bridging plane. It is a model choice, not a fitted quantity, and
+    the shell/bulk split depends on it - see docs/defect-model.md."""
     if ss_layers is None:
         ss_layers = p['defaults']['subsurface_layers']
     if bet_m2_g is not None:
@@ -114,9 +120,11 @@ def geometry(p, d_um=None, bet_m2_g=None, ss_layers=None):
     n_o = 2.0 / p['molar_mass_g_mol'] * 1e6
     n_s = area_cm2_g * sig_b / N_AVO * 1e6
     n_ss = area_cm2_g * sig_l * ss_layers / N_AVO * 1e6
+    d110_nm = p['lattice_constants_A']['a'] / math.sqrt(2.0) / 10.0
     return {'area_m2_g': area_cm2_g * 1e-4, 'N_s': n_s, 'N_ss': n_ss,
             'N_b': n_o - n_s - n_ss, 'N_O_total': n_o,
-            'ss_layers': ss_layers}
+            'ss_layers': ss_layers, 'layer_nm': d110_nm,
+            'shell_nm': (1.0 + 4.0 * ss_layers) / 4.0 * d110_nm}
 
 
 # ---------------------------------------------------------------- lattice

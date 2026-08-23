@@ -3,9 +3,10 @@
 Shares only rutile_dft.json with the production code - no import of
 solidgas.statmech, no shared solver code. Three kinds of certified values:
 
-1. Analytic matching grid: the uncapped three-class site-exclusion
-   distribution, solved by mpmath bisection at 50 digits. The reported
-   reconstruction interval is retained as a validity warning.
+1. Analytic matching grid: the phase-aware three-class site-exclusion
+   distribution, solved by mpmath bisection at 50 digits, together with
+   the closed-form phase-boundary ladder and the declared-shell-thickness
+   ladder (ss_layers = 1..4).
 2. Exact ideal-lattice canonical ensemble (generating polynomial): finite-
    lattice class occupancies and the exact chemical potential
    mu = -kT ln(Z(N+1)/Z(N)) that Widom insertion estimates.
@@ -410,6 +411,19 @@ def main():
     bet_geom = geometry(bet_m2_g=1.60)
     bet_case = match(600, 95.0, bet_geom, 'sx')
 
+    # declared shell thickness: the subsurface class is ss_layers oxygen
+    # slabs of thickness d110 below the bridging plane, 4 O per (1x1) cell
+    # per slab. The split between the shell and the bulk depends on it, so
+    # the whole ladder is certified rather than the default alone.
+    shell_ladder = []
+    for n_lay in (1, 2, 3, 4):
+        g_lay = geometry(d_um=P['defaults']['particle_diameter_um'],
+                         ss_layers=n_lay)
+        row = match(600, 95.0, g_lay, 'sx')
+        row['ss_layers'] = n_lay
+        row['geometry'] = {k: float(v) for k, v in g_lay.items()}
+        shell_ladder.append(row)
+
     eps_sx = [float(e) for e in eps_of('sx')]
     pair = P['surface_ordering']['pair_eV']['along_row']
     kin_d = P['co2_kinetics']['defaults']
@@ -429,6 +443,7 @@ def main():
         'flagship': flagship,
         'flagship_gga': flagship_gga,
         'bet_case': bet_case,
+        'shell_ladder': shell_ladder,
         'ideal_ensemble': dict(
             {'m_by_class': [48, 48, 96], 'eps_eV': eps_sx, 'T_C': 600,
              'n_vac': 14},

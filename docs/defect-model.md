@@ -10,6 +10,21 @@ This is a canonical equilibrium calculation. It does not predict how the invento
 
 Particle diameter or BET area determines the real number of sites in each class. For a 0.9 µm spherical rutile particle, the outer bridging-oxygen layer is about 0.05% of all oxygen sites. The representative Monte Carlo slab contains a much larger surface fraction, so slab class ratios are never used as particle-scale capacities.
 
+The rutile (110) 1x1 cell (c x a*sqrt(2) = 19.22 A^2) carries one bridging oxygen. Every oxygen slab of thickness d110 = a/sqrt(2) = 3.25 A below the bridging plane carries four oxygens per cell, which reproduces the bulk oxygen density exactly. The subsurface class is therefore not one atomic row: one declared layer is four bridging rows of capacity, 54.23 against 13.56 umol-O/g at 0.9 um, and the near-surface shell holds 1 + 4*n_layers oxygens per cell.
+
+## Shell thickness
+
+`subsurface_layers` (default 1) is a declared model choice, not a fitted quantity. The default follows the DFT set, which resolves a single first-subsurface formation energy and takes deeper layers as bulk. Because that energy (0.59 eV) lies far below the bulk value (1.31 eV), the shell/bulk split depends on where the line is drawn. At 600 C, 95 umol-O/g and 0.9 um:
+
+| n_layers | shell depth | subsurface | theta_ss | bulk | mu_V (eV) | shell share |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 0.41 nm | 51.76 | 0.954 | 36.47 | 0.8188 | 61.6% |
+| 2 | 0.73 nm | 82.65 | 0.762 | 5.57 | 0.6776 | 94.1% |
+| 3 | 1.06 nm | 86.26 | 0.530 | 1.96 | 0.5991 | 97.9% |
+| 4 | 1.38 nm | 87.06 | 0.401 | 1.16 | 0.5599 | 98.8% |
+
+The surface class is fixed at the reconstructed line-phase deficiency (6.78 umol-O/g) throughout, so the ladder moves inventory between the subsurface shell and the bulk only. The reconstruction boundaries barely move (2.31 to 2.32 and 6.78 to 6.80 umol-O/g), but the CS ceiling does: it is a chemical-potential condition on the bulk, so a thicker cheap shell holds more inventory before the bulk reaches it (160 / 213 / 266 / 319 umol-O/g for one to four layers). Real formation energies relax smoothly towards the bulk value over the first few layers, so the physical answer lies between the first two rows: a reduced region of the order of 0.5 to 1 nm at 50 to 95% local depletion, with a correspondingly smaller bulk remainder than the default row reports. What the choice does not put at stake is the conclusion that the near-surface shell carries most of the inventory - that grows from 62% to 99% along the ladder. The full ladder is certified by the oracle (`shell_ladder` in `data/reference_statmech.json`) and is reproduced by the shell-thickness control in the workspace.
+
 ## Site thermodynamics
 
 The layer partition is analytic and uses the polaron-relaxed formation energies alone: every class follows its exact site-exclusion isotherm, and the particle-scale calculation finds the common vacancy chemical potential that satisfies

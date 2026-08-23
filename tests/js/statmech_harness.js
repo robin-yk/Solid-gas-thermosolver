@@ -107,6 +107,17 @@ if (spec.ladder_vo) {
   });
 }
 
+if (spec.shell_layers) {
+  out.shell = spec.shell_layers.map(n => {
+    const g = SM.geometry(P, { ss_layers: n });
+    const d = SM.distribute(P, 600.0, 95.0, g, {});
+    return { ss_layers: n, geometry: g, mu_V_eV: d.mu_V_eV,
+             umol_g: d.umol_g, theta: d.theta, regime: d.regime,
+             fractions: d.fractions,
+             warn_kinds: d.warnings.map(w => w.kind) };
+  });
+}
+
 if (spec.cgmc) {
   const CG = require(path.join(root, 'web', 'cgmc.js'));
   const c = spec.cgmc;

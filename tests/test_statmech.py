@@ -53,6 +53,59 @@ def test_geometry_matches_oracle():
         assert gb[k] == pytest.approx(v, rel=1e-10), k
 
 
+def test_the_shell_is_four_oxygens_per_cell_per_declared_layer():
+    """The subsurface class is a slab, not an atomic row.
+
+    One d110 = a/sqrt(2) oxygen slab carries four O per (1x1) cell against
+    the bridging row's one, and that ratio is what makes a 51.8 umol-O/g
+    subsurface population fit inside a 0.33 nm layer at all."""
+    g1 = S.geometry(P, ss_layers=1)
+    assert g1['N_ss'] == pytest.approx(4.0 * g1['N_s'], rel=1e-12)
+    d110_nm = P['lattice_constants_A']['a'] / math.sqrt(2.0) / 10.0
+    assert g1['layer_nm'] == pytest.approx(d110_nm, rel=1e-12)
+    # the shell holds 1 + 4n O per cell, i.e. (1+4n)/4 slabs of material
+    for n in (1, 2, 3, 4):
+        g = S.geometry(P, ss_layers=n)
+        assert g['N_ss'] == pytest.approx(4.0 * n * g['N_s'], rel=1e-12)
+        assert g['shell_nm'] == pytest.approx(
+            (1.0 + 4.0 * n) / 4.0 * d110_nm, rel=1e-12)
+        assert g['N_s'] + g['N_ss'] + g['N_b'] == pytest.approx(
+            g['N_O_total'], rel=1e-12)
+    # the areal layer density is the bulk oxygen density over one slab
+    sig_b, sig_l = S.site_densities(P)
+    a = P['lattice_constants_A']['a']
+    c = P['lattice_constants_A']['c']
+    assert sig_l / (d110_nm * 1e-7) == pytest.approx(
+        4.0 / (a * a * c * 1e-24), rel=1e-12)
+    assert sig_l == pytest.approx(4.0 * sig_b, rel=1e-12)
+
+
+def test_the_shell_thickness_ladder_matches_the_oracle():
+    """Declared shell thickness moves the shell/bulk split, so certify it.
+
+    The surface sits on the reconstructed line phase throughout, so the
+    ladder only trades subsurface against bulk; the shell share rises
+    monotonically and mu_V falls as the cheap class is made thicker."""
+    assert len(REF['shell_ladder']) == 4
+    shares, mus = [], []
+    for ref in REF['shell_ladder']:
+        g = S.geometry(P, ss_layers=ref['ss_layers'])
+        for k, v in ref['geometry'].items():
+            assert g[k] == pytest.approx(v, rel=1e-10), k
+        row = S.distribute(P, ref['T_C'], ref['VO_total_umol_g'], g,
+                           preset=ref['preset'])
+        _assert_row(row, ref)
+        assert row['umol_g']['surface'] == pytest.approx(
+            0.5 * g['N_s'], rel=1e-12)
+        shares.append((row['umol_g']['surface'] + row['umol_g']['subsurface'])
+                      / row['VO_total_umol_g'])
+        mus.append(row['mu_V_eV'])
+    assert shares == sorted(shares)
+    assert mus == sorted(mus, reverse=True)
+    assert shares[0] == pytest.approx(0.616, abs=0.005)
+    assert shares[1] == pytest.approx(0.941, abs=0.005)
+
+
 def test_hand_anchors():
     """Numbers checked by hand: they pin the unit system."""
     g = S.geometry(P)

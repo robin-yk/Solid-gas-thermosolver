@@ -16,7 +16,7 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var el = {};
-  ['smT', 'smVO', 'smGeoMode', 'smGeoVal', 'smGeoUnit', 'smDerived',
+  ['smT', 'smVO', 'smGeoMode', 'smGeoVal', 'smGeoUnit', 'smSS', 'smDerived',
    'smPreset', 'smEpsSS', 'smEpsB', 'smV1', 'smV2', 'smV3', 'smQuality',
    'smSeed', 'smRun', 'smStatus', 'smSummary', 'smKpis', 'smChart',
    'smTable', 'smSpacing', 'smNotes',
@@ -65,12 +65,19 @@
       along_row: [num(el.smV1, 0.40), num(el.smV2, 0.20), num(el.smV3, 0.05)],
       cross_row: DATA.surface_ordering.pair_eV.cross_row } };
   }
+  function currentSS() {
+    var v = Math.round(num(el.smSS, DATA.defaults.subsurface_layers));
+    return Math.max(1, Math.min(4, v));
+  }
   function currentGeom() {
+    var n = currentSS();
     if (el.smGeoMode.value === 'bet') {
-      return SM.geometry(DATA, { bet_m2_g: num(el.smGeoVal, 1.57) });
+      return SM.geometry(DATA, { bet_m2_g: num(el.smGeoVal, 1.57),
+                                 ss_layers: n });
     }
     return SM.geometry(DATA, {
-      d_um: num(el.smGeoVal, DATA.defaults.particle_diameter_um) });
+      d_um: num(el.smGeoVal, DATA.defaults.particle_diameter_um),
+      ss_layers: n });
   }
   function currentKin() {
     return { Ea_eV: { surface: num(el.smEaS, 0.45),
@@ -361,7 +368,11 @@
     el.smDerived.textContent = 'x in TiO2-x = ' + out.x_TiO2mx.toFixed(4)
       + ' · Ti³⁺/Ti = ' + (out.Ti3_frac * 100).toFixed(2)
       + '% · area ' + geom.area_m2_g.toFixed(2)
-      + ' m²/g · phase ladder at ' + out.T_C + ' °C: (1×2) onset '
+      + ' m²/g · shell = bridging plane + ' + geom.ss_layers
+      + ' × 0.325 nm oxygen layer' + (geom.ss_layers > 1 ? 's' : '')
+      + ' (N_s ' + geom.N_s.toFixed(2) + ' + N_ss '
+      + geom.N_ss.toFixed(2) + ' μmol-O/g) · phase ladder at ' + out.T_C
+      + ' °C: (1×2) onset '
       + b.VO_onset_umol_g.toFixed(2) + ' → reconstruction complete '
       + b.VO_recon_complete_umol_g.toFixed(2) + ' → CS ceiling ~'
       + b.VO_cs_umol_g.toFixed(0) + ' μmol-O/g (est.)';
@@ -839,10 +850,11 @@
     return t;
   }
 
-  function vacDot(x, y, cls, prob, accMode, parent) {
+  function vacDot(x, y, cls, prob, accMode, parent, r) {
     var varn = cls === 'surface' ? '--cSurf'
       : cls === 'subsurface' ? '--cSub' : '--cBulk';
-    var attrs = { cx: x, cy: y, r: 2.6, 'data-cls': cls, 'data-kind': 'vac' };
+    var attrs = { cx: x, cy: y, r: r || 2.6, 'data-cls': cls,
+                  'data-kind': 'vac' };
     if (!accMode) {
       attrs.style = 'fill:var(' + varn + ')';
     } else if (prob >= 0.05) {
@@ -891,8 +903,11 @@
     var geom = out.geometry;
     var aA = DATA.lattice_constants_A.a;
     var cA = DATA.lattice_constants_A.c;
-    var t1 = aA / Math.sqrt(2) / 10;                 // d110, nm
-    var tShell = 2 * t1;
+    var t1 = aA / Math.sqrt(2) / 10;                 // d110 slab, nm
+    var nLay = geom.ss_layers;                       // slabs in the shell
+    /* the shell is the bridging plane plus nLay oxygen slabs, so it holds
+       1 + 4*nLay O per (1x1) cell - (1+4n)/4 slabs of material */
+    var tShell = geom.shell_nm;
     var rho = SM.densityGCm3(DATA);
     var dUm = 6 / (rho * geom.area_m2_g * 1e4) * 1e4;
     var Rnm = dUm * 1000 / 2;
@@ -940,14 +955,22 @@
        'fill:var(--muted);font-size:15px', 'middle', svg);
     tx(cx + 24, cy + Rpx + 36, 'd = ' + dUm.toFixed(2) + ' μm',
        'fill:var(--muted);font-size:15px', 'middle', svg);
-    tx(cx, y0 + 6, 'shell 0.65 nm, not resolvable at this scale',
+    tx(cx, y0 + 6, 'shell ' + tShell.toFixed(2)
+       + ' nm, not resolvable at this scale',
        'fill:var(--muted);font-size:12.5px', 'middle', svg);
 
     /* -------------------------------------------- magnified window */
-    var nCols = 46;
+    /* One drawn dot is one oxygen vacancy on one oxygen site. The 1x1
+       cell carries a single bridging O on the terminating plane, and
+       every d110 slab below it carries four O per cell, drawn as two
+       sub-rows of two sites (positions within the slab are schematic;
+       the count per cell is exact). Horizontal and vertical scales are
+       equal, so the shell thickness on screen is the real thickness. */
+    var nCols = 24;                                  // 1x1 cells across
     var sitePx = fw / nCols;
+    var pxNm = sitePx / (cA / 10);                   // isotropic
+    var hPx = t1 * pxNm / 2;                         // O sub-row spacing
     var gasH = 24;
-    var pxNm = 27.5;
     sv('rect', { x: x0, y: y0, width: fw, height: fh,
       style: 'fill:var(--panel);stroke:var(--line)' }, svg);
     sv('rect', { x: x0, y: y0, width: fw, height: gasH,
@@ -955,19 +978,35 @@
     tx(x0 + fw - 6, y0 + 16, 'gas', 'fill:var(--muted);font-size:12.5px',
        'end', svg);
 
-    var surfY = y0 + gasH + 10;
-    var rowY = function (k) { return surfY + k * t1 * pxNm; };
-    var nRows = Math.floor((y0 + fh - 8 - surfY) / (t1 * pxNm)) + 1;
-    for (var k = 0; k < nRows; k++) {
-      sv('line', { x1: x0 + sitePx / 2 - 0.8, x2: x0 + fw - 2,
-        y1: rowY(k), y2: rowY(k),
-        'stroke-dasharray': '1.6 ' + (sitePx - 1.6).toFixed(2),
-        style: 'stroke:var(--muted);stroke-width:1.6;opacity:.25' }, svg);
-    }
-    var siteX = function (j) { return x0 + (j + 0.5) * sitePx; };
+    var surfY = y0 + gasH + 12;                      // bridging plane
+    var subY = function (i) { return surfY + i * hPx; };
+    var nSub = Math.floor((y0 + fh - 10 - surfY) / hPx);
+    var nShellRows = 2 * nLay;                       // sub-rows in the shell
 
-    /* Surface: sampled configuration. Subsurface: expected count at seeded
-       sites. Bulk: continuous class-average shading. */
+    /* shell band: half a sub-row of margin around its outermost sites */
+    sv('rect', { x: x0 + 1, y: surfY - hPx / 2, width: fw - 2,
+      height: (nShellRows + 1) * hPx,
+      style: 'fill:var(--cSub);opacity:.07;stroke:none' }, svg);
+
+    /* oxygen sublattice: one dashed line per sub-row */
+    function latticeRow(y, period, offset) {
+      sv('line', { x1: x0 + 1, x2: x0 + fw - 1, y1: y, y2: y,
+        'stroke-dasharray': '1.7 ' + (period - 1.7).toFixed(2),
+        'stroke-dashoffset': (-offset).toFixed(2),
+        style: 'stroke:var(--muted);stroke-width:1.7;opacity:.28' }, svg);
+    }
+    latticeRow(surfY, sitePx, 0.5 * sitePx - 0.85);
+    for (var i = 1; i <= nSub; i++) {
+      latticeRow(subY(i), sitePx / 2, 0.25 * sitePx - 0.85);
+    }
+
+    var siteX = function (j) { return x0 + (j + 0.5) * sitePx; };
+    var siteX2 = function (j, sgn) {
+      return x0 + (j + 0.25 + 0.5 * sgn) * sitePx;
+    };
+
+    /* Surface: sampled configuration. Deeper classes: expected counts on
+       seeded sites of the same sublattice. */
     function pickCells(n, kk, rng2) {
       var idx = [];
       var t;
@@ -980,24 +1019,47 @@
       }
       return idx.slice(0, Math.min(kk, n));
     }
+    function drawClass(row0, rows, cls, prob, theta) {
+      if (rows <= 0) return 0;
+      var n = rows * nCols * 2;
+      var k = Math.round(n * theta);
+      pickCells(n, k, prng).forEach(function (ix) {
+        var s2 = ix % 2;
+        var rest = (ix - s2) / 2;
+        var j = rest % nCols;
+        var r = (rest - j) / nCols;
+        vacDot(siteX2(j, s2), subY(row0 + r), cls, prob, accMode, svg, 2.3);
+      });
+      return k;
+    }
     var pat = surfacePattern(nCols, out.theta.surface, fresh);
     for (var j = 0; j < nCols; j++) {
       if (pat.arr[j]) {
-        vacDot(siteX(j), rowY(0), 'surface', acc.P.surface, accMode, svg);
+        vacDot(siteX(j), surfY, 'surface', acc.P.surface, accMode, svg, 2.8);
       }
     }
-    var nss = Math.round(nCols * out.theta.subsurface);
-    pickCells(nCols, nss, prng).forEach(function (jj) {
-      vacDot(siteX(jj), rowY(1), 'subsurface', acc.P.subsurface, accMode,
-             svg);
-    });
-    var bulkTop = rowY(2) - 0.42 * t1 * pxNm;
-    var bulkBottom = Math.min(y0 + fh - 8,
-                              rowY(Math.max(2, nRows - 1)) + 0.42 * t1 * pxNm);
-    sv('rect', { x: x0 + 2, y: bulkTop, width: fw - 4,
-      height: Math.max(0, bulkBottom - bulkTop),
+    drawClass(1, nShellRows, 'subsurface', acc.P.subsurface,
+              out.theta.subsurface);
+    /* the bulk class spans the whole interior and the window shows a
+       sliver of it, so it stays a continuous class-average tint: placing
+       individual deep vacancies would invent depth structure the
+       canonical partition does not carry */
+    var coreTop = subY(nShellRows) + hPx / 2;
+    sv('rect', { x: x0 + 1, y: coreTop, width: fw - 2,
+      height: Math.max(0, y0 + fh - 1 - coreTop),
       style: 'fill:var(--cBulk);opacity:' + coreOpacity.toFixed(3)
         + ';stroke:none' }, svg);
+
+    /* shell bracket */
+    var brX = x0 + 5;
+    sv('path', { d: 'M' + (brX + 4) + ',' + (surfY - hPx / 2) + ' L' + brX
+      + ',' + (surfY - hPx / 2) + ' L' + brX + ','
+      + (subY(nShellRows) + hPx / 2) + ' L' + (brX + 4) + ','
+      + (subY(nShellRows) + hPx / 2),
+      style: 'fill:none;stroke:var(--cSub);stroke-width:1.2' }, svg);
+    tx(brX + 8, subY(nShellRows) + hPx / 2 + 13,
+       'shell ' + tShell.toFixed(2) + ' nm · 1 + ' + (4 * nLay)
+       + ' O per cell', 'fill:var(--cSub);font-size:12px', 'start', svg);
 
     sv('line', { x1: x0 + 10, x2: x0 + 10, y1: y0 + fh - 10 - pxNm,
       y2: y0 + fh - 10, style: 'stroke:var(--ink);stroke-width:2' }, svg);
@@ -1005,22 +1067,25 @@
        'start', svg);
 
     var lx = x0 + fw + 10;
-    var lab = function (y, cls, name, u, th, prob) {
+    var lab = function (y, cls, name, u, th, prob, sub) {
       sv('rect', { x: lx, y: y - 8, width: 9, height: 9, rx: 2,
         style: 'fill:var(--c' + cls + ')' }, svg);
       tx(lx + 14, y, name, 'fill:var(--navy);font-size:13.5px;'
          + 'font-weight:bold', 'start', svg);
       tx(lx + 14, y + 13, f2(u) + ' μmol/g · θ ' + thf(th),
          'fill:var(--muted);font-size:12.5px', 'start', svg);
-      tx(lx + 14, y + 25, 'P(CO₂) ' + probf(prob),
+      tx(lx + 14, y + 25, sub, 'fill:var(--muted);font-size:12.5px',
+         'start', svg);
+      tx(lx + 14, y + 37, 'P(CO₂) ' + probf(prob),
          'fill:var(--muted);font-size:12.5px', 'start', svg);
     };
-    lab(rowY(0), 'Surf', 'Surface', out.umol_g.surface,
-        out.theta.surface, acc.P.surface);
-    lab(rowY(1) + 34, 'Sub', 'Subsurface', out.umol_g.subsurface,
-        out.theta.subsurface, acc.P.subsurface);
-    lab(rowY(1) + 108, 'Bulk', 'Bulk', out.umol_g.bulk,
-        out.theta.bulk, acc.P.bulk);
+    lab(y0 + 18, 'Surf', 'Surface', out.umol_g.surface,
+        out.theta.surface, acc.P.surface, '1 O per cell');
+    lab(y0 + 104, 'Sub', 'Subsurface', out.umol_g.subsurface,
+        out.theta.subsurface, acc.P.subsurface,
+        (4 * nLay) + ' O per cell · ' + (nLay * t1).toFixed(2) + ' nm');
+    lab(y0 + 190, 'Bulk', 'Bulk', out.umol_g.bulk,
+        out.theta.bulk, acc.P.bulk, 'below the shell');
 
     /* ------------------------------------------------ depth profile */
     var px0 = 386, py0 = 316, pw2 = 474, ph2 = 128;
@@ -1031,11 +1096,14 @@
       if (dep <= 1) return px0 + dep * linW;
       return px0 + linW + 14 + Math.log10(dep) / lgMax * logW;
     };
+    /* six decades: a thick declared shell drives the bulk class into the
+       1e-5 range, which a four-decade axis would flatten onto the floor */
     var YT = function (th) {
-      var lg = Math.log10(Math.max(th, 1e-4));
-      return papBot - (lg + 4) / 4 * (papBot - papTop);
+      var lg = Math.log10(Math.max(th, 1e-6));
+      return papBot - (lg + 6) / 6 * (papBot - papTop);
     };
-    [[1, '100%'], [0.01, '1%'], [0.0001, '0.01%']].forEach(function (g) {
+    [[1, '100%'], [0.01, '1%'], [0.0001, '0.01%'],
+     [0.000001, '1e-4 %']].forEach(function (g) {
       var y = YT(g[0]);
       sv('line', { x1: px0, x2: px0 + pw2, y1: y, y2: y,
         style: 'stroke:var(--line);stroke-width:1' }, svg);
@@ -1050,8 +1118,9 @@
       sv('path', { d: d, style: 'stroke:var(--muted);stroke-width:1.2;'
         + 'fill:none' }, svg);
     });
-    var segs = [[0, t1, out.theta.surface, '--cSurf'],
-                [t1, tShell, out.theta.subsurface, '--cSub'],
+    var tBridge = t1 / 4;            // 1 of the 4 O per cell in a slab
+    var segs = [[0, tBridge, out.theta.surface, '--cSurf'],
+                [tBridge, tShell, out.theta.subsurface, '--cSub'],
                 [tShell, Rnm, out.theta.bulk, '--cBulk']];
     segs.forEach(function (s, si) {
       var y = YT(s[2]);
@@ -1073,7 +1142,7 @@
     });
     sv('line', { x1: px0, x2: px0 + pw2, y1: papBot, y2: papBot,
       style: 'stroke:var(--muted);stroke-width:1' }, svg);
-    [[0, '0'], [t1, ''], [tShell, '0.65'], [1, '1']].forEach(function (g) {
+    [[0, '0'], [tShell, tShell.toFixed(2)], [1, '1']].forEach(function (g) {
       tx(XD(g[0]), papBot + 13, g[1], 'fill:var(--muted);font-size:14px',
          'middle', svg);
     });
@@ -1102,18 +1171,24 @@
     });
     lg2 += '<span>' + (accMode
       ? 'fill strength = P(CO₂ refill); hollow = locked'
-      : 'dot = one vacancy (window)') + '</span>';
-    lg2 += '<span>disc core = bulk occupation</span>';
+      : 'dot = one vacancy on one O site (shell)') + '</span>';
+    lg2 += '<span>tint = bulk occupation (disc core and window core)'
+      + '</span>';
     el.smPvLegend.innerHTML = lg2;
 
     var shellTheta = (geom.N_s + geom.N_ss)
       ? shellU / (geom.N_s + geom.N_ss) : 0;
-    el.smPvNote.textContent = 'Shell (' + tShell.toFixed(2) + ' nm): '
+    el.smPvNote.textContent = 'Shell (bridging plane + ' + nLay
+      + ' × ' + t1.toFixed(3) + ' nm oxygen layer'
+      + (nLay > 1 ? 's' : '') + ' = 1 + ' + (4 * nLay)
+      + ' O per (1×1) cell, ' + tShell.toFixed(2) + ' nm): '
       + f2(shellU) + ' μmol-O/g = ' + shellPct.toFixed(1)
       + '% of the inventory at ' + (shellTheta * 100).toFixed(0)
       + '% local depletion; core (' + Math.round(Rnm) + ' nm): '
       + f2(out.umol_g.bulk) + ' μmol-O/g at θ = ' + thf(out.theta.bulk)
-      + '. Surface row: ' + (pat.sampled
+      + '. The subsurface class is a declared shell thickness, not one '
+      + 'atomic row: each layer holds four times the bridging-row '
+      + 'capacity. Surface row: ' + (pat.sampled
         ? 'sampled Monte Carlo configuration.'
         : 'ideal-preview draw. Run the model for the sampled arrangement.');
   }
@@ -1377,8 +1452,8 @@
     });
   });
   el.smT.addEventListener('input', scheduleEnv);
-  [el.smVO, el.smGeoVal, el.smEaS, el.smEaSS, el.smEaB, el.smAS, el.smASS,
-   el.smAB, el.smKinT, el.smExp, el.smPCO2].forEach(function (n) {
+  [el.smVO, el.smGeoVal, el.smSS, el.smEaS, el.smEaSS, el.smEaB, el.smAS,
+   el.smASS, el.smAB, el.smKinT, el.smExp, el.smPCO2].forEach(function (n) {
     n.addEventListener('input', solve);
   });
   el.smPvAcc.addEventListener('change', function () {

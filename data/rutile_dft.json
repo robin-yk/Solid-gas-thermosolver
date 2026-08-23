@@ -5,6 +5,14 @@
   "lattice_constants_A": {"a": 4.5937, "c": 2.9587},
   "molar_mass_g_mol": 79.866,
 
+  "site_geometry": {
+    "O_per_1x1_cell_bridging": 1,
+    "O_per_1x1_cell_layer": 4,
+    "layer_thickness": "d110 = a/sqrt(2) = 3.248 A",
+    "note": "The (110) 1x1 cell is c x a*sqrt(2) = 19.22 A^2. It carries one bridging O; an oxygen slab of thickness d110 below the bridging plane carries four O per cell, which reproduces the bulk oxygen density exactly. The subsurface class is therefore not one atomic row: at the default subsurface_layers = 1 it is a 0.325 nm slab holding four times the bridging-row capacity (54.23 vs 13.56 umol-O/g at d = 0.9 um), and the near-surface shell holds 1 + 4*subsurface_layers O per cell.",
+    "shell_thickness_parameter": "subsurface_layers (defaults block) is a declared model choice, not a fitted quantity. The default 1 follows the DFT set, which resolves one first-subsurface energy and takes deeper layers as bulk. Because the subsurface energy is far below the bulk energy, the shell/bulk split is sensitive to it: at 600 C and 95 umol-O/g the subsurface class holds 51.8 / 82.6 / 86.3 / 87.1 umol-O/g for 1 / 2 / 3 / 4 layers, with the bulk taking 36.5 / 5.6 / 2.0 / 1.2. The certified ladder is in reference_statmech.json (shell_ladder) and the reading is discussed in docs/defect-model.md. Real formation energies relax smoothly towards the bulk value over the first few layers, so the physical answer lies between the one- and two-layer columns."
+  },
+
   "vacancy_energetics": {
     "reference_state": "surface bridging O vacancy",
     "default_preset": "sx",

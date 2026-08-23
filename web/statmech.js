@@ -75,8 +75,11 @@
     var nO = 2.0 / p.molar_mass_g_mol * 1e6;
     var nS = area * sig[0] / N_AVO * 1e6;
     var nSS = area * sig[1] * ssLayers / N_AVO * 1e6;
+    var d110nm = p.lattice_constants_A.a / Math.sqrt(2) / 10;
     return { area_m2_g: area * 1e-4, N_s: nS, N_ss: nSS,
-             N_b: nO - nS - nSS, N_O_total: nO, ss_layers: ssLayers };
+             N_b: nO - nS - nSS, N_O_total: nO, ss_layers: ssLayers,
+             layer_nm: d110nm,
+             shell_nm: (1 + 4 * ssLayers) / 4 * d110nm };
   }
 
   /* --------------------------------------------------------- lattice */

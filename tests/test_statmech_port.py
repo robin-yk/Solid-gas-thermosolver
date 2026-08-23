@@ -101,6 +101,7 @@ CGMC_ALL_BULK = {'surface': 0.0, 'subsurface': 0.0, 'bulk': 1.0}
 CGMC_STOCH_CG = {'E_m_bulk_eV': 1.9, 'n_cells': 8,
                  'stochastic_column_counts': 50000}
 LADDER_VO = [1.0, 3.5, 9.0, 95.0, 200.0]
+SHELL_LAYERS = [1, 2, 3, 4]
 
 
 def _cgmc_linear_sys():
@@ -123,6 +124,7 @@ def pair(tmp_path_factory):
                                 'pipelines': PIPELINES,
                                 'sweep_vo': SWEEP_VO,
                                 'ladder_vo': LADDER_VO,
+                                'shell_layers': SHELL_LAYERS,
                                 'validity_cases': VALIDITY_CASES,
                                 'cgmc': {
                                     'sys': _cgmc_linear_sys(),
@@ -273,6 +275,37 @@ def test_ladder_parity_walks_the_same_regimes(pair):
     assert [r['regime'] for r in js['ladder']] == [
         'dilute', 'surface_coexistence', 'reconstructed', 'reconstructed',
         'cs_coexistence']
+
+
+def test_shell_thickness_parity_and_oracle_ladder(pair):
+    """The shell control is a real parameter in both engines.
+
+    The declared subsurface thickness moves the shell/bulk split, so the
+    JS engine has to reproduce the Python numbers and both have to land on
+    the oracle ladder - otherwise the browser control would drift from the
+    certified table in docs/defect-model.md."""
+    _, js = pair
+    assert [r['ss_layers'] for r in js['shell']] == SHELL_LAYERS
+    ref_by_n = {r['ss_layers']: r for r in REF['shell_ladder']}
+    for got in js['shell']:
+        n = got['ss_layers']
+        g = S.geometry(P, ss_layers=n)
+        for k in ('N_s', 'N_ss', 'N_b', 'N_O_total', 'area_m2_g',
+                  'layer_nm', 'shell_nm'):
+            assert got['geometry'][k] == pytest.approx(g[k], rel=1e-12), k
+        d = S.distribute(P, 600.0, 95.0, g)
+        assert got['regime'] == d['regime'] == ref_by_n[n]['regime']
+        assert got['mu_V_eV'] == pytest.approx(d['mu_V_eV'], abs=1e-12)
+        assert d['mu_V_eV'] == pytest.approx(
+            ref_by_n[n]['mu_V_eV'], abs=1e-9)
+        for k in ('surface', 'subsurface', 'bulk'):
+            assert got['umol_g'][k] == pytest.approx(
+                d['umol_g'][k], rel=1e-12, abs=1e-12), (n, k)
+            assert d['umol_g'][k] == pytest.approx(
+                ref_by_n[n]['umol_g'][k], rel=1e-9, abs=1e-9), (n, k)
+        assert got['warn_kinds'] == [w['kind'] for w in d['warnings']]
+    # the browser default is the shipped default
+    assert P['defaults']['subsurface_layers'] == 1
 
 
 def test_bet_sensitivity_case_matches_the_oracle():
@@ -447,7 +480,7 @@ def test_page_carries_the_defect_workspace_and_disclosures():
                    'Placeholder kinetics', 'Recoverable fraction',
                    '-accessible inventory', '(S1)', '(S15)',
                    'Oxygen environment', 'ThermoBridge', 'phaseValidity',
-                   'Particle cross-section', 'outer 0.65 nm shell',
+                   'Particle cross-section', 'one vacancy on one oxygen site',
                    'Monte Carlo arrangement', 'Katsoulakis',
                    'OriginLab, no weighting',
                    # the phase construction and its honesty clauses
@@ -455,7 +488,11 @@ def test_page_carries_the_defect_workspace_and_disclosures():
                    'line compound', 'extended defects',
                    'effective pair interactions',
                    'illustrative until fitted',
-                   'high-coverage branch'):
+                   'high-coverage branch',
+                   # the declared shell thickness and its sensitivity
+                   'Subsurface shell thickness', 'id="smSS"',
+                   'declared model choice', 'four O per cell',
+                   '51.8 / 82.6 / 86.3 / 87.1'):
         assert phrase.lower() in html.lower(), f'disclosure lost: {phrase}'
     # the dataset is swappable, and the page says so
     assert 'calibrated to those constraints' in html
@@ -466,10 +503,26 @@ def test_particle_view_uses_spherical_shells_without_random_bulk_dots():
     ui = (WEB / 'statmech_ui.js').read_text()
     template = (WEB / 'ti_solver_template.html').read_text()
     assert 'bulk occupation' in ui
-    assert 'disc core = bulk occupation' in ui
+    assert 'tint = bulk occupation' in ui
     assert "'bulk', acc.P.bulk" not in ui
     assert 'Spherical particle cross-section' in template
     assert 'core fill tracks the' in template
+
+
+def test_the_slab_window_draws_one_dot_per_oxygen_site():
+    """The magnified window must not read as one atomic row emptying.
+
+    Each (1x1) column carries one bridging O and four O per d110 layer,
+    so the subsurface class is drawn as 2*n_layers sub-rows of two sites
+    and the horizontal and vertical scales are the same."""
+    ui = (WEB / 'statmech_ui.js').read_text()
+    assert 'var pxNm = sitePx / (cA / 10);' in ui          # isotropic
+    assert 'var hPx = t1 * pxNm / 2;' in ui                # O sub-rows
+    assert 'var nShellRows = 2 * nLay;' in ui
+    assert 'dot = one vacancy on one O site' in ui
+    assert 'var tShell = geom.shell_nm;' in ui             # engine value
+    assert "'shell ' + tShell.toFixed(2)" in ui            # bracket label
+    assert 'O per cell' in ui
 
 
 def test_portal_fits_the_desktop_viewport_and_keeps_mobile_scroll():

@@ -18,7 +18,8 @@ Trace solid amounts down to about 1e-41 mol are compared in logarithmic form.
 
 `scripts/oracle_statmech.py` runs at 50 digits and shares only `data/rutile_dft.json` with production. It certifies:
 
-- analytic three-class site-exclusion matching
+- analytic three-class site-exclusion matching, phase-aware, with the closed-form boundary ladder
+- the declared-shell-thickness ladder (one to four oxygen layers), which fixes the shell/bulk split
 - exact finite-lattice canonical ensembles from generating polynomials
 - exact enumeration of small interacting lattices
 - the chemical potential estimated by Widom insertion

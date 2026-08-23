@@ -396,6 +396,11 @@ a{color:var(--blue)}
           </select></div>
         <div><label for="smGeoVal">Value</label><input type="number" id="smGeoVal" value="0.90" min="0.0001" step="0.1"><div class="readout" id="smGeoUnit">&mu;m (spherical particle)</div></div>
       </div>
+      <div class="field">
+        <label for="smSS">Subsurface shell thickness</label>
+        <input type="number" id="smSS" value="1" min="1" max="4" step="1">
+        <div class="readout">oxygen layers below the bridging plane. One layer is d<sub>110</sub> = 0.325 nm and holds 4 O per (1&times;1) cell &mdash; four times the bridging row, so the subsurface class is never one atomic row. A declared model choice, not a fitted quantity: the shell/bulk split moves with it (see the model panel).</div>
+      </div>
       <div class="readout" id="smDerived" style="margin:2px 0 12px"></div>
       <div class="field">
         <label>Mode</label>
@@ -557,10 +562,17 @@ a{color:var(--blue)}
 
     <div class="panel pad">
       <h2>Particle cross-section</h2>
-      <p class="sub">Spherical particle cross-section. The outer 0.65 nm shell is
-      magnified at right. The surface row shows the sampled Monte Carlo arrangement,
-      the subsurface row uses its calculated occupancy, and the core fill tracks the
-      bulk occupancy. The lower plot shows the same three values against radial depth.</p>
+      <p class="sub">Spherical particle cross-section. The outer shell &mdash; the
+      bridging plane plus the declared subsurface layers, 0.41 nm at the default
+      thickness &mdash; is magnified at right on an isotropic scale, so one drawn dot
+      is one vacancy on one oxygen site: the bridging plane carries one O per
+      (1&times;1) column and each 0.325 nm layer below it carries four, drawn as two
+      sub-rows of two sites. The bridging row shows the
+      sampled Monte Carlo arrangement, the subsurface sites use the calculated
+      class occupancy, and the
+      core fill tracks the bulk occupancy as a tint rather than placed vacancies,
+      because the partition carries no depth structure inside the bulk class. The
+      lower plot shows the same three values against radial depth.</p>
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
         <label style="display:flex;gap:7px;align-items:center;width:auto;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--ink);margin:0">
           <input type="checkbox" id="smPvAcc" style="width:auto"> Colour by CO<sub>2</sub> accessibility
@@ -635,6 +647,22 @@ a{color:var(--blue)}
       Birschitzky et al., are sampled by canonical Metropolis Monte Carlo with Widom
       insertion, and inform the arrangement exhibits only &mdash; they never enter the
       layer partition.</p>
+      <p>Shell thickness is a declared model choice, not a fitted quantity. The
+      (1&times;1) cell carries one bridging O, while every d<sub>110</sub> = 0.325 nm
+      oxygen slab below the bridging plane carries four O per cell, so one subsurface
+      layer is four bridging rows of capacity (54.2 against 13.6 &mu;mol-O/g at
+      0.9 &mu;m) and the class is never a single atomic row. The default of one layer
+      follows the DFT set, which resolves one first-subsurface energy and takes deeper
+      layers as bulk. Because that energy lies far below the bulk value, the shell/bulk
+      split moves with the choice: at 600 &deg;C and 95 &mu;mol-O/g the subsurface class
+      holds 51.8 / 82.6 / 86.3 / 87.1 &mu;mol-O/g for one to four layers, the bulk takes
+      36.5 / 5.6 / 2.0 / 1.2, and &mu;<sub>V</sub> falls from 0.819 to 0.560 eV. Real
+      formation energies relax smoothly towards the bulk value over the first few
+      layers, so the physical answer lies between the one- and two-layer columns. What
+      moves is the size of the bulk remainder, not the conclusion that the near-surface
+      shell carries most of the inventory (62% of it at one layer, 94% at two). The
+      ladder is certified against the 50-digit oracle and the control in the input
+      panel reproduces it.</p>
       <p>Two phase branches close the construction. The (1&times;2) reconstruction
       enters as a first-order surface transition at the reported onset: the (1&times;1)
       lattice gas coexists with the added-row Ti<sub>2</sub>O<sub>3</sub> line phase

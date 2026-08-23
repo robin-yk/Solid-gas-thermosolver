@@ -9186,6 +9186,11 @@ z
           </select></div>
         <div><label for="smGeoVal">Value</label><input type="number" id="smGeoVal" value="0.90" min="0.0001" step="0.1"><div class="readout" id="smGeoUnit">&mu;m (spherical particle)</div></div>
       </div>
+      <div class="field">
+        <label for="smSS">Subsurface shell thickness</label>
+        <input type="number" id="smSS" value="1" min="1" max="4" step="1">
+        <div class="readout">oxygen layers below the bridging plane. One layer is d<sub>110</sub> = 0.325 nm and holds 4 O per (1&times;1) cell &mdash; four times the bridging row, so the subsurface class is never one atomic row. A declared model choice, not a fitted quantity: the shell/bulk split moves with it (see the model panel).</div>
+      </div>
       <div class="readout" id="smDerived" style="margin:2px 0 12px"></div>
       <div class="field">
         <label>Mode</label>
@@ -9347,10 +9352,17 @@ z
 
     <div class="panel pad">
       <h2>Particle cross-section</h2>
-      <p class="sub">Spherical particle cross-section. The outer 0.65 nm shell is
-      magnified at right. The surface row shows the sampled Monte Carlo arrangement,
-      the subsurface row uses its calculated occupancy, and the core fill tracks the
-      bulk occupancy. The lower plot shows the same three values against radial depth.</p>
+      <p class="sub">Spherical particle cross-section. The outer shell &mdash; the
+      bridging plane plus the declared subsurface layers, 0.41 nm at the default
+      thickness &mdash; is magnified at right on an isotropic scale, so one drawn dot
+      is one vacancy on one oxygen site: the bridging plane carries one O per
+      (1&times;1) column and each 0.325 nm layer below it carries four, drawn as two
+      sub-rows of two sites. The bridging row shows the
+      sampled Monte Carlo arrangement, the subsurface sites use the calculated
+      class occupancy, and the
+      core fill tracks the bulk occupancy as a tint rather than placed vacancies,
+      because the partition carries no depth structure inside the bulk class. The
+      lower plot shows the same three values against radial depth.</p>
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
         <label style="display:flex;gap:7px;align-items:center;width:auto;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--ink);margin:0">
           <input type="checkbox" id="smPvAcc" style="width:auto"> Colour by CO<sub>2</sub> accessibility
@@ -9425,6 +9437,22 @@ z
       Birschitzky et al., are sampled by canonical Metropolis Monte Carlo with Widom
       insertion, and inform the arrangement exhibits only &mdash; they never enter the
       layer partition.</p>
+      <p>Shell thickness is a declared model choice, not a fitted quantity. The
+      (1&times;1) cell carries one bridging O, while every d<sub>110</sub> = 0.325 nm
+      oxygen slab below the bridging plane carries four O per cell, so one subsurface
+      layer is four bridging rows of capacity (54.2 against 13.6 &mu;mol-O/g at
+      0.9 &mu;m) and the class is never a single atomic row. The default of one layer
+      follows the DFT set, which resolves one first-subsurface energy and takes deeper
+      layers as bulk. Because that energy lies far below the bulk value, the shell/bulk
+      split moves with the choice: at 600 &deg;C and 95 &mu;mol-O/g the subsurface class
+      holds 51.8 / 82.6 / 86.3 / 87.1 &mu;mol-O/g for one to four layers, the bulk takes
+      36.5 / 5.6 / 2.0 / 1.2, and &mu;<sub>V</sub> falls from 0.819 to 0.560 eV. Real
+      formation energies relax smoothly towards the bulk value over the first few
+      layers, so the physical answer lies between the one- and two-layer columns. What
+      moves is the size of the bulk remainder, not the conclusion that the near-surface
+      shell carries most of the inventory (62% of it at one layer, 94% at two). The
+      ladder is certified against the 50-digit oracle and the control in the input
+      panel reproduces it.</p>
       <p>Two phase branches close the construction. The (1&times;2) reconstruction
       enters as a first-order surface transition at the reported onset: the (1&times;1)
       lattice gas coexists with the added-row Ti<sub>2</sub>O<sub>3</sub> line phase
@@ -13123,6 +13151,32 @@ Q 653 1106 653 756
 Q 653 481 798 289
 Q 944 97 1203 97
 z
+" transform="scale(0.015625)"/><path id="sm-Cmr10-3b" d="M 178 1056
+L 178 1281
+L 2156 4231
+Q 2178 4263 2222 4263
+L 2316 4263
+Q 2388 4263 2388 4191
+L 2388 1281
+L 3016 1281
+L 3016 1056
+L 2388 1056
+L 2388 428
+Q 2388 297 2575 261
+Q 2763 225 3009 225
+L 3009 0
+L 1247 0
+L 1247 225
+Q 1494 225 1681 261
+Q 1869 297 1869 428
+L 1869 1056
+L 178 1056
+z
+M 391 1281
+L 1906 1281
+L 1906 3547
+L 391 1281
+z
 " transform="scale(0.015625)"/><path id="sm-Cmr10-45" d="M 1600 -141
 Q 1203 -141 937 70
 Q 672 281 526 617
@@ -13346,31 +13400,20 @@ L 4172 1678
 L 3903 0
 L 197 0
 z
-" transform="scale(0.015625)"/><path id="sm-Cmr10-3b" d="M 178 1056
-L 178 1281
-L 2156 4231
-Q 2178 4263 2222 4263
-L 2316 4263
-Q 2388 4263 2388 4191
-L 2388 1281
-L 3016 1281
-L 3016 1056
-L 2388 1056
-L 2388 428
-Q 2388 297 2575 261
-Q 2763 225 3009 225
-L 3009 0
-L 1247 0
-L 1247 225
-Q 1494 225 1681 261
-Q 1869 297 1869 428
-L 1869 1056
-L 178 1056
+" transform="scale(0.015625)"/><path id="sm-DejaVuSans-24" d="M 2188 4044
+L 1331 1722
+L 3047 1722
+L 2188 4044
 z
-M 391 1281
-L 1906 1281
-L 1906 3547
-L 391 1281
+M 1831 4666
+L 2547 4666
+L 4325 0
+L 3669 0
+L 3244 1197
+L 1141 1197
+L 716 0
+L 50 0
+L 1831 4666
 z
 " transform="scale(0.015625)"/><path id="sm-Cmmi10-80" d="M -159 -1241
 Q -219 -1241 -219 -1159
@@ -15799,14 +15842,14 @@ z
   </g>
  </g>
 </svg><span class="eqno">(S7)</span></div></div>
-<div class="eqrow"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="296" height="20" style="max-width:100%;height:auto" viewBox="0 0 295.92 20.16" xmlns="http://www.w3.org/2000/svg" version="1.1">
+<div class="eqrow"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="421" height="20" style="max-width:100%;height:auto" viewBox="0 0 421.2 20.16" xmlns="http://www.w3.org/2000/svg" version="1.1">
 
 
  <g id="sm-eqn14-figure_1">
   <g id="sm-eqn14-patch_1">
    <path d="M 0 20.16
-L 295.92 20.16
-L 295.92 0
+L 421.2 20.16
+L 421.2 0
 L 0 0
 L 0 20.16
 z
@@ -15828,51 +15871,67 @@ z
     <use xlink:href="#sm-Cmmi10-58" transform="translate(801.855748 -14.543712) scale(0.7)"/>
     <use xlink:href="#sm-Cmmi10-58" transform="translate(834.599889 -14.543712) scale(0.7)"/>
     <use xlink:href="#sm-Cmr10-29" transform="translate(893.064502 0.45625)"/>
-    <use xlink:href="#sm-Cmmi10-5c" transform="translate(990.750106 0.45625)"/>
-    <use xlink:href="#sm-Cmmi10-15" transform="translate(1082.417154 0.45625)"/>
-    <use xlink:href="#sm-Cmr10-6a" transform="translate(1139.497232 -14.543712) scale(0.7)"/>
-    <use xlink:href="#sm-Cmr10-73" transform="translate(1158.877115 -14.543712) scale(0.7)"/>
-    <use xlink:href="#sm-Cmr10-6b" transform="translate(1193.877115 -14.543712) scale(0.7)"/>
-    <use xlink:href="#sm-Cmr10-82" transform="translate(1230.756998 -14.543712) scale(0.7)"/>
-    <use xlink:href="#sm-Cmr10-84" transform="translate(1261.826334 -14.543712) scale(0.7)"/>
-    <use xlink:href="#sm-Cmmi10-2c" transform="translate(1311.591727 0.45625)"/>
-    <use xlink:href="#sm-Cmmi10-5c" transform="translate(1559.277903 0.45625)"/>
-    <use xlink:href="#sm-Cmr10-29" transform="translate(1654.27796 0.45625)"/>
-    <use xlink:href="#sm-Cmr10-45" transform="translate(1783.213564 36.373438) scale(0.7)"/>
-    <use xlink:href="#sm-Cmmi10-27" transform="translate(1758.213564 -32.492188) scale(0.7)"/>
-    <use xlink:href="#sm-Cmmi10-51" transform="translate(1806.076787 -32.492188) scale(0.7)"/>
-    <use xlink:href="#sm-Cmr10-42" transform="translate(1915.394345 0.45625)"/>
-    <use xlink:href="#sm-Cmr10-84" transform="translate(1965.394345 0.45625)"/>
-    <use xlink:href="#sm-Cmr10-20" transform="translate(2037.838768 0.45625)"/>
-    <use xlink:href="#sm-Cmr10-65" transform="translate(2108.639549 0.45625)"/>
-    <use xlink:href="#sm-Cmr10-71" transform="translate(2176.657127 0.45625)"/>
-    <path d="M 1758.213564 22.33125
-L 1758.213564 28.58125
-L 1842.478154 28.58125
-L 1842.478154 22.33125
-L 1758.213564 22.33125
+    <use xlink:href="#sm-Cmmi10-7a" transform="translate(990.750106 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-6a" transform="translate(1050.759872 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-73" transform="translate(1070.139755 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-6b" transform="translate(1105.139755 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmmi10-5c" transform="translate(1164.407101 0.45625)"/>
+    <use xlink:href="#sm-Cmmi10-15" transform="translate(1256.074148 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-6a" transform="translate(1313.154227 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-73" transform="translate(1332.534109 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-6b" transform="translate(1367.534109 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-82" transform="translate(1404.413992 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-84" transform="translate(1435.483328 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmmi10-2c" transform="translate(1485.248721 0.45625)"/>
+    <use xlink:href="#sm-Cmmi10-15" transform="translate(1732.934897 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-6a" transform="translate(1790.014975 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-73" transform="translate(1809.394858 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-6b" transform="translate(1844.394858 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-82" transform="translate(1881.274741 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-84" transform="translate(1912.344077 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-29" transform="translate(1965.442479 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-3b" transform="translate(2063.128083 0.45625)"/>
+    <use xlink:href="#sm-Cmmi10-15" transform="translate(2129.795131 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-41" transform="translate(2186.875209 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-84" transform="translate(2225.737514 -14.543712) scale(0.7)"/>
+    <use xlink:href="#sm-Cmmi10-2c" transform="translate(2275.502907 0.45625)"/>
+    <use xlink:href="#sm-Cmmi10-5c" transform="translate(2523.189083 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-29" transform="translate(2618.18914 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-45" transform="translate(2747.124744 36.373438) scale(0.7)"/>
+    <use xlink:href="#sm-Cmmi10-27" transform="translate(2722.124744 -32.492188) scale(0.7)"/>
+    <use xlink:href="#sm-Cmmi10-51" transform="translate(2769.987967 -32.492188) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-42" transform="translate(2879.305525 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-84" transform="translate(2929.305525 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-20" transform="translate(3001.749948 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-65" transform="translate(3072.55073 0.45625)"/>
+    <use xlink:href="#sm-Cmr10-71" transform="translate(3140.568308 0.45625)"/>
+    <path d="M 2722.124744 22.33125
+L 2722.124744 28.58125
+L 2806.389334 28.58125
+L 2806.389334 22.33125
+L 2722.124744 22.33125
 z
 "/>
    </g>
   </g>
  </g>
 </svg><span class="eqno">(S8)</span></div>
-<div class="eqnote"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="582" height="14" style="max-width:100%;height:auto" viewBox="0 0 581.76 14.4" xmlns="http://www.w3.org/2000/svg" version="1.1">
+<div class="eqnote"><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="1316" height="15" style="max-width:100%;height:auto" viewBox="0 0 1316.16 15.12" xmlns="http://www.w3.org/2000/svg" version="1.1">
 
 
  <g id="sm-eqn15-figure_1">
   <g id="sm-eqn15-patch_1">
-   <path d="M 0 14.4
-L 581.76 14.4
-L 581.76 0
+   <path d="M 0 15.12
+L 1316.16 15.12
+L 1316.16 0
 L 0 0
-L 0 14.4
+L 0 15.12
 z
 " style="fill: none; opacity: 0"/>
   </g>
   <g id="sm-eqn15-text_1">
 
-   <g style="fill: currentColor" transform="translate(1.44 12.96) scale(0.105 -0.105)">
+   <g style="fill: currentColor" transform="translate(1.44 13.68) scale(0.105 -0.105)">
 
     <use xlink:href="#sm-DejaVuSans-55" transform="translate(0 0.015625)"/>
     <use xlink:href="#sm-DejaVuSans-48" transform="translate(39.113281 0.015625)"/>
@@ -15982,6 +16041,149 @@ z
     <use xlink:href="#sm-DejaVuSans-57" transform="translate(5359.937759 0.015625)"/>
     <use xlink:href="#sm-DejaVuSans-48" transform="translate(5399.146744 0.015625)"/>
     <use xlink:href="#sm-DejaVuSans-56" transform="translate(5460.670181 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-11" transform="translate(5512.769791 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(5544.5569 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-32" transform="translate(5576.344009 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-51" transform="translate(5655.054947 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-48" transform="translate(5718.433853 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(5779.957291 0.015625)"/>
+    <use xlink:href="#sm-Cmmi10-51" transform="translate(5811.7444 0.015625)"/>
+    <use xlink:href="#sm-Cmr10-64" transform="translate(5863.746353 -14.984337) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-64" transform="translate(5898.746353 -14.984337) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-28" transform="translate(5933.746353 -14.984337) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-29" transform="translate(5994.466826 0.015625)"/>
+    <use xlink:href="#sm-Cmr10-6e" transform="translate(6092.15243 0.015625)"/>
+    <use xlink:href="#sm-Cmmi10-33" transform="translate(6142.15243 0.015625)"/>
+    <use xlink:href="#sm-Cmr10-31" transform="translate(6169.837977 0.015625)"/>
+    <use xlink:href="#sm-Cmr10-78" transform="translate(6219.837977 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(6269.837977 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-24" transform="translate(6301.625086 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(6370.033289 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-52" transform="translate(6401.820399 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-5b" transform="translate(6460.002039 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-5c" transform="translate(6519.181727 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4a" transform="translate(6578.361414 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-48" transform="translate(6641.837977 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-51" transform="translate(6703.361414 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(6766.740321 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-56" transform="translate(6798.52743 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4f" transform="translate(6850.627039 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-44" transform="translate(6878.410242 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-45" transform="translate(6939.689539 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(7003.166102 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4b" transform="translate(7034.953211 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-52" transform="translate(7098.332117 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4f" transform="translate(7159.513758 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-47" transform="translate(7187.296961 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-56" transform="translate(7250.773524 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(7302.873133 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-49" transform="translate(7334.660242 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-52" transform="translate(7369.865321 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-58" transform="translate(7431.046961 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-55" transform="translate(7494.425867 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(7535.539149 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-32" transform="translate(7567.326258 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(7646.037196 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-53" transform="translate(7677.824305 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-48" transform="translate(7741.300867 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-55" transform="translate(7802.824305 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(7843.937586 0.015625)"/>
+    <use xlink:href="#sm-Cmr10-77" transform="translate(7875.724696 0.015625)"/>
+    <use xlink:href="#sm-Cmr10-64" transform="translate(7914.543055 0.015625)"/>
+    <use xlink:href="#sm-Cmsy10-d" transform="translate(7964.543055 0.015625)"/>
+    <use xlink:href="#sm-Cmr10-64" transform="translate(8042.228602 0.015625)"/>
+    <use xlink:href="#sm-Cmr10-44" transform="translate(8092.228602 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(8131.046961 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-46" transform="translate(8162.834071 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-48" transform="translate(8217.814539 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4f" transform="translate(8279.337977 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4f" transform="translate(8307.12118 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-f" transform="translate(8334.904383 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(8366.691492 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-56" transform="translate(8398.478602 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-52" transform="translate(8450.578211 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(8511.759852 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-48" transform="translate(8543.546961 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-44" transform="translate(8605.070399 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-46" transform="translate(8666.349696 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4b" transform="translate(8721.330164 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(8784.709071 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-47" transform="translate(8816.49618 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-48" transform="translate(8879.972742 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-46" transform="translate(8941.49618 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4f" transform="translate(8996.476649 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-44" transform="translate(9024.259852 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-55" transform="translate(9085.539149 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-48" transform="translate(9124.65243 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-47" transform="translate(9186.175867 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(9249.65243 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-56" transform="translate(9281.439539 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-58" transform="translate(9333.539149 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-45" transform="translate(9396.918055 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-56" transform="translate(9460.394617 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-58" transform="translate(9512.494227 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-55" transform="translate(9575.873133 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-49" transform="translate(9616.986414 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-44" transform="translate(9652.191492 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-46" transform="translate(9713.470789 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-48" transform="translate(9768.451258 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(9829.974696 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4f" transform="translate(9861.761805 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-44" transform="translate(9889.545008 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-5c" transform="translate(9950.824305 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-48" transform="translate(10010.003992 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-55" transform="translate(10071.52743 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(10112.640711 0.015625)"/>
+    <use xlink:href="#sm-Cmmi10-7a" transform="translate(10144.427821 0.015625)"/>
+    <use xlink:href="#sm-Cmr10-6a" transform="translate(10204.437586 -14.984337) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-73" transform="translate(10223.817469 -14.984337) scale(0.7)"/>
+    <use xlink:href="#sm-Cmr10-6b" transform="translate(10258.817469 -14.984337) scale(0.7)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(10301.417767 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-b" transform="translate(10333.204877 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-47" transform="translate(10372.218549 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-48" transform="translate(10435.695111 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-49" transform="translate(10497.218549 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-44" transform="translate(10532.423627 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-58" transform="translate(10593.702924 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4f" transform="translate(10657.08183 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-57" transform="translate(10684.865033 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(10724.074017 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-14" transform="translate(10755.861127 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-c" transform="translate(10819.484174 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(10858.497845 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4c" transform="translate(10890.284955 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-56" transform="translate(10918.068158 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(10970.167767 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-49" transform="translate(11001.954877 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-52" transform="translate(11037.159955 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-58" transform="translate(11098.341595 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-55" transform="translate(11161.720502 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(11202.833783 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-45" transform="translate(11234.620892 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-55" transform="translate(11298.097455 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4c" transform="translate(11339.210736 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-47" transform="translate(11366.993939 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4a" transform="translate(11430.470502 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4c" transform="translate(11493.947064 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-51" transform="translate(11521.730267 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4a" transform="translate(11585.109174 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(11648.585736 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-55" transform="translate(11680.372845 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-52" transform="translate(11719.486127 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-5a" transform="translate(11780.667767 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-56" transform="translate(11862.454877 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(11914.554486 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-52" transform="translate(11946.341595 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-49" transform="translate(12007.523236 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-3" transform="translate(12042.728314 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-46" transform="translate(12074.515424 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-44" transform="translate(12129.495892 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-53" transform="translate(12190.775189 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-44" transform="translate(12254.251752 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-46" transform="translate(12315.531049 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-4c" transform="translate(12370.511517 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-57" transform="translate(12398.29472 0.015625)"/>
+    <use xlink:href="#sm-DejaVuSans-5c" transform="translate(12437.503705 0.015625)"/>
    </g>
   </g>
  </g>
@@ -17523,6 +17725,14 @@ z
   "lattice_constants_A": {"a": 4.5937, "c": 2.9587},
   "molar_mass_g_mol": 79.866,
 
+  "site_geometry": {
+    "O_per_1x1_cell_bridging": 1,
+    "O_per_1x1_cell_layer": 4,
+    "layer_thickness": "d110 = a/sqrt(2) = 3.248 A",
+    "note": "The (110) 1x1 cell is c x a*sqrt(2) = 19.22 A^2. It carries one bridging O; an oxygen slab of thickness d110 below the bridging plane carries four O per cell, which reproduces the bulk oxygen density exactly. The subsurface class is therefore not one atomic row: at the default subsurface_layers = 1 it is a 0.325 nm slab holding four times the bridging-row capacity (54.23 vs 13.56 umol-O/g at d = 0.9 um), and the near-surface shell holds 1 + 4*subsurface_layers O per cell.",
+    "shell_thickness_parameter": "subsurface_layers (defaults block) is a declared model choice, not a fitted quantity. The default 1 follows the DFT set, which resolves one first-subsurface energy and takes deeper layers as bulk. Because the subsurface energy is far below the bulk energy, the shell/bulk split is sensitive to it: at 600 C and 95 umol-O/g the subsurface class holds 51.8 / 82.6 / 86.3 / 87.1 umol-O/g for 1 / 2 / 3 / 4 layers, with the bulk taking 36.5 / 5.6 / 2.0 / 1.2. The certified ladder is in reference_statmech.json (shell_ladder) and the reading is discussed in docs/defect-model.md. Real formation energies relax smoothly towards the bulk value over the first few layers, so the physical answer lies between the one- and two-layer columns."
+  },
+
   "vacancy_energetics": {
     "reference_state": "surface bridging O vacancy",
     "default_preset": "sx",
@@ -18796,8 +19006,11 @@ root.Solver = Solver;
     var nO = 2.0 / p.molar_mass_g_mol * 1e6;
     var nS = area * sig[0] / N_AVO * 1e6;
     var nSS = area * sig[1] * ssLayers / N_AVO * 1e6;
+    var d110nm = p.lattice_constants_A.a / Math.sqrt(2) / 10;
     return { area_m2_g: area * 1e-4, N_s: nS, N_ss: nSS,
-             N_b: nO - nS - nSS, N_O_total: nO, ss_layers: ssLayers };
+             N_b: nO - nS - nSS, N_O_total: nO, ss_layers: ssLayers,
+             layer_nm: d110nm,
+             shell_nm: (1 + 4 * ssLayers) / 4 * d110nm };
   }
 
   /* --------------------------------------------------------- lattice */
@@ -19936,7 +20149,7 @@ self.onmessage = function (ev) {
 
   var $ = function (id) { return document.getElementById(id); };
   var el = {};
-  ['smT', 'smVO', 'smGeoMode', 'smGeoVal', 'smGeoUnit', 'smDerived',
+  ['smT', 'smVO', 'smGeoMode', 'smGeoVal', 'smGeoUnit', 'smSS', 'smDerived',
    'smPreset', 'smEpsSS', 'smEpsB', 'smV1', 'smV2', 'smV3', 'smQuality',
    'smSeed', 'smRun', 'smStatus', 'smSummary', 'smKpis', 'smChart',
    'smTable', 'smSpacing', 'smNotes',
@@ -19985,12 +20198,19 @@ self.onmessage = function (ev) {
       along_row: [num(el.smV1, 0.40), num(el.smV2, 0.20), num(el.smV3, 0.05)],
       cross_row: DATA.surface_ordering.pair_eV.cross_row } };
   }
+  function currentSS() {
+    var v = Math.round(num(el.smSS, DATA.defaults.subsurface_layers));
+    return Math.max(1, Math.min(4, v));
+  }
   function currentGeom() {
+    var n = currentSS();
     if (el.smGeoMode.value === 'bet') {
-      return SM.geometry(DATA, { bet_m2_g: num(el.smGeoVal, 1.57) });
+      return SM.geometry(DATA, { bet_m2_g: num(el.smGeoVal, 1.57),
+                                 ss_layers: n });
     }
     return SM.geometry(DATA, {
-      d_um: num(el.smGeoVal, DATA.defaults.particle_diameter_um) });
+      d_um: num(el.smGeoVal, DATA.defaults.particle_diameter_um),
+      ss_layers: n });
   }
   function currentKin() {
     return { Ea_eV: { surface: num(el.smEaS, 0.45),
@@ -20281,7 +20501,11 @@ self.onmessage = function (ev) {
     el.smDerived.textContent = 'x in TiO2-x = ' + out.x_TiO2mx.toFixed(4)
       + ' · Ti³⁺/Ti = ' + (out.Ti3_frac * 100).toFixed(2)
       + '% · area ' + geom.area_m2_g.toFixed(2)
-      + ' m²/g · phase ladder at ' + out.T_C + ' °C: (1×2) onset '
+      + ' m²/g · shell = bridging plane + ' + geom.ss_layers
+      + ' × 0.325 nm oxygen layer' + (geom.ss_layers > 1 ? 's' : '')
+      + ' (N_s ' + geom.N_s.toFixed(2) + ' + N_ss '
+      + geom.N_ss.toFixed(2) + ' μmol-O/g) · phase ladder at ' + out.T_C
+      + ' °C: (1×2) onset '
       + b.VO_onset_umol_g.toFixed(2) + ' → reconstruction complete '
       + b.VO_recon_complete_umol_g.toFixed(2) + ' → CS ceiling ~'
       + b.VO_cs_umol_g.toFixed(0) + ' μmol-O/g (est.)';
@@ -20759,10 +20983,11 @@ self.onmessage = function (ev) {
     return t;
   }
 
-  function vacDot(x, y, cls, prob, accMode, parent) {
+  function vacDot(x, y, cls, prob, accMode, parent, r) {
     var varn = cls === 'surface' ? '--cSurf'
       : cls === 'subsurface' ? '--cSub' : '--cBulk';
-    var attrs = { cx: x, cy: y, r: 2.6, 'data-cls': cls, 'data-kind': 'vac' };
+    var attrs = { cx: x, cy: y, r: r || 2.6, 'data-cls': cls,
+                  'data-kind': 'vac' };
     if (!accMode) {
       attrs.style = 'fill:var(' + varn + ')';
     } else if (prob >= 0.05) {
@@ -20811,8 +21036,11 @@ self.onmessage = function (ev) {
     var geom = out.geometry;
     var aA = DATA.lattice_constants_A.a;
     var cA = DATA.lattice_constants_A.c;
-    var t1 = aA / Math.sqrt(2) / 10;                 // d110, nm
-    var tShell = 2 * t1;
+    var t1 = aA / Math.sqrt(2) / 10;                 // d110 slab, nm
+    var nLay = geom.ss_layers;                       // slabs in the shell
+    /* the shell is the bridging plane plus nLay oxygen slabs, so it holds
+       1 + 4*nLay O per (1x1) cell - (1+4n)/4 slabs of material */
+    var tShell = geom.shell_nm;
     var rho = SM.densityGCm3(DATA);
     var dUm = 6 / (rho * geom.area_m2_g * 1e4) * 1e4;
     var Rnm = dUm * 1000 / 2;
@@ -20860,14 +21088,22 @@ self.onmessage = function (ev) {
        'fill:var(--muted);font-size:15px', 'middle', svg);
     tx(cx + 24, cy + Rpx + 36, 'd = ' + dUm.toFixed(2) + ' μm',
        'fill:var(--muted);font-size:15px', 'middle', svg);
-    tx(cx, y0 + 6, 'shell 0.65 nm, not resolvable at this scale',
+    tx(cx, y0 + 6, 'shell ' + tShell.toFixed(2)
+       + ' nm, not resolvable at this scale',
        'fill:var(--muted);font-size:12.5px', 'middle', svg);
 
     /* -------------------------------------------- magnified window */
-    var nCols = 46;
+    /* One drawn dot is one oxygen vacancy on one oxygen site. The 1x1
+       cell carries a single bridging O on the terminating plane, and
+       every d110 slab below it carries four O per cell, drawn as two
+       sub-rows of two sites (positions within the slab are schematic;
+       the count per cell is exact). Horizontal and vertical scales are
+       equal, so the shell thickness on screen is the real thickness. */
+    var nCols = 24;                                  // 1x1 cells across
     var sitePx = fw / nCols;
+    var pxNm = sitePx / (cA / 10);                   // isotropic
+    var hPx = t1 * pxNm / 2;                         // O sub-row spacing
     var gasH = 24;
-    var pxNm = 27.5;
     sv('rect', { x: x0, y: y0, width: fw, height: fh,
       style: 'fill:var(--panel);stroke:var(--line)' }, svg);
     sv('rect', { x: x0, y: y0, width: fw, height: gasH,
@@ -20875,19 +21111,35 @@ self.onmessage = function (ev) {
     tx(x0 + fw - 6, y0 + 16, 'gas', 'fill:var(--muted);font-size:12.5px',
        'end', svg);
 
-    var surfY = y0 + gasH + 10;
-    var rowY = function (k) { return surfY + k * t1 * pxNm; };
-    var nRows = Math.floor((y0 + fh - 8 - surfY) / (t1 * pxNm)) + 1;
-    for (var k = 0; k < nRows; k++) {
-      sv('line', { x1: x0 + sitePx / 2 - 0.8, x2: x0 + fw - 2,
-        y1: rowY(k), y2: rowY(k),
-        'stroke-dasharray': '1.6 ' + (sitePx - 1.6).toFixed(2),
-        style: 'stroke:var(--muted);stroke-width:1.6;opacity:.25' }, svg);
-    }
-    var siteX = function (j) { return x0 + (j + 0.5) * sitePx; };
+    var surfY = y0 + gasH + 12;                      // bridging plane
+    var subY = function (i) { return surfY + i * hPx; };
+    var nSub = Math.floor((y0 + fh - 10 - surfY) / hPx);
+    var nShellRows = 2 * nLay;                       // sub-rows in the shell
 
-    /* Surface: sampled configuration. Subsurface: expected count at seeded
-       sites. Bulk: continuous class-average shading. */
+    /* shell band: half a sub-row of margin around its outermost sites */
+    sv('rect', { x: x0 + 1, y: surfY - hPx / 2, width: fw - 2,
+      height: (nShellRows + 1) * hPx,
+      style: 'fill:var(--cSub);opacity:.07;stroke:none' }, svg);
+
+    /* oxygen sublattice: one dashed line per sub-row */
+    function latticeRow(y, period, offset) {
+      sv('line', { x1: x0 + 1, x2: x0 + fw - 1, y1: y, y2: y,
+        'stroke-dasharray': '1.7 ' + (period - 1.7).toFixed(2),
+        'stroke-dashoffset': (-offset).toFixed(2),
+        style: 'stroke:var(--muted);stroke-width:1.7;opacity:.28' }, svg);
+    }
+    latticeRow(surfY, sitePx, 0.5 * sitePx - 0.85);
+    for (var i = 1; i <= nSub; i++) {
+      latticeRow(subY(i), sitePx / 2, 0.25 * sitePx - 0.85);
+    }
+
+    var siteX = function (j) { return x0 + (j + 0.5) * sitePx; };
+    var siteX2 = function (j, sgn) {
+      return x0 + (j + 0.25 + 0.5 * sgn) * sitePx;
+    };
+
+    /* Surface: sampled configuration. Deeper classes: expected counts on
+       seeded sites of the same sublattice. */
     function pickCells(n, kk, rng2) {
       var idx = [];
       var t;
@@ -20900,24 +21152,47 @@ self.onmessage = function (ev) {
       }
       return idx.slice(0, Math.min(kk, n));
     }
+    function drawClass(row0, rows, cls, prob, theta) {
+      if (rows <= 0) return 0;
+      var n = rows * nCols * 2;
+      var k = Math.round(n * theta);
+      pickCells(n, k, prng).forEach(function (ix) {
+        var s2 = ix % 2;
+        var rest = (ix - s2) / 2;
+        var j = rest % nCols;
+        var r = (rest - j) / nCols;
+        vacDot(siteX2(j, s2), subY(row0 + r), cls, prob, accMode, svg, 2.3);
+      });
+      return k;
+    }
     var pat = surfacePattern(nCols, out.theta.surface, fresh);
     for (var j = 0; j < nCols; j++) {
       if (pat.arr[j]) {
-        vacDot(siteX(j), rowY(0), 'surface', acc.P.surface, accMode, svg);
+        vacDot(siteX(j), surfY, 'surface', acc.P.surface, accMode, svg, 2.8);
       }
     }
-    var nss = Math.round(nCols * out.theta.subsurface);
-    pickCells(nCols, nss, prng).forEach(function (jj) {
-      vacDot(siteX(jj), rowY(1), 'subsurface', acc.P.subsurface, accMode,
-             svg);
-    });
-    var bulkTop = rowY(2) - 0.42 * t1 * pxNm;
-    var bulkBottom = Math.min(y0 + fh - 8,
-                              rowY(Math.max(2, nRows - 1)) + 0.42 * t1 * pxNm);
-    sv('rect', { x: x0 + 2, y: bulkTop, width: fw - 4,
-      height: Math.max(0, bulkBottom - bulkTop),
+    drawClass(1, nShellRows, 'subsurface', acc.P.subsurface,
+              out.theta.subsurface);
+    /* the bulk class spans the whole interior and the window shows a
+       sliver of it, so it stays a continuous class-average tint: placing
+       individual deep vacancies would invent depth structure the
+       canonical partition does not carry */
+    var coreTop = subY(nShellRows) + hPx / 2;
+    sv('rect', { x: x0 + 1, y: coreTop, width: fw - 2,
+      height: Math.max(0, y0 + fh - 1 - coreTop),
       style: 'fill:var(--cBulk);opacity:' + coreOpacity.toFixed(3)
         + ';stroke:none' }, svg);
+
+    /* shell bracket */
+    var brX = x0 + 5;
+    sv('path', { d: 'M' + (brX + 4) + ',' + (surfY - hPx / 2) + ' L' + brX
+      + ',' + (surfY - hPx / 2) + ' L' + brX + ','
+      + (subY(nShellRows) + hPx / 2) + ' L' + (brX + 4) + ','
+      + (subY(nShellRows) + hPx / 2),
+      style: 'fill:none;stroke:var(--cSub);stroke-width:1.2' }, svg);
+    tx(brX + 8, subY(nShellRows) + hPx / 2 + 13,
+       'shell ' + tShell.toFixed(2) + ' nm · 1 + ' + (4 * nLay)
+       + ' O per cell', 'fill:var(--cSub);font-size:12px', 'start', svg);
 
     sv('line', { x1: x0 + 10, x2: x0 + 10, y1: y0 + fh - 10 - pxNm,
       y2: y0 + fh - 10, style: 'stroke:var(--ink);stroke-width:2' }, svg);
@@ -20925,22 +21200,25 @@ self.onmessage = function (ev) {
        'start', svg);
 
     var lx = x0 + fw + 10;
-    var lab = function (y, cls, name, u, th, prob) {
+    var lab = function (y, cls, name, u, th, prob, sub) {
       sv('rect', { x: lx, y: y - 8, width: 9, height: 9, rx: 2,
         style: 'fill:var(--c' + cls + ')' }, svg);
       tx(lx + 14, y, name, 'fill:var(--navy);font-size:13.5px;'
          + 'font-weight:bold', 'start', svg);
       tx(lx + 14, y + 13, f2(u) + ' μmol/g · θ ' + thf(th),
          'fill:var(--muted);font-size:12.5px', 'start', svg);
-      tx(lx + 14, y + 25, 'P(CO₂) ' + probf(prob),
+      tx(lx + 14, y + 25, sub, 'fill:var(--muted);font-size:12.5px',
+         'start', svg);
+      tx(lx + 14, y + 37, 'P(CO₂) ' + probf(prob),
          'fill:var(--muted);font-size:12.5px', 'start', svg);
     };
-    lab(rowY(0), 'Surf', 'Surface', out.umol_g.surface,
-        out.theta.surface, acc.P.surface);
-    lab(rowY(1) + 34, 'Sub', 'Subsurface', out.umol_g.subsurface,
-        out.theta.subsurface, acc.P.subsurface);
-    lab(rowY(1) + 108, 'Bulk', 'Bulk', out.umol_g.bulk,
-        out.theta.bulk, acc.P.bulk);
+    lab(y0 + 18, 'Surf', 'Surface', out.umol_g.surface,
+        out.theta.surface, acc.P.surface, '1 O per cell');
+    lab(y0 + 104, 'Sub', 'Subsurface', out.umol_g.subsurface,
+        out.theta.subsurface, acc.P.subsurface,
+        (4 * nLay) + ' O per cell · ' + (nLay * t1).toFixed(2) + ' nm');
+    lab(y0 + 190, 'Bulk', 'Bulk', out.umol_g.bulk,
+        out.theta.bulk, acc.P.bulk, 'below the shell');
 
     /* ------------------------------------------------ depth profile */
     var px0 = 386, py0 = 316, pw2 = 474, ph2 = 128;
@@ -20951,11 +21229,14 @@ self.onmessage = function (ev) {
       if (dep <= 1) return px0 + dep * linW;
       return px0 + linW + 14 + Math.log10(dep) / lgMax * logW;
     };
+    /* six decades: a thick declared shell drives the bulk class into the
+       1e-5 range, which a four-decade axis would flatten onto the floor */
     var YT = function (th) {
-      var lg = Math.log10(Math.max(th, 1e-4));
-      return papBot - (lg + 4) / 4 * (papBot - papTop);
+      var lg = Math.log10(Math.max(th, 1e-6));
+      return papBot - (lg + 6) / 6 * (papBot - papTop);
     };
-    [[1, '100%'], [0.01, '1%'], [0.0001, '0.01%']].forEach(function (g) {
+    [[1, '100%'], [0.01, '1%'], [0.0001, '0.01%'],
+     [0.000001, '1e-4 %']].forEach(function (g) {
       var y = YT(g[0]);
       sv('line', { x1: px0, x2: px0 + pw2, y1: y, y2: y,
         style: 'stroke:var(--line);stroke-width:1' }, svg);
@@ -20970,8 +21251,9 @@ self.onmessage = function (ev) {
       sv('path', { d: d, style: 'stroke:var(--muted);stroke-width:1.2;'
         + 'fill:none' }, svg);
     });
-    var segs = [[0, t1, out.theta.surface, '--cSurf'],
-                [t1, tShell, out.theta.subsurface, '--cSub'],
+    var tBridge = t1 / 4;            // 1 of the 4 O per cell in a slab
+    var segs = [[0, tBridge, out.theta.surface, '--cSurf'],
+                [tBridge, tShell, out.theta.subsurface, '--cSub'],
                 [tShell, Rnm, out.theta.bulk, '--cBulk']];
     segs.forEach(function (s, si) {
       var y = YT(s[2]);
@@ -20993,7 +21275,7 @@ self.onmessage = function (ev) {
     });
     sv('line', { x1: px0, x2: px0 + pw2, y1: papBot, y2: papBot,
       style: 'stroke:var(--muted);stroke-width:1' }, svg);
-    [[0, '0'], [t1, ''], [tShell, '0.65'], [1, '1']].forEach(function (g) {
+    [[0, '0'], [tShell, tShell.toFixed(2)], [1, '1']].forEach(function (g) {
       tx(XD(g[0]), papBot + 13, g[1], 'fill:var(--muted);font-size:14px',
          'middle', svg);
     });
@@ -21022,18 +21304,24 @@ self.onmessage = function (ev) {
     });
     lg2 += '<span>' + (accMode
       ? 'fill strength = P(CO₂ refill); hollow = locked'
-      : 'dot = one vacancy (window)') + '</span>';
-    lg2 += '<span>disc core = bulk occupation</span>';
+      : 'dot = one vacancy on one O site (shell)') + '</span>';
+    lg2 += '<span>tint = bulk occupation (disc core and window core)'
+      + '</span>';
     el.smPvLegend.innerHTML = lg2;
 
     var shellTheta = (geom.N_s + geom.N_ss)
       ? shellU / (geom.N_s + geom.N_ss) : 0;
-    el.smPvNote.textContent = 'Shell (' + tShell.toFixed(2) + ' nm): '
+    el.smPvNote.textContent = 'Shell (bridging plane + ' + nLay
+      + ' × ' + t1.toFixed(3) + ' nm oxygen layer'
+      + (nLay > 1 ? 's' : '') + ' = 1 + ' + (4 * nLay)
+      + ' O per (1×1) cell, ' + tShell.toFixed(2) + ' nm): '
       + f2(shellU) + ' μmol-O/g = ' + shellPct.toFixed(1)
       + '% of the inventory at ' + (shellTheta * 100).toFixed(0)
       + '% local depletion; core (' + Math.round(Rnm) + ' nm): '
       + f2(out.umol_g.bulk) + ' μmol-O/g at θ = ' + thf(out.theta.bulk)
-      + '. Surface row: ' + (pat.sampled
+      + '. The subsurface class is a declared shell thickness, not one '
+      + 'atomic row: each layer holds four times the bridging-row '
+      + 'capacity. Surface row: ' + (pat.sampled
         ? 'sampled Monte Carlo configuration.'
         : 'ideal-preview draw. Run the model for the sampled arrangement.');
   }
@@ -21297,8 +21585,8 @@ self.onmessage = function (ev) {
     });
   });
   el.smT.addEventListener('input', scheduleEnv);
-  [el.smVO, el.smGeoVal, el.smEaS, el.smEaSS, el.smEaB, el.smAS, el.smASS,
-   el.smAB, el.smKinT, el.smExp, el.smPCO2].forEach(function (n) {
+  [el.smVO, el.smGeoVal, el.smSS, el.smEaS, el.smEaSS, el.smEaB, el.smAS,
+   el.smASS, el.smAB, el.smKinT, el.smExp, el.smPCO2].forEach(function (n) {
     n.addEventListener('input', solve);
   });
   el.smPvAcc.addEventListener('change', function () {
