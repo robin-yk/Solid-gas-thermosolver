@@ -431,24 +431,32 @@ def test_page_inlines_the_statmech_stack():
     for src in sources:
         assert src.read_text() in html, \
             f'page is stale against {src.name} - run build_ti_solver.py'
-    for token in ('__SM_DATA__', '__SM_ENGINE__', '__SM_WORKER__',
-                  '__SM_UI__', '__SM_EQS__'):
+    for token in ('__SM_DATA__', '__SM_ENGINE__', '__CG_ENGINE__',
+                  '__SM_WORKER__', '__SM_UI__', '__SM_EQS__'):
         assert token not in html
+    assert (WEB / 'cgmc.js').read_text() in html, \
+        'page is stale against cgmc.js - run build_ti_solver.py'
 
 
 def test_page_carries_the_defect_workspace_and_disclosures():
     html = (DOCS / 'ti_solver.html').read_text()
     assert 'Defect stat mech' in html
     for phrase in ('Li, Guo &amp; Robertson', 'Birschitzky',
-                   'reconstruction onset', 'not reduction kinetics',
+                   'not reduction kinetics', 'conditional-equilibrium',
                    'rutile_dft.json', 'Widom insertion',
                    'Placeholder kinetics', 'Recoverable fraction',
-                   '-accessible inventory', '(S1)', '(S12)',
+                   '-accessible inventory', '(S1)', '(S15)',
                    'Oxygen environment', 'ThermoBridge', 'phaseValidity',
                    'Particle cross-section', 'outer 0.65 nm shell',
                    'Monte Carlo arrangement', 'Katsoulakis',
-                   'OriginLab, no weighting'):
-        assert phrase in html, f'disclosure lost: {phrase}'
+                   'OriginLab, no weighting',
+                   # the phase construction and its honesty clauses
+                   'added-row', 'lever rule', 'Onishi',
+                   'line compound', 'extended defects',
+                   'effective pair interactions',
+                   'illustrative until fitted',
+                   'high-coverage branch'):
+        assert phrase.lower() in html.lower(), f'disclosure lost: {phrase}'
     # the dataset is swappable, and the page says so
     assert 'calibrated to those constraints' in html
     assert 'will replace them directly' in html

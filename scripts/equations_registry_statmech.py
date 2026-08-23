@@ -21,9 +21,10 @@ R.append(('eq', r'$\mu_V \;=\; -k_B T\, \ln\! \left[ \frac{1}{N_V + 1} \left\lan
 R.append(('note', r'Widom insertion on the sampling slab; verified against exact generating-polynomial ensembles and exact enumerations'))
 
 R.append(('head', '2 · Particle-scale matching'))
-R.append(('eq', r'$\theta_c(\mu_V) \;=\; \left[\, 1 + e^{(\epsilon_c - \mu_V)/k_B T} \right]^{-1} \ \ (c = ss,\, b)\,;\qquad \theta_s(\mu_V)\ \mathrm{from\ the\ MC\ isotherm}$', 'S5'))
-R.append(('eq', r'$\theta_{\mathrm{rec}} \simeq 0.17\!\text{-}\!0.20 \qquad \mathrm{(reported\ onset\ interval\ for\ the\ 1\!\times\!2\ reconstruction;\ validity\ boundary,\ not\ a\ cap)}$', 'S6'))
-R.append(('boxeq', r'$N_s\,\theta_s(\mu_V) \;+\; N_{ss}\,\theta_{ss}(\mu_V) \;+\; N_b\,\theta_b(\mu_V) \;=\; N_V^{\mathrm{tot}}$', 'S7'))
+R.append(('eq', r'$\theta_c(\mu_V) \;=\; \left[\, 1 + e^{(\epsilon_c - \mu_V)/k_B T} \right]^{-1} \ \ (c = s,\, ss,\, b)\qquad \mathrm{(analytic\ site\text{-}exclusion;\ the\ MC\ isotherm\ feeds\ only\ the\ ordering\ exhibit)}$', 'S5'))
+R.append(('eq', r'$\theta_s^{\mathrm{phase}} = \theta_s(\mu_V)\ \left[\mu_V\!<\!\mu_t\right];\ \ \theta_t \rightarrow 0.5\ \mathrm{lever\ rule}\ \left[\mu_V\!=\!\mu_t\right];\ \ 0.5\ \left[\mu_V\!>\!\mu_t\right]\,,\qquad \mu_t = \epsilon_s + k_B T \ln\!\frac{\theta_t}{1-\theta_t}\,,\ \ \theta_t = 0.17$', 'S6'))
+R.append(('note', r'first-order transition to the $1\!\times\!2$ added-row $\mathrm{Ti_2O_3}$ line phase (Onishi-Iwasawa stoichiometry: one O vacancy per two bridging sites); the high-coverage $1\!\times\!1$ branch is excluded from the phase set. Beyond the bulk solubility $\theta_{sol} = x_{sol}/2$, $\mu_V$ pins at $\mu_{cs} = \epsilon_b + k_B T \ln[\theta_{sol}/(1-\theta_{sol})]$ and the excess precipitates as extended defects (lever rule)'))
+R.append(('boxeq', r'$N_s\,\theta_s^{\mathrm{phase}}(\mu_V) \;+\; N_{ss}\,\theta_{ss}(\mu_V) \;+\; N_b\,\theta_b(\mu_V) \;+\; N_{\mathrm{ext}} \;=\; N_V^{\mathrm{tot}}$', 'S7'))
 R.append(('eq', r'$N_s = A\,\sigma_{\mathrm{br}}\,,\qquad N_{ss} = A\,\sigma_{\mathrm{layer}}\,,\qquad A = \frac{6}{\rho\, d}\ \ \mathrm{or\ BET}$', 'S8'))
 R.append(('note', r'real geometric site counts, not the slab ratio: at $d = 0.9\ \mu\mathrm{m}$, $N_s = 13.6\ \mu\mathrm{mol\text{-}O/g}$ against $25\,042\ \mu\mathrm{mol\text{-}O/g}$ of O sites'))
 

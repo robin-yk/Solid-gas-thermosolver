@@ -26,7 +26,7 @@ Active-set Gibbs minimization determines the stable gas composition and Ti-O pha
 
 ### Defect statistical mechanics
 
-Given a measured oxygen-deficiency inventory, a canonical lattice model distributes vacancies among rutile (110) surface, first-subsurface, and bulk sites. The calculation uses particle geometry, site energetics, site exclusion, and surface interactions. It reports equilibrium occupancy, not a diffusion profile or reduction kinetics.
+Given a measured oxygen-deficiency inventory, a canonical lattice model computes its conditional-equilibrium partition among rutile (110) surface, first-subsurface, and bulk sites, using particle geometry, site energetics, and site exclusion. The (1x2) surface reconstruction and the shear-plane solubility ceiling enter as competing phases (lever rule at pinned chemical potential), so nothing is clipped and the phase boundaries are certified numbers. A coarse-grained KMC layer adds reoxidation transport. It reports thermodynamic tendency, not a diffusion profile or reduction kinetics.
 
 See [docs/equilibrium-method.md](docs/equilibrium-method.md) and [docs/defect-model.md](docs/defect-model.md) for the full formulations.
 

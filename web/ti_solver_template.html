@@ -364,15 +364,18 @@ a{color:var(--blue)}
 <div class="note calm">
   <b>Scope.</b> Canonical lattice statistical mechanics for a measured oxygen-vacancy
   inventory in rutile TiO<sub>2</sub>: the total V<sub>O</sub> is fixed from experiment
-  and distributed over (110) bridging-O, first-subsurface and bulk sites at equal vacancy
-  chemical potential. Site energies are polaron-relaxed literature DFT values;
-  Ti<sup>3+</sup> polarons are not explicit variables in this version. The reported
-  17&ndash;20% bridging-O vacancy interval marks onset of the (1&times;2)
-  reconstruction. Coverage is not clipped there. Results in and above this interval
-  are conditional extrapolations of the unreconstructed (1&times;1) surface Hamiltonian
-  because reconstructed-phase energetics are not implemented. The result is the equilibrium
-  distribution of a fixed inventory, not reduction kinetics; coupling to the gas-phase
-  oxygen potential arrives with the thermodynamic bridge in a later version.
+  and its conditional-equilibrium partition over (110) bridging-O, first-subsurface and
+  bulk sites is computed at equal vacancy chemical potential &mdash; the thermodynamic
+  tendency for redistribution of a prescribed inventory, not reduction kinetics.
+  Site energies are polaron-relaxed literature DFT values; Ti<sup>3+</sup> polarons are
+  not explicit variables in this version. The reported 17&ndash;20% onset of the
+  (1&times;2) reconstruction is treated as a competing surface <i>phase</i>, not a cap:
+  at the onset the (1&times;1) vacancy lattice gas coexists with the added-row
+  Ti<sub>2</sub>O<sub>3</sub> line phase (lever rule at pinned &mu;<sub>V</sub>,
+  areal O deficiency 0.5 bridging-ML), and beyond the bulk point-defect solubility
+  &mu;<sub>V</sub> pins at the estimated rutile/CS coexistence with the excess reported
+  as extended defects. Nothing is clipped and no remainder is silently reassigned;
+  the idealisations of each phase branch are declared in <code>data/rutile_dft.json</code>.
 </div>
 </details>
 
@@ -484,7 +487,29 @@ a{color:var(--blue)}
       k<sub>c</sub> = A<sub>c</sub> p<sup>m</sup> e<sup>&minus;Ea/kT</sup>,
       P<sub>c</sub> = 1 &minus; e<sup>&minus;kt</sup>. The prefactors are effective
       because deeper classes are transport-limited. None of these numbers
-      is a literature value; they are replaced when fitted or DFT kinetics arrive.</div>
+      is a literature value; every derived recoverable fraction is illustrative
+      until fitted to the CO<sub>2</sub> recovery measurements.</div>
+    </div>
+
+    <div class="panel pad">
+      <h3 style="margin-top:0">Transport &mdash; CGMC</h3>
+      <div class="field pair">
+        <div><label for="cgEm">Bulk barrier E<sub>m</sub></label>
+          <input type="number" id="cgEm" value="0.65" step="0.05"><div class="readout">eV per hop</div></div>
+        <div><label for="cgCells">Coarse cells</label>
+          <input type="number" id="cgCells" value="28" step="4" min="6"><div class="readout">radial</div></div>
+      </div>
+      <div class="field pair">
+        <div><label for="cgTarget">Measured recovery</label>
+          <input type="number" id="cgTarget" step="1" min="0" max="100" placeholder="e.g. 40"><div class="readout">% at the exposure above</div></div>
+        <div style="align-self:end"><button class="act" id="cgFit" type="button">Fit E<sub>m,eff</sub></button></div>
+      </div>
+      <div class="readout" id="cgFitOut"></div>
+      <div class="readout">Coarse-grained KMC of reoxidation transport
+      (Katsoulakis &amp; Vlachos, J. Chem. Phys. 119, 9412 (2003)): radial coarse
+      cells over the particle, detailed-balance exchange rates against the same
+      site-class Hamiltonian, irreversible surface refill from the card above.
+      E<sub>m</sub> defaults to the neutral-vacancy bulk barrier (Iddir et al.).</div>
     </div>
 
     <div class="panel pad">
@@ -513,9 +538,13 @@ a{color:var(--blue)}
 
     <div class="panel pad">
       <h2>Vacancy distribution</h2>
-      <p class="sub">Share of the total inventory in each site class at the common
-      vacancy chemical potential, using the geometric site counts of the spherical
-      particle. The sampling-lattice ratio is not used.</p>
+      <p class="sub">Conditional-equilibrium partition of the measured inventory at the
+      common vacancy chemical potential, using the geometric site counts of the
+      spherical particle and the phase-aware surface (the (1&times;2) reconstruction
+      and the CS ceiling enter as phases). The partition uses the formation energies
+      alone; the sampled surface Monte Carlo feeds only the ordering statistics below,
+      because its pair terms are effective parameters constrained to arrangement
+      statistics, not layer energetics.</p>
       <svg id="smChart" class="smchart" viewBox="0 0 560 300" role="img"
            aria-label="Vacancy distribution over surface, subsurface and bulk sites">
         <text x="280" y="150" text-anchor="middle" fill="#657482"
@@ -550,10 +579,12 @@ a{color:var(--blue)}
     <div class="panel pad">
       <h2>CO<sub>2</sub>-accessible inventory</h2>
       <p class="sub">First-order refill of each site class during one CO<sub>2</sub>
-      exposure, applied to the distribution above. The curve carries the same
-      quantities along a total-inventory axis at the current temperature and
-      energetics. The reconstruction onset interval is marked as a model-boundary
-      warning, and the recoverable fraction tracks the resulting site distribution.</p>
+      exposure, applied to the distribution above (illustrative until the kinetics are
+      fitted). The figure walks the phase ladder along a total-inventory axis: the
+      surface crosses the (1&times;2) coexistence riser and holds at the line-phase
+      deficiency, the subsurface shell fills, and beyond the estimated CS ceiling the
+      excess precipitates as extended defects (shaded). Dashed verticals mark the
+      certified phase boundaries at the current temperature.</p>
       <div class="kpis" id="smAccKpis"></div>
       <div class="chartwrap">
         <svg id="smSweep" class="smchart" style="max-width:820px" viewBox="0 0 720 380"
@@ -566,32 +597,76 @@ a{color:var(--blue)}
       <div id="smCoupledNote"></div>
     </div>
 
+    <div class="panel pad">
+      <h2>Reoxidation kinetics &mdash; CGMC</h2>
+      <p class="sub">Coarse-grained kinetic Monte Carlo of the whole particle during
+      one CO<sub>2</sub> exposure: radial coarse cells, Arrhenius exchange rates in
+      detailed balance with the (1&times;1) site-class Hamiltonian, and the
+      irreversible surface refill as the only gas channel. With the neutral-vacancy
+      barrier, transport is not rate-limiting at 600 &deg;C &mdash; a measured partial
+      recovery therefore reads back as an <i>effective</i> migration barrier.</p>
+      <div class="kpis" id="cgKpis"></div>
+      <div class="chartwrap">
+        <svg id="cgChart" class="smchart" style="max-width:820px" viewBox="0 0 720 330"
+             role="img" aria-label="CGMC recovery against exposure time"></svg>
+      </div>
+      <div class="legrow" id="cgLegend"></div>
+      <div class="chartwrap" style="margin-top:14px">
+        <svg id="cgProf" class="smchart" style="max-width:820px" viewBox="0 0 720 300"
+             role="img" aria-label="Radial vacancy occupancy profiles during
+             reoxidation"></svg>
+      </div>
+      <div class="legrow" id="cgProfLegend"></div>
+      <div class="readout" id="cgNote" style="margin-top:8px"></div>
+    </div>
+
     <details class="panel technical-model">
       <summary>Model formulation and references</summary>
       <div class="technical-model-body">
-      <p>Three site classes hold the fixed total: rutile (110) bridging O, the first
-      subsurface O layer, and bulk. The distribution equalises the vacancy chemical
-      potential across the classes. Surface vacancies interact through a short-range
-      pair table, so the surface isotherm &theta;<sub>s</sub>(&mu;<sub>V</sub>) is
-      sampled by canonical Metropolis Monte Carlo on a representative slab, with Widom
-      insertion supplying the chemical potential; subsurface and bulk sites are
-      non-interacting in this version and follow the exact site-exclusion isotherm.</p>
-      <p>The particle-scale balance uses the real geometric site counts rather than the
-      slab's class ratio. At 0.9 &mu;m the surface layer holds at most 13.6
-      &mu;mol-O/g, or 14% of a 95 &mu;mol-O/g inventory. Deeper sites must
-      carry most of that inventory whatever the energetics. Crossing the reported
-      17&ndash;20% reconstruction-onset interval triggers a model-boundary warning;
-      it does not impose a coverage cap. Because the
-      isotherm depends only on temperature and energetics, one Monte Carlo run serves
-      every inventory and particle size.</p>
+      <p>We calculate the conditional-equilibrium partitioning of the measured vacancy
+      inventory to determine the thermodynamic tendency for vacancy redistribution
+      among surface, subsurface and bulk environments. Three site classes hold the
+      fixed total: rutile (110) bridging O, the first subsurface O layer (the in-plane
+      and sub-bridging O of the outer trilayer &mdash; removal of non-bridging oxygen
+      is this class), and bulk. The partition equalises the vacancy chemical potential
+      using the analytic site-exclusion isotherms on the formation energies alone.
+      Surface lateral ordering is a separate calculation: effective pair interactions,
+      constrained to reproduce the vacancy-correlation statistics reported by
+      Birschitzky et al., are sampled by canonical Metropolis Monte Carlo with Widom
+      insertion, and inform the arrangement exhibits only &mdash; they never enter the
+      layer partition.</p>
+      <p>Two phase branches close the construction. The (1&times;2) reconstruction
+      enters as a first-order surface transition at the reported onset: the (1&times;1)
+      lattice gas coexists with the added-row Ti<sub>2</sub>O<sub>3</sub> line phase
+      (Onishi&ndash;Iwasawa stoichiometry, one O vacancy per two bridging sites,
+      &theta;<sub>eff</sub> = 0.5; confirmed stable under reduction by Reticcioli et
+      al., Phys. Rev. X 7, 031053 (2017)), with the lever rule at pinned
+      &mu;<sub>V</sub>. The high-coverage branch of the ideal (1&times;1) gas is
+      excluded from the phase set on physical grounds (repulsive ordering energies;
+      the observed strongly reduced surface is reconstructed, not bridging-stripped).
+      Beyond the bulk point-defect solubility (x<sub>sol</sub> &asymp; 0.008 in
+      TiO<sub>2&minus;x</sub>, an estimate), &mu;<sub>V</sub> pins at the rutile/CS
+      coexistence and the excess precipitates as extended defects. The particle-scale
+      balance uses the real geometric site counts: at 0.9 &mu;m the bridging-O layer
+      holds at most 13.6 &mu;mol-O/g (0.054% of all O sites), so a 95 &mu;mol-O/g
+      inventory drives the surface through the reconstruction (complete by
+      &sim;6.8 &mu;mol-O/g) and loads the subsurface shell to &sim;95% occupancy,
+      just below the estimated CS ceiling (&sim;160 &mu;mol-O/g at 600 &deg;C).
+      The certified boundary ladder is printed above the results; the measured BET
+      area (1.60 m&sup2;/g) and the diameter model agree on it to &sim;2%.</p>
       <p>Site energies are polaron-relaxed DFT values: the oxygen vacancy itself is most
       stable in the surface layer, while the Ti<sup>3+</sup> small polarons it donates
-      prefer subsurface Ti (Reticcioli et al., Phys. Rev. B 98, 045306 (2018)). Explicit
-      polaron variables and the grand-canonical coupling to the gas-phase oxygen
-      potential are later stages of this workspace; the kinetic transport layer will
-      follow the group's coarse-grained kinetic Monte Carlo framework (Katsoulakis &amp;
-      Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis,
-      Majda &amp; Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003)).</p>
+      prefer subsurface Ti (Reticcioli et al., Phys. Rev. B 98, 045306 (2018)). The
+      single subsurface energy is applied to all four O sites of the first layer
+      (a data-granularity limit; per-site project DFT will split the class in the
+      dataset). Explicit polaron variables and the grand-canonical coupling to the
+      gas-phase oxygen potential are later stages of this workspace. The kinetic
+      transport layer implements the group's coarse-grained kinetic Monte Carlo
+      framework (Katsoulakis &amp; Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI
+      10.1063/1.1616513; Katsoulakis, Majda &amp; Vlachos, Proc. Natl. Acad. Sci. USA
+      100, 782 (2003)): detailed-balance exchange rates on radial coarse cells,
+      reducing in the dilute limit to spherical diffusion, with the CO<sub>2</sub>
+      surface refill as the one irreversible channel.</p>
       <p><b>Dataset.</b> Layer energies: Li, Guo &amp; Robertson, J. Phys. Chem. C 119
       (2015), DOI 10.1021/acs.jpcc.5b02430: sX 0 / +0.59 / +1.31 eV, GGA
       0 / +0.39 / +1.08 eV (surface / first subsurface / bulk); the ordering survives the
@@ -614,7 +689,7 @@ a{color:var(--blue)}
       oracle plus exact finite-lattice ensembles by the repository test suite
       (<code>tests/test_statmech.py</code>, <code>tests/test_statmech_port.py</code>).</div>
       <h3 style="margin-top:24px">Formulation</h3>
-      <p class="sub">Equations (S1)&ndash;(S12), as implemented. Rendered at build time
+      <p class="sub">Equations (S1)&ndash;(S15), as implemented. Rendered at build time
       from <code>equations_registry_statmech.py</code>.</p>
       __SM_EQS__
       </div>
@@ -642,6 +717,7 @@ a{color:var(--blue)}
 <script>__ENGINE__</script>
 <script>__PAGE__</script>
 <script id="sm-engine">__SM_ENGINE__</script>
+<script id="cg-engine">__CG_ENGINE__</script>
 <script type="text/plain" id="sm-worker-src">__SM_WORKER__</script>
 <script>__SM_UI__</script>
 <script>

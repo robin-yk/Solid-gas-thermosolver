@@ -303,14 +303,17 @@
     var tC = currentT();
     var vo = num(el.smVO, DATA.defaults.VO_total_umol_g);
     var eps = currentEps();
-    var kt = SM.KB_EV * (tC + 273.15);
+    /* decoupled by design: the layer partition is the analytic
+       phase-aware solve on the formation energies; the sampled isotherm
+       feeds only the ordering exhibit, at the coverage of the surviving
+       (1x1) patches once coexistence is reached */
     var fresh = !!iso && isoKey === isoSignature();
-    var fn = fresh ? SM.thetaSInterp(iso, eps[0], kt) : undefined;
-    var out = SM.distribute(DATA, tC, vo, geom,
-                            { eps: eps, theta_s_fn: fn });
+    var out = SM.distribute(DATA, tC, vo, geom, { eps: eps });
     out.geometry = geom;
-    out.spacing = fresh ? SM.spacingSummary(iso, out.theta.surface) : null;
-    render(out, fresh, { tC: tC, eps: eps, fn: fn, geom: geom,
+    out.spacing = fresh ? SM.spacingSummary(iso,
+      Math.min(out.theta.surface, DATA.surface_phases.theta_transition))
+      : null;
+    render(out, fresh, { tC: tC, eps: eps, geom: geom,
                          kin: currentKin() });
   }
 
@@ -340,29 +343,46 @@
     { key: 'subsurface', label: 'Subsurface', varname: '--cSub' },
     { key: 'bulk', label: 'Bulk', varname: '--cBulk' }];
 
+  var REGIME_LABEL = {
+    dilute: '(1×1) point-defect regime, below the reconstruction onset.',
+    surface_coexistence: 'Surface in (1×1)/(1×2) two-phase coexistence '
+      + '(lever rule at pinned μ<sub>V</sub>).',
+    reconstructed: 'Surface fully reconstructed to the (1×2) added-row '
+      + 'Ti₂O₃ phase; deeper classes on their isotherms.',
+    cs_coexistence: 'μ<sub>V</sub> pinned at the rutile/CS coexistence '
+      + 'estimate; the excess precipitates as extended defects.'
+  };
+
   function render(out, fresh, ctx) {
     var geom = out.geometry;
-    var acc = SM.accessibility(DATA, out.umol_g, ctx.kin);
+    var acc = SM.accessibility(DATA, out.umol_g, ctx.kin,
+                               out.VO_total_umol_g);
+    var b = out.phase_boundaries;
     el.smDerived.textContent = 'x in TiO2-x = ' + out.x_TiO2mx.toFixed(4)
       + ' · Ti³⁺/Ti = ' + (out.Ti3_frac * 100).toFixed(2)
       + '% · area ' + geom.area_m2_g.toFixed(2)
-      + ' m²/g · surface capacity ' + geom.N_s.toFixed(1)
-      + ' μmol-O/g';
+      + ' m²/g · phase ladder at ' + out.T_C + ' °C: (1×2) onset '
+      + b.VO_onset_umol_g.toFixed(2) + ' → reconstruction complete '
+      + b.VO_recon_complete_umol_g.toFixed(2) + ' → CS ceiling ~'
+      + b.VO_cs_umol_g.toFixed(0) + ' μmol-O/g (est.)';
 
     var bad = out.warnings.some(function (w) {
-      return w.kind === 'x_max' || w.kind === 'unresolved';
+      return w.kind === 'unresolved';
     });
     var parts = CLASSES.map(function (c) {
       return c.label.toLowerCase() + ' ' + f2(out.umol_g[c.key]) + ' ('
         + pctf(out.fractions[c.key]) + ')';
     });
+    if (out.extended_defects_umol_g > 0) {
+      parts.push('extended defects ' + f2(out.extended_defects_umol_g)
+        + ' (' + pctf(out.fractions.extended) + ')');
+    }
     el.smSummary.className = 'verdict ' + (bad ? 'red' : 'none');
     el.smSummary.innerHTML = '<b>' + f2(out.VO_total_umol_g)
-      + ' μmol-O/g at ' + out.T_C + ' °C:</b> ' + parts.join(', ')
-      + ' μmol-O/g. Vacancy chemical potential μ<sub>V</sub> = '
-      + out.mu_V_eV.toFixed(3) + ' eV.'
-      + (fresh ? '' : ' <span style="color:var(--muted)">Ideal-surface '
-         + 'preview. The interacting isotherm is being sampled.</span>');
+      + ' μmol-O/g at ' + out.T_C
+      + ' °C (conditional equilibrium):</b> ' + parts.join(', ')
+      + ' μmol-O/g. μ<sub>V</sub> = ' + out.mu_V_eV.toFixed(3) + ' eV. '
+      + REGIME_LABEL[out.regime];
 
     var k = '';
     CLASSES.forEach(function (c) {
@@ -372,13 +392,32 @@
         + '</div><div class="u">μmol-O/g · '
         + pctf(out.fractions[c.key]) + ' of inventory</div></div>';
     });
+    var sp = out.surface_phase;
+    k += '<div class="kpi"><div class="k">Surface phase</div>'
+      + '<div class="v" style="font-size:20px">'
+      + (sp.phase === '1x1' ? '(1×1)'
+         : sp.phase === '1x2' ? '(1×2)' : '(1×1)+(1×2)')
+      + '</div><div class="u">'
+      + (sp.phase === 'coexistence'
+         ? (sp.phi_reconstructed * 100).toFixed(0) + '% of area reconstructed'
+         : sp.phase === '1x2' ? 'added-row Ti₂O₃, θ_eff = 0.5'
+         : 'vacancy lattice gas') + '</div></div>';
+    if (out.extended_defects_umol_g > 0) {
+      k += '<div class="kpi"><div class="k">Extended defects</div>'
+        + '<div class="v">' + f2(out.extended_defects_umol_g) + '</div>'
+        + '<div class="u">μmol-O/g as CS planes (lever rule, est.)'
+        + '</div></div>';
+    }
     k += '<div class="kpi"><div class="k">CO<sub>2</sub>-recoverable</div>'
       + '<div class="v">' + pctf(acc.f_recoverable) + '</div>'
-      + '<div class="u">' + f2(acc.accessible_umol_g)
-      + ' μmol-O/g accessible</div></div>';
+      + '<div class="u">illustrative — placeholder kinetics</div></div>';
     k += '<div class="kpi"><div class="k">μ<sub>V</sub> (vacancy)</div>'
       + '<div class="v">' + out.mu_V_eV.toFixed(3) + '</div>'
-      + '<div class="u">eV, common to all classes</div></div>';
+      + '<div class="u">eV'
+      + (out.regime === 'surface_coexistence'
+         || out.regime === 'cs_coexistence'
+         ? ', pinned at coexistence' : ', common to all classes')
+      + '</div></div>';
     el.smKpis.innerHTML = k;
 
     drawChart(out);
@@ -386,26 +425,35 @@
     var h = '<tr><th>Site class</th><th>θ occupancy</th>'
       + '<th>μmol-O/g</th><th>share of inventory</th></tr>';
     CLASSES.forEach(function (c) {
+      var th = thf(out.theta[c.key]);
+      if (c.key === 'surface' && sp.phase !== '1x1') {
+        th += sp.phase === '1x2' ? ' · (1×2)' : ' · mixed';
+      }
       h += '<tr><td><span class="swatch" style="background:var(' + c.varname
-        + ')"></span>' + c.label + '</td><td>' + thf(out.theta[c.key])
+        + ')"></span>' + c.label + '</td><td>' + th
         + '</td><td>' + f2(out.umol_g[c.key]) + '</td><td>'
         + pctf(out.fractions[c.key]) + '</td></tr>';
     });
+    if (out.extended_defects_umol_g > 0) {
+      h += '<tr><td>Extended defects (CS)</td><td>—</td><td>'
+        + f2(out.extended_defects_umol_g) + '</td><td>'
+        + pctf(out.fractions.extended) + '</td></tr>';
+    }
     h += '<tr><td><b>Total</b></td><td></td><td><b>'
       + f2(out.matched_umol_g) + '</b></td><td><b>100%</b></td></tr>';
     el.smTable.innerHTML = h;
 
     if (out.spacing) {
-      el.smSpacing.textContent = 'Surface pair statistics at θs = '
-        + out.spacing.at_theta_s.toFixed(3) + ': modal spacing '
+      el.smSpacing.textContent = 'Surface ordering (separate calculation; '
+        + 'effective pair interactions constrained to the Birschitzky '
+        + 'et al. statistics): at θs = '
+        + out.spacing.at_theta_s.toFixed(3) + ', modal spacing '
         + out.spacing.modal_gap_sites + ' bridging sites, P(spacing ≤ 2) '
         + '= ' + (out.spacing.P_gap_le_2 * 100).toFixed(1) + '%. '
         + (out.surface_reconstruction_regime
-          ? 'The 4–5-site literature comparison applies near the 17–20% '
-            + 'reconstruction-onset interval; this higher-coverage (1×1) '
-            + 'snapshot is outside that validation range.'
-          : 'Near the reconstruction onset, the literature reports modal '
-            + 'spacing 4–5 with close pairs suppressed.');
+          ? 'Sampled at the coverage of the surviving (1×1) patches '
+            + '(θ_t) — in coexistence the (1×1) domains sit there.'
+          : 'Literature window: modal 4–5, close pairs suppressed.');
     } else {
       el.smSpacing.textContent = '';
     }
@@ -430,9 +478,10 @@
       }
     }
     out.warnings.forEach(function (w) {
-      var calm = w.kind === 'surface_reconstruction' || w.kind === 'x_near';
+      var calm = w.kind === 'surface_phase' || w.kind === 'x_near';
       notes += '<div class="note' + (calm ? ' calm' : '') + '">'
-        + (w.kind === 'x_max' ? '<b>Model range.</b> ' : '')
+        + (w.kind === 'cs_precipitation' ? '<b>Phase change.</b> '
+           : w.kind === 'subsurface_dense' ? '<b>Reduced shell.</b> ' : '')
         + esc(w.text) + '</div>';
     });
     el.smNotes.innerHTML = notes;
@@ -447,10 +496,10 @@
     var k = '<div class="kpi"><div class="k">CO<sub>2</sub>-accessible '
       + 'V<sub>O</sub></div><div class="v">' + f2(acc.accessible_umol_g)
       + '</div><div class="u">μmol-O/g of ' + f2(out.VO_total_umol_g)
-      + ' total</div></div>';
+      + ' total · illustrative</div></div>';
     k += '<div class="kpi"><div class="k">Recoverable fraction</div>'
       + '<div class="v">' + pctf(acc.f_recoverable) + '</div>'
-      + '<div class="u">V<sub>O,acc</sub> / V<sub>O,tot</sub> at '
+      + '<div class="u">illustrative until fitted · '
       + acc.params.T_reox_C + ' °C, ' + acc.params.exposure_s + ' s</div></div>';
     var dc = DATA.dielectric_correlation;
     if (di) {
@@ -492,13 +541,13 @@
       + '<code>data/rutile_dft.json</code>.</div>';
 
     var vo = out.VO_total_umol_g;
-    var xmax = 150;
-    while (xmax < vo * 1.25) xmax += 50;
+    var b = out.phase_boundaries;
+    var xmax = Math.max(220, b.VO_cs_umol_g * 1.3, vo * 1.25);
     var voList = [];
-    for (var i = 0; i <= 60; i++) voList.push(xmax * i / 60);
+    for (var i = 0; i <= 72; i++) voList.push(xmax * i / 72);
     var rows = SM.sweep(DATA, ctx.tC, ctx.geom, voList,
-                        { theta_s_fn: ctx.fn, eps: ctx.eps, kin: ctx.kin });
-    drawSweep(rows, vo, xmax);
+                        { eps: ctx.eps, kin: ctx.kin });
+    drawSweep(rows, vo, xmax, b);
 
     renderParticle(out, acc, fresh);
     renderCg(out, acc, ctx);
@@ -591,12 +640,14 @@
     { key: 'surface', label: 'Surface', varname: '--cSurf', dash: null },
     { key: 'subsurface', label: 'Subsurface', varname: '--cSub', dash: null },
     { key: 'bulk', label: 'Bulk', varname: '--cBulk', dash: null },
+    { key: 'extended', label: 'Extended (CS)', varname: '--red',
+      dash: '2 4' },
     { key: 'accessible', label: 'CO₂-accessible', varname: '--ink',
       dash: '7 5' }];
 
   var sweepState = null;
 
-  function drawSweep(rows, currentVO, xmax) {
+  function drawSweep(rows, currentVO, xmax, bounds) {
     var svg = el.smSweep;
     while (svg.firstChild) svg.removeChild(svg.firstChild);
     var W = 720, H = 380, L = 56, R = 116, T = 26, B = 52;
@@ -614,6 +665,32 @@
     function X(v) { return L + pw * v / xmax; }
     function Y(v) { return T + ph - ph * v / ymax; }
     var i, yv, y;
+
+    /* phase regions: CS band shaded, boundaries as dashed verticals */
+    if (bounds) {
+      var xcs = X(Math.min(bounds.VO_cs_umol_g, xmax));
+      if (xcs < L + pw - 2) {
+        sv('rect', { x: xcs, y: T, width: L + pw - xcs, height: ph,
+          style: 'fill:var(--red);opacity:0.05' }, svg);
+        var bl = sv('text', { x: Math.min(xcs + 8, L + pw - 8), y: T + 16,
+          style: 'fill:var(--red);font-size:12.5px;opacity:0.85' }, svg);
+        bl.textContent = 'CS precipitation (est.)';
+      }
+      [[bounds.VO_onset_umol_g, '(1×2) onset'],
+       [bounds.VO_recon_complete_umol_g, 'recon. complete'],
+       [bounds.VO_cs_umol_g, null]].forEach(function (q, qi) {
+        if (q[0] > xmax) return;
+        var bx = X(q[0]);
+        sv('line', { x1: bx, x2: bx, y1: T, y2: T + ph,
+          'stroke-dasharray': '2 5',
+          style: 'stroke:var(--muted);stroke-width:1;opacity:0.8' }, svg);
+        if (q[1]) {
+          var lt = sv('text', { x: bx + 4, y: T + ph - 8 - qi * 15,
+            style: 'fill:var(--muted);font-size:12px' }, svg);
+          lt.textContent = q[1];
+        }
+      });
+    }
     for (i = 0; i <= 4; i++) {
       yv = step * i;
       y = Y(yv);
@@ -732,8 +809,10 @@
     var tip = el.smTip;
     tip.style.display = 'block';
     tip.innerHTML = '<b>' + f2(row.VO_total_umol_g)
-      + ' μmol-O/g total</b><br>surface ' + f2(row.surface)
+      + ' μmol-O/g total</b> · ' + row.regime.replace(/_/g, ' ')
+      + '<br>surface ' + f2(row.surface)
       + ' · subsurface ' + f2(row.subsurface) + ' · bulk ' + f2(row.bulk)
+      + (row.extended > 0 ? ' · CS ' + f2(row.extended) : '')
       + '<br>accessible ' + f2(row.accessible) + ' ('
       + pctf(row.f_recoverable) + ')';
     var wrap = svg.parentNode;
@@ -1110,8 +1189,10 @@
     drawCgChart(r, tEnd, acc);
     drawCgProf(r, sys);
     el.cgNote.textContent = 'Closed-system check: with the gas channel '
-      + 'shut, this transport network relaxes to the equilibrium split of '
-      + 'the distribution panel (enforced by tests/test_cgmc.py). '
+      + 'shut, this transport network relaxes to the exact product-'
+      + 'binomial equilibrium of its own (1×1) site-class Hamiltonian '
+      + '(enforced by tests/test_cgmc.py). Reconstruction kinetics are '
+      + 'not modelled; the initial state is the phase-aware partition. '
       + 'Deterministic mean of the CGMC process; fluctuations scale as '
       + '1/√N ≈ 0.01% at the ~10⁸ vacancies of one particle. '
       + 'E_m = 0.65 eV is the neutral-vacancy bulk barrier (Iddir et al.); '
