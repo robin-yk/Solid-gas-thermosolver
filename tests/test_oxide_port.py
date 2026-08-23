@@ -21,7 +21,7 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 HARNESS = ROOT / 'tests' / 'js' / 'port_harness.js'
-REFERENCE = ROOT / 'oxide_reference.json'
+REFERENCE = ROOT / 'data' / 'oxide_reference.json'
 TEMPS = [500, 700, 900, 1100, 1300, 1500]
 PRESENT_PCT = 1e-4          # a gas species below this is not being compared
 TOL = 1e-5                  # five significant figures
@@ -32,7 +32,8 @@ TRACE_ABS_TOL_PCT = 1e-7    # optimiser noise near PRESENT_PCT
 def pair():
     if shutil.which('node') is None:
         pytest.skip('node is not available')
-    for f in (REFERENCE, ROOT / 'oxide_data.json', ROOT / 'oxide.js'):
+    for f in (REFERENCE, ROOT / 'data' / 'oxide_data.json',
+              ROOT / 'web' / 'oxide.js'):
         if not f.exists():
             pytest.skip(f'{f.name} missing - run export_oxide.py and oxide_reference.py')
     r = subprocess.run(['node', str(HARNESS), str(ROOT)],

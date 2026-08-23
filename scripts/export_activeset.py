@@ -8,6 +8,12 @@ package so the exports cannot drift.
 """
 
 import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+sys.path.insert(0, str(ROOT))
 
 from solidgas.activeset import (GASES, SOLIDS, GAS_FORMULA, STOICH, TI3,
                                 ATOMIC_WEIGHT, MODE_NOTE)
@@ -45,7 +51,7 @@ def build():
 
 def main():
     data = build()
-    with open('activeset_data.json', 'w') as fh:
+    with (DATA / 'activeset_data.json').open('w') as fh:
         json.dump(data, fh, indent=1, sort_keys=True)
     print(f"activeset_data.json written "
           f"({len(json.dumps(data)) / 1024:.0f} kB)")

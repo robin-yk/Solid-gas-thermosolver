@@ -13,6 +13,7 @@ Outputs, inlined by build_ti_solver.py:
 
 import io
 import re
+from pathlib import Path
 
 import matplotlib
 matplotlib.use('Agg')
@@ -22,6 +23,8 @@ from equations_registry import R as R_THERMO
 from equations_registry_statmech import R as R_STATMECH
 
 INK = '#0b0b0b'
+ROOT = Path(__file__).resolve().parent.parent
+OUTPUT = ROOT / 'web' / 'generated'
 
 plt.rcParams.update({
     'mathtext.fontset': 'cm',
@@ -111,12 +114,13 @@ def build_fragment(rows, id_prefix='', glyph_prefix=''):
 
 
 def main():
+    OUTPUT.mkdir(parents=True, exist_ok=True)
     frag = build_fragment(R_THERMO)
-    with open('equations_method.html', 'w') as fh:
+    with (OUTPUT / 'equations_method.html').open('w') as fh:
         fh.write(frag)
     print(f'equations_method.html written ({len(frag) / 1024:.0f} kB)')
     frag = build_fragment(R_STATMECH, id_prefix='sm-', glyph_prefix='sm-')
-    with open('equations_statmech.html', 'w') as fh:
+    with (OUTPUT / 'equations_statmech.html').open('w') as fh:
         fh.write(frag)
     print(f'equations_statmech.html written ({len(frag) / 1024:.0f} kB)')
 

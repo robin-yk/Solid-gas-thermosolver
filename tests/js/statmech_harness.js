@@ -10,8 +10,8 @@ const path = require('path');
 
 const root = process.argv[2] || path.resolve(__dirname, '..', '..');
 const spec = JSON.parse(fs.readFileSync(process.argv[3], 'utf8'));
-const P = JSON.parse(fs.readFileSync(path.join(root, 'rutile_dft.json'), 'utf8'));
-const SM = require(path.join(root, 'statmech.js'));
+const P = JSON.parse(fs.readFileSync(path.join(root, 'data', 'rutile_dft.json'), 'utf8'));
+const SM = require(path.join(root, 'web', 'statmech.js'));
 
 const out = { rng: [], mc_cases: [], pipelines: [] };
 
@@ -62,9 +62,9 @@ for (const c of spec.pipelines) {
 }
 
 if (spec.validity_cases && spec.validity_cases.length) {
-  const AS = require(path.join(root, 'activeset.js'));
+  const AS = require(path.join(root, 'web', 'activeset.js'));
   const AD = JSON.parse(fs.readFileSync(
-    path.join(root, 'activeset_data.json'), 'utf8'));
+    path.join(root, 'data', 'activeset_data.json'), 'utf8'));
   const thermo = new AS.Solver(AD);
   const isRed = {};
   AD.solids.forEach(s => { isRed[s] = AD.ti3[s] > 0; });

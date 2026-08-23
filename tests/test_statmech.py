@@ -15,7 +15,8 @@ import pytest
 from solidgas import statmech as S
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-REF = json.loads((ROOT / 'reference_statmech.json').read_text())
+DATA = ROOT / 'data'
+REF = json.loads((DATA / 'reference_statmech.json').read_text())
 P = S.load_params()
 
 
@@ -23,7 +24,7 @@ P = S.load_params()
 
 def test_oracle_reproduces_committed_reference():
     """Re-derive the flagship row in-process: catches a stale JSON."""
-    import oracle_statmech as O
+    from scripts import oracle_statmech as O
     geom = O.geometry(d_um=P['defaults']['particle_diameter_um'])
     row = O.match(P['defaults']['T_C'], P['defaults']['VO_total_umol_g'],
                   geom, 'sx')
@@ -392,8 +393,7 @@ def test_phase_validity_boundary_at_the_h2_h2o_flip():
     import json as _json
     from solidgas import activeset as A
     ref = _json.loads(
-        (pathlib.Path(__file__).resolve().parent.parent
-         / 'reference_results_high_precision.json').read_text())
+        (DATA / 'reference_results_high_precision.json').read_text())
     ratio = float(ref['boundary_validation']['h2_h2o_boundary']
                   ['H2O_over_H2_critical_ratio'])
     r = A.solve({'H2': 1, 'H2O': ratio * (1 - 1e-3)}, 1173.15)

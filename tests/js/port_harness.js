@@ -3,10 +3,10 @@
 const fs = require('fs'); global.fs = fs;
 const ROOT = process.argv[2]; global.ROOT = ROOT;
 global.document = {
-  getElementById: () => ({ textContent: fs.readFileSync(ROOT + '/oxide_data.json', 'utf8') }),
+  getElementById: () => ({ textContent: fs.readFileSync(ROOT + '/data/oxide_data.json', 'utf8') }),
 };
 const harness = `
-const ref = JSON.parse(fs.readFileSync(ROOT + '/oxide_reference.json','utf8'));
+const ref = JSON.parse(fs.readFileSync(ROOT + '/data/oxide_reference.json','utf8'));
 const GAS = ['CO2','H2','CO','H2O','CH4','O2'];
 const out = [];
 for (const name of Object.keys(Oxide.D.systems)) {
@@ -41,4 +41,4 @@ for (const name of Object.keys(Oxide.D.systems)) {
 }
 console.log(JSON.stringify(out));
 `;
-(0, eval)(fs.readFileSync(ROOT + '/oxide.js', 'utf8') + harness);
+(0, eval)(fs.readFileSync(ROOT + '/web/oxide.js', 'utf8') + harness);

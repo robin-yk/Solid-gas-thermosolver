@@ -9,10 +9,10 @@ const fs = require('fs');
 const path = require('path');
 
 const root = process.argv[2] || path.resolve(__dirname, '..', '..');
-const D = JSON.parse(fs.readFileSync(path.join(root, 'activeset_data.json'), 'utf8'));
+const D = JSON.parse(fs.readFileSync(path.join(root, 'data', 'activeset_data.json'), 'utf8'));
 const REF = JSON.parse(fs.readFileSync(
-  path.join(root, 'reference_results_high_precision.json'), 'utf8'));
-const AS = require(path.join(root, 'activeset.js'));
+  path.join(root, 'data', 'reference_results_high_precision.json'), 'utf8'));
+const AS = require(path.join(root, 'web', 'activeset.js'));
 
 const solver = new AS.Solver(D);
 

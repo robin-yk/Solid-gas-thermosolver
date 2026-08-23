@@ -25,7 +25,7 @@ import math
 import pytest
 from mpmath import mp, mpf, log as mlog
 
-import oracle_tio as O
+from scripts import oracle_tio as O
 from solidgas import activeset as A
 
 TEMPS_SWEEP_MG = [100, 20, 8.5, 8, 5, 2, 0.8, 0.3, 0.1]

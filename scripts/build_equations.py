@@ -6,6 +6,10 @@ typesetting, no external TeX needed. Output: PNG + PDF.
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+ASSETS = ROOT / 'docs' / 'assets'
 
 BLUE = '#2a78d6'
 SEQ100 = '#cde2fb'
@@ -65,8 +69,7 @@ for row in R:
         ax.text(LM, y, row[1], fontsize=9.8, color=INK2, va='center')
     y -= h
 
-import os
-_here = os.path.dirname(os.path.abspath(__file__))
-fig.savefig(os.path.join(_here, 'equations.png'), facecolor=SURF)
-fig.savefig(os.path.join(_here, 'equations.pdf'), facecolor=SURF)
-print('written equations.png / equations.pdf, height', round(total, 1), 'in')
+ASSETS.mkdir(parents=True, exist_ok=True)
+fig.savefig(ASSETS / 'equations.png', facecolor=SURF)
+fig.savefig(ASSETS / 'equations.pdf', facecolor=SURF)
+print('written docs/assets/equations.png and .pdf, height', round(total, 1), 'in')

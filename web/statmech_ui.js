@@ -489,7 +489,7 @@
       + 'fitted over ~' + dc.fit_range_umol_g[0] + '–'
       + dc.fit_range_umol_g[1] + ' μmol-O/g; below that range the value is '
       + 'an extrapolation. tan δ appears when ε′ is set in '
-      + '<code>rutile_dft.json</code>.</div>';
+      + '<code>data/rutile_dft.json</code>.</div>';
 
     var vo = out.VO_total_umol_g;
     var xmax = 150;

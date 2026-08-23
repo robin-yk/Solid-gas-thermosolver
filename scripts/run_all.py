@@ -9,12 +9,18 @@ The oxygen-potential route is still in the tree and is still run, but only as a
 cross-check written alongside each row. Where the two disagree the difference
 is recorded and the Gibbs value is the one reported.
 
-Writes results.json. Every row carries `method`; the test suite refuses any row
+Writes data/results.json. Every row carries `method`; the test suite refuses any row
 that does not say gibbs_min.
 """
 
 import json
 import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+RESULTS = DATA / 'results.json'
+sys.path.insert(0, str(ROOT))
 
 import numpy as np
 
@@ -192,13 +198,13 @@ def recheck():
     the check reads only that, so re-running it does not re-run anything and
     cannot change a reported value. Guarded by that: rows keep their method.
     """
-    doc = json.load(open('results.json'))
+    doc = json.loads(RESULTS.read_text())
     for row in doc['rows']:
         before = row['ti3_pct'], row['mu_O_kJ'], row['G_rel_kJ']
         row['crosscheck'] = crosscheck(row, row['T_C'] + 273.15)
         assert (row['ti3_pct'], row['mu_O_kJ'], row['G_rel_kJ']) == before
         assert row['method'] == 'gibbs_min'
-    with open('results.json', 'w') as fh:
+    with RESULTS.open('w') as fh:
         json.dump(doc, fh, indent=1)
     for r in doc['rows']:
         cc = r['crosscheck']
@@ -243,7 +249,7 @@ def main():
         'cases': {k: v['label'] for k, v in CASES.items()},
         'rows': rows,
     }
-    with open('results.json', 'w') as fh:
+    with RESULTS.open('w') as fh:
         json.dump(doc, fh, indent=1)
     bad = [r for r in rows if r.get('method') != 'gibbs_min']
     print(f"\n{len(rows)} rows -> results.json   ({len(bad)} not gibbs_min)")

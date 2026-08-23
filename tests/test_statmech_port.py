@@ -20,8 +20,11 @@ import pytest
 from solidgas import statmech as S
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+WEB = ROOT / 'web'
+DOCS = ROOT / 'docs'
 HARNESS = ROOT / 'tests' / 'js' / 'statmech_harness.js'
-REF = json.loads((ROOT / 'reference_statmech.json').read_text())
+REF = json.loads((DATA / 'reference_statmech.json').read_text())
 P = S.load_params()
 
 NO_PAIRS = {'pair_eV': {'along_row': [], 'cross_row': []}}
@@ -78,7 +81,7 @@ def _py_mc(c):
 SWEEP_VO = [10.0, 60.0, 95.0, 150.0]
 
 _HP_REF = json.loads(
-    (ROOT / 'reference_results_high_precision.json').read_text())
+    (DATA / 'reference_results_high_precision.json').read_text())
 _RATIO = float(_HP_REF['boundary_validation']['h2_h2o_boundary']
                ['H2O_over_H2_critical_ratio'])
 
@@ -290,22 +293,24 @@ def test_dielectric_parity(pair):
 
 def test_page_inlines_the_statmech_stack():
     """ti_solver.html carries the dataset, engine, worker and UI verbatim."""
-    page = ROOT / 'ti_solver.html'
-    assert page.exists(), 'run python3 build_ti_solver.py'
+    page = DOCS / 'ti_solver.html'
+    assert page.exists(), 'run python3 scripts/build_ti_solver.py'
     html = page.read_text()
-    assert (ROOT / 'rutile_dft.json').read_text().strip() in html, \
+    assert (DATA / 'rutile_dft.json').read_text().strip() in html, \
         'page is stale against rutile_dft.json - run build_ti_solver.py'
-    for src in ('statmech.js', 'statmech_worker.js', 'statmech_ui.js',
-                'equations_statmech.html'):
-        assert (ROOT / src).read_text() in html, \
-            f'page is stale against {src} - run build_ti_solver.py'
+    sources = (WEB / 'statmech.js', WEB / 'statmech_worker.js',
+               WEB / 'statmech_ui.js',
+               WEB / 'generated' / 'equations_statmech.html')
+    for src in sources:
+        assert src.read_text() in html, \
+            f'page is stale against {src.name} - run build_ti_solver.py'
     for token in ('__SM_DATA__', '__SM_ENGINE__', '__SM_WORKER__',
                   '__SM_UI__', '__SM_EQS__'):
         assert token not in html
 
 
 def test_page_carries_the_defect_workspace_and_disclosures():
-    html = (ROOT / 'ti_solver.html').read_text()
+    html = (DOCS / 'ti_solver.html').read_text()
     assert 'Defect stat mech' in html
     for phrase in ('Li, Guo &amp; Robertson', 'Birschitzky',
                    'reconstruction onset', 'not reduction kinetics',
@@ -323,8 +328,8 @@ def test_page_carries_the_defect_workspace_and_disclosures():
 
 
 def test_particle_view_uses_spherical_shells_without_random_bulk_dots():
-    ui = (ROOT / 'statmech_ui.js').read_text()
-    template = (ROOT / 'ti_solver_template.html').read_text()
+    ui = (WEB / 'statmech_ui.js').read_text()
+    template = (WEB / 'ti_solver_template.html').read_text()
     assert 'bulk occupation' in ui
     assert 'disc core = bulk occupation' in ui
     assert "'bulk', acc.P.bulk" not in ui
@@ -333,8 +338,8 @@ def test_particle_view_uses_spherical_shells_without_random_bulk_dots():
 
 
 def test_portal_fits_the_desktop_viewport_and_keeps_mobile_scroll():
-    portal = (ROOT / 'portal.html').read_text()
-    index = (ROOT / 'index.html').read_text()
+    portal = (WEB / 'portal.html').read_text()
+    index = (DOCS / 'index.html').read_text()
     assert portal == index
     assert 'height:calc(100svh - 58px)' in portal
     assert 'grid-template-rows:auto minmax(0,1fr) auto' in portal

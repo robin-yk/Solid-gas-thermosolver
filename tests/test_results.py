@@ -14,7 +14,7 @@ import re
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-RESULTS = ROOT / 'results.json'
+RESULTS = ROOT / 'data' / 'results.json'
 
 CASES = ['RWGS', 'H2', 'CH4', 'N2']
 TEMPS = [500, 700, 900, 1100, 1300, 1500]
@@ -132,7 +132,7 @@ def test_page_and_table_read_the_same_file():
     on the page were built from that, it would agree today and diverge the first
     time either side moved. So the page renders the file, and this compares them.
     """
-    index = ROOT / 'tiox.html'
+    index = ROOT / 'docs' / 'tiox.html'
     if not index.exists():
         pytest.skip('index.html not built yet - run `python build_site.py`')
     m = re.search(r'<script id="results" type="application/json">(.*?)</script>',

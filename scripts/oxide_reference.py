@@ -10,6 +10,11 @@ coordinates - the same engine, only the condensed phases differ.
 
 import json
 import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+sys.path.insert(0, str(ROOT))
 
 import numpy as np
 
@@ -109,7 +114,7 @@ def main():
             ph = ' + '.join(f'{p} {v:.3g}%' for p, v in r['phase_split_pct'].items())
             print(f"  {r['T_C']:5d}C  red={r['reduced_pct']:10.6f}%  conv={r['conversion_CO2_pct']:6.2f}%  "
                   f"Kp={r['Kp_rwgs']:7.4f} Q={r['Q_rwgs']:7.4f}  resid={r['balance_residual_mol']:.1e}  {ph}")
-    with open('oxide_reference.json', 'w') as fh:
+    with (DATA / 'oxide_reference.json').open('w') as fh:
         json.dump(doc, fh, indent=1)
     print(f"\n{len(doc['rows'])} rows -> oxide_reference.json")
     return 0

@@ -13,20 +13,24 @@ import sys
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA = os.path.join(ROOT, 'data')
+WEB = os.path.join(ROOT, 'web')
+DOCS = os.path.join(ROOT, 'docs')
+SCRIPTS = os.path.join(ROOT, 'scripts')
 
 
 @pytest.fixture(scope='module')
 def exported():
-    with open(os.path.join(ROOT, 'thermo_data.json')) as fh:
+    with open(os.path.join(DATA, 'thermo_data.json')) as fh:
         return json.load(fh)
 
 
 def test_exported_file_is_current(exported):
     """Regenerating must reproduce the committed file byte for byte."""
-    out = subprocess.run([sys.executable, 'export_thermo.py'], cwd=ROOT,
+    out = subprocess.run([sys.executable, os.path.join(SCRIPTS, 'export_thermo.py')], cwd=ROOT,
                          capture_output=True, text=True)
     assert out.returncode == 0, out.stderr
-    with open(os.path.join(ROOT, 'thermo_data.json')) as fh:
+    with open(os.path.join(DATA, 'thermo_data.json')) as fh:
         assert json.load(fh) == exported, 'run export_thermo.py and commit the result'
 
 
@@ -52,14 +56,14 @@ def test_every_coefficient_matches_the_package(exported):
 
 def test_index_html_embeds_the_current_data_and_solver(exported):
     """index.html is built by inlining both, so it must contain them verbatim."""
-    path = os.path.join(ROOT, 'tiox.html')
+    path = os.path.join(DOCS, 'tiox.html')
     if not os.path.exists(path):
         pytest.skip('index.html not built')
     html = open(path).read()
-    with open(os.path.join(ROOT, 'thermo_data.json')) as fh:
+    with open(os.path.join(DATA, 'thermo_data.json')) as fh:
         assert fh.read() in html, 'index.html is stale - run build_site.py'
     for js in ('solver.js', 'page.js'):
-        with open(os.path.join(ROOT, js)) as fh:
+        with open(os.path.join(WEB, js)) as fh:
             assert fh.read() in html, f'index.html is stale against {js} - run build_site.py'
     for token in ('__THERMO__', '__SOLVER__', '__PAGE__'):
         assert token not in html
@@ -67,7 +71,7 @@ def test_index_html_embeds_the_current_data_and_solver(exported):
 
 def test_page_has_no_external_requests():
     """GitHub Pages serves it flat; nothing may be fetched from elsewhere."""
-    path = os.path.join(ROOT, 'tiox.html')
+    path = os.path.join(DOCS, 'tiox.html')
     if not os.path.exists(path):
         pytest.skip('index.html not built')
     html = open(path).read()

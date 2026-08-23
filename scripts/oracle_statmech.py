@@ -20,6 +20,10 @@ the JS parity harness.
 import itertools
 import json
 import math
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
 
 from mpmath import mp, mpf, exp as mexp, log as mlog
 
@@ -28,7 +32,7 @@ mp.dps = 50
 KB_EV = mpf('8.617333262e-5')
 N_AVO = mpf('6.02214076e23')
 
-with open('rutile_dft.json') as fh:
+with (DATA / 'rutile_dft.json').open() as fh:
     P = json.load(fh)
 
 
@@ -389,7 +393,7 @@ def main():
         'micro3_case': micro3_case(8, 4, pair, eps_sx, 600),
         'co2_flagship': co2_rows,
     }
-    with open('reference_statmech.json', 'w') as fh:
+    with (DATA / 'reference_statmech.json').open('w') as fh:
         json.dump(doc, fh, indent=1)
     print('reference_statmech.json written')
     print('flagship: mu=%.9f f=(%.6f, %.6f, %.6f) warn=%s' % (

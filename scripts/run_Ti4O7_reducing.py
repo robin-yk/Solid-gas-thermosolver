@@ -9,6 +9,12 @@ carry the next step. See README.
 """
 
 import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / 'data'
+sys.path.insert(0, str(ROOT))
 
 import numpy as np
 
@@ -94,8 +100,8 @@ for feed in ['H2', 'CH4']:
     seen = [p for p in ACTIVE_TI_PHASES if any(r[p] > 0.01 for r in res)]
     print(f"  -> phases that actually appear: {', '.join(seen)}")
 
-with open('results_reducing.json', 'w') as fh:
+with (DATA / 'results_reducing.json').open('w') as fh:
     json.dump({'conditions': {'P_atm': P_tot, 'V_cm3': V, 'm_TiO2_g': m,
                               'n0_TiO2_mol': n0_TiO2, 'phases': ACTIVE_TI_PHASES},
                'feeds': all_results}, fh, indent=1)
-print("\ndata saved -> results_reducing.json")
+print("\ndata saved -> data/results_reducing.json")

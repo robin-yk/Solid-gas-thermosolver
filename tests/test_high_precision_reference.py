@@ -15,7 +15,7 @@ import pathlib
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-REF = ROOT / 'reference_results_high_precision.json'
+REF = ROOT / 'data' / 'reference_results_high_precision.json'
 
 CASES = ['rwgs_1_1', 'h2_rich', 'product_mix', 'pure_h2', 'pure_n2',
          'n2_10ppm_o2']
