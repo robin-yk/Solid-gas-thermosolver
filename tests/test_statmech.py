@@ -73,6 +73,15 @@ def _assert_row(row, ref):
             ref['fractions'][k], rel=1e-9, abs=1e-12), k
         assert row['umol_g'][k] == pytest.approx(
             ref['umol_g'][k], rel=1e-9, abs=1e-12), k
+    assert row['regime'] == ref['regime']
+    assert row['surface_phase']['phase'] == ref['surface_phase']['phase']
+    assert row['surface_phase']['phi_reconstructed'] == pytest.approx(
+        ref['surface_phase']['phi_reconstructed'], abs=1e-9)
+    assert row['extended_defects_umol_g'] == pytest.approx(
+        ref['extended_defects_umol_g'], rel=1e-9, abs=1e-9)
+    for k, v in ref['boundaries'].items():
+        assert row['phase_boundaries'][k] == pytest.approx(
+            v, rel=1e-9, abs=1e-12), k
     assert row['surface_reconstruction_regime'] == \
         ref['surface_reconstruction_regime']
     assert [w['kind'] for w in row['warnings']
@@ -221,10 +230,48 @@ def test_deeper_bulk_level_moves_inventory_out_of_the_bulk():
     assert hi['fractions']['bulk'] < lo['fractions']['bulk']
 
 
-def test_warning_fires_beyond_the_shear_limit():
+def test_the_phase_ladder_and_its_lever_rules():
+    """The four regimes in order, mass exact in each, mu pinned on the
+    coexistence branches, and continuity across every boundary."""
     g = S.geometry(P)
-    r = S.distribute(P, 600.0, 120.0, g)
-    assert 'x_max' in [w['kind'] for w in r['warnings']]
+    b = S.phase_boundaries(P, 600.0, g)
+    cases = [(1.0, 'dilute'), (3.5, 'surface_coexistence'),
+             (9.0, 'reconstructed'), (95.0, 'reconstructed'),
+             (200.0, 'cs_coexistence')]
+    for vo, regime in cases:
+        d = S.distribute(P, 600.0, vo, g)
+        assert d['regime'] == regime, vo
+        assert d['matched_umol_g'] == pytest.approx(vo, rel=1e-9), vo
+    co = S.distribute(P, 600.0, 3.5, g)
+    assert co['mu_V_eV'] == b['mu_t_eV']                 # riser: mu pinned
+    assert 0.0 < co['surface_phase']['phi_reconstructed'] < 1.0
+    cs = S.distribute(P, 600.0, 200.0, g)
+    assert cs['mu_V_eV'] == b['mu_cs_eV']                # ceiling: mu pinned
+    assert cs['extended_defects_umol_g'] == pytest.approx(
+        200.0 - b['VO_cs_umol_g'], rel=1e-6)
+    assert 'cs_precipitation' in [w['kind'] for w in cs['warnings']]
+    # continuity at each boundary: the two sides agree to the solve tol
+    for edge in ('VO_onset_umol_g', 'VO_recon_complete_umol_g',
+                 'VO_cs_umol_g'):
+        lo = S.distribute(P, 600.0, b[edge] * (1 - 1e-9), g)
+        hi = S.distribute(P, 600.0, b[edge] * (1 + 1e-9), g)
+        for k in ('surface', 'subsurface', 'bulk'):
+            assert hi['umol_g'][k] == pytest.approx(
+                lo['umol_g'][k], abs=5e-6), (edge, k)
+
+
+def test_boundary_ladder_matches_the_hand_calculation():
+    """mu_t = eps_s + kT ln(th/(1-th)) and friends, checked as numbers:
+    2.31 / 6.78 / 160 umol-O/g at 600 C for the shipped dataset."""
+    g = S.geometry(P)
+    b = S.phase_boundaries(P, 600.0, g)
+    assert b['mu_t_eV'] == pytest.approx(-0.11931, abs=2e-5)
+    assert b['mu_cs_eV'] == pytest.approx(0.89485, abs=2e-5)
+    assert b['VO_onset_umol_g'] == pytest.approx(2.3092, abs=2e-4)
+    assert b['VO_recon_complete_umol_g'] == pytest.approx(6.7830, abs=2e-4)
+    assert b['VO_cs_umol_g'] == pytest.approx(159.98, abs=0.05)
+    hot = S.phase_boundaries(P, 800.0, g)
+    assert hot['VO_onset_umol_g'] > b['VO_onset_umol_g']
 
 
 def test_isotherm_theta_s_is_monotone_in_filling():
@@ -312,21 +359,29 @@ def test_sweep_agrees_with_pointwise_solutions():
         assert row['accessible'] == a['accessible_umol_g']
 
 
-def test_sweep_has_no_reconstruction_hard_cap():
-    """The 17-20% reconstruction interval is a warning boundary. It must
-    not clip the numerical surface occupation."""
+def test_sweep_walks_the_phase_ladder():
+    """Along the inventory axis: surface rises through the coexistence
+    riser, holds at the line-phase deficiency, extended defects appear
+    only beyond the CS ceiling, and the recoverable fraction falls as the
+    inventory is forced deep."""
     g = S.geometry(P)
-    rows = S.sweep(P, 600.0, g, [2.0, 20.0, 60.0, 95.0, 150.0])
-    onset_umol = P['surface_ordering']['reconstruction_coverage'] * g['N_s']
+    rows = S.sweep(P, 600.0, g, [2.0, 4.0, 20.0, 60.0, 95.0, 150.0, 200.0])
+    b = S.phase_boundaries(P, 600.0, g)
+    line_umol = b['theta_reconstructed_eff'] * g['N_s']
     surface = [r['surface'] for r in rows]
-    assert surface[-1] > onset_umol
-    assert surface[-1] <= g['N_s']
-    assert all(b >= a for a, b in zip(surface, surface[1:]))
+    assert all(y >= a - 1e-12 for a, y in zip(surface, surface[1:]))
+    assert surface[0] < line_umol                     # dilute point
+    assert rows[1]['regime'] == 'surface_coexistence'
+    for r in rows[2:]:
+        assert r['surface'] == pytest.approx(line_umol, rel=1e-12)
+    assert [r['regime'] for r in rows][-1] == 'cs_coexistence'
+    assert rows[-1]['extended'] > 0.0
+    assert all(r['extended'] == 0.0 for r in rows[:-1])
     fr = [r['f_recoverable'] for r in rows]
     assert fr[0] > 0.95
     assert fr[-1] < fr[-2] < fr[2]
-    acc = [r['accessible'] for r in rows]
-    assert all(b >= a for a, b in zip(acc, acc[1:]))
+    acc = [r['accessible'] for r in rows[:-1]]
+    assert all(y >= a for a, y in zip(acc, acc[1:]))
 
 
 def test_dielectric_power_law_of_this_work():
@@ -420,9 +475,14 @@ def test_mode_note_discloses_scope():
     out = S.run_full(P, mc=MC_SMALL)
     assert out['method'] == 'canonical_statmech'
     assert out['surface_reconstruction_regime'] is True
+    assert out['regime'] == 'reconstructed'
     kinds = [w['kind'] for w in out['warnings']]
-    assert 'surface_reconstruction' in kinds and 'subsurface_dense' in kinds
-    warning = next(w['text'] for w in out['warnings']
-                   if w['kind'] == 'surface_reconstruction')
-    assert 'not clipped' in warning
-    assert 'conditional extrapolation' in warning
+    assert 'surface_phase' in kinds and 'subsurface_dense' in kinds
+    phase_note = next(w['text'] for w in out['warnings']
+                      if w['kind'] == 'surface_phase')
+    assert 'added-row' in phase_note
+    assert 'line compound' in phase_note
+    shell = next(w['text'] for w in out['warnings']
+                 if w['kind'] == 'subsurface_dense')
+    assert 'dilute-defect approximation fails' in shell
+    assert 'heavily reduced' in shell

@@ -353,6 +353,50 @@ def sfc32_first(seed, count):
     return out
 
 
+CGMC_SPEC = {
+    'q': [1e12, 1e12, 1e12],
+    'eps': [0.0, 0.05, 0.10],
+    'lam': [1e-11, 2e-11],
+    'k_fill': 5.0,
+    'eta0': [0.0, 0.0, 1000.0],
+    'T_C': 600,
+    'times_s': [0.001, 0.01, 0.1, 1.0],
+}
+
+
+def cgmc_linear():
+    """The dilute limit of the coarse-grained transport network is linear:
+    d eta/dt = M eta with per-vacancy rates L(k->l) = lam_kl e^{beta eps_k}
+    q_l and the surface refill -k_fill on cell 0. expm at 50 digits."""
+    from mpmath import expm, matrix
+    s = CGMC_SPEC
+    kt = KB_EV * (mpf(str(s['T_C'])) + mpf('273.15'))
+    beta = 1 / kt
+    m = len(s['q'])
+    a = matrix(m, m)
+    for j in range(m - 1):
+        k, l = j, j + 1
+        lkl = (mpf(str(s['lam'][j])) * mexp(beta * mpf(str(s['eps'][k])))
+               * mpf(str(s['q'][l])))
+        llk = (mpf(str(s['lam'][j])) * mexp(beta * mpf(str(s['eps'][l])))
+               * mpf(str(s['q'][k])))
+        a[k, k] -= lkl
+        a[l, k] += lkl
+        a[l, l] -= llk
+        a[k, l] += llk
+    a[0, 0] -= mpf(str(s['k_fill']))
+    eta0 = matrix([mpf(str(x)) for x in s['eta0']])
+    rows = []
+    for t in s['times_s']:
+        et = expm(a * mpf(str(t))) * eta0
+        rows.append({'t_s': t, 'eta': [float(et[i]) for i in range(m)]})
+    # closed two-cell equilibrium ratio in the same dilute limit
+    ratio = (mpf(str(s['q'][0])) / mpf(str(s['q'][1]))
+             * mexp(-beta * (mpf(str(s['eps'][0])) - mpf(str(s['eps'][1])))))
+    return {'spec': s, 'rows': rows,
+            'eq_ratio_cell0_over_cell1': float(ratio)}
+
+
 def main():
     geom = geometry(d_um=P['defaults']['particle_diameter_um'])
     grid = []
@@ -392,6 +436,7 @@ def main():
         'ring_case': ring_case(10, 3, pair, 600),
         'micro3_case': micro3_case(8, 4, pair, eps_sx, 600),
         'co2_flagship': co2_rows,
+        'cgmc_linear': cgmc_linear(),
     }
     with (DATA / 'reference_statmech.json').open('w') as fh:
         json.dump(doc, fh, indent=1)

@@ -18,7 +18,7 @@ from solidgas import cgmc as C
 from solidgas import statmech as S
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-REF = json.loads((ROOT / 'reference_statmech.json').read_text())
+REF = json.loads((ROOT / 'data' / 'reference_statmech.json').read_text())
 P = S.load_params()
 
 NO_FILL = {'A_eff_per_s_atm': {'surface': 0.0}}
@@ -46,18 +46,31 @@ def test_dilute_limit_matches_the_matrix_exponential_oracle():
 
 def test_closed_system_lands_on_the_equilibrium_split():
     """Detailed balance in practice: start with every vacancy in the
-    core, shut the gas channel, and the transport network must relax to
-    the same split the equilibrium workspace computes."""
+    core, shut the gas channel, and the network must relax to the exact
+    product-binomial equilibrium of its own Hamiltonian - every cell on
+    the common-mu site-exclusion isotherm over the cell capacities.
+
+    (This is the (1x1) three-class equilibrium; the particle workspace's
+    phase-aware partition adds the reconstruction and CS phases ON TOP of
+    this Hamiltonian, so it is not the comparison point here.)"""
     sys0 = C.build(P, kin=NO_FILL, dist_fractions=ALL_BULK)
     r = C.run(sys0, 300.0)
-    eq = S.distribute(P, 600.0, 95.0, S.geometry(P))
-    tot = sum(r['final_eta'])
-    got = (r['final_eta'][0] / tot, r['final_eta'][1] / tot,
-           sum(r['final_eta'][2:]) / tot)
-    want = (eq['fractions']['surface'], eq['fractions']['subsurface'],
-            eq['fractions']['bulk'])
-    for g, w in zip(got, want):
-        assert g == pytest.approx(w, abs=5e-3)
+    kt = 1.0 / sys0['beta']
+    v0 = sum(sys0['eta0'])
+
+    def total(mu):
+        return sum(q * S.fd(mu, e, kt)
+                   for q, e in zip(sys0['q'], sys0['eps_c']))
+    lo, hi = -3.0, 3.0
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if total(mid) < v0:
+            lo = mid
+        else:
+            hi = mid
+    mu = 0.5 * (lo + hi)
+    for got, q, e in zip(r['final_eta'], sys0['q'], sys0['eps_c']):
+        assert got / q == pytest.approx(S.fd(mu, e, kt), abs=5e-3)
     assert abs(r['mass_check']) < 1e-12
 
 
