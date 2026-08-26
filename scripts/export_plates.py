@@ -148,16 +148,31 @@ def defect_block():
     # sampled surface arrangement at the coverage of the surviving (1x1)
     # patches: the ordering exhibit, kept separate from the partition
     th_target = min(out['theta']['surface'], th_t)
-    pts = S.isotherm_scan(P, FLAG_T)
-    best = min(pts, key=lambda q: abs(q['theta_s'] - th_target))
-    ordering = {
-        'theta_target': th_target,
-        'rows': best['rows'], 'row_sites': best['row_sites'],
-        'surf_vac': best['surf_vac'], 'theta_s': best['theta_s'],
-        'hist': best['hist'], 'mu_eV': best['mu_eV'],
-        'spacing': S.spacing_summary(pts, th_target),
-        'pair_eV': P['surface_ordering']['pair_eV']['along_row'],
-    }
+    if '--keep-ordering' in sys.argv:
+        prev = json.loads((DATA / 'figure_data.json').read_text())
+        ordering = prev['plot']['defect']['ordering']
+        pts = None
+    else:
+        pts = S.isotherm_scan(P, FLAG_T)
+    if pts is not None:
+        best = min(pts, key=lambda q: abs(q['theta_s'] - th_target))
+        ordering = {
+            'theta_target': th_target,
+            'rows': best['rows'], 'row_sites': best['row_sites'],
+            'surf_vac': best['surf_vac'], 'theta_s': best['theta_s'],
+            'hist': best['hist'], 'mu_eV': best['mu_eV'],
+            'spacing': S.spacing_summary(pts, th_target),
+            'pair_eV': P['surface_ordering']['pair_eV']['along_row'],
+        }
+
+    calib = []
+    for i in range(11):
+        e = 0.6 + i * 0.22
+        sysc = CG.build(P, vo_total=FLAG_VO, dist_fractions=out['fractions'],
+                        cg={'E_m_bulk_eV': e})
+        calib.append({'E_m_eV': e,
+                      'rec': CG.run(sysc, CGMC_TARGET_S,
+                                    n_out=12)['recovered_fraction']})
 
     def cg_rows(r):
         return [{'t_s': t, 'rec': v}
@@ -196,6 +211,7 @@ def defect_block():
                        'profiles': run1['profiles'],
                        'recovered': run1['recovered_fraction']},
             'depth_nm': run0['depth_nm'], 'R_nm': sys0['R_nm'],
+            'calibration': calib,
         },
     }
 
@@ -281,13 +297,66 @@ def equilibrium_block():
         key=lambda kv: kv[1])
     n_solids = len(row['solid_moles'])
 
+    def as_float(v):
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+
+    cands = []
+    for c in row['candidates']:
+        w = as_float(c.get('worst_inactive_r_kJ'))
+        cands.append({'active': c['active'], 'n': len(c['active']),
+                      'feasible': bool(c['feasible']),
+                      'kkt_ok': bool(c['kkt_ok']),
+                      'worst_r_kJ': None if w is None or w != w
+                      or w in (float('inf'), float('-inf')) else w})
+    winner = row['active_condensed_phases']
+
+    # validity map for the thermodynamic bridge: what the gas charge leaves
+    # standing at each temperature, which is the condition the defect
+    # partition is conditional on
+    def tier(active):
+        if 'TiO2' not in active:
+            return 'outside'
+        return 'stable' if len(active) == 1 else 'boundary'
+
+    temps = sorted({r['T_C'] for r in rows})
+    validity = []
+    for case in ('rwgs_1_1', 'h2_rich', 'product_mix', 'pure_h2', 'pure_n2'):
+        cr = case_rows(case)
+        if not cr:
+            continue
+        validity.append({
+            'case': case, 'label': REF_TH['cases'][case],
+            'tiers': [{'T_C': r['T_C'],
+                       'tier': tier(r['active_condensed_phases']),
+                       'active': r['active_condensed_phases']}
+                      for r in cr]})
+
+    # trace resolution and elemental closure, the two things a minimiser is
+    # usually caught truncating
+    traces, residuals = [], []
+    for r in case_rows('pure_n2'):
+        for sp, lg10 in (r.get('log10_trace_amounts') or {}).items():
+            traces.append({'T_C': r['T_C'], 'species': sp,
+                           'log10_mol': float(lg10)})
+        worst = max((abs(float(v)) for v in
+                     (r.get('element_residuals_mol') or {}).values()),
+                    default=0.0)
+        residuals.append({'T_C': r['T_C'], 'worst_abs_mol': worst})
+
     plot = {
         'margin': {'case': MARGIN_CASE, 'phase': MARGIN_PHASE,
                    'label': REF_TH['cases'][MARGIN_CASE], 'rows': margin},
         'feeds': feeds,
         'method': {'T_C': method_T, 'n_solids': n_solids,
                    'active': row['active_condensed_phases'],
-                   'costs': [{'phase': s, 'r_kJ': v} for s, v in costs]},
+                   'costs': [{'phase': s, 'r_kJ': v} for s, v in costs],
+                   'candidates': cands, 'winner': winner},
+        'validity': {'temps': temps, 'cases': validity},
+        'verification': {'traces': traces, 'residuals': residuals,
+                         'trace_case': 'pure_n2'},
         'conditions': cond,
     }
 
@@ -319,10 +388,14 @@ def verification_block():
     layers = []
 
     worst = 0.0
+    grid_dev = []
     for ref in REF_SM['analytic_grid'] + [REF_SM['flagship']]:
         row = S.distribute(P, ref['T_C'], ref['VO_total_umol_g'], geom,
                            preset=ref['preset'])
-        worst = max(worst, abs(row['mu_V_eV'] - ref['mu_V_eV']))
+        dev = abs(row['mu_V_eV'] - ref['mu_V_eV'])
+        grid_dev.append({'T_C': ref['T_C'], 'vo': ref['VO_total_umol_g'],
+                         'dev_eV': dev, 'regime': row['regime']})
+        worst = max(worst, dev)
     layers.append({'layer': 'partition vs 50-digit oracle',
                    'measured': worst, 'tolerance': 1e-9,
                    'unit': 'eV in mu_V'})
@@ -373,7 +446,7 @@ def verification_block():
     n_tests = collected_tests()
     thermo_dps = int(re.search(r'(\d+)\s+certified',
                                REF_TH['precision']).group(1))
-    plot = {'layers': layers, 'n_tests': n_tests,
+    plot = {'layers': layers, 'grid_dev': grid_dev, 'n_tests': n_tests,
             'statmech_dps': REF_SM['precision_dps'],
             'thermo_dps': thermo_dps}
     slots = {

@@ -56,29 +56,27 @@ FIGURES = [
         'width': 'double',
         'section': 'Defect thermodynamics - site capacity and the phase '
                    'ladder',
-        'claim': 'Particle geometry, not site energy, is what forces the '
-                 'inventory below the surface; the ladder that follows is a '
-                 'set of certified numbers.',
+        'claim': 'Particle geometry decides where the inventory goes. The '
+                 'surface classes are too small to hold it.',
         'caption':
-            '**Site capacity and the phase ladder of reduced rutile.** '
+            '**Site capacity and the phase ladder.** '
             '**a**, Oxygen-site capacity of the three classes for a '
-            '{{defect.geometry.d_um}} um particle '
-            '({{defect.geometry.area_m2_g}} m2 g-1): the bridging-oxygen row '
-            'holds {{defect.geometry.N_s}} umol-O g-1, '
-            '{{defect.geometry.surface_pct_of_O}}% of all oxygen sites, and the '
-            'subsurface shell {{defect.geometry.N_ss}}, so both saturate '
-            'long before a measured inventory is accommodated. '
+            '{{defect.geometry.d_um}} um particle, '
+            '{{defect.geometry.area_m2_g}} m2 g-1. The bridging-oxygen row '
+            'holds {{defect.geometry.N_s}} umol-O g-1. That is '
+            '{{defect.geometry.surface_pct_of_O}}% of all oxygen sites. The '
+            'subsurface shell holds {{defect.geometry.N_ss}}. Both fill '
+            'before the measured inventory is placed. '
             '**b**, Class inventory against total vacancy content at '
-            '{{defect.flagship.T_C}} C. The (1x2) reconstruction enters as a '
-            'first-order surface phase at '
-            '{{defect.boundaries.VO_onset_umol_g}} umol-O g-1 and completes '
-            'at {{defect.boundaries.VO_recon_complete_umol_g}}; beyond the '
-            'estimated shear-plane ceiling '
-            '({{defect.boundaries.VO_cs_umol_g}}) the vacancy chemical '
-            'potential pins and the excess precipitates as extended '
-            'defects. Dashed verticals are the closed-form boundaries; the '
-            'marker is the measured inventory '
-            '({{defect.flagship.VO_total_umol_g}} umol-O g-1).',
+            '{{defect.flagship.T_C}} C. The (1x2) reconstruction starts at '
+            '{{defect.boundaries.VO_onset_umol_g}} umol-O g-1 and is '
+            'complete at '
+            '{{defect.boundaries.VO_recon_complete_umol_g}}. Above the '
+            'shear-plane ceiling at {{defect.boundaries.VO_cs_umol_g}} the '
+            'vacancy chemical potential is pinned and the excess forms '
+            'extended defects. That ceiling is an estimate. Dashed lines '
+            'mark the boundaries. The marker is the measured inventory, '
+            '{{defect.flagship.VO_total_umol_g}} umol-O g-1.',
         'symbols': ['N_s', 'N_ss', 'N_b', 'mu_V', 'theta_c'],
         'methods': ['site-exclusion isotherm', 'lever rule',
                     'closed-form phase boundaries'],
@@ -88,24 +86,25 @@ FIGURES = [
         'width': 'double',
         'section': 'Defect thermodynamics - the measured inventory',
         'claim': 'At the measured inventory the surface is reconstructed and '
-                 'saturated, and the near-surface shell - not the bulk - '
-                 'carries the majority of the vacancies.',
+                 'full. The near-surface shell carries most of the '
+                 'vacancies.',
         'caption':
-            '**Where a measured inventory of '
-            '{{defect.flagship.VO_total_umol_g}} umol-O g-1 sits.** '
-            '**a**, Cross-section of the outer shell, drawn to scale: one '
+            '**The measured inventory of '
+            '{{defect.flagship.VO_total_umol_g}} umol-O g-1.** '
+            '**a**, Cross-section of the outer shell, drawn to scale. One '
             'dot is one vacancy on one oxygen site. The bridging plane '
-            'carries one oxygen per (1x1) column and each '
-            '{{defect.geometry.layer_nm}} nm layer below it carries four, so '
-            'the subsurface class is a slab and not an atomic row. '
+            'carries one oxygen per (1x1) column. Each '
+            '{{defect.geometry.layer_nm}} nm layer below it carries four. '
+            'The subsurface class is a slab, not an atomic row. '
             '**b**, Class occupancy against depth. '
-            '**c**, The partition: surface {{defect.flagship.umol.surface}}, '
-            'subsurface {{defect.flagship.umol.subsurface}}, bulk '
-            '{{defect.flagship.umol.bulk}} umol-O g-1 at a common vacancy '
-            'chemical potential mu_V = {{defect.flagship.mu_V_eV}} eV. The '
+            '**c**, The partition. Surface '
+            '{{defect.flagship.umol.surface}}, subsurface '
+            '{{defect.flagship.umol.subsurface}}, bulk '
+            '{{defect.flagship.umol.bulk}} umol-O g-1, at a common vacancy '
+            'chemical potential of {{defect.flagship.mu_V_eV}} eV. The '
             'shell holds {{defect.flagship.shell_pct}}% of the inventory at '
-            '{{defect.flagship.shell_depletion_pct}}% local depletion, just '
-            'below the estimated shear-plane ceiling.',
+            '{{defect.flagship.shell_depletion_pct}}% local depletion. This '
+            'sits just below the shear-plane ceiling.',
         'symbols': ['mu_V', 'theta_c', 'N_c'],
         'methods': ['site-exclusion isotherm', 'canonical Monte Carlo'],
     },
@@ -113,23 +112,22 @@ FIGURES = [
         'id': 'd3', 'track': 'defect', 'label': 'Figure 3',
         'width': 'onehalf',
         'section': 'Defect thermodynamics - phase construction',
-        'claim': 'The reconstruction is a competing phase handled by the '
-                 'lever rule, and the high-coverage branch of the ideal '
-                 'lattice gas is excluded deliberately, not overlooked.',
+        'claim': 'The reconstruction is a competing phase, handled by the '
+                 'lever rule. The high-coverage branch is excluded on '
+                 'purpose.',
         'caption':
-            '**Grand-potential construction of the surface phase set.** '
-            'Surface grand potential per bridging site against the vacancy '
-            'chemical potential. The (1x1) lattice gas (solid) crosses the '
-            'added-row Ti2O3 line phase (straight, slope '
-            '-{{defect.omega.theta_eff}}) at mu_t = '
-            '{{defect.boundaries.mu_t_eV}} eV, which is the first-order '
-            'transition; between the branches the surface is a two-phase '
-            'mixture at pinned mu_V. Because the ideal branch keeps a '
-            'steeper slope it re-crosses the line phase at '
-            '{{defect.omega.mu_recross_eV}} eV (dashed): that high-coverage '
-            'branch is excluded from the phase set on physical grounds - '
-            'repulsive ordering penalises it and the observed strongly '
-            'reduced surface is reconstructed, not bridging-stripped.',
+            '**The surface phase set.** Grand potential per bridging site '
+            'against vacancy chemical potential. The (1x1) lattice gas '
+            'crosses the added-row Ti2O3 line phase at '
+            '{{defect.boundaries.mu_t_eV}} eV. That crossing is the '
+            'first-order transition. The line phase has slope '
+            '-{{defect.omega.theta_eff}}. Between the branches the surface '
+            'is a two-phase mixture at fixed chemical potential. The ideal '
+            'branch is steeper, so it crosses back at '
+            '{{defect.omega.mu_recross_eV}} eV. That high-coverage branch is '
+            'excluded from the phase set. Repulsive ordering penalises it, '
+            'and the observed reduced surface is reconstructed rather than '
+            'stripped of bridging oxygen.',
         'symbols': ['mu_V', 'omega_s', 'theta_t'],
         'methods': ['grand-potential common tangent', 'lever rule'],
     },
@@ -137,24 +135,23 @@ FIGURES = [
         'id': 'd4', 'track': 'defect', 'label': 'Figure 4',
         'width': 'double',
         'section': 'Defect kinetics - reoxidation transport',
-        'claim': 'Coarse-grained kinetic Monte Carlo turns a measured '
-                 'recovery fraction into an effective migration barrier, and '
-                 'the neutral-vacancy barrier cannot reproduce the '
-                 'measurement.',
+        'claim': 'A measured recovery fraction reads back as an effective '
+                 'migration barrier. The neutral-vacancy barrier does not '
+                 'reproduce the measurement.',
         'caption':
-            '**Coarse-grained reoxidation transport.** '
+            '**Reoxidation transport.** '
             '**a**, Recovered fraction of the inventory against exposure '
-            'time at {{defect.cgmc.T_C}} C for the neutral-vacancy bulk '
-            'barrier ({{defect.cgmc.E_m_eV}} eV) and for the barrier fitted '
-            'to a measured recovery of {{defect.cgmc.target_pct}}% at '
-            '{{defect.cgmc.target_s}} s. '
-            '**b**, Radial vacancy occupancy at the same times. Transport at '
-            'the neutral barrier is not rate-limiting, so a partial measured '
-            'recovery reads back as an effective barrier of '
-            '{{defect.cgmc.E_m_fit_eV}} eV - the signature of a channel the '
-            'neutral-vacancy picture does not contain. Refill rate constants '
-            'are placeholders; the barrier fit is the quantity this panel '
-            'reports.',
+            'time at {{defect.cgmc.T_C}} C. One curve uses the '
+            'neutral-vacancy bulk barrier of {{defect.cgmc.E_m_eV}} eV. The '
+            'other uses the barrier fitted to a measured recovery of '
+            '{{defect.cgmc.target_pct}}% at {{defect.cgmc.target_s}} s. '
+            '**b**, Recovered fraction at {{defect.cgmc.target_s}} s '
+            'against the migration barrier. Transport at the neutral '
+            'barrier is fast enough that it does not limit the rate, so the '
+            'curve saturates there. Reading the measured recovery across '
+            'gives an effective barrier of {{defect.cgmc.E_m_fit_eV}} eV. '
+            'Refill rate constants are placeholders. The barrier is the '
+            'result this panel reports.',
         'symbols': ['E_m', 'k_fill', 'theta_k'],
         'methods': ['coarse-grained KMC', 'detailed balance',
                     'matrix exponential'],
@@ -166,26 +163,24 @@ FIGURES = [
         'section': 'Gas-solid equilibrium - stability of rutile under the '
                    'working feed',
         'claim': 'An equilibrated CO2/H2 feed does not reduce rutile at any '
-                 'temperature in the working range, and the margin is a KKT '
-                 'reduced cost rather than a read-off from a phase diagram.',
+                 'temperature in the working range.',
         'caption':
             '**Rutile stability under three gas charges.** '
-            '**a**, Kuhn-Tucker reduced cost of the nearest reduced phase '
-            '({{equilibrium.margin.phase}}) for the '
-            '{{equilibrium.margin.feed_label}} feed. Positive is unstable, '
-            'so rutile is the equilibrium solid throughout: the margin falls '
-            'from {{equilibrium.margin.first_kJ}} to '
+            '**a**, Kuhn-Tucker reduced cost of the nearest reduced phase, '
+            '{{equilibrium.margin.phase}}, for the '
+            '{{equilibrium.margin.feed_label}} feed. Positive means the '
+            'phase is unstable, so rutile is the equilibrium solid. The '
+            'margin falls from {{equilibrium.margin.first_kJ}} to '
             '{{equilibrium.margin.last_kJ}} kJ per mol O between '
             '{{equilibrium.margin.first_T_C}} and '
-            '{{equilibrium.margin.last_T_C}} C without changing sign. '
+            '{{equilibrium.margin.last_T_C}} C and does not change sign. '
             '**b**, Reduced titanium fraction for three charges over the '
-            'same range; the CO2/H2 feed returns exact zero at every '
-            'temperature, pure hydrogen sits on the '
-            '{{equilibrium.feeds.h2_phase}} buffer, and the sealed inert '
-            'case is a genuine two-phase-buffer trace rather than an '
-            'optimiser floor. Closed finite charge: '
-            '{{equilibrium.conditions.mass_mg}} mg TiO2, '
-            '{{equilibrium.conditions.volume_mL}} mL, '
+            'same range. The CO2/H2 feed returns exact zero at every '
+            'temperature. Pure hydrogen sits on the '
+            '{{equilibrium.feeds.h2_phase}} buffer. The sealed inert case is '
+            'a real two-phase-buffer trace, not an optimiser floor. The '
+            'charge is closed: {{equilibrium.conditions.mass_mg}} mg TiO2 in '
+            '{{equilibrium.conditions.volume_mL}} mL at '
             '{{equilibrium.conditions.pressure_atm}} atm.',
         'symbols': ['lambda_e', 'r_j', 'x_red'],
         'methods': ['active-set Gibbs minimisation', 'KKT reduced cost'],
@@ -194,19 +189,20 @@ FIGURES = [
         'id': 'e2', 'track': 'equilibrium', 'label': 'Figure 6',
         'width': 'onehalf',
         'section': 'Gas-solid equilibrium - method',
-        'claim': 'The assemblage is selected by enumerating candidate active '
-                 'sets and testing optimality, not by assuming which phases '
-                 'are present.',
+        'claim': 'The assemblage is selected by testing every candidate, not '
+                 'by assuming which phases are present.',
         'caption':
-            '**Active-set selection of the condensed assemblage.** Every '
-            'candidate subset of the {{equilibrium.method.n_solids}} '
-            'implemented Ti-O phases is solved against the elemental '
-            'balance; a candidate survives only if it is feasible and every '
-            'excluded phase has a non-negative reduced cost. The smallest '
-            'surviving set is the equilibrium assemblage, and excluded '
-            'phases are returned as exact zero rather than as an optimiser '
-            'residual. Shown for the {{equilibrium.margin.feed_label}} feed '
-            'at {{equilibrium.method.T_C}} C.',
+            '**Active-set selection.** Every subset of the '
+            '{{equilibrium.method.n_solids}} implemented Ti-O phases is '
+            'solved against the elemental balance. A subset survives if it '
+            'is feasible and every excluded phase has a non-negative reduced '
+            'cost. The smallest surviving subset is the equilibrium '
+            'assemblage. The bars are that optimality test for the selected '
+            'assemblage: the reduced cost of each excluded phase, all '
+            'positive. Excluded phases are returned as exact zero, not as an '
+            'optimiser residual. Shown for the '
+            '{{equilibrium.margin.feed_label}} feed at '
+            '{{equilibrium.method.T_C}} C.',
         'symbols': ['lambda_e', 'r_j', 'm_j'],
         'methods': ['active-set enumeration', 'KKT reduced cost',
                     'element-potential Newton'],
@@ -216,24 +212,24 @@ FIGURES = [
         'id': 's1', 'track': 'defect', 'label': 'Supplementary Figure 1',
         'width': 'onehalf',
         'section': 'Supplementary - declared shell thickness',
-        'claim': 'The shell/bulk split is sensitive to the declared '
-                 'subsurface thickness, and the conclusion that survives it '
-                 'is the shell share, not the bulk remainder.',
+        'claim': 'The shell and bulk split depends on the declared '
+                 'subsurface thickness. The shell share does not.',
         'caption':
-            '**Sensitivity to the declared subsurface shell thickness.** '
-            'Class inventory at {{defect.flagship.VO_total_umol_g}} umol-O '
-            'g-1 and {{defect.flagship.T_C}} C against the number of oxygen '
-            'layers assigned to the subsurface class. The surface holds at '
-            'the line-phase deficiency throughout, so the ladder trades '
-            'shell against bulk only: the subsurface class takes '
-            '{{defect.shell_ladder_text.subsurface}} umol-O g-1 and the bulk '
-            '{{defect.shell_ladder_text.bulk}} for one to four layers, while '
-            'the shell share rises from {{defect.shell_ladder_text.first_pct}} '
-            'to {{defect.shell_ladder_text.last_pct}}%. The default of one '
-            'layer follows the formation-energy set, which resolves a single '
-            'first-subsurface energy; real energies relax smoothly towards '
-            'the bulk value, so the physical answer lies between the first '
-            'two columns.',
+            '**Declared subsurface shell thickness.** Class inventory at '
+            '{{defect.flagship.VO_total_umol_g}} umol-O g-1 and '
+            '{{defect.flagship.T_C}} C against the number of oxygen layers '
+            'assigned to the subsurface class. The surface stays at the '
+            'line-phase deficiency, so the ladder moves inventory between '
+            'shell and bulk only. The subsurface class takes '
+            '{{defect.shell_ladder_text.subsurface}} umol-O g-1 for one to '
+            'four layers. The bulk takes '
+            '{{defect.shell_ladder_text.bulk}}. The shell share rises from '
+            '{{defect.shell_ladder_text.first_pct}} to '
+            '{{defect.shell_ladder_text.last_pct}}%. One layer is the '
+            'default because the formation-energy set resolves a single '
+            'first-subsurface energy. Real energies relax towards the bulk '
+            'value over the first few layers, so the physical answer lies '
+            'between the first two columns.',
         'symbols': ['n_lay', 'N_ss', 'theta_ss'],
         'methods': ['site-exclusion isotherm'],
     },
@@ -241,16 +237,15 @@ FIGURES = [
         'id': 's2', 'track': 'defect', 'label': 'Supplementary Figure 2',
         'width': 'onehalf',
         'section': 'Supplementary - surface ordering',
-        'claim': 'Surface arrangement statistics are a separate calculation '
-                 'from the layer partition and are reported as such.',
+        'claim': 'Surface arrangement is a separate calculation from the '
+                 'layer partition.',
         'caption':
             '**Surface vacancy arrangement.** Sampled bridging-row '
             'configuration and the distribution of vacancy separations along '
-            'the row at the coverage of the surviving (1x1) patches. '
-            'Effective pair interactions are constrained to reproduce '
-            'published vacancy-correlation statistics; they parameterise '
-            'arrangement, never layer energetics, and do not enter the '
-            'partition of the preceding figures.',
+            'the row, taken at the coverage of the surviving (1x1) patches. '
+            'Effective pair interactions are constrained to published '
+            'vacancy-correlation statistics. They set arrangement only. They '
+            'do not enter the layer partition of the preceding figures.',
         'symbols': ['V_1', 'theta_s'],
         'methods': ['canonical swap Metropolis', 'Widom insertion'],
     },
@@ -258,12 +253,12 @@ FIGURES = [
         'id': 's3', 'track': 'defect', 'label': 'Supplementary Figure 3',
         'width': 'single',
         'section': 'Supplementary - particle geometry',
-        'claim': 'The measured BET area and the sphere model agree on the '
-                 'ladder, so the geometric input is not carrying the result.',
+        'claim': 'The measured BET area and the sphere model give the same '
+                 'ladder.',
         'caption':
-            '**Geometry sensitivity.** Phase-boundary ladder computed from '
-            'the measured BET area ({{defect.bet.area_m2_g}} m2 g-1) against '
-            'the equivalent-sphere model ({{defect.geometry.d_um}} um). The '
+            '**Geometry sensitivity.** Phase-boundary ladder from the '
+            'measured BET area of {{defect.bet.area_m2_g}} m2 g-1 against '
+            'the equivalent-sphere model at {{defect.geometry.d_um}} um. The '
             'two agree to {{defect.bet.max_shift_pct}}% on every boundary.',
         'symbols': ['A_BET', 'd', 'N_c'],
         'methods': ['equivalent-sphere geometry'],
@@ -272,17 +267,15 @@ FIGURES = [
         'id': 's4', 'track': 'defect', 'label': 'Supplementary Figure 4',
         'width': 'onehalf',
         'section': 'Supplementary - thermodynamic bridge',
-        'claim': 'The defect calculation is conditional on rutile being the '
-                 'stable solid, and the condition is evaluated rather than '
-                 'assumed.',
+        'claim': 'The defect calculation holds only where rutile is the '
+                 'stable solid. That condition is evaluated.',
         'caption':
-            '**Validity of the conditional-equilibrium partition.** The gas '
-            'charge is re-solved at the defect temperature and the '
-            'assemblage classified: rutile alone, rutile with a reduced '
-            'phase, or an assemblage without rutile, in which case the '
-            'partition is outside its own scope. The partition is a '
-            'conditional equilibrium at fixed inventory and carries no '
-            'statement about how that inventory was created.',
+            '**Validity of the partition.** The gas charge is re-solved at '
+            'the defect temperature and the assemblage is classified: rutile '
+            'alone, rutile with a reduced phase, or an assemblage without '
+            'rutile. The third case is outside the scope of the partition. '
+            'The partition is a conditional equilibrium at fixed inventory. '
+            'It says nothing about how the inventory was created.',
         'symbols': ['r_j', 'mu_O'],
         'methods': ['active-set Gibbs minimisation'],
     },
@@ -293,16 +286,18 @@ FIGURES = [
         'claim': 'Production values are reproduced by independent '
                  'high-precision references and by a second implementation.',
         'caption':
-            '**Verification.** **a**, Production engine against the '
-            '{{verification.statmech_dps}}-digit defect oracle at the '
-            'shipped configuration and across the phase ladder. '
-            '**b**, JavaScript engine against the Python engine, same seed, '
-            'compared as integer states where the trajectory is discrete. '
-            '**c**, Coarse-grained transport against a high-precision matrix '
-            'exponential of the same generator. '
-            '**d**, Worst deviation measured in each layer, against the '
-            'tolerance the test suite enforces. The suite is '
-            '{{verification.n_tests}} tests with none skipped.',
+            '**Verification.** **a**, Deviation of the production engine '
+            'from the {{verification.statmech_dps}}-digit defect reference '
+            'in the vacancy chemical potential, over the whole matching '
+            'grid. Each point is one temperature and one inventory. The line '
+            'is the tolerance the test suite enforces. '
+            '**b**, Worst deviation measured in each verification layer, '
+            'against the tolerance for that layer. The layers are the '
+            'analytic partition, the declared shell ladder, a finite lattice '
+            'against its exact ensemble, and coarse-grained transport '
+            'against a high-precision matrix exponential of the same '
+            'generator. The suite holds {{verification.n_tests}} tests and '
+            'skips none.',
         'symbols': ['mu_V', 'theta_c', 'p_k'],
         'methods': ['mpmath reference', 'matrix exponential',
                     'same-seed trajectory comparison'],
@@ -312,18 +307,17 @@ FIGURES = [
         'label': 'Supplementary Figure 6',
         'width': 'double',
         'section': 'Supplementary - equilibrium verification',
-        'claim': 'The active-set solution is the constrained minimum, and '
-                 'trace amounts are resolved rather than truncated.',
+        'claim': 'The active-set solution is the constrained minimum. Trace '
+                 'amounts are resolved, not truncated.',
         'caption':
-            '**Equilibrium verification.** **a**, Total Gibbs energy of '
-            'every candidate assemblage relative to the winner, showing the '
-            'reported solution is the minimum and not a local stationary '
-            'point. **b**, Trace solid amounts under the sealed inert charge '
-            'compared logarithmically against the '
-            '{{verification.thermo_dps}}-digit reference, down to '
-            '{{verification.trace_floor_log10}} in log10 mol. '
-            '**c**, Elemental balance residual per element. '
-            '**d**, Deviation ledger against the enforced tolerance.',
+            '**Equilibrium verification.** **a**, Trace amounts under the '
+            'sealed inert charge, resolved logarithmically against the '
+            '{{verification.thermo_dps}}-digit reference down to '
+            '{{verification.trace_floor_log10}} in log10 mol. A minimiser '
+            'that truncated instead of resolving would floor these points. '
+            '**b**, Worst elemental balance residual per temperature for the '
+            'same charge. Closure is at the working precision of the '
+            'reference, not at the tolerance of the production solver.',
         'symbols': ['G', 'lambda_e', 'm_j'],
         'methods': ['mpmath reference', 'active-set enumeration'],
     },

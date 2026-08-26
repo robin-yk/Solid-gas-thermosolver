@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Drew all twelve manuscript plates, rewrote the captions in a plain declarative register, and replaced two panels that the data could not support: the dead radial profile became a barrier-calibration curve, and the candidate scatter became the optimality certificate of the selected assemblage.
 - Added a manuscript figure-plate pipeline: a registry of what each figure claims, a frozen extract of every value the plates carry, a print drawing kit at journal column widths, and a self-contained proof sheet with per-plate SVG and 600 dpi export.
 - Corrected the 500 and 700 C entries of the RWGS stability-margin table, which quoted the legacy oxygen-potential ladder margin from the CH4-containing run instead of the certified KKT reduced cost, and added a gate that holds the table and the README to the reference.
 - Exposed the declared subsurface shell thickness (1 to 4 oxygen layers) as a workspace control, certified the 600 C / 95 umol-O/g ladder against the oracle, and documented the shell/bulk sensitivity it carries.

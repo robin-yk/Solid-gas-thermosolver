@@ -141,6 +141,17 @@
     f.clamp = function (v) { return f(Math.max(d0, Math.min(d1, v))); };
     return f;
   }
+  function niceTicks(d0, d1, want) {
+    var span = d1 - d0, raw = span / (want || 4);
+    var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var step = [1, 2, 2.5, 5, 10].map(function (m) { return m * mag; })
+      .filter(function (v) { return v >= raw; })[0] || 10 * mag;
+    var out = [], v = Math.ceil(d0 / step) * step;
+    for (; v <= d1 + 1e-9; v += step) {
+      out.push(Math.round(v / step) * step);
+    }
+    return out;
+  }
   function decades(d0, d1) {
     var out = [];
     for (var e = Math.ceil(log10(d0)); e <= Math.floor(log10(d1)); e++) {
@@ -441,13 +452,497 @@
     return p.done();
   };
 
+
+  /* d2 - where the measured inventory sits */
+  PLATES.d2 = function (D) {
+    var g = D.plot.defect.geometry, fl = D.plot.defect.flagship;
+    var ord = D.plot.defect.ordering;
+    var p = plate('double', 64);
+    var t1 = g.layer_nm, nLay = g.ss_layers;
+
+    /* a: slab cross-section, one dot per vacancy, isotropic scale */
+    var x0 = 30, y0 = 26, fw = 176, fh = 80;
+    var nCols = 20, sitePx = fw / nCols;
+    var pxNm = sitePx / 0.29587;                 /* c along [001], nm */
+    var hPx = t1 * pxNm / 2;                     /* O sub-row spacing */
+    p.panel(8, 14, 'a');
+    p.text(x0, 16, 'Outer shell, to scale',
+      { size: TYPE.body, weight: 'bold' });
+    p.rect(x0, y0, fw, fh, C.paper, C.structure, 0.6);
+    p.rect(x0, y0, fw, 9, tint(C.gas, 0.18));
+    p.text(x0 + fw - 3, y0 + 6.6, 'gas',
+      { size: TYPE.small, anchor: 'end', fill: C.structure });
+    var surfY = y0 + 16;
+    var nSub = Math.floor((y0 + fh - 5 - surfY) / hPx);
+    var shellRows = 2 * nLay;
+    p.rect(x0 + 1, surfY - hPx / 2, fw - 2, (shellRows + 1) * hPx,
+      tint(C.subsurface, 0.09));
+    function row(y, period, off) {
+      p.el('line', { x1: x0 + 1, y1: y, x2: x0 + fw - 1, y2: y,
+        stroke: C.structure, 'stroke-width': 1.3, 'stroke-opacity': 0.35,
+        'stroke-dasharray': '1.2 ' + (period - 1.2).toFixed(2),
+        'stroke-dashoffset': (-off).toFixed(2) });
+    }
+    row(surfY, sitePx, 0.5 * sitePx - 0.6);
+    for (var i = 1; i <= nSub; i++) {
+      row(surfY + i * hPx, sitePx / 2, 0.25 * sitePx - 0.6);
+    }
+    var rng = 1;
+    function nextRand() {                     /* deterministic placement */
+      rng = (rng * 1103515245 + 12345) % 2147483648;
+      return rng / 2147483648;
+    }
+    /* the surface is on the added-row line phase here, which removes one
+       bridging oxygen per two sites: the arrangement is periodic, not the
+       sampled (1x1) configuration of the ordering exhibit */
+    var recon = fl.surface_phase && fl.surface_phase.phase === '1x2';
+    for (var j = 0; j < nCols; j++) {
+      var vac = recon ? (j % 2 === 0)
+        : ord.surf_vac.indexOf(j) >= 0;
+      if (vac) p.dot(x0 + (j + 0.5) * sitePx, surfY, 2.1, C.surface);
+    }
+    var nSites = shellRows * nCols * 2;
+    var want = Math.round(nSites * fl.theta.subsurface);
+    var order = [];
+    for (var k = 0; k < nSites; k++) order.push(k);
+    for (var t = 0; t < want; t++) {
+      var sw = t + Math.floor(nextRand() * (nSites - t));
+      var tmp = order[t]; order[t] = order[sw]; order[sw] = tmp;
+    }
+    order.slice(0, want).forEach(function (ix) {
+      var s2 = ix % 2, rest = (ix - s2) / 2;
+      var jj = rest % nCols, rr = (rest - jj) / nCols;
+      p.dot(x0 + (jj + 0.25 + 0.5 * s2) * sitePx, surfY + (1 + rr) * hPx,
+        1.8, C.subsurface);
+    });
+    var coreTop = surfY + (shellRows + 0.5) * hPx;
+    p.rect(x0 + 1, coreTop, fw - 2, y0 + fh - 1 - coreTop,
+      tint(C.bulk, 0.06));
+    var brX = x0 + 4;
+    p.path('M' + (brX + 3) + ',' + n2(surfY - hPx / 2) + ' L' + brX + ','
+      + n2(surfY - hPx / 2) + ' L' + brX + ',' + n2(coreTop) + ' L'
+      + (brX + 3) + ',' + n2(coreTop), C.subsurface, 1.0);
+    p.text(brX + 6, coreTop + 9, 'shell ' + g.shell_nm.toFixed(2)
+      + ' nm, 1 + ' + (4 * nLay) + ' O per cell',
+      { size: TYPE.small, fill: C.subsurface });
+    p.line(x0 + 6, y0 + fh - 6 - pxNm, x0 + 6, y0 + fh - 6, C.ink, 1.4);
+    p.text(x0 + 10, y0 + fh - 7, '1 nm', { size: TYPE.small });
+
+    /* b: class occupancy against depth */
+    var bx0 = 250, bx1 = 372, by0 = 118, by1 = 30;
+    var dmax = 1000;
+    var XD = lg(0.02, dmax, bx0, bx1), YT = lg(1e-4, 1, by0, by1);
+    p.panel(224, 14, 'b');
+    p.text(bx0, 16, 'Occupancy against depth',
+      { size: TYPE.body, weight: 'bold' });
+    var segs = [[0.02, t1 / 4, fl.theta.surface, C.surface],
+                [t1 / 4, g.shell_nm, fl.theta.subsurface, C.subsurface],
+                [g.shell_nm, dmax, fl.theta.bulk, C.bulk]];
+    segs.forEach(function (q, si) {
+      p.line(XD(q[0]), YT(q[2]), XD(q[1]), YT(q[2]), q[3], 1.6);
+      if (si) {
+        p.line(XD(q[0]), YT(segs[si - 1][2]), XD(q[0]), YT(q[2]),
+          C.structure, 0.6);
+      }
+    });
+    axisX(p, XD, by0, [0.1, 1, 10, 100, 1000], 'depth (nm)',
+      function (v) { return v < 1 ? '0.1' : String(v); });
+    p.line(XD(g.shell_nm), by0, XD(g.shell_nm), by1, C.structure, 0.6,
+      '2 1.6');
+    p.text(XD(g.shell_nm) + 3, by1 + 8, 'shell edge',
+      { size: TYPE.small, fill: C.structure });
+    axisY(p, YT, bx0, [1e-4, 1e-2, 1], 'vacancy occupancy', expLabel);
+
+    /* c: the partition */
+    var cx0 = 418, cx1 = 508;
+    p.panel(392, 14, 'c');
+    p.text(cx0, 16, 'Partition', { size: TYPE.body, weight: 'bold' });
+    var vmax = Math.max(fl.umol_g.surface, fl.umol_g.subsurface,
+                        fl.umol_g.bulk);
+    var XV = lin(0, vmax, cx0, cx1);
+    [['surface', 'surface'], ['subsurface', 'subsurface'],
+     ['bulk', 'bulk']].forEach(function (kv, i) {
+      var y = 34 + i * 26;
+      p.rect(cx0, y, XV(fl.umol_g[kv[0]]) - cx0, 11,
+        tint(C[kv[0]], 0.32), C[kv[0]], 0.7);
+      p.text(cx0, y - 3, kv[1], { size: TYPE.small, fill: C[kv[0]] });
+      p.text(cx0 + 2, y + 8.2, fl.umol_g[kv[0]].toFixed(1),
+        { size: TYPE.tick });
+    });
+    axisX(p, XV, 112, [0, 25, 50], 'µmol-O g⁻¹');
+    p.text(cx0, 146, 'μᵥ = ' + fl.mu_V_eV.toFixed(3) + ' eV, common to all '
+      + 'classes', { size: TYPE.small });
+    p.text(cx0, 155, 'shell holds ' + fl.shell_pct.toFixed(1)
+      + '% of the inventory', { size: TYPE.small });
+    return p.done();
+  };
+
+  /* d4 - coarse-grained reoxidation transport */
+  PLATES.d4 = function (D) {
+    var c = D.plot.defect.cgmc;
+    var p = plate('double', 62);
+    var ax0 = 40, ax1 = 244, ay0 = 116, ay1 = 30;
+    var tmin = 1e-6, tmax = c.target_s;
+    var X = lg(tmin, tmax, ax0, ax1), Y = lin(0, 100, ay0, ay1);
+    p.panel(8, 14, 'a');
+    p.text(ax0, 16, 'Recovered fraction against exposure',
+      { size: TYPE.body, weight: 'bold' });
+    [['neutral', C.gas, c.E_m_eV], ['fitted', C.subsurface, c.E_m_fit_eV]]
+      .forEach(function (kv) {
+        var rows = c[kv[0]].rows.filter(function (r) {
+          return r.t_s >= tmin; });
+        series(p, rows.map(function (r) { return [r.t_s, r.rec * 100]; }),
+          X, Y, kv[1], 1.2);
+      });
+    p.dot(X(c.target_s), Y(c.target_pct), 2.2, C.ink);
+    p.text(X(c.target_s) - 4, Y(c.target_pct) - 5,
+      'measured ' + c.target_pct + '% at ' + c.target_s + ' s',
+      { size: TYPE.small, anchor: 'end' });
+    axisX(p, X, ay0, [1e-6, 1e-4, 1e-2, 1, 100], 'exposure time (s)',
+      expLabel);
+    axisY(p, Y, ax0, [0, 25, 50, 75, 100], 'recovered (%)');
+    legend(p, ax0 + 92, ay0 - 44, [
+      { col: C.gas, text: 'Eₘ = ' + c.E_m_eV.toFixed(2)
+        + ' eV, neutral vacancy' },
+      { col: C.subsurface, text: 'Eₘ = ' + c.E_m_fit_eV.toFixed(2)
+        + ' eV, fitted' }
+    ]);
+
+    /* b: what a measured recovery implies for the barrier */
+    var bx0 = 322, bx1 = 500;
+    var cal = c.calibration;
+    var emin = cal[0].E_m_eV, emax = cal[cal.length - 1].E_m_eV;
+    var XB = lin(emin, emax, bx0, bx1), YB = lin(0, 100, ay0, ay1);
+    p.panel(286, 14, 'b');
+    p.text(bx0, 16, 'Recovery at ' + c.target_s + ' s against barrier',
+      { size: TYPE.body, weight: 'bold' });
+    series(p, cal.map(function (q) { return [q.E_m_eV, q.rec * 100]; }),
+      XB, YB, C.subsurface, 1.2);
+    cal.forEach(function (q) {
+      p.dot(XB(q.E_m_eV), YB(q.rec * 100), 1.5, C.subsurface);
+    });
+    p.line(bx0, YB(c.target_pct), XB(c.E_m_fit_eV), YB(c.target_pct),
+      C.ink, 0.8, '2.5 1.8');
+    p.line(XB(c.E_m_fit_eV), YB(c.target_pct), XB(c.E_m_fit_eV), ay0,
+      C.ink, 0.8, '2.5 1.8');
+    p.dot(XB(c.E_m_fit_eV), YB(c.target_pct), 2.2, C.ink);
+    p.text(XB(c.E_m_fit_eV) + 4, YB(c.target_pct) - 5,
+      c.E_m_fit_eV.toFixed(2) + ' eV', { size: TYPE.small });
+    p.line(XB(c.E_m_eV), ay0, XB(c.E_m_eV), ay1, C.gas, 0.9, '3 2');
+    p.text(XB(c.E_m_eV) + 3, ay1 + 8, 'neutral vacancy',
+      { size: TYPE.small, fill: C.gas });
+    axisX(p, XB, ay0, [1, 1.5, 2, 2.5], 'migration barrier Eₘ (eV)',
+      function (v) { return v.toFixed(1); });
+    axisY(p, YB, bx0, [0, 25, 50, 75, 100], 'recovered (%)');
+    return p.done();
+  };
+
+  /* e2 - active-set selection */
+  PLATES.e2 = function (D) {
+    var m = D.plot.equilibrium.method;
+    var p = plate('onehalf', 62);
+    var x0 = 60, x1 = 316, y0 = 104, y1 = 34;
+    var costs = m.costs.slice().sort(function (a, b) {
+      return a.r_kJ - b.r_kJ; });
+    var vmax = Math.max.apply(null, costs.map(function (q) {
+      return q.r_kJ; }));
+    var X = lin(0, vmax * 1.12, x0, x1);
+    var bh = (y0 - y1) / costs.length * 0.62;
+    p.text(x0 - 22, 16, 'Optimality of the selected assemblage at '
+      + m.T_C + ' °C', { size: TYPE.body, weight: 'bold' });
+    p.text(x0 - 22, 26, chem(m.winner.join(' + ')) + ' survives; every '
+      + 'excluded phase costs more', { size: TYPE.small,
+        fill: C.structure });
+    costs.forEach(function (q, i) {
+      var y = y1 + (i + 0.5) * (y0 - y1) / costs.length - bh / 2;
+      p.rect(x0, y, X(q.r_kJ) - x0, bh, tint(C.surface, 0.30), C.surface,
+        0.6);
+      p.text(x0 - 4, y + bh - 1, chem(q.phase),
+        { size: TYPE.small, anchor: 'end' });
+      p.text(X(q.r_kJ) + 3, y + bh - 1, q.r_kJ.toFixed(1),
+        { size: TYPE.small });
+    });
+    p.line(x0, y1, x0, y0, C.ink, 0.9);
+    axisX(p, X, y0, niceTicks(0, vmax * 1.12, 4),
+      'KKT reduced cost (kJ per mol O)',
+      function (v) { return String(Math.round(v)); });
+    var nOk = m.candidates.filter(function (c) {
+      return c.feasible && c.kkt_ok; }).length;
+    var nFeas = m.candidates.filter(function (c) {
+      return c.feasible; }).length;
+    p.text(x0 - 22, y0 + 30, m.candidates.length + ' candidate sets '
+      + 'enumerated, ' + nFeas + ' feasible, ' + nOk + ' optimal',
+      { size: TYPE.small });
+    p.text(x0 - 22, y0 + 39, 'excluded phases are returned as exact zero',
+      { size: TYPE.small, fill: C.structure });
+    return p.done();
+  };
+
+  /* s1 - declared shell thickness */
+  PLATES.s1 = function (D) {
+    var L = D.plot.defect.shell_ladder;
+    var p = plate('onehalf', 60);
+    var x0 = 44, x1 = 246, y0 = 110, y1 = 28;
+    var tot = D.plot.defect.flagship.VO_total_umol_g;
+    var Y = lin(0, tot, y0, y1);
+    var bw = (x1 - x0) / L.length * 0.5;
+    p.text(x0, 16, 'Shell thickness against the shell/bulk split',
+      { size: TYPE.body, weight: 'bold' });
+    L.forEach(function (r, i) {
+      var xc = x0 + (i + 0.5) * (x1 - x0) / L.length;
+      var acc = 0;
+      [['surface', C.surface], ['subsurface', C.subsurface],
+       ['bulk', C.bulk]].forEach(function (kv) {
+        var v = r[kv[0]];
+        p.rect(xc - bw / 2, Y(acc + v), bw, Y(acc) - Y(acc + v),
+          tint(kv[1], 0.34), kv[1], 0.6);
+        acc += v;
+      });
+      p.text(xc, Y(acc) - 4, r.shell_pct.toFixed(0) + '%',
+        { size: TYPE.small, anchor: 'middle' });
+      p.text(xc, y0 + 9.5, String(r.n_lay),
+        { size: TYPE.tick, anchor: 'middle' });
+      p.text(xc, y0 + 18, r.shell_nm.toFixed(2),
+        { size: TYPE.small, anchor: 'middle', fill: C.structure });
+    });
+    p.line(x0, y0, x1, y0, C.ink, 0.7);
+    p.text((x0 + x1) / 2, y0 + 29, 'subsurface layers / shell depth (nm)',
+      { size: TYPE.body, anchor: 'middle' });
+    axisY(p, Y, x0, [0, 25, 50, 75, 95].filter(function (v) {
+      return v <= tot; }), 'class inventory (µmol-O g⁻¹)');
+    legend(p, x1 + 12, y1 + 10, [
+      { col: C.surface, swatch: true, text: 'surface' },
+      { col: C.subsurface, swatch: true, text: 'subsurface' },
+      { col: C.bulk, swatch: true, text: 'bulk' }
+    ]);
+    return p.done();
+  };
+
+  /* s2 - surface vacancy arrangement */
+  PLATES.s2 = function (D) {
+    var o = D.plot.defect.ordering;
+    var p = plate('onehalf', 60);
+    var x0 = 40, y0 = 26;
+    var cell = 5.2, nR = o.rows, nC = o.row_sites;
+    p.panel(8, 14, 'a');
+    p.text(x0, 16, 'Sampled bridging row',
+      { size: TYPE.body, weight: 'bold' });
+    var occ = {};
+    o.surf_vac.forEach(function (v) { occ[v] = 1; });
+    for (var r = 0; r < nR; r++) {
+      for (var k = 0; k < nC; k++) {
+        var cx = x0 + k * cell, cy = y0 + r * cell;
+        if (occ[r * nC + k]) p.dot(cx, cy, 1.8, C.surface);
+        else p.dot(cx, cy, 0.7, C.structure);
+      }
+    }
+    p.text(x0, y0 + nR * cell + 8,
+      'θₛ = ' + (o.theta_s * 100).toFixed(1) + '%, '
+      + o.rows + ' × ' + o.row_sites + ' sites',
+      { size: TYPE.small });
+
+    var bx0 = 214, bx1 = 330, by0 = 104, by1 = 30;
+    var h = o.hist || [];
+    var n = Math.min(h.length, 10);
+    var hmax = 0;
+    for (var i = 1; i <= n; i++) hmax = Math.max(hmax, h[i - 1] || 0);
+    var Y = lin(0, hmax, by0, by1);
+    var bw2 = (bx1 - bx0) / n * 0.66;
+    p.panel(190, 14, 'b');
+    p.text(bx0, 16, 'Separation along the row',
+      { size: TYPE.body, weight: 'bold' });
+    for (var i2 = 1; i2 <= n; i2++) {
+      var xc2 = bx0 + (i2 - 0.5) * (bx1 - bx0) / n;
+      var v2 = h[i2 - 1] || 0;
+      p.rect(xc2 - bw2 / 2, Y(v2), bw2, by0 - Y(v2),
+        tint(C.surface, 0.34), C.surface, 0.6);
+      if (i2 % 2 === 1) {
+        p.text(xc2, by0 + 9.5, String(i2),
+          { size: TYPE.tick, anchor: 'middle' });
+      }
+    }
+    p.line(bx0, by0, bx1, by0, C.ink, 0.7);
+    axisY(p, Y, bx0, [0, hmax], 'pairs sampled',
+      function (v) { return String(Math.round(v)); });
+    p.text((bx0 + bx1) / 2, by0 + 21, 'gap (bridging sites)',
+      { size: TYPE.body, anchor: 'middle' });
+    p.text(bx0, by1 - 4, 'modal gap ' + o.spacing.modal_gap_sites
+      + ' sites, P(gap ≤ 2) = ' + o.spacing.P_gap_le_2.toFixed(2),
+      { size: TYPE.small });
+    return p.done();
+  };
+
+  /* s3 - geometry sensitivity */
+  PLATES.s3 = function (D) {
+    var b = D.plot.defect.boundaries, bb = D.plot.defect.bet;
+    var p = plate('single', 52);
+    var x0 = 36, x1 = 236, y0 = 92, y1 = 30;
+    var X = lg(1, 400, x0, x1);
+    p.text(x0, 15, 'Boundary ladder, two geometries',
+      { size: TYPE.body, weight: 'bold' });
+    var keys = [['VO_onset_umol_g', 'onset'],
+                ['VO_recon_complete_umol_g', 'complete'],
+                ['VO_cs_umol_g', 'CS ceiling']];
+    keys.forEach(function (kv, i) {
+      var y = 30 + i * 19;
+      p.line(X(b[kv[0]]), y, X(bb.boundaries[kv[0]]), y, C.structure, 0.8);
+      p.dot(X(b[kv[0]]), y, 2.2, C.surface);
+      p.dot(X(bb.boundaries[kv[0]]), y, 2.2, C.paper, C.subsurface);
+      p.text(x0, y - 5, kv[1], { size: TYPE.small, fill: C.structure });
+    });
+    axisX(p, X, y0, [1, 10, 100, 400], 'µmol-O g⁻¹',
+      function (v) { return String(v); });
+    legend(p, x0 + 4, y1 + 30, [
+      { col: C.surface, swatch: true,
+        text: 'sphere, ' + D.slots['defect.geometry.d_um'] + ' µm' },
+      { col: C.subsurface, swatch: true,
+        text: 'BET, ' + bb.area_m2_g.toFixed(2) + ' m² g⁻¹' }
+    ]);
+    p.text(x0, y0 + 22, 'agreement to '
+      + bb.max_shift_pct.toFixed(1) + '% on every boundary',
+      { size: TYPE.small });
+    return p.done();
+  };
+
+  var SHORT_CASE = { rwgs_1_1: 'CO2/H2 = 1:1', h2_rich: 'CO2/H2 = 1:3',
+    product_mix: 'product mix', pure_h2: 'pure H2', pure_n2: 'sealed N2' };
+
+  /* s4 - validity of the partition */
+  PLATES.s4 = function (D) {
+    var v = D.plot.equilibrium.validity;
+    var p = plate('onehalf', 58);
+    var x0 = 108, y0 = 30, cw = 34, ch = 15;
+    var temps = v.temps;
+    p.text(20, 16, 'Where the partition is valid',
+      { size: TYPE.body, weight: 'bold' });
+    var fills = { stable: tint(C.surface, 0.30),
+                  boundary: tint(C.extended, 0.36),
+                  outside: tint(C.structure, 0.30) };
+    temps.forEach(function (t, j) {
+      p.text(x0 + (j + 0.5) * cw, y0 - 4, String(t),
+        { size: TYPE.small, anchor: 'middle' });
+    });
+    p.text(x0 + temps.length * cw / 2, y0 - 14, 'temperature (°C)',
+      { size: TYPE.small, anchor: 'middle', fill: C.structure });
+    v.cases.forEach(function (c, i) {
+      var y = y0 + i * ch;
+      p.text(x0 - 4, y + 10.5, chem(SHORT_CASE[c.case] || c.case),
+        { size: TYPE.small, anchor: 'end' });
+      c.tiers.forEach(function (q) {
+        var j = temps.indexOf(q.T_C);
+        p.rect(x0 + j * cw + 1, y + 2, cw - 2, ch - 4, fills[q.tier],
+          C.paper, 0.8);
+      });
+    });
+    legend(p, x0, y0 + v.cases.length * ch + 16, [
+      { col: fills.stable, swatch: true, text: 'rutile alone, valid' },
+      { col: fills.boundary, swatch: true,
+        text: 'rutile with a reduced phase, boundary' },
+      { col: fills.outside, swatch: true,
+        text: 'no rutile, outside the model' }
+    ]);
+    return p.done();
+  };
+
+  /* s5 - numerical verification of the defect stack */
+  PLATES.s5 = function (D) {
+    var V = D.plot.verification;
+    var p = plate('double', 62);
+    var ax0 = 52, ax1 = 236, ay0 = 112, ay1 = 30;
+    var X = lin(350, 1050, ax0, ax1), Y = lg(1e-16, 1e-8, ay0, ay1);
+    p.panel(8, 14, 'a');
+    p.text(ax0, 16, 'Partition against the reference',
+      { size: TYPE.body, weight: 'bold' });
+    p.line(ax0, Y(1e-9), ax1, Y(1e-9), C.extended, 1.0, '3 2');
+    p.text(ax1 - 3, Y(1e-9) - 4, 'enforced tolerance',
+      { size: TYPE.small, anchor: 'end', fill: C.extended });
+    V.grid_dev.forEach(function (q) {
+      p.dot(X(q.T_C), Y(Math.max(q.dev_eV, 1e-16)), 1.8, C.surface);
+    });
+    axisX(p, X, ay0, [400, 600, 800, 1000], 'temperature (°C)');
+    axisY(p, Y, ax0, [1e-16, 1e-12, 1e-8], 'deviation in μᵥ (eV)',
+      expLabel);
+    p.text(ax0 + 4, ay0 - 5, 'points at the floor of double precision',
+      { size: TYPE.small, fill: C.structure });
+
+    var bx0 = 330, bx1 = 470;
+    var XB = lg(1e-16, 1e-1, bx0, bx1);
+    p.panel(276, 14, 'b');
+    p.text(bx0, 16, 'Deviation ledger',
+      { size: TYPE.body, weight: 'bold' });
+    V.layers.forEach(function (L, i) {
+      var y = 34 + i * 22;
+      p.text(bx0, y - 3, L.layer, { size: TYPE.small });
+      p.rect(bx0, y, XB(Math.max(L.measured, 1e-16)) - bx0, 6,
+        tint(C.surface, 0.34), C.surface, 0.6);
+      p.line(XB(L.tolerance), y - 1.5, XB(L.tolerance), y + 7.5,
+        C.extended, 1.1);
+    });
+    axisX(p, XB, ay0, [1e-15, 1e-10, 1e-5], 'measured against tolerance',
+      expLabel);
+    p.text(bx0, ay0 + 32, V.n_tests + ' tests, none skipped. '
+      + 'Vertical marks are the enforced tolerances.',
+      { size: TYPE.small });
+    return p.done();
+  };
+
+  /* s6 - equilibrium verification */
+  PLATES.s6 = function (D) {
+    var V = D.plot.equilibrium.verification;
+    var p = plate('double', 62);
+    var ax0 = 48, ax1 = 240, ay0 = 112, ay1 = 30;
+    var Ts = V.traces.map(function (q) { return q.T_C; });
+    var tmin = Math.min.apply(null, Ts), tmax = Math.max.apply(null, Ts);
+    var lo = Math.floor(Math.min.apply(null,
+      V.traces.map(function (q) { return q.log10_mol; })) / 10) * 10;
+    var X = lin(tmin, tmax, ax0, ax1), Y = lin(lo, 0, ay0, ay1);
+    p.panel(8, 14, 'a');
+    p.text(ax0, 16, 'Trace amounts, sealed inert charge',
+      { size: TYPE.body, weight: 'bold' });
+    var byS = {};
+    V.traces.forEach(function (q) {
+      (byS[q.species] = byS[q.species] || []).push(q); });
+    var cols = [C.surface, C.subsurface, C.gas, C.bulk];
+    Object.keys(byS).sort().forEach(function (sp, i) {
+      var col = cols[i % cols.length];
+      var pts = byS[sp].sort(function (a, b) { return a.T_C - b.T_C; });
+      series(p, pts.map(function (q) { return [q.T_C, q.log10_mol]; }),
+        X, Y, col, 1.1);
+      pts.forEach(function (q) { p.dot(X(q.T_C), Y(q.log10_mol), 1.6, col); });
+      /* the traces converge, so the keys are stacked rather than placed
+         on the curve ends */
+      p.text(ax1 - 2, ay1 + 8 + i * 9, chem(sp),
+        { size: TYPE.small, anchor: 'end', fill: col });
+    });
+    axisX(p, X, ay0, [500, 900, 1300], 'temperature (°C)');
+    axisY(p, Y, ax0, [lo, lo / 2, 0], 'log₁₀ (amount / mol)',
+      function (v) { return String(Math.round(v)); });
+
+    var bx0 = 330, bx1 = 500;
+    var XB = lin(tmin, tmax, bx0, bx1);
+    var rmin = -100;
+    var YB = lg(1e-100, 1e-60, ay0, ay1);
+    p.panel(276, 14, 'b');
+    p.text(bx0, 16, 'Elemental closure',
+      { size: TYPE.body, weight: 'bold' });
+    V.residuals.forEach(function (q) {
+      p.dot(XB(q.T_C), YB(Math.max(q.worst_abs_mol, 1e-100)), 1.9, C.gas);
+    });
+    axisX(p, XB, ay0, [500, 900, 1300], 'temperature (°C)');
+    axisY(p, YB, bx0, [1e-100, 1e-80, 1e-60],
+      'worst residual (mol)', expLabel);
+    p.text(bx0, ay1 - 4, 'zero residuals are drawn at the axis floor',
+      { size: TYPE.small, fill: C.structure });
+    return p.done();
+  };
+
   function render(id, data) {
     if (!PLATES[id]) throw new Error('no plate ' + id);
     return PLATES[id](data);
   }
 
   return { plate: plate, render: render, PLATES: PLATES, C: C, tint: tint,
-           chem: chem,
+           chem: chem, niceTicks: niceTicks,
            TYPE: TYPE, WIDTH_MM: WIDTH_MM, PT_PER_MM: PT_PER_MM,
            lin: lin, lg: lg, decades: decades, axisX: axisX, axisY: axisY,
            series: series, legend: legend, expLabel: expLabel };
