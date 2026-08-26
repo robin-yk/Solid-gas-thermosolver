@@ -8,7 +8,7 @@ This repository calculates whether a reacting gas can reduce rutile TiO2 at equi
 
 ## Main results
 
-An equilibrated CO2/H2 = 1:1 feed does not reduce rutile from 500 to 1500 °C. The nearest reduced phase remains 78.44 to 27.30 kJ mol-O⁻¹ above stability over this range.
+An equilibrated CO2/H2 = 1:1 feed does not reduce rutile from 500 to 1500 °C. The nearest reduced phase remains 70.40 to 27.30 kJ mol-O⁻¹ above stability over this range.
 
 | Gas charge | Equilibrium result |
 | --- | --- |
@@ -40,11 +40,15 @@ python3 -m pip install -r requirements.txt
 python3 scripts/export_equations.py
 python3 scripts/build_ti_solver.py
 python3 scripts/build_portal.py
+python3 scripts/export_plates.py       # freeze the manuscript figure data
+python3 scripts/build_plates.py        # docs/figures.html proof sheet
 python3 -m pytest tests/ -q
 python3 -m http.server 8000 --directory docs
 ```
 
 The Python package is in `solidgas/`. Browser sources are in `web/`, generated site files in `docs/`, build and oracle commands in `scripts/`, and committed inputs and reference outputs in `data/`.
+
+Manuscript figures are drawn to print size from frozen solver output: `scripts/export_plates.py` extracts every value the plates carry into `data/figure_data.json` and stamps it with the commit, and `scripts/build_plates.py` renders the proof sheet at [docs/figures.html](docs/figures.html). Captions are written with slots rather than numbers, so a caption cannot drift from the model, and the test suite fails while the extract is stale.
 
 ## Verification
 
