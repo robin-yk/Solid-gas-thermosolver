@@ -18,14 +18,59 @@
   var el = {};
   ['smT', 'smVO', 'smGeoMode', 'smGeoVal', 'smGeoUnit', 'smSS', 'smDerived',
    'smPreset', 'smEpsSS', 'smEpsB', 'smV1', 'smV2', 'smV3', 'smQuality',
-   'smSeed', 'smRun', 'smStatus', 'smSummary', 'smKpis', 'smChart',
+   'smSeed', 'smRun', 'smStatus', 'smSummary', 'smKpis',
    'smTable', 'smSpacing', 'smNotes',
    'smEaS', 'smEaSS', 'smEaB', 'smAS', 'smASS', 'smAB', 'smKinT', 'smExp',
-   'smPCO2', 'smAccKpis', 'smSweep', 'smTip', 'smSweepLegend', 'smAccNote',
+   'smPCO2', 'smAccKpis', 'smAccNote',
    'smCoupledNote', 'smEnv', 'smParticle', 'smPvAcc', 'smPvDl',
    'smPvLegend', 'smPvNote', 'cgEm', 'cgCells', 'cgTarget', 'cgFit',
-   'cgFitOut', 'cgKpis', 'cgChart', 'cgLegend', 'cgProf', 'cgProfLegend',
-   'cgNote'].forEach(function (id) { el[id] = $(id); });
+   'cgFitOut', 'cgKpis', 'cgNote'].forEach(function (id) {
+     el[id] = $(id);
+   });
+
+  /* ------------------------------------------------- published figures */
+
+  /* Every quantitative plot on this page is a publication figure built by
+     web/figures_defect.js through the shared kit. The page holds the SVG
+     string it was given and hands the same string to the download, so the
+     preview and the file cannot differ. */
+  var FIG = window.DefectFigures;
+  var KIT = window.FigKit;
+  var figState = {};
+
+  function mountFigure(hostId, name, svg) {
+    var host = $(hostId);
+    if (!host) return;
+    figState[hostId] = { svg: svg, name: name };
+    var box = host.querySelector('.figbox');
+    box.innerHTML = svg;
+    var dl = host.querySelector('.figdl');
+    if (dl && !dl.dataset.wired) {
+      dl.dataset.wired = '1';
+      dl.addEventListener('click', function (ev) {
+        var fmt = ev.target && ev.target.getAttribute('data-fmt');
+        if (!fmt) return;
+        var st = figState[hostId];
+        if (!st) return;
+        if (fmt === 'svg') {
+          KIT.downloadSVG(st.svg, st.name);
+        } else {
+          ev.target.disabled = true;
+          KIT.downloadPNG(st.svg, st.name).catch(function (e) {
+            window.alert('PNG export failed: ' + e.message);
+          }).then(function () { ev.target.disabled = false; });
+        }
+        dl.open = false;
+      });
+    }
+  }
+
+  function figFail(hostId, why) {
+    var host = $(hostId);
+    if (host) {
+      host.querySelector('.figbox').textContent = why;
+    }
+  }
 
   /* ------------------------------------------- workspace switching */
 
@@ -431,7 +476,10 @@
       + '</div></div>';
     el.smKpis.innerHTML = k;
 
-    drawChart(out);
+    try {
+      mountFigure('figDistribution', 'vacancy-distribution',
+        FIG.distribution({ out: out }));
+    } catch (e) { figFail('figDistribution', e.message); }
 
     var h = '<tr><th>Site class</th><th>θ occupancy</th>'
       + '<th>μmol-O/g</th><th>share of inventory</th></tr>';
@@ -558,7 +606,20 @@
     for (var i = 0; i <= 72; i++) voList.push(xmax * i / 72);
     var rows = SM.sweep(DATA, ctx.tC, ctx.geom, voList,
                         { eps: ctx.eps, kin: ctx.kin });
-    drawSweep(rows, vo, xmax, b);
+    try {
+      mountFigure('figAccessible', 'accessible-inventory', FIG.accessible({
+        vo: vo, bounds: b, acc: acc,
+        sweep: {
+          xmax: xmax,
+          rows: rows.map(function (r) {
+            return { VO_total_umol_g: r.VO_total_umol_g,
+                     surface: r.surface, subsurface: r.subsurface,
+                     bulk: r.bulk, extended: r.extended,
+                     accessible: r.accessible };
+          })
+        }
+      }));
+    } catch (e) { figFail('figAccessible', e.message); }
 
     renderParticle(out, acc, fresh);
     renderCg(out, acc, ctx);
@@ -582,68 +643,6 @@
     return n;
   }
 
-  function drawChart(out) {
-    var svg = el.smChart;
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    var W = 560, H = 300, L = 52, R = 12, T = 26, B = 48;
-    var pw = W - L - R, ph = H - T - B;
-    var fmax = 0;
-    CLASSES.forEach(function (c) {
-      if (out.fractions[c.key] > fmax) fmax = out.fractions[c.key];
-    });
-    // round tick steps: the axis reads 0/20/40/60/80%, never 17.5%
-    var steps = [0.025, 0.05, 0.1, 0.2, 0.25];
-    var step = steps[steps.length - 1];
-    for (var si = 0; si < steps.length; si++) {
-      if (4 * steps[si] >= Math.min(1, fmax * 1.1)) { step = steps[si]; break; }
-    }
-    var ymax = 4 * step;
-    for (var i = 0; i <= 4; i++) {
-      var fv = step * i;
-      var y = T + ph - ph * fv / ymax;
-      sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
-                   style: 'stroke:var(--line);stroke-width:1' }, svg);
-      var lab = sv('text', { x: L - 8, y: y + 4, 'text-anchor': 'end',
-        style: 'fill:var(--muted);font-size:15px' }, svg);
-      lab.textContent = (Math.round(fv * 1000) / 10) + '%';
-    }
-    var bw = pw / 3;
-    CLASSES.forEach(function (c, idx) {
-      var f = out.fractions[c.key];
-      var barW = Math.min(96, bw * 0.52);
-      var x = L + bw * idx + (bw - barW) / 2;
-      var hgt = ph * f / ymax;
-      var y = T + ph - hgt;
-      var r = Math.min(4, hgt);
-      if (hgt > 0) {
-        var d = 'M' + x + ',' + (T + ph)
-          + ' L' + x + ',' + (y + r)
-          + ' Q' + x + ',' + y + ' ' + (x + r) + ',' + y
-          + ' L' + (x + barW - r) + ',' + y
-          + ' Q' + (x + barW) + ',' + y + ' ' + (x + barW) + ',' + (y + r)
-          + ' L' + (x + barW) + ',' + (T + ph) + ' Z';
-        var p = sv('path', { d: d, style: 'fill:var(' + c.varname + ')' }, svg);
-        var tt = document.createElementNS(SVG, 'title');
-        tt.textContent = c.label + ': ' + f2(out.umol_g[c.key])
-          + ' μmol-O/g (' + pctf(f) + ' of inventory), θ = '
-          + thf(out.theta[c.key]);
-        p.appendChild(tt);
-      }
-      var vt = sv('text', { x: x + barW / 2, y: y - 7, 'text-anchor': 'middle',
-        style: 'fill:var(--ink);font-size:15px;font-weight:700' }, svg);
-      vt.textContent = pctf(f);
-      var nt = sv('text', { x: x + barW / 2, y: T + ph + 17,
-        'text-anchor': 'middle',
-        style: 'fill:var(--navy);font-size:14px;font-weight:700' }, svg);
-      nt.textContent = c.label;
-      var ut = sv('text', { x: x + barW / 2, y: T + ph + 33,
-        'text-anchor': 'middle',
-        style: 'fill:var(--muted);font-size:12.5px' }, svg);
-      ut.textContent = f2(out.umol_g[c.key]) + ' μmol-O/g';
-    });
-    sv('line', { x1: L, x2: L + pw, y1: T + ph, y2: T + ph,
-                 style: 'stroke:var(--muted);stroke-width:1' }, svg);
-  }
 
   /* ----------------------------------------------------- sweep chart */
 
@@ -658,186 +657,8 @@
 
   var sweepState = null;
 
-  function drawSweep(rows, currentVO, xmax, bounds) {
-    var svg = el.smSweep;
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    var W = 720, H = 380, L = 56, R = 116, T = 26, B = 52;
-    var pw = W - L - R, ph = H - T - B;
-    var vmax = 0;
-    rows.forEach(function (r) {
-      SWEEP.forEach(function (s) { if (r[s.key] > vmax) vmax = r[s.key]; });
-    });
-    var steps = [1, 2, 5, 10, 20, 25, 50];
-    var step = steps[steps.length - 1];
-    for (var si = 0; si < steps.length; si++) {
-      if (4 * steps[si] >= vmax * 1.06) { step = steps[si]; break; }
-    }
-    var ymax = 4 * step;
-    function X(v) { return L + pw * v / xmax; }
-    function Y(v) { return T + ph - ph * v / ymax; }
-    var i, yv, y;
 
-    /* phase regions: CS band shaded, boundaries as dashed verticals */
-    if (bounds) {
-      var xcs = X(Math.min(bounds.VO_cs_umol_g, xmax));
-      if (xcs < L + pw - 2) {
-        sv('rect', { x: xcs, y: T, width: L + pw - xcs, height: ph,
-          style: 'fill:var(--red);opacity:0.05' }, svg);
-        var bl = sv('text', { x: Math.min(xcs + 8, L + pw - 8), y: T + 16,
-          style: 'fill:var(--red);font-size:12.5px;opacity:0.85' }, svg);
-        bl.textContent = 'CS precipitation (est.)';
-      }
-      [[bounds.VO_onset_umol_g, '(1×2) onset'],
-       [bounds.VO_recon_complete_umol_g, 'recon. complete'],
-       [bounds.VO_cs_umol_g, null]].forEach(function (q, qi) {
-        if (q[0] > xmax) return;
-        var bx = X(q[0]);
-        sv('line', { x1: bx, x2: bx, y1: T, y2: T + ph,
-          'stroke-dasharray': '2 5',
-          style: 'stroke:var(--muted);stroke-width:1;opacity:0.8' }, svg);
-        if (q[1]) {
-          var lt = sv('text', { x: bx + 4, y: T + ph - 8 - qi * 15,
-            style: 'fill:var(--muted);font-size:12px' }, svg);
-          lt.textContent = q[1];
-        }
-      });
-    }
-    for (i = 0; i <= 4; i++) {
-      yv = step * i;
-      y = Y(yv);
-      sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
-                   style: 'stroke:var(--line);stroke-width:1' }, svg);
-      var lb = sv('text', { x: L - 8, y: y + 4, 'text-anchor': 'end',
-        style: 'fill:var(--muted);font-size:15px' }, svg);
-      lb.textContent = yv;
-    }
-    var yt = sv('text', { x: 6, y: 14,
-      style: 'fill:var(--muted);font-size:15px' }, svg);
-    yt.textContent = 'μmol-O/g';
-    for (i = 0; i <= 5; i++) {
-      var xv = xmax * i / 5;
-      var xl = sv('text', { x: X(xv), y: T + ph + 18, 'text-anchor': 'middle',
-        style: 'fill:var(--muted);font-size:15px' }, svg);
-      xl.textContent = Math.round(xv);
-    }
-    var xt = sv('text', { x: L + pw / 2, y: T + ph + 38,
-      'text-anchor': 'middle',
-      style: 'fill:var(--muted);font-size:13.5px' }, svg);
-    xt.textContent = 'total Vₒ (μmol-O/g)';
 
-    SWEEP.forEach(function (s) {
-      var d = '';
-      rows.forEach(function (r, j) {
-        d += (j ? 'L' : 'M') + X(r.VO_total_umol_g).toFixed(2) + ','
-          + Y(r[s.key]).toFixed(2);
-      });
-      var p = sv('path', { d: d, fill: 'none',
-        style: 'stroke:var(' + s.varname + ');stroke-width:2' }, svg);
-      if (s.dash) p.setAttribute('stroke-dasharray', s.dash);
-    });
-
-    var last = rows[rows.length - 1];
-    var ends = SWEEP.map(function (s) {
-      return { label: s.label, y: Y(last[s.key]) };
-    }).sort(function (a, b) { return a.y - b.y; });
-    for (i = 1; i < ends.length; i++) {
-      if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
-    }
-    ends.forEach(function (e) {
-      var t2 = sv('text', { x: L + pw + 8, y: e.y + 4,
-        style: 'fill:var(--ink);font-size:13.5px' }, svg);
-      t2.textContent = e.label;
-    });
-
-    var gx = X(currentVO);
-    sv('line', { x1: gx, x2: gx, y1: T, y2: T + ph,
-                 'stroke-dasharray': '3 4',
-                 style: 'stroke:var(--muted);stroke-width:1' }, svg);
-    var tpos = currentVO / xmax * (rows.length - 1);
-    var j0 = Math.min(rows.length - 2, Math.floor(tpos));
-    var wgt = tpos - j0;
-    SWEEP.forEach(function (s) {
-      var val = rows[j0][s.key] * (1 - wgt) + rows[j0 + 1][s.key] * wgt;
-      sv('circle', { cx: gx, cy: Y(val), r: 4,
-        style: 'fill:var(' + s.varname + ');stroke:var(--panel);'
-          + 'stroke-width:2' }, svg);
-    });
-    sv('line', { x1: L, x2: L + pw, y1: T + ph, y2: T + ph,
-                 style: 'stroke:var(--muted);stroke-width:1' }, svg);
-
-    var expPts = (DATA.experimental_recovery
-                  && DATA.experimental_recovery.points) || [];
-    expPts.forEach(function (q) {
-      if (q.VO_total_umol_g <= xmax && q.recovered_umol_g <= ymax) {
-        sv('circle', { cx: X(q.VO_total_umol_g), cy: Y(q.recovered_umol_g),
-          r: 4.5, style: 'fill:none;stroke:var(--ink);stroke-width:2' }, svg);
-      }
-    });
-
-    var ch = sv('line', { x1: L, x2: L, y1: T, y2: T + ph, opacity: 0,
-                 style: 'stroke:var(--muted);stroke-width:1' }, svg);
-    sweepState = { rows: rows, xmax: xmax, L: L, T: T, pw: pw, ph: ph,
-                   W: W, ch: ch };
-    if (!svg.dataset.wired) {
-      svg.dataset.wired = '1';
-      svg.addEventListener('mousemove', sweepMove);
-      svg.addEventListener('mouseleave', sweepLeave);
-    }
-
-    var lg = '';
-    SWEEP.forEach(function (s) {
-      lg += '<span>' + (s.dash
-        ? '<svg width="20" height="6" style="vertical-align:middle;'
-          + 'margin-right:5px"><line x1="0" x2="20" y1="3" y2="3" '
-          + 'stroke-dasharray="4 3" style="stroke:var(--ink);'
-          + 'stroke-width:2"/></svg>'
-        : '<span class="swatch" style="background:var(' + s.varname
-          + ')"></span>') + s.label + '</span>';
-    });
-    if (expPts.length) {
-      lg += '<span><svg width="12" height="12" style="vertical-align:middle;'
-        + 'margin-right:5px"><circle cx="6" cy="6" r="4" fill="none" '
-        + 'style="stroke:var(--ink);stroke-width:2"/></svg>'
-        + 'measured CO₂ recovery</span>';
-    }
-    el.smSweepLegend.innerHTML = lg;
-  }
-
-  function sweepMove(ev) {
-    var st = sweepState;
-    if (!st) return;
-    var svg = el.smSweep;
-    var rect = svg.getBoundingClientRect();
-    var sx = (ev.clientX - rect.left) * (st.W / rect.width);
-    if (sx < st.L || sx > st.L + st.pw) { sweepLeave(); return; }
-    var j = Math.round((sx - st.L) / st.pw * (st.rows.length - 1));
-    j = Math.max(0, Math.min(st.rows.length - 1, j));
-    var row = st.rows[j];
-    var gx = st.L + st.pw * row.VO_total_umol_g / st.xmax;
-    st.ch.setAttribute('x1', gx);
-    st.ch.setAttribute('x2', gx);
-    st.ch.setAttribute('opacity', 0.6);
-    var tip = el.smTip;
-    tip.style.display = 'block';
-    tip.innerHTML = '<b>' + f2(row.VO_total_umol_g)
-      + ' μmol-O/g total</b> · ' + row.regime.replace(/_/g, ' ')
-      + '<br>surface ' + f2(row.surface)
-      + ' · subsurface ' + f2(row.subsurface) + ' · bulk ' + f2(row.bulk)
-      + (row.extended > 0 ? ' · CS ' + f2(row.extended) : '')
-      + '<br>accessible ' + f2(row.accessible) + ' ('
-      + pctf(row.f_recoverable) + ')';
-    var wrap = svg.parentNode;
-    var wr = wrap.getBoundingClientRect();
-    var px = (gx / st.W) * rect.width + (rect.left - wr.left);
-    var flip = px > wr.width * 0.62;
-    tip.style.left = (flip ? px - tip.offsetWidth - 14 : px + 12) + 'px';
-    tip.style.top = (ev.clientY - wr.top - 14) + 'px';
-  }
-
-  function sweepLeave() {
-    if (sweepState && sweepState.ch) sweepState.ch.setAttribute('opacity', 0);
-    el.smTip.style.display = 'none';
-  }
 
   /* ------------------------------------------ particle cross-section */
 
@@ -1261,8 +1082,15 @@
       + (cgFitVal == null ? 'enter a measured recovery and fit'
         : 'eV, from the measured recovery') + '</div></div>';
     el.cgKpis.innerHTML = k;
-    drawCgChart(r, tEnd, acc);
-    drawCgProf(r, sys);
+    var cg = { r: r, sys: sys, tEnd: tEnd,
+               E_m_eV: num(el.cgEm, 0.65),
+               target_s: tEnd, target_pct: r.recovered_fraction * 100 };
+    try {
+      mountFigure('figRecovery', 'cgmc-recovery', FIG.recovery({ cg: cg }));
+    } catch (e) { figFail('figRecovery', e.message); }
+    try {
+      mountFigure('figRadial', 'radial-profile', FIG.radial({ cg: cg }));
+    } catch (e) { figFail('figRadial', e.message); }
     el.cgNote.textContent = 'Closed-system check: with the gas channel '
       + 'shut, this transport network relaxes to the exact product-'
       + 'binomial equilibrium of its own (1×1) site-class Hamiltonian '
@@ -1275,149 +1103,7 @@
       + 'trapping or defect aggregation rather than neutral hops.';
   }
 
-  function drawCgChart(r, tEnd, acc) {
-    var svg = el.cgChart;
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    var W = 720, H = 330, L = 56, R = 128, T = 18, B = 46;
-    var pw = W - L - R, ph = H - T - B;
-    var lgLo = -6;
-    var lgHi = Math.ceil(Math.log10(tEnd));
-    if (lgHi <= lgLo) lgHi = lgLo + 1;
-    var X = function (t) {
-      var lg = Math.log10(Math.max(t, Math.pow(10, lgLo)));
-      return L + pw * (lg - lgLo) / (lgHi - lgLo);
-    };
-    var Y = function (f) { return T + ph - ph * f; };
-    var i;
-    for (i = 0; i <= 4; i++) {
-      var y = Y(i / 4);
-      sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
-        style: 'stroke:var(--line);stroke-width:1' }, svg);
-      tx(L - 8, y + 4, (i * 25) + '%',
-         'fill:var(--muted);font-size:11px', 'end', svg);
-    }
-    for (var n = lgLo; n <= lgHi; n++) {
-      var xx = X(Math.pow(10, n));
-      sv('line', { x1: xx, x2: xx, y1: T, y2: T + ph,
-        style: 'stroke:var(--line);stroke-width:1;opacity:.6' }, svg);
-      var lab = n === -6 ? '1 μs' : n === -3 ? '1 ms' : n === 0 ? '1 s'
-        : n === 3 ? '1000 s' : '1e' + n;
-      tx(xx, T + ph + 16, lab, 'fill:var(--muted);font-size:10.5px',
-         'middle', svg);
-    }
-    tx(L + pw / 2, T + ph + 34, 'exposure time',
-       'fill:var(--muted);font-size:11px', 'middle', svg);
 
-    var fo = acc.f_recoverable;
-    sv('line', { x1: L, x2: L + pw, y1: Y(fo), y2: Y(fo),
-      'stroke-dasharray': '6 4',
-      style: 'stroke:var(--cSub);stroke-width:1.6;opacity:.9' }, svg);
-    tx(L + pw + 6, Y(fo) + 4, 'first-order',
-       'fill:var(--muted);font-size:10.5px', 'start', svg);
-    var tgt = num(el.cgTarget, NaN);
-    if (tgt > 0 && tgt < 100) {
-      sv('line', { x1: L, x2: L + pw, y1: Y(tgt / 100), y2: Y(tgt / 100),
-        'stroke-dasharray': '2 4',
-        style: 'stroke:var(--orange);stroke-width:1.6' }, svg);
-      tx(L + pw + 6, Y(tgt / 100) + 4, 'measured',
-         'fill:var(--orange);font-size:10.5px', 'start', svg);
-    }
-    var d = '';
-    var started = false;
-    for (i = 0; i < r.t_s.length; i++) {
-      if (r.t_s[i] < Math.pow(10, lgLo)) continue;
-      d += (started ? 'L' : 'M') + X(r.t_s[i]).toFixed(2) + ','
-        + Y(r.recovery[i]).toFixed(2);
-      started = true;
-    }
-    sv('path', { d: d, fill: 'none',
-      style: 'stroke:var(--ink);stroke-width:2.2' }, svg);
-    sv('circle', { cx: X(tEnd), cy: Y(r.recovered_fraction), r: 4.5,
-      style: 'fill:var(--ink);stroke:var(--panel);stroke-width:2' }, svg);
-    tx(L + pw + 6, Y(r.recovered_fraction) + 4,
-       pctf(r.recovered_fraction) + ' CGMC',
-       'fill:var(--ink);font-size:10.5px;font-weight:bold', 'start', svg);
-    sv('line', { x1: L, x2: L + pw, y1: T + ph, y2: T + ph,
-      style: 'stroke:var(--muted);stroke-width:1' }, svg);
-
-    el.cgLegend.innerHTML = '<span><svg width="20" height="6" '
-      + 'style="vertical-align:middle;margin-right:5px"><line x1="0" '
-      + 'x2="20" y1="3" y2="3" style="stroke:var(--ink);stroke-width:2.2"'
-      + '/></svg>CGMC recovery</span><span><svg width="20" height="6" '
-      + 'style="vertical-align:middle;margin-right:5px"><line x1="0" '
-      + 'x2="20" y1="3" y2="3" stroke-dasharray="6 4" '
-      + 'style="stroke:var(--cSub);stroke-width:1.6"/></svg>first-order '
-      + 'layer at the same exposure</span>'
-      + (tgt > 0 && tgt < 100 ? '<span><svg width="20" height="6" '
-        + 'style="vertical-align:middle;margin-right:5px"><line x1="0" '
-        + 'x2="20" y1="3" y2="3" stroke-dasharray="2 4" '
-        + 'style="stroke:var(--orange);stroke-width:1.6"/></svg>measured'
-        + '</span>' : '');
-  }
-
-  function drawCgProf(r, sys) {
-    var svg = el.cgProf;
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    var W = 720, H = 300, L = 56, R = 128, T = 16, B = 46;
-    var pw = W - L - R, ph = H - T - B;
-    var depths = r.depth_nm;
-    var lgLo = Math.log10(Math.max(depths[0] * 0.7, 0.05));
-    var lgHi = Math.log10(depths[depths.length - 1] * 1.15);
-    var X = function (dep) {
-      return L + pw * (Math.log10(dep) - lgLo) / (lgHi - lgLo);
-    };
-    var Y = function (th) {
-      var lg = Math.log10(Math.max(th, 1e-6));
-      return T + ph - (lg + 6) / 6 * ph;
-    };
-    [[1, '100%'], [1e-2, '1%'], [1e-4, '0.01%'],
-     [1e-6, '1e-4%']].forEach(function (g) {
-      var y = Y(g[0]);
-      sv('line', { x1: L, x2: L + pw, y1: y, y2: y,
-        style: 'stroke:var(--line);stroke-width:1' }, svg);
-      tx(L - 8, y + 4, g[1], 'fill:var(--muted);font-size:10.5px', 'end',
-         svg);
-    });
-    [0.3, 1, 10, 100].forEach(function (dep) {
-      if (Math.log10(dep) > lgLo && Math.log10(dep) < lgHi) {
-        tx(X(dep), T + ph + 16, dep + '',
-           'fill:var(--muted);font-size:10.5px', 'middle', svg);
-      }
-    });
-    tx(L + pw / 2, T + ph + 34, 'depth from surface (nm)',
-       'fill:var(--muted);font-size:11px', 'middle', svg);
-
-    function line(theta, style, dash) {
-      var d = '';
-      for (var kk = 0; kk < depths.length; kk++) {
-        d += (kk ? 'L' : 'M') + X(depths[kk]).toFixed(2) + ','
-          + Y(theta[kk]).toFixed(2);
-      }
-      var pth = sv('path', { d: d, fill: 'none', style: style }, svg);
-      if (dash) pth.setAttribute('stroke-dasharray', dash);
-      return pth;
-    }
-    var init = [];
-    for (var kk = 0; kk < sys.q.length; kk++) {
-      init.push(sys.eta0[kk] / sys.q[kk]);
-    }
-    line(init, 'stroke:var(--muted);stroke-width:1.6', '5 4');
-    var ops = [0.3, 0.5, 0.75, 1.0];
-    r.profiles.forEach(function (pr, pi) {
-      line(pr.theta, 'stroke:var(--ink);stroke-width:2;opacity:'
-        + ops[Math.min(pi, ops.length - 1)]);
-      tx(L + pw + 6, Y(pr.theta[pr.theta.length - 1]) + 4 + pi * 12,
-         tfmt(pr.t_s), 'fill:var(--muted);font-size:10px', 'start', svg);
-    });
-    sv('line', { x1: L, x2: L + pw, y1: T + ph, y2: T + ph,
-      style: 'stroke:var(--muted);stroke-width:1' }, svg);
-    el.cgProfLegend.innerHTML = '<span><svg width="20" height="6" '
-      + 'style="vertical-align:middle;margin-right:5px"><line x1="0" '
-      + 'x2="20" y1="3" y2="3" stroke-dasharray="5 4" '
-      + 'style="stroke:var(--muted);stroke-width:1.6"/></svg>initial '
-      + 'state</span><span><span class="swatch" style="background:'
-      + 'var(--ink)"></span>θ per cell, darker = later time</span>';
-  }
 
   /* --------------------------------------------------------- wiring */
 

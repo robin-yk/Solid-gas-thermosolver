@@ -70,6 +70,10 @@ def main():
         cg_engine = fh.read()
     with (WEB / 'statmech_worker.js').open() as fh:
         sm_worker = fh.read()
+    with (WEB / 'figkit.js').open() as fh:
+        figkit = fh.read()
+    with (WEB / 'figures_defect.js').open() as fh:
+        sm_figs = fh.read()
     with (WEB / 'statmech_ui.js').open() as fh:
         sm_ui = fh.read()
     ref = json.dumps(slim_reference(), separators=(',', ':'))
@@ -80,7 +84,9 @@ def main():
                         ('__SM_DATA__', sm_data),
                         ('__SM_ENGINE__', sm_engine),
                         ('__CG_ENGINE__', cg_engine),
-                        ('__SM_WORKER__', sm_worker), ('__SM_UI__', sm_ui)):
+                        ('__SM_WORKER__', sm_worker),
+                        ('__FIGKIT__', figkit), ('__SM_FIGS__', sm_figs),
+                        ('__SM_UI__', sm_ui)):
         assert token in html, f'{token} missing from the template'
         html = html.replace(token, body)
 

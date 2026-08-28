@@ -27,7 +27,13 @@
   var WIDTH_MM = { single: 89, onehalf: 120, double: 183 };
   var MAX_H_MM = 247;
   var FONT = 'Arial, Helvetica, sans-serif';
+  /* Two type scales, both in points at print size. A plate is a column
+     of a printed page and sits at the journal floor; a workspace figure
+     is a 3.5 in square read on its own and carries the larger set the
+     specification asks for. Offsets below are derived from these, so a
+     figure never needs a hand-placed label. */
   var TYPE = { panel: 8, body: 7, tick: 6.5, small: 5.5 };
+  var FIGTYPE = { panel: 9, body: 9, tick: 8, small: 8 };
   /* Print style, in points - the plate coordinate system is points, so
      these are the numbers that reach the page. Spines and ticks carry one
      weight, data curves another, guides a third; nothing sets a stroke
@@ -236,8 +242,19 @@
     return out;
   }
 
+  /* A tick outside the scale's own domain is drawn off the axis, which
+     is always a bug rather than an intention. */
+  function inDomain(sc, t) {
+    if (sc.d0 == null) return true;
+    var lo = Math.min(sc.d0, sc.d1), hi = Math.max(sc.d0, sc.d1);
+    var pad = 1e-9 * (Math.abs(hi) + Math.abs(lo) + 1);
+    return t >= lo - pad && t <= hi + pad;
+  }
+
   function axisX(p, sc, y, ticks, label, fmt) {
+    var T = p.type || TYPE;
     var bx = p._box;
+    ticks = ticks.filter(function (t) { return inDomain(sc, t); });
     var top = bx ? bx.y0 : null;
     if (!bx) p.line(sc.r0, y, sc.r1, y, C.ink, LW.axis);
     var px = [];
@@ -246,8 +263,8 @@
       px.push(x);
       p.line(x, y, x, y - TICK.major, C.ink, LW.axis);
       if (top != null) p.line(x, top, x, top + TICK.major, C.ink, LW.axis);
-      p.text(x, y + 9.5, fmt ? fmt(t) : String(t),
-        { size: TYPE.tick, anchor: 'middle' });
+      p.text(x, y + T.tick + 3, fmt ? fmt(t) : String(t),
+        { size: T.tick, anchor: 'middle' });
     });
     minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1)
       .forEach(function (x) {
@@ -257,13 +274,15 @@
         }
       });
     if (label) {
-      p.text((sc.r0 + sc.r1) / 2, y + 21, label,
-        { size: TYPE.body, anchor: 'middle' });
+      p.text((sc.r0 + sc.r1) / 2, y + T.tick + T.body + 7.5, label,
+        { size: T.body, anchor: 'middle' });
     }
     return p;
   }
   function axisY(p, sc, x, ticks, label, fmt) {
+    var T = p.type || TYPE;
     var bx = p._box;
+    ticks = ticks.filter(function (t) { return inDomain(sc, t); });
     var right = bx ? bx.x1 : null;
     if (!bx) p.line(x, sc.r0, x, sc.r1, C.ink, LW.axis);
     var px = [];
@@ -274,8 +293,8 @@
       if (right != null) {
         p.line(right - TICK.major, y, right, y, C.ink, LW.axis);
       }
-      p.text(x - 4, y + 2.3, fmt ? fmt(t) : String(t),
-        { size: TYPE.tick, anchor: 'end' });
+      p.text(x - 4, y + T.tick / 2 - 0.95, fmt ? fmt(t) : String(t),
+        { size: T.tick, anchor: 'end' });
     });
     minorsOf(px, bx ? bx.y0 : sc.r1, bx ? bx.y1 : sc.r0)
       .forEach(function (y) {
@@ -285,8 +304,8 @@
         }
       });
     if (label) {
-      p.text(x - 26, (sc.r0 + sc.r1) / 2, label,
-        { size: TYPE.body, anchor: 'middle', rotate: -90 });
+      p.text(x - (2 * T.tick + T.body + 6), (sc.r0 + sc.r1) / 2, label,
+        { size: T.body, anchor: 'middle', rotate: -90 });
     }
     return p;
   }
@@ -301,7 +320,8 @@
     return p;
   }
   function legend(p, x, y, items, gap) {
-    gap = gap || 9.5;
+    var T = p.type || TYPE;
+    gap = gap || T.small + 4;
     items.forEach(function (it, i) {
       var yy = y + i * gap;
       if (it.dash) {
@@ -311,7 +331,7 @@
       } else {
         p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.4);
       }
-      p.text(x + 12, yy, it.text, { size: TYPE.small });
+      p.text(x + 12, yy, it.text, { size: T.small });
     });
     return p;
   }
@@ -327,10 +347,14 @@
   function square(o) {
     o = o || {};
     var wIn = o.wide ? 2 * SQUARE_IN : SQUARE_IN;
-    return figure(wIn * 72, SQUARE_PT, {
+    var f = figure(wIn * 72, SQUARE_PT, {
       widthAttr: wIn + 'in', heightAttr: SQUARE_IN + 'in',
       kind: o.wide ? 'wide' : 'square'
     });
+    f.type = FIGTYPE;
+    /* the plotting panel is square and the margins are what is left */
+    f.pane = { x0: 44, y0: 10, x1: 44 + 200, y1: 210 };
+    return f;
   }
 
   /* ---------------------------------------------------------- export */
@@ -441,12 +465,14 @@
 
   return {
     PT_PER_MM: PT_PER_MM, WIDTH_MM: WIDTH_MM, MAX_H_MM: MAX_H_MM,
-    FONT: FONT, TYPE: TYPE, LW: LW, TICK: TICK, MARK: MARK, C: C,
+    FONT: FONT, TYPE: TYPE, FIGTYPE: FIGTYPE, LW: LW, TICK: TICK,
+    MARK: MARK, C: C,
     DPI: DPI, PX_PER_M: PX_PER_M, SQUARE_IN: SQUARE_IN, SQUARE_PT: SQUARE_PT,
     tint: tint, esc: esc, n2: n2, chem: chem, expLabel: expLabel,
     figure: figure, plate: plate, square: square,
     lin: lin, lg: lg, niceTicks: niceTicks, decades: decades,
     frame: frame, axisX: axisX, axisY: axisY, series: series,
+    inDomain: inDomain,
     legend: legend, minorsOf: minorsOf,
     toPNG: toPNG, pxAt600: pxAt600, pngWithDPI: pngWithDPI,
     downloadSVG: downloadSVG, downloadPNG: downloadPNG, saveBlob: saveBlob
