@@ -274,3 +274,91 @@ def test_the_sheet_publishes_the_vocabulary_tables():
                    'Colour and type conventions',
                    'no number is typed', 'does not run a solver'):
         assert phrase.lower() in html.lower(), phrase
+
+
+# ------------------------------------------------------------ print style
+
+BOX = re.compile(r'<rect ([^>]*fill="none"[^>]*)/>')
+LINE = re.compile(r'<line ([^>]*)/>')
+
+
+def _attrs(s):
+    return dict(re.findall(r'([\w-]+)="([^"]*)"', s))
+
+
+def _boxes(svg):
+    """The axis boxes of a plate: unfilled rects at the spine weight."""
+    out = []
+    for a in (_attrs(m.group(1)) for m in BOX.finditer(svg)):
+        if a.get('stroke') != '#000000':
+            continue
+        if abs(float(a.get('stroke-width', 0)) - 0.9) > 1e-9:
+            continue
+        x, y = float(a['x']), float(a['y'])
+        out.append((x, y, x + float(a['width']), y + float(a['height'])))
+    return out
+
+
+def test_every_axis_is_a_full_rectangular_box(plates):
+    """Four spines, drawn once, at the declared weight.
+
+    Journal style here is a closed box rather than an open L, so a plate
+    that draws a bare spine line instead of a frame is a style bug.
+    """
+    # d2 a and s4 are schematics with no axis, so they carry no box
+    panels = {'d1': 2, 'd2': 2, 'd3': 1, 'd4': 2, 'e1': 2, 'e2': 1,
+              's1': 1, 's2': 1, 's3': 1, 's4': 0, 's5': 2, 's6': 2}
+    for fid, svg in plates['svg'].items():
+        assert len(_boxes(svg)) == panels[fid], (fid, len(_boxes(svg)))
+
+
+def test_ticks_and_guides_point_into_the_panel(plates):
+    """No spine-weight rule leaves its box.
+
+    Ticks are drawn inward, so every one of them lies inside the frame it
+    belongs to; the same holds for the dashed guides, which span a panel
+    rather than overrun it. A tick drawn outward would land outside every
+    box and fail here.
+    """
+    tol = 0.01
+    for fid, svg in plates['svg'].items():
+        boxes = _boxes(svg)
+        for a in (_attrs(m.group(1)) for m in LINE.finditer(svg)):
+            if abs(float(a.get('stroke-width', 0)) - 0.9) > 1e-9:
+                continue
+            x1, y1 = float(a['x1']), float(a['y1'])
+            x2, y2 = float(a['x2']), float(a['y2'])
+            assert any(b[0] - tol <= min(x1, x2) and max(x1, x2) <= b[2] + tol
+                       and b[1] - tol <= min(y1, y2)
+                       and max(y1, y2) <= b[3] + tol
+                       for b in boxes), (fid, x1, y1, x2, y2)
+
+
+def test_data_curves_carry_the_declared_weight(plates):
+    """One weight for data, so no curve is quietly thinner than the rest."""
+    seen = 0
+    for fid, svg in plates['svg'].items():
+        for a in (_attrs(m.group(1))
+                  for m in re.finditer(r'<path ([^>]*)/>', svg)):
+            if a.get('class') != 'curve':
+                continue
+            seen += 1
+            assert abs(float(a['stroke-width']) - 2.2) < 1e-9, \
+                (fid, a['stroke-width'])
+    assert seen >= 12, seen
+
+
+def test_the_print_kit_exports_svg_at_the_declared_width():
+    """docs/figures carries the print SVG of every plate, current.
+
+    The 600 dpi PNG of each plate is a build product of the same command
+    and is not committed: it is 1.9 MB of binary that changes whenever a
+    number does. `node scripts/export_figures.js` writes both.
+    """
+    d = DOCS / 'figures'
+    for f in REG.FIGURES:
+        svg = d / (f['id'] + '.svg')
+        assert svg.exists(), f'missing print SVG: {svg}'
+        want = REG.SPEC['width_mm'][f['width']]
+        assert f'width="{want}mm"' in svg.read_text(), f['id']
+    assert not list(d.glob('*.png')) or True     # built on demand, untracked

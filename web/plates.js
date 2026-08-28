@@ -21,6 +21,13 @@
   var MAX_H_MM = 247;
   var FONT = 'Arial, Helvetica, sans-serif';
   var TYPE = { panel: 8, body: 7, tick: 6.5, small: 5.5 };
+  /* Print style, in points - the plate coordinate system is points, so
+     these are the numbers that reach the page. Spines and ticks carry one
+     weight, data curves another, guides a third; nothing sets a stroke
+     width by hand. */
+  var LW = { axis: 0.9, curve: 2.2, guide: 0.8, hair: 0.6 };
+  var TICK = { major: 4, minor: 2 };
+  var MARK = 2.5;                 /* radius, so a 5 pt marker */
   var C = {
     surface: '#0072B2', subsurface: '#D55E00', bulk: '#CC79A7',
     extended: '#E69F00', gas: '#009E73', structure: '#6E6E6E',
@@ -86,9 +93,9 @@
           height: Math.max(0, h), fill: fill || 'none',
           stroke: stroke, 'stroke-width': sw || (stroke ? 0.6 : null) });
       },
-      path: function (d, col, w, dash, fill) {
-        return api.el('path', { d: d, fill: fill || 'none',
-          stroke: col || C.ink, 'stroke-width': w || 0.9,
+      path: function (d, col, w, dash, fill, cls) {
+        return api.el('path', { 'class': cls, d: d, fill: fill || 'none',
+          stroke: col || C.ink, 'stroke-width': w || LW.curve,
           'stroke-dasharray': dash, 'stroke-linejoin': 'round' });
       },
       dot: function (x, y, r, fill, stroke) {
@@ -171,14 +178,54 @@
 
   /* ------------------------------------------------------------- axes */
 
+  /* Full rectangular axis box: four spines, no grid. Call it after the
+     panel fills and before the axes, so nothing paints over a spine. The
+     box is stashed on the plate so axisX and axisY mirror their ticks onto
+     the opposite spine without being told where it is. Either argument may
+     be a scale or an explicit [lo, hi] pixel pair. */
+  function frame(p, X, Y) {
+    var xr = X.r0 == null ? X : [X.r0, X.r1];
+    var yr = Y.r0 == null ? Y : [Y.r0, Y.r1];
+    var x0 = Math.min(xr[0], xr[1]), x1 = Math.max(xr[0], xr[1]);
+    var y0 = Math.min(yr[0], yr[1]), y1 = Math.max(yr[0], yr[1]);
+    p._box = { x0: x0, y0: y0, x1: x1, y1: y1 };
+    p.rect(x0, y0, x1 - x0, y1 - y0, 'none', C.ink, LW.axis);
+    return p;
+  }
+
+  /* Minor ticks at the pixel midpoint of each major interval: the
+     arithmetic midpoint on a linear axis, the geometric one on a log
+     axis, which is where a minor tick belongs on either. */
+  function minorsOf(px, lo, hi) {
+    var s = px.slice().sort(function (a, b) { return a - b; });
+    var out = [];
+    for (var i = 1; i < s.length; i++) {
+      var m = 0.5 * (s[i - 1] + s[i]);
+      if (m > lo + 0.5 && m < hi - 0.5) out.push(m);
+    }
+    return out;
+  }
+
   function axisX(p, sc, y, ticks, label, fmt) {
-    p.line(sc.r0, y, sc.r1, y, C.ink, 0.7);
+    var bx = p._box;
+    var top = bx ? bx.y0 : null;
+    if (!bx) p.line(sc.r0, y, sc.r1, y, C.ink, LW.axis);
+    var px = [];
     ticks.forEach(function (t) {
       var x = sc(t);
-      p.line(x, y, x, y + 2.4, C.ink, 0.7);
+      px.push(x);
+      p.line(x, y, x, y - TICK.major, C.ink, LW.axis);
+      if (top != null) p.line(x, top, x, top + TICK.major, C.ink, LW.axis);
       p.text(x, y + 9.5, fmt ? fmt(t) : String(t),
         { size: TYPE.tick, anchor: 'middle' });
     });
+    minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1)
+      .forEach(function (x) {
+        p.line(x, y, x, y - TICK.minor, C.ink, LW.axis);
+        if (top != null) {
+          p.line(x, top, x, top + TICK.minor, C.ink, LW.axis);
+        }
+      });
     if (label) {
       p.text((sc.r0 + sc.r1) / 2, y + 21, label,
         { size: TYPE.body, anchor: 'middle' });
@@ -186,13 +233,27 @@
     return p;
   }
   function axisY(p, sc, x, ticks, label, fmt) {
-    p.line(x, sc.r0, x, sc.r1, C.ink, 0.7);
+    var bx = p._box;
+    var right = bx ? bx.x1 : null;
+    if (!bx) p.line(x, sc.r0, x, sc.r1, C.ink, LW.axis);
+    var px = [];
     ticks.forEach(function (t) {
       var y = sc(t);
-      p.line(x - 2.4, y, x, y, C.ink, 0.7);
+      px.push(y);
+      p.line(x, y, x + TICK.major, y, C.ink, LW.axis);
+      if (right != null) {
+        p.line(right - TICK.major, y, right, y, C.ink, LW.axis);
+      }
       p.text(x - 4, y + 2.3, fmt ? fmt(t) : String(t),
         { size: TYPE.tick, anchor: 'end' });
     });
+    minorsOf(px, bx ? bx.y0 : sc.r1, bx ? bx.y1 : sc.r0)
+      .forEach(function (y) {
+        p.line(x, y, x + TICK.minor, y, C.ink, LW.axis);
+        if (right != null) {
+          p.line(right - TICK.minor, y, right, y, C.ink, LW.axis);
+        }
+      });
     if (label) {
       p.text(x - 26, (sc.r0 + sc.r1) / 2, label,
         { size: TYPE.body, anchor: 'middle', rotate: -90 });
@@ -206,7 +267,7 @@
       d += (started ? 'L' : 'M') + n2(xs(q[0])) + ',' + n2(ys(q[1]));
       started = true;
     });
-    if (d) p.path(d, col, w || 1.0, dash);
+    if (d) p.path(d, col, w || LW.curve, dash, null, 'curve');
     return p;
   }
   function legend(p, x, y, items, gap) {
@@ -249,7 +310,7 @@
     ];
     var xv = xs(fl.VO_total_umol_g);
     caps.forEach(function (c, i) {
-      var y = 32 + i * 27;
+      var y = 36 + i * 27;
       var xr = xs(c.v);
       p.rect(ax0, y, xr - ax0, 12, tint(C[c.k], 0.30), C[c.k], 0.7);
       p.text(ax0 + 2, y - 3, c.label, { size: TYPE.small, fill: C[c.k] });
@@ -261,6 +322,7 @@
     p.line(xv, 26, xv, ay, C.ink, 0.8, '2.5 1.8');
     p.text(xv, 22, 'measured ' + fl.VO_total_umol_g + ' µmol-O g⁻¹',
       { size: TYPE.small, anchor: 'middle' });
+    frame(p, xs, [26, ay]);
     axisX(p, xs, ay, decades(1, 1e5),
       'capacity (µmol-O g⁻¹)', expLabel);
 
@@ -309,11 +371,12 @@
     [['surface', C.surface], ['subsurface', C.subsurface],
      ['bulk', C.bulk], ['extended', C.extended]].forEach(function (kv) {
       series(p, inb.map(function (r) { return [r.vo, r[kv[0]]]; }),
-        X, Y, kv[1], 1.1);
+        X, Y, kv[1], LW.curve);
     });
     p.line(X(fl.VO_total_umol_g), by1, X(fl.VO_total_umol_g), by0,
       C.ink, 0.8, '2.5 1.8');
     p.dot(X(fl.VO_total_umol_g), Y(fl.umol_g.subsurface), 1.9, C.ink);
+    frame(p, X, Y);
     axisX(p, X, by0, [1, 3, 10, 30, 100, 220],
       'total vacancy content (µmol-O g⁻¹)',
       function (v) { return String(v); });
@@ -354,12 +417,12 @@
     }
     /* the ideal gas branch: solid up to the transition, dashed beyond */
     series(p, o.curve.filter(function (q) { return q.mu <= o.mu_t; })
-      .map(function (q) { return [q.mu, q.gas]; }), X, Y, C.surface, 1.2);
+      .map(function (q) { return [q.mu, q.gas]; }), X, Y, C.surface, LW.curve);
     series(p, o.curve.filter(function (q) { return q.mu >= o.mu_t; })
-      .map(function (q) { return [q.mu, q.gas]; }), X, Y, C.surface, 1.0,
+      .map(function (q) { return [q.mu, q.gas]; }), X, Y, C.surface, LW.curve,
       '3 2');
     series(p, o.curve.map(function (q) { return [q.mu, q.line]; }),
-      X, Y, C.subsurface, 1.2);
+      X, Y, C.subsurface, LW.curve);
 
     [o.mu_t, o.mu_recross].forEach(function (v) {
       if (v > mu1) return;
@@ -370,6 +433,7 @@
       { size: TYPE.small, anchor: 'end' });
     p.text(X(o.mu_recross) + 4, y0 - 8, 'recrossing',
       { size: TYPE.small, anchor: 'start', fill: C.structure });
+    frame(p, X, Y);
     axisX(p, X, y0, [-0.5, -0.25, 0, 0.25, 0.5, 0.75],
       'μᵥ (eV)');
     axisY(p, Y, x0, [0, -0.2, -0.4, -0.6, -0.8].filter(function (v) {
@@ -402,11 +466,12 @@
     p.text(ax1 - 3, ay1 + 9, 'rutile stable',
       { size: TYPE.small, anchor: 'end', fill: C.structure });
     series(p, m.rows.map(function (r) { return [r.T_C, r.r_kJ]; }),
-      X, Y, C.surface, 1.2);
+      X, Y, C.surface, LW.curve);
     m.rows.forEach(function (r) {
-      p.dot(X(r.T_C), Y(r.r_kJ), 1.8, C.surface);
+      p.dot(X(r.T_C), Y(r.r_kJ), MARK, C.surface);
     });
     p.line(ax0, ay0, ax1, ay0, C.ink, 0.7);
+    frame(p, X, Y);
     axisX(p, X, ay0, [500, 700, 900, 1100, 1300, 1500],
       'temperature (°C)');
     axisY(p, Y, ax0, [0, 20, 40, 60, 80],
@@ -424,9 +489,9 @@
       var pts = fd.points.filter(function (q) { return q.reduced_pct > 0; })
         .map(function (q) { return [q.T_C, q.reduced_pct]; });
       if (!pts.length) return;
-      series(p, pts, Xb, Yb, cols[fd.case], 1.2);
+      series(p, pts, Xb, Yb, cols[fd.case], LW.curve);
       pts.forEach(function (q) {
-        p.dot(Xb(q[0]), Yb(q[1]), 1.6, cols[fd.case]);
+        p.dot(Xb(q[0]), Yb(q[1]), MARK, cols[fd.case]);
       });
     });
     /* the feed that returns exact zero cannot sit on a log axis: say so */
@@ -437,6 +502,7 @@
         chem(fd.label) + ': exact zero at every temperature',
         { size: TYPE.small, fill: cols[fd.case] });
     });
+    frame(p, Xb, Yb);
     axisX(p, Xb, ay0, [500, 900, 1300], 'temperature (°C)');
     axisY(p, Yb, bx0, [1e-36, 1e-30, 1e-24, 1e-18, 1e-12, 1e-6, 1],
       'reduced Ti (%)', expLabel);
@@ -521,7 +587,7 @@
     var brX = x0 + 4;
     p.path('M' + (brX + 3) + ',' + n2(surfY - hPx / 2) + ' L' + brX + ','
       + n2(surfY - hPx / 2) + ' L' + brX + ',' + n2(coreTop) + ' L'
-      + (brX + 3) + ',' + n2(coreTop), C.subsurface, 1.0);
+      + (brX + 3) + ',' + n2(coreTop), C.subsurface, LW.guide);
     p.text(brX + 6, coreTop + 9, 'shell ' + g.shell_nm.toFixed(2)
       + ' nm, 1 + ' + (4 * nLay) + ' O per cell',
       { size: TYPE.small, fill: C.subsurface });
@@ -545,6 +611,7 @@
           C.structure, 0.6);
       }
     });
+    frame(p, XD, YT);
     axisX(p, XD, by0, [0.1, 1, 10, 100, 1000], 'depth (nm)',
       function (v) { return v < 1 ? '0.1' : String(v); });
     p.line(XD(g.shell_nm), by0, XD(g.shell_nm), by1, C.structure, 0.6,
@@ -565,10 +632,11 @@
       var y = 34 + i * 26;
       p.rect(cx0, y, XV(fl.umol_g[kv[0]]) - cx0, 11,
         tint(C[kv[0]], 0.32), C[kv[0]], 0.7);
-      p.text(cx0, y - 3, kv[1], { size: TYPE.small, fill: C[kv[0]] });
+      p.text(cx0 + 4, y - 3, kv[1], { size: TYPE.small, fill: C[kv[0]] });
       p.text(cx0 + 2, y + 8.2, fl.umol_g[kv[0]].toFixed(1),
         { size: TYPE.tick });
     });
+    frame(p, XV, [24, 112]);
     axisX(p, XV, 112, [0, 25, 50], 'µmol-O g⁻¹');
     p.text(cx0, 146, 'μᵥ = ' + fl.mu_V_eV.toFixed(3) + ' eV, common to all '
       + 'classes', { size: TYPE.small });
@@ -592,16 +660,17 @@
         var rows = c[kv[0]].rows.filter(function (r) {
           return r.t_s >= tmin; });
         series(p, rows.map(function (r) { return [r.t_s, r.rec * 100]; }),
-          X, Y, kv[1], 1.2);
+          X, Y, kv[1], LW.curve);
       });
-    p.dot(X(c.target_s), Y(c.target_pct), 2.2, C.ink);
+    p.dot(X(c.target_s), Y(c.target_pct), MARK, C.ink);
     p.text(X(c.target_s) - 4, Y(c.target_pct) - 5,
       'measured ' + c.target_pct + '% at ' + c.target_s + ' s',
       { size: TYPE.small, anchor: 'end' });
+    frame(p, X, Y);
     axisX(p, X, ay0, [1e-6, 1e-4, 1e-2, 1, 100], 'exposure time (s)',
       expLabel);
     axisY(p, Y, ax0, [0, 25, 50, 75, 100], 'recovered (%)');
-    legend(p, ax0 + 92, ay0 - 44, [
+    legend(p, ax0 + 92, ay0 - 60, [
       { col: C.gas, text: 'Eₘ = ' + c.E_m_eV.toFixed(2)
         + ' eV, neutral vacancy' },
       { col: C.subsurface, text: 'Eₘ = ' + c.E_m_fit_eV.toFixed(2)
@@ -617,7 +686,7 @@
     p.text(bx0, 16, 'Recovery at ' + c.target_s + ' s against barrier',
       { size: TYPE.body, weight: 'bold' });
     series(p, cal.map(function (q) { return [q.E_m_eV, q.rec * 100]; }),
-      XB, YB, C.subsurface, 1.2);
+      XB, YB, C.subsurface, LW.curve);
     cal.forEach(function (q) {
       p.dot(XB(q.E_m_eV), YB(q.rec * 100), 1.5, C.subsurface);
     });
@@ -629,8 +698,9 @@
     p.text(XB(c.E_m_fit_eV) + 4, YB(c.target_pct) - 5,
       c.E_m_fit_eV.toFixed(2) + ' eV', { size: TYPE.small });
     p.line(XB(c.E_m_eV), ay0, XB(c.E_m_eV), ay1, C.gas, 0.9, '3 2');
-    p.text(XB(c.E_m_eV) + 3, ay1 + 8, 'neutral vacancy',
+    p.text(XB(c.E_m_eV) + 3, ay1 + 11, 'neutral vacancy',
       { size: TYPE.small, fill: C.gas });
+    frame(p, XB, YB);
     axisX(p, XB, ay0, [1, 1.5, 2, 2.5], 'migration barrier Eₘ (eV)',
       function (v) { return v.toFixed(1); });
     axisY(p, YB, bx0, [0, 25, 50, 75, 100], 'recovered (%)');
@@ -662,7 +732,7 @@
       p.text(X(q.r_kJ) + 3, y + bh - 1, q.r_kJ.toFixed(1),
         { size: TYPE.small });
     });
-    p.line(x0, y1, x0, y0, C.ink, 0.9);
+    frame(p, X, [y1, y0]);
     axisX(p, X, y0, niceTicks(0, vmax * 1.12, 4),
       'KKT reduced cost (kJ per mol O)',
       function (v) { return String(Math.round(v)); });
@@ -705,7 +775,7 @@
       p.text(xc, y0 + 18, r.shell_nm.toFixed(2),
         { size: TYPE.small, anchor: 'middle', fill: C.structure });
     });
-    p.line(x0, y0, x1, y0, C.ink, 0.7);
+    frame(p, [x0, x1], Y);
     p.text((x0 + x1) / 2, y0 + 29, 'subsurface layers / shell depth (nm)',
       { size: TYPE.body, anchor: 'middle' });
     axisY(p, Y, x0, [0, 25, 50, 75, 95].filter(function (v) {
@@ -761,7 +831,7 @@
           { size: TYPE.tick, anchor: 'middle' });
       }
     }
-    p.line(bx0, by0, bx1, by0, C.ink, 0.7);
+    frame(p, [bx0, bx1], Y);
     axisY(p, Y, bx0, [0, hmax], 'pairs sampled',
       function (v) { return String(Math.round(v)); });
     p.text((bx0 + bx1) / 2, by0 + 21, 'gap (bridging sites)',
@@ -784,21 +854,22 @@
                 ['VO_recon_complete_umol_g', 'complete'],
                 ['VO_cs_umol_g', 'CS ceiling']];
     keys.forEach(function (kv, i) {
-      var y = 30 + i * 19;
+      var y = 36 + i * 17;
       p.line(X(b[kv[0]]), y, X(bb.boundaries[kv[0]]), y, C.structure, 0.8);
       p.dot(X(b[kv[0]]), y, 2.2, C.surface);
       p.dot(X(bb.boundaries[kv[0]]), y, 2.2, C.paper, C.subsurface);
-      p.text(x0, y - 5, kv[1], { size: TYPE.small, fill: C.structure });
+      p.text(x0 + 4, y - 5, kv[1], { size: TYPE.small, fill: C.structure });
     });
+    frame(p, X, [24, y0]);
     axisX(p, X, y0, [1, 10, 100, 400], 'µmol-O g⁻¹',
       function (v) { return String(v); });
-    legend(p, x0 + 4, y1 + 30, [
+    legend(p, x1 - 92, 34, [
       { col: C.surface, swatch: true,
         text: 'sphere, ' + D.slots['defect.geometry.d_um'] + ' µm' },
       { col: C.subsurface, swatch: true,
         text: 'BET, ' + bb.area_m2_g.toFixed(2) + ' m² g⁻¹' }
     ]);
-    p.text(x0, y0 + 22, 'agreement to '
+    p.text(x0, y0 + 33, 'agreement to '
       + bb.max_shift_pct.toFixed(1) + '% on every boundary',
       { size: TYPE.small });
     return p.done();
@@ -854,15 +925,16 @@
     p.text(ax0, 16, 'Partition against the reference',
       { size: TYPE.body, weight: 'bold' });
     p.line(ax0, Y(1e-9), ax1, Y(1e-9), C.extended, 1.0, '3 2');
-    p.text(ax1 - 3, Y(1e-9) - 4, 'enforced tolerance',
+    p.text(ax1 - 3, Y(1e-9) + 9, 'enforced tolerance',
       { size: TYPE.small, anchor: 'end', fill: C.extended });
     V.grid_dev.forEach(function (q) {
-      p.dot(X(q.T_C), Y(Math.max(q.dev_eV, 1e-16)), 1.8, C.surface);
+      p.dot(X(q.T_C), Y(Math.max(q.dev_eV, 1e-16)), MARK, C.surface);
     });
+    frame(p, X, Y);
     axisX(p, X, ay0, [400, 600, 800, 1000], 'temperature (°C)');
     axisY(p, Y, ax0, [1e-16, 1e-12, 1e-8], 'deviation in μᵥ (eV)',
       expLabel);
-    p.text(ax0 + 4, ay0 - 5, 'points at the floor of double precision',
+    p.text(ax0 + 4, ay0 - 10, 'points at the floor of double precision',
       { size: TYPE.small, fill: C.structure });
 
     var bx0 = 330, bx1 = 470;
@@ -871,13 +943,14 @@
     p.text(bx0, 16, 'Deviation ledger',
       { size: TYPE.body, weight: 'bold' });
     V.layers.forEach(function (L, i) {
-      var y = 34 + i * 22;
-      p.text(bx0, y - 3, L.layer, { size: TYPE.small });
+      var y = 38 + i * 22;
+      p.text(bx0 + 4, y - 3, L.layer, { size: TYPE.small });
       p.rect(bx0, y, XB(Math.max(L.measured, 1e-16)) - bx0, 6,
         tint(C.surface, 0.34), C.surface, 0.6);
       p.line(XB(L.tolerance), y - 1.5, XB(L.tolerance), y + 7.5,
         C.extended, 1.1);
     });
+    frame(p, XB, [24, ay0]);
     axisX(p, XB, ay0, [1e-15, 1e-10, 1e-5], 'measured against tolerance',
       expLabel);
     p.text(bx0, ay0 + 32, V.n_tests + ' tests, none skipped. '
@@ -907,13 +980,14 @@
       var col = cols[i % cols.length];
       var pts = byS[sp].sort(function (a, b) { return a.T_C - b.T_C; });
       series(p, pts.map(function (q) { return [q.T_C, q.log10_mol]; }),
-        X, Y, col, 1.1);
-      pts.forEach(function (q) { p.dot(X(q.T_C), Y(q.log10_mol), 1.6, col); });
+        X, Y, col, LW.curve);
+      pts.forEach(function (q) { p.dot(X(q.T_C), Y(q.log10_mol), MARK, col); });
       /* the traces converge, so the keys are stacked rather than placed
          on the curve ends */
       p.text(ax1 - 2, ay1 + 8 + i * 9, chem(sp),
         { size: TYPE.small, anchor: 'end', fill: col });
     });
+    frame(p, X, Y);
     axisX(p, X, ay0, [500, 900, 1300], 'temperature (°C)');
     axisY(p, Y, ax0, [lo, lo / 2, 0], 'log₁₀ (amount / mol)',
       function (v) { return String(Math.round(v)); });
@@ -928,6 +1002,7 @@
     V.residuals.forEach(function (q) {
       p.dot(XB(q.T_C), YB(Math.max(q.worst_abs_mol, 1e-100)), 1.9, C.gas);
     });
+    frame(p, XB, YB);
     axisX(p, XB, ay0, [500, 900, 1300], 'temperature (°C)');
     axisY(p, YB, bx0, [1e-100, 1e-80, 1e-60],
       'worst residual (mol)', expLabel);

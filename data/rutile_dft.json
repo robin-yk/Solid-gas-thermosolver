@@ -22,6 +22,24 @@
       "gga": {"label": "GGA, Li et al. 2015",
               "surface_eV": 0.0, "subsurface_eV": 0.39, "bulk_eV": 1.08}
     },
+    "layer_profile": {
+      "resolved_layers_max": 3,
+      "span_fraction": [0.0, 0.36, 0.64],
+      "eps_eV_sx_illustrative": [0.59, 0.85, 1.05],
+      "range_eV": {"layer1": [0.3, 0.8], "layer2": [0.5, 1.1],
+                   "layer3": [0.7, 1.3], "bulk": [1.0, 1.6]},
+      "label": "assumed",
+      "note": "Depth profile of the dilute vacancy formation energy. Layer 1 is the DFT first-subsurface value of the active preset and the bulk class keeps the DFT bulk value; a resolved layer between them sits at span_fraction of the subsurface-to-bulk interval, so the endpoints are literature and only the SHAPE is assumed. span_fraction 0.36 / 0.64 places layers 2 and 3 at 0.85 / 1.05 eV on the sx preset. The ranges are sampling intervals for the uncertainty study, not error bars: no published DFT set resolves these layers separately. resolved_layers = 1 (the default) collapses layers 2-3 back into the bulk class and reproduces the legacy partition exactly."
+    },
+    "coverage_penalty": {
+      "omega_eV": {"surface": 0.0, "layer1": 0.60, "layer2": 0.45,
+                   "layer3": 0.30, "bulk": 0.15},
+      "range_eV": [0.0, 1.0],
+      "label": "assumed",
+      "sign_convention": "repulsive, omega >= 0",
+      "note": "Effective mean-field coverage penalty. The free energy per site carries eps_i*theta + (omega_i/2)*theta^2, so the chemical potential carries omega_i*theta and crowding costs energy. omega_i ~ sum_j z_ij J_ij is an EFFECTIVE quantity, not a vacancy-pair energy: the surface_ordering pair table must not be summed into it directly, because coordination and pair counting would be double counted. The planned route for omega_surface is to back it out of the sampled mu(theta) of the surface Monte Carlo; until then it is held at 0 so the surface phase ladder is untouched and any change in layer-1 occupancy is attributable to the layer interaction alone. omega = 0 for every class recovers the non-interacting site-exclusion isotherm exactly. Only repulsive values are admitted: omega < -4kT would make mu(theta) non-monotone and split a layer into two phases, a construction this branch does not carry.",
+      "provenance": "No literature value. The magnitudes are chosen to bring the first subsurface layer out of near-saturation at the flagship condition and are carried as a sampling range, not as a measurement."
+    },
     "provenance": "Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), DOI 10.1021/acs.jpcc.5b02430. Absolute neutral V_O formation energies on rutile (110): sX 4.39 / 4.98 / 5.70 eV, GGA 3.71 / 4.10 / 4.79 eV (surface / first subsurface / bulk). Relative values are used; the oxygen chemical potential cancels in the canonical ensemble. Site energies are polaron-relaxed: Ti3+ small polarons are not explicit variables (context: Reticcioli et al., Phys. Rev. B 98 (2018) 045306)."
   },
 
@@ -103,6 +121,8 @@
     "VO_total_umol_g": 95.0,
     "particle_diameter_um": 0.90,
     "subsurface_layers": 1,
+    "resolved_layers": 1,
+    "coverage_penalty": "off",
     "energetics_preset": "sx",
     "mc": {
       "seed": 12345,

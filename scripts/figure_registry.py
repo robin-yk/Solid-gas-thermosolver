@@ -24,6 +24,18 @@ SPEC = {
     'type_body_pt': 7.0,
     'font': 'Arial, Helvetica, sans-serif',
     'mm_per_pt': 25.4 / 72.0,
+    # The house drawing style, in points. Every panel is a closed
+    # rectangle rather than an open L, ticks point into the panel, and
+    # tick labels appear on the bottom and left only. No grid, white
+    # ground, one stroke weight for data and one for everything else.
+    'axis_pt': 0.9,
+    'tick_major_pt': 4.0,
+    'tick_minor_pt': 2.0,
+    'curve_pt': 2.2,
+    'marker_pt': 5.0,
+    'axis_box': 'four spines, ticks inward, labels bottom and left',
+    'grid': 'none',
+    'export': 'print SVG at the declared width, plus 600 dpi PNG',
 }
 
 # One hue per physical role, identical in every plate. Okabe-Ito, so the set

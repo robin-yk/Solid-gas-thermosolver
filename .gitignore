@@ -7,3 +7,6 @@ venv/
 
 # generated figures
 Ti4O7_RWGS.png
+
+# 600 dpi rasters are build products of scripts/export_figures.js
+docs/figures/*.png
