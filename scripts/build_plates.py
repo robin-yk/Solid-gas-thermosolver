@@ -79,6 +79,7 @@ def main():
             ('__FIG_DATA__', json.dumps(doc, separators=(',', ':'))),
             ('__FIG_REGISTRY__', json.dumps(registry,
                                             separators=(',', ':'))),
+            ('__FIGKIT_JS__', (WEB / 'figkit.js').read_text()),
             ('__PLATES_JS__', (WEB / 'plates.js').read_text())):
         if token not in html:
             raise SystemExit(f'template lost its {token} slot')

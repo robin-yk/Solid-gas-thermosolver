@@ -47,15 +47,16 @@ ROLES = [
     ('subsurface', '#D55E00',
      'The declared subsurface shell: the oxygen layers below the bridging '
      'plane.'),
-    ('bulk', '#CC79A7',
+    ('bulk', '#6A51A3',
      'Bulk oxygen sites and the bulk-class occupancy.'),
-    ('extended', '#E69F00',
+    ('extended', '#777777',
      'Extended defects: the crystallographic-shear precipitate beyond the '
-     'solubility ceiling.'),
+     'solubility ceiling. The one neutral role, so structure is lighter '
+     'than it is.'),
     ('gas', '#009E73',
      'The gas charge and everything it carries: feed composition, oxygen '
      'potential, CO2 refill.'),
-    ('structure', '#6E6E6E',
+    ('structure', '#AAAAAA',
      'Axes, boundaries, inactive phases, and anything held fixed.'),
 ]
 
