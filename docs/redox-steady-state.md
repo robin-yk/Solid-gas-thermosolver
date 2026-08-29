@@ -50,6 +50,31 @@ Everything lives in `data/redox.json` with a label. Nothing is fitted.
 
 The descriptor is an **offset** from a reference, not an absolute energy, because only differences enter the two barriers. The reference is quoted for orientation as rutile (110) bridging O at 4.39 eV (Li, Guo & Robertson, J. Phys. Chem. C 119 (2015)) and is strongly functional dependent: the same authors report 3.71 eV with GGA for the same site. That 0.68 eV spread is the systematic uncertainty on placing a material along the axis, and it is comparable to the width of the volcano — so a computed formation energy alone does not rank two materials that sit within about 0.7 eV of each other.
 
+## The axis with nothing assumed in it
+
+Everything above is written in terms of a material descriptor and two linear free-energy slopes, and each of those is a parameter that has to be assumed. None of them is needed to state the steady state. All the material dependence collapses into one dimensionless number,
+
+```text
+K = k_reduction / k_oxidation        theta* = K / (1 + K)
+```
+
+`from_ratio()` takes K and nothing else — no temperature, no pressure, no prefactor, no descriptor, no slopes — and returns the same crossing the descriptor route finds when handed the same ratio. The Bronsted-Evans-Polanyi layer is best read as an *overlay* on this axis: it is what turns K into a material ranking, and it is where the assumptions live.
+
+**The design window.** A carrier can be run while two things hold: the solid stays one phase, and the reacting face stays below the coverage its own phase pins it at. Both are closed forms in K, and both depend on the surface enrichment `E = theta_face / theta_particle`:
+
+```text
+second phase      K > E*theta_sol / (1 - E*theta_sol)
+no steady state   K > theta_face,max / (1 - theta_face,max)
+```
+
+The uniform assumption is `E = 1`. For rutile at 600 C that gives a usable window of `K < 0.0040` — reduction must be 250 times slower than oxidation or the solid shears. The layer-resolved enrichment is `E = 1844`, and the window becomes `K < 1`: oxidation merely has to keep up with reduction. **The uniform assumption discards a factor of 249 of the design space**, and it does so silently, because nothing in it announces that a surface concentration was being used as a bulk composition.
+
+The failure mode changes with it. Below `E = theta_face,max / theta_sol = 125` the solid shears before the face saturates; above it the face saturates first and the bulk never approaches the solubility. Which of the two binds decides what a carrier should be engineered against, and the uniform reading gets that wrong as well as the number.
+
+One consequence is worth stating rather than leaving implicit: with the face pinned at 0.5, an *oxidation-limited* steady state — the solid sitting reduced, theta above 0.75 — is unreachable for this carrier at any rate constants, because that state lies past the boundary where no steady state exists at all.
+
+The two figures are `docs/figures/redox_crossing.svg` and `docs/figures/redox_phase.svg`, drawn from rows the engine computes; the gates check that every boundary on the page is the closed form the engine returns.
+
 ## Domain
 
 `theta` is a point-defect concentration only while the reduced solid stays one phase. Past the declared solubility the vacancies order into crystallographic shear planes and mass action in `theta` stops meaning anything. `steady_state()` reports that as a flag and a warning; it never clips.

@@ -188,7 +188,8 @@ def _mapping_saturates(surf, n):
 
 
 def steady_state(p, t_c=None, dev=0.0, p_red=None, p_ox=None,
-                 theta_sol=None, theta_of_average=None, window_n=17):
+                 theta_sol=None, theta_of_average=None, window_n=17,
+                 k=None):
     """The crossing of the two half-reaction rates.
 
     theta_of_average, when given, is the layer-resolved correction: a
@@ -197,7 +198,8 @@ def steady_state(p, t_c=None, dev=0.0, p_red=None, p_ox=None,
     average while both rates are evaluated at the surface, which is the
     'one more pass' over the uniform model. Left out, the mapping is the
     identity and the result is the uniform model exactly."""
-    k = rate_constants(p, t_c=t_c, dev=dev, p_red=p_red, p_ox=p_ox)
+    if k is None:
+        k = rate_constants(p, t_c=t_c, dev=dev, p_red=p_red, p_ox=p_ox)
     warnings = list(k['warnings'])
     st = p['structure']
     if theta_sol is None:
@@ -333,6 +335,140 @@ def steady_state(p, t_c=None, dev=0.0, p_red=None, p_ox=None,
             'p_red_atm': k['p_red_atm'], 'p_ox_atm': k['p_ox_atm'],
             'uniform': identity,
             'warnings': warnings}
+
+
+# ------------------------------------------------- the assumption-free axis
+
+def from_ratio(p, ratio, theta_sol=None, theta_of_average=None,
+               window_n=17):
+    """The crossing from the ratio of the two rate constants and nothing else.
+
+    K = k_red / k_ox is the whole material dependence of the steady state:
+    at unit site orders theta* = K/(1+K) exactly, with no temperature, no
+    pressure, no prefactor and no linear free-energy relation anywhere in
+    it. Everything else this module offers - the descriptor axis, the
+    Bronsted-Evans-Polanyi slopes, the volcano - is a way of predicting K
+    from a material property, and each of those steps adds a parameter
+    that has to be assumed. This entry point adds none.
+
+    Rates come back in units of k_ox, since only the ratio was given."""
+    if not (ratio >= 0.0):
+        raise ValueError('K = k_red/k_ox must be non-negative')
+    k = {'k_red_s1': float(ratio), 'k_ox_s1': 1.0,
+         'E_red_eV': None, 'E_ox_eV': None, 'kT_eV': None, 'T_C': None,
+         'dev_eV': None, 'p_red_atm': None, 'p_ox_atm': None,
+         'warnings': []}
+    out = steady_state(p, theta_sol=theta_sol, k=k,
+                       theta_of_average=theta_of_average,
+                       window_n=window_n)
+    out['K'] = float(ratio)
+    out['rate_unit'] = 'k_ox'
+    return out
+
+
+def theta_of_ratio(ratio):
+    """theta* = K/(1+K), the closed form the solver is checked against."""
+    return ratio / (1.0 + ratio) if ratio >= 0.0 else 0.0
+
+
+def ratio_sweep(p, k_lo=1e-4, k_hi=1e4, n=161, theta_sol=None,
+                theta_of_average=None, window_n=0):
+    """One steady state per decade-spaced K: the family, with no assumptions.
+
+    Logarithmic because K is a ratio, so equal factors deserve equal space."""
+    rows = []
+    lg0, lg1 = math.log10(k_lo), math.log10(k_hi)
+    for i in range(n):
+        kk = 10.0 ** (lg0 + (lg1 - lg0) * i / float(n - 1))
+        s = from_ratio(p, kk, theta_sol=theta_sol,
+                       theta_of_average=theta_of_average,
+                       window_n=window_n)
+        rows.append({'K': kk, 'theta': s['theta'],
+                     'theta_surface': s['theta_surface'],
+                     'rate_over_k_ox': s['rate_s1'], 'regime': s['regime'],
+                     'beyond_solubility': s['beyond_solubility'],
+                     'runaway': s['runaway']})
+    return rows
+
+
+def phase_map(p, k_lo=1e-4, k_hi=1e4, e_lo=1.0, e_hi=1e4, nk=61, ne=41,
+              theta_sol=None, theta_surface_max=None):
+    """Regions of behaviour over (K, surface enrichment).
+
+    The second axis is E = theta_surface / theta_average, which is what a
+    layer-resolved partition supplies and what the uniform assumption sets
+    to 1. Reading the diagram along E answers the question the uniform
+    model cannot ask: how much of the design window was lost by assuming
+    the particle is uniformly reduced.
+
+    Two boundaries, both closed forms rather than swept:
+
+      no steady state   theta_s* = K/(1+K) > theta_surface_max
+                        - the face is pinned by its own phase, so neither
+                          half-rate depends on the inventory any more.
+                          A vertical line: it does not involve E.
+
+      second phase      theta_bulk = theta_s*/E > theta_sol
+                        - the average composition leaves the point-defect
+                          range and the solid orders its vacancies away.
+                          A curve: raising E is exactly what buys room
+                          here."""
+    st = p['structure']
+    if theta_sol is None:
+        theta_sol = st['x_solubility'] / st['oxygen_per_formula']
+    if theta_surface_max is None:
+        theta_surface_max = st.get('theta_surface_max', 0.5)
+    band = p['regime_thresholds']
+    lgk0, lgk1 = math.log10(k_lo), math.log10(k_hi)
+    lge0, lge1 = math.log10(e_lo), math.log10(e_hi)
+    cells = []
+    for j in range(ne):
+        e = 10.0 ** (lge0 + (lge1 - lge0) * j / float(ne - 1))
+        row = []
+        for i in range(nk):
+            kk = 10.0 ** (lgk0 + (lgk1 - lgk0) * i / float(nk - 1))
+            th = theta_of_ratio(kk)
+            if th > theta_surface_max:
+                row.append('no_steady_state')
+            elif th / e > theta_sol:
+                row.append('second_phase')
+            elif th < band['theta_lo']:
+                row.append('reduction_limited')
+            elif th > band['theta_hi']:
+                row.append('oxidation_limited')
+            else:
+                row.append('balanced')
+        cells.append({'E': e, 'cells': row})
+    k_runaway = (theta_surface_max / (1.0 - theta_surface_max)
+                 if theta_surface_max < 1.0 else float('inf'))
+    return {'K_lo': k_lo, 'K_hi': k_hi, 'E_lo': e_lo, 'E_hi': e_hi,
+            'nk': nk, 'ne': ne, 'theta_sol': theta_sol,
+            'theta_surface_max': theta_surface_max,
+            'K_no_steady_state': k_runaway,
+            'rows': cells}
+
+
+def usable_window(p, enrichment, theta_sol=None, theta_surface_max=None):
+    """The largest K a carrier can run at, at a given surface enrichment.
+
+    Both limits in closed form: the solid must stay one phase, and the face
+    must stay below the coverage its own phase pins it at. The smaller of
+    the two is the answer, and which one binds is the interesting part."""
+    st = p['structure']
+    if theta_sol is None:
+        theta_sol = st['x_solubility'] / st['oxygen_per_formula']
+    if theta_surface_max is None:
+        theta_surface_max = st.get('theta_surface_max', 0.5)
+    th_phase = min(1.0, enrichment * theta_sol)
+    k_phase = (th_phase / (1.0 - th_phase) if th_phase < 1.0
+               else float('inf'))
+    k_face = (theta_surface_max / (1.0 - theta_surface_max)
+              if theta_surface_max < 1.0 else float('inf'))
+    return {'enrichment': enrichment,
+            'K_max': min(k_phase, k_face),
+            'K_second_phase': k_phase, 'K_no_steady_state': k_face,
+            'binding': 'second_phase' if k_phase < k_face
+                       else 'no_steady_state'}
 
 
 # ------------------------------------------------------- graphical solution

@@ -460,3 +460,132 @@ def test_the_layer_model_does_move_the_measurement_regime(p):
                         omega='on')
     assert deep['umol_g']['bulk'] / flat['umol_g']['bulk'] > 1.3
     assert abs(deep['mu_V_eV'] - flat['mu_V_eV']) > 0.02
+
+
+# --------------------------------------------- the assumption-free K axis
+
+def test_the_ratio_entry_point_needs_nothing_but_the_ratio(p):
+    """theta* = K/(1+K), to the last digit, with no BEP anywhere in it.
+
+    This is the whole material dependence of the steady state expressed as
+    one dimensionless number. Everything else the module offers is a way of
+    predicting K, and each of those steps costs an assumed parameter."""
+    for kk in (1e-6, 1e-3, 0.004, 0.1, 0.5, 1.0, 2.0, 10.0, 1e4):
+        s = R.from_ratio(p, kk)
+        assert s['theta'] == pytest.approx(R.theta_of_ratio(kk), abs=1e-15), kk
+        assert s['K'] == kk
+        assert s['rate_unit'] == 'k_ox'
+        assert s['residual'] < 1e-12, kk
+        # rate in units of k_ox is theta* itself at unit orders
+        assert s['rate_s1'] == pytest.approx(s['theta'], rel=1e-12), kk
+    assert R.from_ratio(p, 0.0)['theta'] == 0.0
+    with pytest.raises(ValueError):
+        R.from_ratio(p, -1.0)
+
+
+def test_the_ratio_and_descriptor_axes_are_the_same_model(p):
+    """Two parameterisations, one crossing.
+
+    Whatever the descriptor route computes for the two rate constants, the
+    ratio route reproduces its state exactly when handed their ratio - so
+    the BEP layer is an overlay on this axis rather than a different model
+    underneath."""
+    for dev in (-0.5, -0.1, 0.0, 0.3, 0.9):
+        d = R.steady_state(p, dev=dev, window_n=0)
+        r = R.from_ratio(p, d['k_red_s1'] / d['k_ox_s1'], window_n=0)
+        assert r['theta'] == pytest.approx(d['theta'], abs=1e-12), dev
+        assert r['regime'] == d['regime'], dev
+
+
+def test_the_sweep_is_monotone_and_spans_both_limits(p):
+    rows = R.ratio_sweep(p, n=81)
+    th = [r['theta'] for r in rows]
+    assert all(b > a for a, b in zip(th, th[1:]))
+    assert th[0] < 1e-3 and th[-1] > 0.999
+    assert {r['regime'] for r in rows} == {
+        'reduction_limited', 'balanced', 'oxidation_limited'}
+
+
+# ------------------------------------------------------ the phase diagram
+
+def test_the_usable_window_opens_with_surface_enrichment(p):
+    """What the uniform assumption costs, as a design criterion.
+
+    A carrier is usable while it stays one phase and its face stays below
+    the coverage its own phase pins it at. Assuming the particle uniformly
+    reduced sets the enrichment to 1 and demands a 250:1 rate asymmetry;
+    the layer-resolved enrichment of a 0.9 um rutile particle demands only
+    that oxidation keep up with reduction."""
+    uni = R.usable_window(p, 1.0)
+    lay = R.usable_window(p, 1844.0)
+    assert uni['K_max'] == pytest.approx(0.0040161, rel=1e-4)
+    assert lay['K_max'] == pytest.approx(1.0, rel=1e-12)
+    assert lay['K_max'] / uni['K_max'] > 200.0
+    # and the failure mode is not the same failure mode
+    assert uni['binding'] == 'second_phase'
+    assert lay['binding'] == 'no_steady_state'
+
+
+def test_the_binding_limit_switches_at_a_computable_enrichment(p):
+    """The two limits cross where E*theta_sol = theta_surface_max.
+
+    Below it the solid shears before the face saturates; above it the face
+    saturates first and the bulk never gets near the solubility. Which one
+    binds decides what a carrier should be engineered against."""
+    st = p['structure']
+    sol = st['x_solubility'] / st['oxygen_per_formula']
+    cross = 0.5 / sol
+    assert cross == pytest.approx(125.0, rel=1e-12)
+    assert R.usable_window(p, cross * 0.9)['binding'] == 'second_phase'
+    assert R.usable_window(p, cross * 1.1)['binding'] == 'no_steady_state'
+    assert R.usable_window(p, cross)['K_max'] == pytest.approx(
+        R.usable_window(p, cross)['K_no_steady_state'], rel=1e-12)
+
+
+def test_the_phase_map_agrees_with_the_closed_form_boundaries(p):
+    """Every cell of the swept map is on the side the closed form says."""
+    m = R.phase_map(p, nk=41, ne=31)
+    assert m['K_no_steady_state'] == pytest.approx(1.0, rel=1e-12)
+    seen = set()
+    lgk0, lgk1 = math.log10(m['K_lo']), math.log10(m['K_hi'])
+    for row in m['rows']:
+        e = row['E']
+        kmax = R.usable_window(p, e)['K_max']
+        for i, cell in enumerate(row['cells']):
+            kk = 10.0 ** (lgk0 + (lgk1 - lgk0) * i / float(m['nk'] - 1))
+            seen.add(cell)
+            usable = cell not in ('no_steady_state', 'second_phase')
+            assert usable == (kk <= kmax + 1e-12), (e, kk, cell)
+    assert seen == {'no_steady_state', 'second_phase',
+                    'reduction_limited', 'balanced'}
+
+
+def test_an_oxidation_limited_steady_state_is_out_of_reach_here(p):
+    """A consequence of the face ceiling worth stating rather than hiding.
+
+    Oxidation-limited means the solid sits reduced, theta above 0.75. The
+    rutile face is pinned at 0.5 by its own phase, so that state is on the
+    far side of the boundary where no steady state exists at all: this
+    carrier cannot be run oxidation-limited, whatever the rate constants.
+    Checked against its own cause by lifting the ceiling and watching the
+    region appear."""
+    m = R.phase_map(p, nk=41, ne=31)
+    assert 'oxidation_limited' not in {c for row in m['rows']
+                                       for c in row['cells']}
+    assert m['theta_surface_max'] < p['regime_thresholds']['theta_hi']
+    lifted = R.phase_map(p, nk=41, ne=31, theta_surface_max=0.9)
+    assert 'oxidation_limited' in {c for row in lifted['rows']
+                                   for c in row['cells']}
+
+
+def test_the_no_steady_state_region_does_not_depend_on_enrichment(p):
+    """It is set by the face's own ceiling, so it is a vertical boundary.
+
+    Worth gating because it is the one region the uniform model cannot
+    produce at all, and a diagram that let it drift with E would be
+    telling a different story than the algebra."""
+    m = R.phase_map(p, nk=41, ne=31)
+    cols = [[row['cells'][i] == 'no_steady_state' for row in m['rows']]
+            for i in range(m['nk'])]
+    for col in cols:
+        assert len(set(col)) == 1, 'the boundary bends with enrichment'
