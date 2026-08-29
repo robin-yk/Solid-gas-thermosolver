@@ -17,7 +17,8 @@
   var $ = function (id) { return document.getElementById(id); };
   var el = {};
   ['smT', 'smVO', 'smGeoMode', 'smGeoVal', 'smGeoUnit', 'smSS', 'smDerived',
-   'smPreset', 'smEpsSS', 'smEpsB', 'smV1', 'smV2', 'smV3', 'smQuality',
+   'smPreset', 'smEpsSS', 'smEpsB', 'smRes', 'smOmega',
+   'smV1', 'smV2', 'smV3', 'smQuality',
    'smSeed', 'smRun', 'smStatus', 'smSummary', 'smKpis',
    'smTable', 'smSpacing', 'smNotes',
    'smEaS', 'smEaSS', 'smEaB', 'smAS', 'smASS', 'smAB', 'smKinT', 'smExp',
@@ -127,19 +128,24 @@
       along_row: [num(el.smV1, 0.40), num(el.smV2, 0.20), num(el.smV3, 0.05)],
       cross_row: DATA.surface_ordering.pair_eV.cross_row } };
   }
+  function currentRes() {
+    var v = Math.round(num(el.smRes, 1));
+    return Math.max(1, Math.min(3, v));
+  }
+  function currentOmega() { return el.smOmega.value === 'on' ? 'on' : 'off'; }
   function currentSS() {
     var v = Math.round(num(el.smSS, DATA.defaults.subsurface_layers));
     return Math.max(1, Math.min(4, v));
   }
   function currentGeom() {
-    var n = currentSS();
+    var n = currentSS(), r = currentRes();
     if (el.smGeoMode.value === 'bet') {
       return SM.geometry(DATA, { bet_m2_g: num(el.smGeoVal, 1.57),
-                                 ss_layers: n });
+                                 ss_layers: n, resolved_layers: r });
     }
     return SM.geometry(DATA, {
       d_um: num(el.smGeoVal, DATA.defaults.particle_diameter_um),
-      ss_layers: n });
+      ss_layers: n, resolved_layers: r });
   }
   function currentKin() {
     return { Ea_eV: { surface: num(el.smEaS, 0.45),
@@ -369,7 +375,8 @@
        feeds only the ordering exhibit, at the coverage of the surviving
        (1x1) patches once coexistence is reached */
     var fresh = !!iso && isoKey === isoSignature();
-    var out = SM.distribute(DATA, tC, vo, geom, { eps: eps });
+    var out = SM.distribute(DATA, tC, vo, geom,
+                            { eps: eps, omega: currentOmega() });
     out.geometry = geom;
     out.spacing = fresh ? SM.spacingSummary(iso,
       Math.min(out.theta.surface, DATA.surface_phases.theta_transition))
@@ -419,11 +426,16 @@
     var acc = SM.accessibility(DATA, out.umol_g, ctx.kin,
                                out.VO_total_umol_g);
     var b = out.phase_boundaries;
+    var slabSum = (geom.slabs_per_layer || [geom.ss_layers])
+      .reduce(function (a, v) { return a + v; }, 0);
     el.smDerived.textContent = 'x in TiO2-x = ' + out.x_TiO2mx.toFixed(4)
       + ' · Ti³⁺/Ti = ' + (out.Ti3_frac * 100).toFixed(2)
       + '% · area ' + geom.area_m2_g.toFixed(2)
-      + ' m²/g · shell = bridging plane + ' + geom.ss_layers
-      + ' × 0.325 nm oxygen layer' + (geom.ss_layers > 1 ? 's' : '')
+      + ' m²/g · shell = bridging plane + ' + slabSum
+      + ' × 0.325 nm oxygen layer' + (slabSum > 1 ? 's' : '')
+      + (geom.resolved_layers > 1 ? ', resolved separately' : '')
+      + (out.energetics && out.energetics.coverage_penalty === 'on'
+         ? ' · crowding Ω on' : '')
       + ' (N_s ' + geom.N_s.toFixed(2) + ' + N_ss '
       + geom.N_ss.toFixed(2) + ' μmol-O/g) · phase ladder at ' + out.T_C
       + ' °C: (1×2) onset '
@@ -496,6 +508,20 @@
         + ')"></span>' + c.label + '</td><td>' + th
         + '</td><td>' + f2(out.umol_g[c.key]) + '</td><td>'
         + pctf(out.fractions[c.key]) + '</td></tr>';
+      /* the resolved slabs sit under the class whose total they are, so
+         the aggregate stays the row that is read and the resolution is
+         visible without becoming a second table */
+      if (c.key === 'subsurface' && out.layers && out.layers.length > 1) {
+        out.layers.forEach(function (L) {
+          h += '<tr class="sub-row"><td>layer ' + L.index + ' · ε = '
+            + L.eps_eV.toFixed(2) + ' eV'
+            + (L.omega_eV ? ', Ω = ' + L.omega_eV.toFixed(2) + ' eV' : '')
+            + '</td><td>' + thf(L.theta) + '</td><td>' + f2(L.umol_g)
+            + '</td><td>'
+            + pctf(out.matched_umol_g ? L.umol_g / out.matched_umol_g : 0)
+            + '</td></tr>';
+        });
+      }
     });
     if (out.extended_defects_umol_g > 0) {
       h += '<tr><td>Extended defects (CS)</td><td>—</td><td>'
@@ -822,6 +848,9 @@
       solve();
       scheduleRun();
     });
+  });
+  [el.smRes, el.smOmega].forEach(function (n) {
+    n.addEventListener('change', solve);
   });
   el.smT.addEventListener('input', scheduleEnv);
   [el.smVO, el.smGeoVal, el.smSS, el.smEaS, el.smEaSS, el.smEaB, el.smAS,

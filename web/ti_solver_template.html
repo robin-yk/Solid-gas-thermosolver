@@ -64,6 +64,8 @@ th,td{border-bottom:1px solid var(--line);padding:10px 11px;text-align:right}
 th:first-child,td:first-child{text-align:left}
 th{font-size:11px;letter-spacing:.04em;color:var(--muted);font-weight:700}
 .tablewrap{overflow-x:auto;max-width:100%}
+tr.sub-row td{color:var(--muted);font-size:12px;border-bottom-style:dotted}
+tr.sub-row td:first-child{padding-left:30px}
 .eq{background:var(--code);border-left:3px solid var(--blue);border-radius:0 6px 6px 0;
     padding:11px 14px;margin:11px 0;font-family:"Courier New",monospace;font-size:13px;
     line-height:1.7;overflow-x:auto}
@@ -642,7 +644,7 @@ fixed in <code>data/rutile_dft.json</code>.</p>
     <div class="dfx-status" id="smEnv"></div>
 
     <details class="dfx-fold">
-      <summary>Layer energetics and interactions <span>5</span></summary>
+      <summary>Layer energetics and interactions <span>7</span></summary>
       <div class="dfx-fold-body">
         <div class="field">
           <label for="smPreset">Layer energies</label>
@@ -658,6 +660,28 @@ fixed in <code>data/rutile_dft.json</code>.</p>
           <div><label for="smEpsSS">Subsurface</label><input type="number" id="smEpsSS" step="0.01"><div class="readout">eV vs surface</div></div>
           <div><label for="smEpsB">Bulk</label><input type="number" id="smEpsB" step="0.01"><div class="readout">eV vs surface</div></div>
         </div>
+        <div class="field pair">
+          <div><label for="smRes">Resolved layers</label>
+            <select id="smRes">
+              <option value="1">1 &middot; one shell (default)</option>
+              <option value="2">2 &middot; shell split in two</option>
+              <option value="3">3 &middot; shell split in three</option>
+            </select></div>
+          <div><label for="smOmega">Crowding penalty &Omega;</label>
+            <select id="smOmega">
+              <option value="off">off</option>
+              <option value="on">on</option>
+            </select></div>
+        </div>
+        <div class="readout" style="margin:-8px 0 16px">Past one layer the
+        shell is resolved into single 0.325&nbsp;nm oxygen slabs and the
+        thickness set above no longer applies; each slab sits at an assumed
+        fraction of the subsurface&ndash;bulk interval (the endpoints are
+        DFT, only the shape is assumed). &Omega; adds a repulsive
+        &Omega;<sub>i</sub>&theta;<sub>i</sub> term to each layer&rsquo;s
+        chemical potential; at &Omega;&nbsp;=&nbsp;0 the partition is the
+        non-interacting one exactly. Both are declared model choices with
+        no measurement behind them.</div>
         <div class="field">
           <label>Surface pair repulsion (along the O<sub>br</sub> row)</label>
           <div class="trio">

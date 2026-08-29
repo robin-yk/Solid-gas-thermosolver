@@ -564,6 +564,44 @@ def test_page_carries_the_defect_workspace_and_disclosures():
     assert 'will replace them directly' in html
 
 
+def test_the_page_can_switch_on_the_layer_resolution_and_the_crowding_term():
+    """Stage 1 shipped in the browser engine before it had a control.
+
+    An engine the page carries but cannot reach is not shipped, so this
+    holds three things at once: the two selects exist, the UI threads them
+    into the geometry and the solve rather than reading them and dropping
+    them, and the page says out loud that both are declared choices with
+    no measurement behind them."""
+    template = (WEB / 'ti_solver_template.html').read_text()
+    ui = (WEB / 'statmech_ui.js').read_text()
+    html = (DOCS / 'ti_solver.html').read_text()
+
+    for ident in ('id="smRes"', 'id="smOmega"'):
+        assert ident in template, f'{ident} missing from the template'
+        assert ident in html, 'page is stale - run build_ti_solver.py'
+    # every value the engine admits is offered, and no value it refuses
+    n_max = json.loads((DATA / 'rutile_dft.json').read_text())[
+        'vacancy_energetics']['layer_profile']['resolved_layers_max']
+    block = template.split('id="smRes"')[1].split('</select>')[0]
+    assert block.count('<option') == n_max
+    for n in range(1, n_max + 1):
+        assert f'value="{n}"' in block
+
+    # threaded, not merely present
+    assert 'resolved_layers: r' in ui, 'the geometry never sees the control'
+    assert "omega: currentOmega()" in ui, 'the solve never sees the penalty'
+    assert "el.smOmega.value === 'on'" in ui
+    assert '[el.smRes, el.smOmega].forEach' in ui, 'no change listener'
+    # and the resolution is visible in the result, not only in the state
+    assert "c.key === 'subsurface' && out.layers" in ui
+
+    for phrase in ('Resolved layers', 'Crowding penalty',
+                   'only the shape is assumed',
+                   'the partition is the\n        non-interacting one exactly',
+                   'declared model choices with\n        no measurement'):
+        assert phrase in template, f'disclosure missing: {phrase!r}'
+
+
 def test_particle_view_uses_spherical_shells_without_random_bulk_dots():
     ui = (WEB / 'statmech_ui.js').read_text()
     template = (WEB / 'ti_solver_template.html').read_text()

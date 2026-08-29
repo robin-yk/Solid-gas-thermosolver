@@ -61,6 +61,8 @@ which is implicit in theta and has no closed form. It is solved in the logit, wh
 
 **What was deliberately not touched.** `omega_surface` is pinned at zero in the dataset, so the (1x2) phase ladder cannot move and any change in a deeper class has one possible cause. The surface Monte Carlo is untouched for the same reason. The bulk interaction *does* enter the CS coexistence, `mu_cs = eps_bulk + omega_bulk theta_sol + kT ln(theta_sol/(1-theta_sol))`, because that boundary is a condition on the bulk class: leaving it out would put the ceiling at the non-interacting potential while the bulk sitting at it was interacting, and the two would disagree about what `x_sol` means.
 
+Both are switchable from the page, under *Layer energetics and interactions* in the defect workspace: `Resolved layers` 1-3 and `Crowding penalty` off/on. The default is 1 and off, which is the legacy partition exactly, and the resolved layers appear as their own rows under the subsurface total they sum to.
+
 Certified by `theta_of_mu` and `layer_ladder` in `data/reference_statmech.json` — the mpmath oracle re-derives the implicit root with a different algorithm and the whole construction at every resolution, across all four phase branches — and by three-way parity against the browser engine in `tests/test_statmech_port.py`.
 
 ## Phase construction
