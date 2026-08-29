@@ -28,7 +28,11 @@ Active-set Gibbs minimization determines the stable gas composition and Ti-O pha
 
 Given a measured oxygen-deficiency inventory, a canonical lattice model computes its conditional-equilibrium partition among rutile (110) surface, first-subsurface, and bulk sites, using particle geometry, site energetics, and site exclusion. The (1x2) surface reconstruction and the shear-plane solubility ceiling enter as competing phases (lever rule at pinned chemical potential), so nothing is clipped and the phase boundaries are certified numbers. A coarse-grained KMC layer adds reoxidation transport. It reports thermodynamic tendency, not a diffusion profile or reduction kinetics.
 
-See [docs/equilibrium-method.md](docs/equilibrium-method.md) and [docs/defect-model.md](docs/defect-model.md) for the full formulations.
+### Steady-state redox
+
+A reductant that needs lattice oxygen and an oxidant that needs vacancies, written against one common vacancy fraction: one falls and one rises, so they cross once and the crossing is the steady state. Both barriers move with the same descriptor in opposite directions, so sweeping it gives a volcano whose peak has a closed form, and a family of solutions is available before any material is fitted. Feeding the layer-resolved partition in as the average-to-surface mapping leaves the steady rate untouched, moves the steady degree of reduction by three orders of magnitude, and removes the steady state entirely on the reducible half of the axis.
+
+See [docs/equilibrium-method.md](docs/equilibrium-method.md), [docs/defect-model.md](docs/defect-model.md) and [docs/redox-steady-state.md](docs/redox-steady-state.md) for the full formulations.
 
 ## Run locally
 

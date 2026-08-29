@@ -22,8 +22,8 @@
    'smTable', 'smSpacing', 'smNotes',
    'smEaS', 'smEaSS', 'smEaB', 'smAS', 'smASS', 'smAB', 'smKinT', 'smExp',
    'smPCO2', 'smAccKpis', 'smAccNote',
-   'smCoupledNote', 'smEnv', 'smParticle', 'smPvAcc', 'smPvDl',
-   'smPvLegend', 'smPvNote', 'cgEm', 'cgCells', 'cgTarget', 'cgFit',
+   'smCoupledNote', 'smEnv', 'smPvAcc', 'smPvNote',
+   'cgEm', 'cgCells', 'cgTarget', 'cgFit',
    'cgFitOut', 'cgKpis', 'cgNote'].forEach(function (id) {
      el[id] = $(id);
    });
@@ -640,57 +640,15 @@
 
   var SVG = 'http://www.w3.org/2000/svg';
 
-  function sv(tag, attrs, parent) {
-    var n = document.createElementNS(SVG, tag);
-    for (var a in attrs) n.setAttribute(a, attrs[a]);
-    if (parent) parent.appendChild(n);
-    return n;
-  }
+  /* ------------------------------------------- particle cross-section */
 
-
-  /* ----------------------------------------------------- sweep chart */
-
-  var SWEEP = [
-    { key: 'surface', label: 'Surface', varname: '--cSurf', dash: null },
-    { key: 'subsurface', label: 'Subsurface', varname: '--cSub', dash: null },
-    { key: 'bulk', label: 'Bulk', varname: '--cBulk', dash: null },
-    { key: 'extended', label: 'Extended (CS)', varname: '--red',
-      dash: '2 4' },
-    { key: 'accessible', label: 'CO₂-accessible', varname: '--ink',
-      dash: '7 5' }];
-
-  var sweepState = null;
-
-
-
-
-  /* ------------------------------------------ particle cross-section */
+  /* The drawing lives in web/figures_defect.js with the other four
+     figures; this only assembles what it needs. The surface arrangement
+     is the sampled Monte Carlo configuration when one exists, so the
+     bridging row shows a real snapshot rather than a coin toss. */
 
   var lastPv = null;
-
-  function tx(x, y, str, style, anchor, parent) {
-    var t = sv('text', { x: x, y: y,
-      'text-anchor': anchor || 'start', style: style }, parent);
-    t.textContent = str;
-    return t;
-  }
-
-  function vacDot(x, y, cls, prob, accMode, parent, r) {
-    var varn = cls === 'surface' ? '--cSurf'
-      : cls === 'subsurface' ? '--cSub' : '--cBulk';
-    var attrs = { cx: x, cy: y, r: r || 2.6, 'data-cls': cls,
-                  'data-kind': 'vac' };
-    if (!accMode) {
-      attrs.style = 'fill:var(' + varn + ')';
-    } else if (prob >= 0.05) {
-      attrs.style = 'fill:var(' + varn + ');fill-opacity:'
-        + Math.max(0.3, prob).toFixed(2);
-    } else {
-      attrs.style = 'fill:none;stroke:var(' + varn + ');stroke-width:1.3';
-      attrs['data-locked'] = '1';
-    }
-    return sv('circle', attrs, parent);
-  }
+  var cgFitVal = null;
 
   function surfacePattern(nCols, thS, fresh) {
     if (fresh && iso) {
@@ -721,326 +679,50 @@
 
   function renderParticle(out, acc, fresh) {
     lastPv = { out: out, acc: acc, fresh: fresh };
-    var svg = el.smParticle;
-    if (!svg) return;
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    var accMode = el.smPvAcc.checked;
     var geom = out.geometry;
     var aA = DATA.lattice_constants_A.a;
     var cA = DATA.lattice_constants_A.c;
     var t1 = aA / Math.sqrt(2) / 10;                 // d110 slab, nm
     var nLay = geom.ss_layers;                       // slabs in the shell
-    /* the shell is the bridging plane plus nLay oxygen slabs, so it holds
-       1 + 4*nLay O per (1x1) cell - (1+4n)/4 slabs of material */
     var tShell = geom.shell_nm;
     var rho = SM.densityGCm3(DATA);
     var dUm = 6 / (rho * geom.area_m2_g * 1e4) * 1e4;
-    var Rnm = dUm * 1000 / 2;
-    var prng = SM.makeRng(777);
-
-    /* ------------------------------------------- true-scale disc */
-    var cx = 182, cy = 208, Rpx = 158;
-    sv('circle', { cx: cx, cy: cy, r: Rpx,
-      style: 'fill:var(--code);stroke:none' }, svg);
-    var coreOpacity = Math.min(0.22, 0.035
-      + 0.18 * Math.sqrt(Math.max(0, out.theta.bulk)));
-    sv('circle', { cx: cx, cy: cy, r: Rpx - 3,
-      style: 'fill:var(--cBulk);opacity:' + coreOpacity.toFixed(3)
-        + ';stroke:none' }, svg);
-    sv('circle', { cx: cx, cy: cy, r: Rpx,
-      style: 'fill:none;stroke:var(--cSurf);stroke-width:1.3' }, svg);
-    sv('circle', { cx: cx, cy: cy, r: Rpx - 1.6,
-      style: 'fill:none;stroke:var(--cSub);stroke-width:1.1;opacity:.9' },
-       svg);
-
-    tx(cx, cy - 4, 'bulk occupation',
-       'fill:var(--navy);font-size:13px;font-weight:bold', 'middle', svg);
-    tx(cx, cy + 13, 'θb = ' + thf(out.theta.bulk),
-       'fill:var(--muted);font-size:12px', 'middle', svg);
-
-    /* zoom marker + leaders to the window frame */
-    var x0 = 386, y0 = 24, fw = 331, fh = 250;
-    var boxW = 16, boxH = 9;
-    sv('rect', { x: cx - boxW / 2, y: cy - Rpx - 2, width: boxW,
-      height: boxH, style: 'fill:none;stroke:var(--ink);stroke-width:1.1' },
-       svg);
-    ['M' + (cx + boxW / 2) + ',' + (cy - Rpx - 2) + ' L' + x0 + ',' + y0,
-     'M' + (cx + boxW / 2) + ',' + (cy - Rpx + boxH - 2) + ' L' + x0 + ','
-       + (y0 + fh)].forEach(function (d) {
-      sv('path', { d: d, 'stroke-dasharray': '4 4',
-        style: 'stroke:var(--muted);stroke-width:1;fill:none;opacity:.7' },
-         svg);
-    });
-
-    var sb = Math.max(20, Math.round(Rnm / 4 / 50) * 50) || 50;
-    var sbPx = sb * Rpx / Rnm;
-    sv('line', { x1: cx - Rpx, x2: cx - Rpx + sbPx, y1: cy + Rpx + 22,
-      y2: cy + Rpx + 22, style: 'stroke:var(--ink);stroke-width:2' }, svg);
-    tx(cx - Rpx + sbPx / 2, cy + Rpx + 36, sb + ' nm',
-       'fill:var(--muted);font-size:15px', 'middle', svg);
-    tx(cx + 24, cy + Rpx + 36, 'd = ' + dUm.toFixed(2) + ' μm',
-       'fill:var(--muted);font-size:15px', 'middle', svg);
-    tx(cx, y0 + 6, 'shell ' + tShell.toFixed(2)
-       + ' nm, not resolvable at this scale',
-       'fill:var(--muted);font-size:12.5px', 'middle', svg);
-
-    /* -------------------------------------------- magnified window */
-    /* One drawn dot is one oxygen vacancy on one oxygen site. The 1x1
-       cell carries a single bridging O on the terminating plane, and
-       every d110 slab below it carries four O per cell, drawn as two
-       sub-rows of two sites (positions within the slab are schematic;
-       the count per cell is exact). Horizontal and vertical scales are
-       equal, so the shell thickness on screen is the real thickness. */
-    var nCols = 24;                                  // 1x1 cells across
-    var sitePx = fw / nCols;
-    var pxNm = sitePx / (cA / 10);                   // isotropic
-    var hPx = t1 * pxNm / 2;                         // O sub-row spacing
-    var gasH = 24;
-    sv('rect', { x: x0, y: y0, width: fw, height: fh,
-      style: 'fill:var(--panel);stroke:var(--line)' }, svg);
-    sv('rect', { x: x0, y: y0, width: fw, height: gasH,
-      style: 'fill:var(--code);opacity:.7' }, svg);
-    tx(x0 + fw - 6, y0 + 16, 'gas', 'fill:var(--muted);font-size:12.5px',
-       'end', svg);
-
-    var surfY = y0 + gasH + 12;                      // bridging plane
-    var subY = function (i) { return surfY + i * hPx; };
-    var nSub = Math.floor((y0 + fh - 10 - surfY) / hPx);
-    var nShellRows = 2 * nLay;                       // sub-rows in the shell
-
-    /* shell band: half a sub-row of margin around its outermost sites */
-    sv('rect', { x: x0 + 1, y: surfY - hPx / 2, width: fw - 2,
-      height: (nShellRows + 1) * hPx,
-      style: 'fill:var(--cSub);opacity:.07;stroke:none' }, svg);
-
-    /* oxygen sublattice: one dashed line per sub-row */
-    function latticeRow(y, period, offset) {
-      sv('line', { x1: x0 + 1, x2: x0 + fw - 1, y1: y, y2: y,
-        'stroke-dasharray': '1.7 ' + (period - 1.7).toFixed(2),
-        'stroke-dashoffset': (-offset).toFixed(2),
-        style: 'stroke:var(--muted);stroke-width:1.7;opacity:.28' }, svg);
-    }
-    latticeRow(surfY, sitePx, 0.5 * sitePx - 0.85);
-    for (var i = 1; i <= nSub; i++) {
-      latticeRow(subY(i), sitePx / 2, 0.25 * sitePx - 0.85);
-    }
-
-    var siteX = function (j) { return x0 + (j + 0.5) * sitePx; };
-    var siteX2 = function (j, sgn) {
-      return x0 + (j + 0.25 + 0.5 * sgn) * sitePx;
-    };
-
-    /* Surface: sampled configuration. Deeper classes: expected counts on
-       seeded sites of the same sublattice. */
-    function pickCells(n, kk, rng2) {
-      var idx = [];
-      var t;
-      for (t = 0; t < n; t++) idx.push(t);
-      for (t = 0; t < kk && t < n; t++) {
-        var swap = t + Math.floor(rng2() * (n - t));
-        var tmp = idx[t];
-        idx[t] = idx[swap];
-        idx[swap] = tmp;
-      }
-      return idx.slice(0, Math.min(kk, n));
-    }
-    function drawClass(row0, rows, cls, prob, theta) {
-      if (rows <= 0) return 0;
-      var n = rows * nCols * 2;
-      var k = Math.round(n * theta);
-      pickCells(n, k, prng).forEach(function (ix) {
-        var s2 = ix % 2;
-        var rest = (ix - s2) / 2;
-        var j = rest % nCols;
-        var r = (rest - j) / nCols;
-        vacDot(siteX2(j, s2), subY(row0 + r), cls, prob, accMode, svg, 2.3);
-      });
-      return k;
-    }
-    var pat = surfacePattern(nCols, out.theta.surface, fresh);
-    for (var j = 0; j < nCols; j++) {
-      if (pat.arr[j]) {
-        vacDot(siteX(j), surfY, 'surface', acc.P.surface, accMode, svg, 2.8);
-      }
-    }
-    drawClass(1, nShellRows, 'subsurface', acc.P.subsurface,
-              out.theta.subsurface);
-    /* the bulk class spans the whole interior and the window shows a
-       sliver of it, so it stays a continuous class-average tint: placing
-       individual deep vacancies would invent depth structure the
-       canonical partition does not carry */
-    var coreTop = subY(nShellRows) + hPx / 2;
-    sv('rect', { x: x0 + 1, y: coreTop, width: fw - 2,
-      height: Math.max(0, y0 + fh - 1 - coreTop),
-      style: 'fill:var(--cBulk);opacity:' + coreOpacity.toFixed(3)
-        + ';stroke:none' }, svg);
-
-    /* shell bracket */
-    var brX = x0 + 5;
-    sv('path', { d: 'M' + (brX + 4) + ',' + (surfY - hPx / 2) + ' L' + brX
-      + ',' + (surfY - hPx / 2) + ' L' + brX + ','
-      + (subY(nShellRows) + hPx / 2) + ' L' + (brX + 4) + ','
-      + (subY(nShellRows) + hPx / 2),
-      style: 'fill:none;stroke:var(--cSub);stroke-width:1.2' }, svg);
-    tx(brX + 8, subY(nShellRows) + hPx / 2 + 13,
-       'shell ' + tShell.toFixed(2) + ' nm · 1 + ' + (4 * nLay)
-       + ' O per cell', 'fill:var(--cSub);font-size:12px', 'start', svg);
-
-    sv('line', { x1: x0 + 10, x2: x0 + 10, y1: y0 + fh - 10 - pxNm,
-      y2: y0 + fh - 10, style: 'stroke:var(--ink);stroke-width:2' }, svg);
-    tx(x0 + 16, y0 + fh - 12, '1 nm', 'fill:var(--muted);font-size:12.5px',
-       'start', svg);
-
-    var lx = x0 + fw + 10;
-    var lab = function (y, cls, name, u, th, prob, sub) {
-      sv('rect', { x: lx, y: y - 8, width: 9, height: 9, rx: 2,
-        style: 'fill:var(--c' + cls + ')' }, svg);
-      tx(lx + 14, y, name, 'fill:var(--navy);font-size:13.5px;'
-         + 'font-weight:bold', 'start', svg);
-      tx(lx + 14, y + 13, f2(u) + ' μmol/g · θ ' + thf(th),
-         'fill:var(--muted);font-size:12.5px', 'start', svg);
-      tx(lx + 14, y + 25, sub, 'fill:var(--muted);font-size:12.5px',
-         'start', svg);
-      tx(lx + 14, y + 37, 'P(CO₂) ' + probf(prob),
-         'fill:var(--muted);font-size:12.5px', 'start', svg);
-    };
-    lab(y0 + 18, 'Surf', 'Surface', out.umol_g.surface,
-        out.theta.surface, acc.P.surface, '1 O per cell');
-    lab(y0 + 104, 'Sub', 'Subsurface', out.umol_g.subsurface,
-        out.theta.subsurface, acc.P.subsurface,
-        (4 * nLay) + ' O per cell · ' + (nLay * t1).toFixed(2) + ' nm');
-    lab(y0 + 190, 'Bulk', 'Bulk', out.umol_g.bulk,
-        out.theta.bulk, acc.P.bulk, 'below the shell');
-
-    /* ------------------------------------------------ depth profile */
-    var px0 = 386, py0 = 316, pw2 = 474, ph2 = 128;
-    var papTop = py0 + 4, papBot = py0 + ph2 - 24;
-    var linW = 0.5 * pw2, logW = 0.42 * pw2;
-    var lgMax = Math.log10(Rnm);
-    var XD = function (dep) {
-      if (dep <= 1) return px0 + dep * linW;
-      return px0 + linW + 14 + Math.log10(dep) / lgMax * logW;
-    };
-    /* six decades: a thick declared shell drives the bulk class into the
-       1e-5 range, which a four-decade axis would flatten onto the floor */
-    var YT = function (th) {
-      var lg = Math.log10(Math.max(th, 1e-6));
-      return papBot - (lg + 6) / 6 * (papBot - papTop);
-    };
-    [[1, '100%'], [0.01, '1%'], [0.0001, '0.01%'],
-     [0.000001, '1e-4 %']].forEach(function (g) {
-      var y = YT(g[0]);
-      sv('line', { x1: px0, x2: px0 + pw2, y1: y, y2: y,
-        style: 'stroke:var(--line);stroke-width:1' }, svg);
-      tx(px0 - 6, y + 3.5, g[1], 'fill:var(--muted);font-size:14px', 'end',
-         svg);
-    });
-    // axis break marks
-    var bx = px0 + linW + 7;
-    ['M' + (bx - 3) + ',' + (papBot + 5) + ' L' + (bx + 1) + ','
-     + (papBot - 3), 'M' + (bx + 2) + ',' + (papBot + 5) + ' L' + (bx + 6)
-     + ',' + (papBot - 3)].forEach(function (d) {
-      sv('path', { d: d, style: 'stroke:var(--muted);stroke-width:1.2;'
-        + 'fill:none' }, svg);
-    });
-    var tBridge = t1 / 4;            // 1 of the 4 O per cell in a slab
-    var segs = [[0, tBridge, out.theta.surface, '--cSurf'],
-                [tBridge, tShell, out.theta.subsurface, '--cSub'],
-                [tShell, Rnm, out.theta.bulk, '--cBulk']];
-    segs.forEach(function (s, si) {
-      var y = YT(s[2]);
-      if (si === 2) {
-        // the bulk segment spans the axis break: draw around the gap
-        sv('line', { x1: XD(s[0]), x2: px0 + linW, y1: y, y2: y,
-          style: 'stroke:var(' + s[3] + ');stroke-width:3' }, svg);
-        sv('line', { x1: px0 + linW + 14, x2: XD(s[1]), y1: y, y2: y,
-          style: 'stroke:var(' + s[3] + ');stroke-width:3' }, svg);
-      } else {
-        sv('line', { x1: XD(s[0]), x2: XD(s[1]), y1: y, y2: y,
-          style: 'stroke:var(' + s[3] + ');stroke-width:3' }, svg);
-      }
-      if (si) {
-        sv('line', { x1: XD(s[0]), x2: XD(s[0]), y1: YT(segs[si - 1][2]),
-          y2: y, style: 'stroke:var(--muted);stroke-width:1;opacity:.6' },
-           svg);
-      }
-    });
-    sv('line', { x1: px0, x2: px0 + pw2, y1: papBot, y2: papBot,
-      style: 'stroke:var(--muted);stroke-width:1' }, svg);
-    [[0, '0'], [tShell, tShell.toFixed(2)], [1, '1']].forEach(function (g) {
-      tx(XD(g[0]), papBot + 13, g[1], 'fill:var(--muted);font-size:14px',
-         'middle', svg);
-    });
-    [[10, '10'], [100, '100'], [Rnm, Math.round(Rnm) + '']].forEach(
-      function (g) {
-        if (g[0] <= Rnm) {
-          tx(XD(g[0]), papBot + 13, g[1],
-             'fill:var(--muted);font-size:14px', 'middle', svg);
-        }
-      });
-    tx(px0 + pw2 / 2, papBot + 26, 'depth from surface (nm)',
-       'fill:var(--muted);font-size:12.5px', 'middle', svg);
+    var pat = surfacePattern(32, out.theta.surface, fresh);
     var shellU = out.umol_g.surface + out.umol_g.subsurface;
     var shellPct = out.matched_umol_g
       ? shellU / out.matched_umol_g * 100 : 0;
-    tx(XD(tShell) + 8, papTop + 10, shellPct.toFixed(1)
-       + '% of the inventory within ' + tShell.toFixed(2) + ' nm',
-       'fill:var(--ink);font-size:15px', 'start', svg);
 
-    /* -------------------------------------------- legend + caption */
-    var lg2 = '';
-    [['Surface', '--cSurf'], ['Subsurface', '--cSub'],
-     ['Bulk', '--cBulk']].forEach(function (s) {
-      lg2 += '<span><span class="swatch" style="background:var(' + s[1]
-        + ')"></span>' + s[0] + '</span>';
-    });
-    lg2 += '<span>' + (accMode
-      ? 'fill strength = P(CO₂ refill); hollow = locked'
-      : 'dot = one vacancy on one O site (shell)') + '</span>';
-    lg2 += '<span>tint = bulk occupation (disc core and window core)'
-      + '</span>';
-    el.smPvLegend.innerHTML = lg2;
+    var pv = {
+      theta: out.theta,
+      theta_bulk_txt: thf(out.theta.bulk),
+      P: acc.P,
+      accMode: el.smPvAcc.checked,
+      n_layers: nLay,
+      layer_nm: t1,
+      cell_nm: cA / 10,
+      shell_nm: tShell,
+      d_um: dUm,
+      R_nm: dUm * 1000 / 2,
+      surf_occ: pat.arr,
+      shell_pct: shellPct
+    };
+    try {
+      mountFigure('figParticle', 'particle-cross-section',
+        FIG.particle({ pv: pv }));
+    } catch (e) { figFail('figParticle', e.message); }
 
-    var shellTheta = (geom.N_s + geom.N_ss)
-      ? shellU / (geom.N_s + geom.N_ss) : 0;
     el.smPvNote.textContent = 'Shell (bridging plane + ' + nLay
       + ' × ' + t1.toFixed(3) + ' nm oxygen layer'
       + (nLay > 1 ? 's' : '') + ' = 1 + ' + (4 * nLay)
       + ' O per (1×1) cell, ' + tShell.toFixed(2) + ' nm): '
       + f2(shellU) + ' μmol-O/g = ' + shellPct.toFixed(1)
-      + '% of the inventory at ' + (shellTheta * 100).toFixed(0)
-      + '% local depletion; core (' + Math.round(Rnm) + ' nm): '
-      + f2(out.umol_g.bulk) + ' μmol-O/g at θ = ' + thf(out.theta.bulk)
-      + '. The subsurface class is a declared shell thickness, not one '
-      + 'atomic row: each layer holds four times the bridging-row '
-      + 'capacity. Surface row: ' + (pat.sampled
-        ? 'sampled Monte Carlo configuration.'
-        : 'ideal-preview draw. Run the model for the sampled arrangement.');
+      + '% of the inventory. Surface arrangement '
+      + (pat.sampled ? 'from the sampled Monte Carlo configuration'
+         : 'is an uncorrelated preview until a run finishes')
+      + '. The bulk class is drawn as a tint, not as placed vacancies: '
+      + 'tint = bulk occupation, because the canonical partition carries '
+      + 'no depth structure inside that class.';
   }
-
-  function exportParticleSvg() {
-    var src = new XMLSerializer().serializeToString(el.smParticle);
-    var cs = getComputedStyle(document.documentElement);
-    ['--cSurf', '--cSub', '--cBulk', '--ink', '--muted', '--line',
-     '--navy', '--panel', '--code', '--bg'].forEach(function (v) {
-      var val = cs.getPropertyValue(v).trim();
-      if (val) src = src.split('var(' + v + ')').join(val);
-    });
-    var bg = cs.getPropertyValue('--bg').trim() || '#ffffff';
-    src = src.replace(/(<svg[^>]*>)/,
-                      '$1<rect width="880" height="470" fill="' + bg + '"/>');
-    var blob = new Blob([src], { type: 'image/svg+xml' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'particle_cross_section.svg';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-
-  /* ------------------------------------------ reoxidation kinetics */
-
-  var cgFitVal = null;
 
   function tfmt(t) {
     if (t == null) return '—';
@@ -1149,7 +831,6 @@
   el.smPvAcc.addEventListener('change', function () {
     if (lastPv) renderParticle(lastPv.out, lastPv.acc, lastPv.fresh);
   });
-  el.smPvDl.addEventListener('click', exportParticleSvg);
   [el.cgEm, el.cgCells, el.cgTarget].forEach(function (n) {
     if (n) n.addEventListener('input', solve);
   });

@@ -27,7 +27,12 @@ sys.path.insert(0, str(ROOT / 'scripts'))
 import figure_registry as REG                 # noqa: E402
 
 SQUARE = 'width="3.5in" height="3.5in" viewBox="0 0 252 252"'
+WIDE = 'width="7in" height="3.5in" viewBox="0 0 504 252"'
 ATTR = re.compile(r'([\w-]+)="([^"]*)"')
+
+# four square plots and one landscape schematic
+PLOTS = ('distribution', 'accessible', 'recovery', 'radial')
+SCHEMATIC = 'particle'
 
 
 @pytest.fixture(scope='module')
@@ -38,7 +43,7 @@ def figs():
     assert r.returncode == 0, f'harness failed:\n{r.stderr[-2000:]}'
     out = json.loads(r.stdout)
     assert not out['errors'], out['errors']
-    assert len(out['ids']) == 4, out['ids']
+    assert len(out['ids']) == 5, out['ids']
     return out
 
 
@@ -59,15 +64,67 @@ def _boxes(svg):
     return out
 
 
-def test_every_figure_is_exactly_three_and_a_half_inches_square(figs):
-    for fid, svg in figs['svg'].items():
+def plots(figs):
+    return [(fid, figs['svg'][fid]) for fid in PLOTS]
+
+
+def test_every_plot_is_exactly_three_and_a_half_inches_square(figs):
+    for fid, svg in plots(figs):
         assert SQUARE in svg, fid
         assert figs['px'][fid] == [2100, 2100], fid
     assert figs['px_wide'] == [4200, 2100]
 
 
-def test_every_figure_has_one_closed_axis_box(figs):
-    for fid, svg in figs['svg'].items():
+def test_the_cross_section_is_seven_by_three_and_a_half_inches(figs):
+    """The one landscape figure: the disc and its magnification have to
+    sit side by side for the magnification to read as one."""
+    svg = figs['svg'][SCHEMATIC]
+    assert WIDE in svg
+    assert figs['px'][SCHEMATIC] == [4200, 2100]
+
+
+def test_the_cross_section_keeps_the_house_axis_style(figs):
+    """Three panels, two of them framed, every tick turned inward."""
+    svg = figs['svg'][SCHEMATIC]
+    boxes = _boxes(svg)
+    assert len(boxes) == 2, len(boxes)      # the window and the depth plot
+    letters = re.findall(r'<text[^>]*font-weight="bold"[^>]*>([^<]*)</text>',
+                         svg)
+    assert letters == ['a', 'b', 'c'], letters
+    tol = 0.01
+    for a in (_attrs(m.group(1))
+              for m in re.finditer(r'<line ([^>]*)/>', svg)):
+        if abs(float(a.get('stroke-width', 0)) - 0.9) > 1e-9:
+            continue
+        xs = [float(a['x1']), float(a['x2'])]
+        ys = [float(a['y1']), float(a['y2'])]
+        assert any(b[0] - tol <= min(xs) and max(xs) <= b[2] + tol
+                   and b[1] - tol <= min(ys) and max(ys) <= b[3] + tol
+                   for b in boxes), (xs, ys)
+
+
+def test_the_cross_section_draws_one_dot_per_oxygen_site(figs):
+    """The magnified window must not read as one atomic row emptying.
+
+    Each (1x1) column carries one bridging O and four O per d110 layer, so
+    the subsurface class is drawn as 2*n_layers sub-rows of two sites and
+    the horizontal and vertical scales are equal."""
+    js = (ROOT / 'web' / 'figures_defect.js').read_text()
+    assert 'var pxNm = sitePx / cell;' in js                 # isotropic
+    assert 'var hPx = t1 * pxNm / 2;' in js                  # O sub-rows
+    assert 'var rows = 2 * nLay;' in js
+    assert 'one dot = one vacancy on one O site' in js
+    assert "'shell ' + p.shell_nm.toFixed(2)" in js          # engine value
+    assert 'O per cell' in js
+    # the bulk class is a tint, never placed dots: the partition carries
+    # no depth structure inside it
+    assert 'p.theta.bulk' in js
+    assert 'vacDot(f, siteX' in js
+    assert "vacDot(f, siteX2(jj, s), subY(1 + rr), C.bulk" not in js
+
+
+def test_every_plot_has_one_closed_axis_box(figs):
+    for fid, svg in plots(figs):
         boxes = _boxes(svg)
         assert len(boxes) == 1, (fid, len(boxes))
         x0, y0, x1, y1 = boxes[0]
@@ -78,7 +135,7 @@ def test_every_figure_has_one_closed_axis_box(figs):
 def test_ticks_point_into_the_panel(figs):
     """A tick drawn outward would fall outside the only box there is."""
     tol = 0.01
-    for fid, svg in figs['svg'].items():
+    for fid, svg in plots(figs):
         b = _boxes(svg)[0]
         for a in (_attrs(m.group(1))
                   for m in re.finditer(r'<line ([^>]*)/>', svg)):
@@ -93,7 +150,7 @@ def test_ticks_point_into_the_panel(figs):
 
 def test_tick_labels_appear_on_the_bottom_and_left_only(figs):
     """No numeral sits above the top spine or right of the right one."""
-    for fid, svg in figs['svg'].items():
+    for fid, svg in plots(figs):
         b = _boxes(svg)[0]
         for m in re.finditer(r'<text ([^>]*)>([^<]*)</text>', svg):
             a, body = _attrs(m.group(1)), m.group(2)
@@ -107,7 +164,7 @@ def test_tick_labels_appear_on_the_bottom_and_left_only(figs):
 
 
 def test_no_grid_and_no_title_inside_the_panel(figs):
-    for fid, svg in figs['svg'].items():
+    for fid, svg in plots(figs):
         b = _boxes(svg)[0]
         assert 'font-weight="bold"' not in svg, (fid, 'in-panel title')
         # a grid rule would span the panel at the spine weight and be
@@ -173,11 +230,12 @@ def test_the_page_mounts_the_figures_it_builds():
     """The template holds a container for each figure and one menu each."""
     html = (ROOT / 'web' / 'ti_solver_template.html').read_text()
     for fid in ('figDistribution', 'figAccessible', 'figRecovery',
+                'figParticle',
                 'figRadial'):
         assert f'id="{fid}"' in html, fid
     assert html.count('class="pubfig"') == 4
-    assert html.count('data-fmt="svg"') == 4
-    assert html.count('data-fmt="png"') == 4
+    assert html.count('data-fmt="svg"') == 5
+    assert html.count('data-fmt="png"') == 5
     built = (ROOT / 'docs' / 'ti_solver.html').read_text()
     for src in ('figkit.js', 'figures_defect.js'):
         body = (ROOT / 'web' / src).read_text()

@@ -26,7 +26,8 @@
   'use strict';
 
   var C = K.C, LW = K.LW, MARK = K.MARK, T = K.FIGTYPE;
-  var lin = K.lin, lg = K.lg, frame = K.frame;
+  var TICK = K.TICK;
+  var lin = K.lin, lg = K.lg, frame = K.frame, n = K.n2;
   var axisX = K.axisX, axisY = K.axisY, series = K.series;
   var legend = K.legend, expLabel = K.expLabel, tint = K.tint;
 
@@ -249,11 +250,232 @@
     return t.toExponential(0) + ' s';
   }
 
+  /* ------------------------------------------------ particle schematic */
+
+  /* Placement, not physics. The subsurface class has one occupancy and no
+     structure inside it, so which cells carry the drawn dots is a drawing
+     choice; it is made by a fixed generator here rather than by the
+     engine's RNG so the figure redraws identically from its own inputs. */
+  function placer(seed) {
+    var s = seed >>> 0;
+    return function () {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+  }
+
+  function pickCells(n, k, rnd) {
+    var idx = [], t;
+    for (t = 0; t < n; t++) idx.push(t);
+    for (t = 0; t < k && t < n; t++) {
+      var sw = t + Math.floor(rnd() * (n - t));
+      var tmp = idx[t]; idx[t] = idx[sw]; idx[sw] = tmp;
+    }
+    return idx.slice(0, Math.min(k, n));
+  }
+
+  /* A vacancy on one oxygen site. In accessibility mode the fill strength
+     is the refill probability and a locked site is drawn hollow, so the
+     same dot carries both what is there and whether CO2 can reach it. */
+  function vacDot(f, x, y, col, prob, accMode, r) {
+    if (!accMode) return f.dot(x, y, r, col);
+    if (prob < 0.02) return f.dot(x, y, r, C.paper, col);
+    return f.dot(x, y, r, tint(col, Math.max(0.18, prob)));
+  }
+
+  /* The cross-section: a true-scale disc, the shell magnified until one
+     drawn dot is one oxygen site, and the same three occupancies against
+     depth. Landscape, because the disc and the magnified window have to
+     sit side by side for the magnification to read as a magnification. */
+  function particle(M) {
+    var f = K.square({ wide: true });
+    var p = M.pv;
+    var cell = p.cell_nm, t1 = p.layer_nm, nLay = p.n_layers;
+    var acc = p.accMode;
+    var core = Math.min(0.30, 0.05
+      + 0.25 * Math.sqrt(Math.max(0, p.theta.bulk)));
+
+    /* ---- a: the particle at true scale, where the shell cannot be seen */
+    var cx = 90, cy = 100, R = 66;
+    f.dot(cx, cy, R, tint(C.structure, 0.30));
+    f.dot(cx, cy, R - 1.4, tint(C.bulk, core));
+    f.el('circle', { cx: cx, cy: cy, r: R, fill: 'none',
+      stroke: C.surface, 'stroke-width': 1.1 });
+    f.el('circle', { cx: cx, cy: cy, r: R - 1.3, fill: 'none',
+      stroke: C.subsurface, 'stroke-width': 0.9 });
+    f.panel(4, 12, 'a');
+    f.text(cx, cy - 1, 'bulk occupation',
+      { size: T.small, anchor: 'middle' });
+    f.text(cx, cy + 9, 'θb = ' + p.theta_bulk_txt,
+      { size: T.small, anchor: 'middle', fill: C.structure });
+    f.text(cx, cy - R - 7, 'shell ' + p.shell_nm.toFixed(2)
+      + ' nm, not resolvable here',
+      { size: T.small, anchor: 'middle', fill: C.structure });
+    var dy = cy + R + 12;
+    f.line(cx - R, dy, cx + R, dy, C.ink, LW.hair);
+    f.line(cx - R, dy - 3, cx - R, dy + 3, C.ink, LW.hair);
+    f.line(cx + R, dy - 3, cx + R, dy + 3, C.ink, LW.hair);
+    f.text(cx, dy + 11, 'd = ' + p.d_um.toFixed(2) + ' μm',
+      { size: T.tick, anchor: 'middle' });
+
+    /* ---- b: the shell, magnified until one dot is one oxygen site */
+    var x0 = 214, y0 = 20, fw = 284, fh = 96;
+    var nCols = 14;
+    var sitePx = fw / nCols;
+    var pxNm = sitePx / cell;               /* isotropic: same both ways */
+    var hPx = t1 * pxNm / 2;                /* O sub-row spacing */
+    var gasH = 15;
+    f.rect(x0, y0, fw, fh, C.paper);
+    f.rect(x0, y0, fw, gasH, tint(C.gas, 0.10));
+    f.text(x0 + fw - 4, y0 + 10, 'gas',
+      { size: T.small, anchor: 'end', fill: C.structure });
+    f.panel(x0, 12, 'b');
+
+    var surfY = y0 + gasH + 10;
+    var subY = function (i) { return surfY + i * hPx; };
+    var rows = 2 * nLay;
+    var nSub = Math.floor((y0 + fh - 4 - surfY) / hPx);
+    f.rect(x0 + 0.6, surfY - hPx / 2, fw - 1.2, (rows + 1) * hPx,
+      tint(C.subsurface, 0.09));
+
+    /* the oxygen sublattice, one dashed rule per sub-row */
+    function latticeRow(y, period, off) {
+      f.el('line', { x1: x0 + 0.6, x2: x0 + fw - 0.6, y1: y, y2: y,
+        stroke: C.structure, 'stroke-width': 1.1, opacity: 0.45,
+        'stroke-dasharray': '1.1 ' + (period - 1.1).toFixed(2),
+        'stroke-dashoffset': (-off).toFixed(2) });
+    }
+    latticeRow(surfY, sitePx, 0.5 * sitePx - 0.55);
+    for (var i = 1; i <= nSub; i++) {
+      latticeRow(subY(i), sitePx / 2, 0.25 * sitePx - 0.55);
+    }
+
+    var siteX = function (j) { return x0 + (j + 0.5) * sitePx; };
+    var siteX2 = function (j, s) {
+      return x0 + (j + 0.25 + 0.5 * s) * sitePx;
+    };
+    /* the bridging row carries the sampled arrangement */
+    for (var j = 0; j < nCols; j++) {
+      if (p.surf_occ[j % p.surf_occ.length]) {
+        vacDot(f, siteX(j), surfY, C.surface, p.P.surface, acc, 2.0);
+      }
+    }
+    /* the subsurface class carries its expected count on seeded sites */
+    var rnd = placer(20240517);
+    var nSites = rows * nCols * 2;
+    pickCells(nSites, Math.round(nSites * p.theta.subsurface), rnd)
+      .forEach(function (ix) {
+        var s = ix % 2, rest = (ix - s) / 2;
+        var jj = rest % nCols, rr = (rest - jj) / nCols;
+        vacDot(f, siteX2(jj, s), subY(1 + rr), C.subsurface,
+          p.P.subsurface, acc, 1.7);
+      });
+    /* the bulk class spans the whole interior and the window shows a
+       sliver of it, so it stays a class-average tint: placing individual
+       deep vacancies would invent depth structure the partition does not
+       carry */
+    var coreTop = subY(rows) + hPx / 2;
+    f.rect(x0 + 0.6, coreTop, fw - 1.2,
+      Math.max(0, y0 + fh - 1.1 - coreTop), tint(C.bulk, core));
+
+    var brX = x0 + 4;
+    f.path('M' + n(brX + 3) + ',' + n(surfY - hPx / 2) + ' L' + n(brX) + ','
+      + n(surfY - hPx / 2) + ' L' + n(brX) + ',' + n(coreTop) + ' L'
+      + n(brX + 3) + ',' + n(coreTop), C.subsurface, LW.guide);
+    f.text(brX + 6, coreTop + 8, 'shell ' + p.shell_nm.toFixed(2)
+      + ' nm · 1 + ' + (4 * nLay) + ' O per cell',
+      { size: T.small, fill: C.subsurface });
+    var sbY = y0 + fh - 8;
+    f.line(x0 + 8, sbY, x0 + 8 + pxNm, sbY, C.ink, 1.4);
+    /* the frame goes on last so the fills cannot creep over it */
+    f.line(x0 + 8, sbY - 2.5, x0 + 8, sbY + 2.5, C.ink, 1.4);
+    f.line(x0 + 8 + pxNm, sbY - 2.5, x0 + 8 + pxNm, sbY + 2.5, C.ink, 1.4);
+    f.text(x0 + 12 + pxNm, sbY + 3, '1 nm', { size: T.small });
+    f.rect(x0, y0, fw, fh, 'none', C.ink, LW.axis);
+
+    /* ---- c: the same three occupancies against depth */
+    var px0 = 250, pw = 248, papTop = 148, papBot = 210;
+    var linW = 0.46 * pw, logW = 0.44 * pw;
+    var lgMax = Math.log10(p.R_nm);
+    var XD = function (d) {
+      if (d <= 1) return px0 + d * linW;
+      return px0 + linW + 10 + Math.log10(d) / lgMax * logW;
+    };
+    /* six decades: a thick declared shell drives the bulk class into the
+       1e-5 range, which four decades would flatten onto the floor */
+    var YT = function (th) {
+      return papBot - (Math.log10(Math.max(th, 1e-6)) + 6) / 6
+        * (papBot - papTop);
+    };
+    f.panel(218, 140, 'c');
+    var yTicks = [[1, '100%'], [0.01, '1%'], [0.0001, '0.01%'],
+     [1e-6, '10⁻⁴%']];
+    var bx = px0 + linW + 5;
+    f.path('M' + n(bx - 2) + ',' + n(papBot + 3) + ' L' + n(bx + 1) + ','
+      + n(papBot - 3), C.structure, LW.hair);
+    f.path('M' + n(bx + 2) + ',' + n(papBot + 3) + ' L' + n(bx + 5) + ','
+      + n(papBot - 3), C.structure, LW.hair);
+    var tBr = t1 / 4;
+    [[0, tBr, p.theta.surface, C.surface],
+     [tBr, p.shell_nm, p.theta.subsurface, C.subsurface],
+     [p.shell_nm, p.R_nm, p.theta.bulk, C.bulk]].forEach(function (s, si, a) {
+      var y = YT(s[2]);
+      if (si === 2) {
+        f.line(XD(s[0]), y, px0 + linW, y, s[3], 2.3);
+        f.line(px0 + linW + 10, y, XD(s[1]), y, s[3], 2.3);
+      } else {
+        f.line(XD(s[0]), y, XD(s[1]), y, s[3], 2.3);
+      }
+      if (si) {
+        f.line(XD(s[0]), YT(a[si - 1][2]), XD(s[0]), y, C.structure,
+          LW.hair);
+      }
+    });
+    f.rect(px0, papTop, pw, papBot - papTop, 'none', C.ink, LW.axis);
+    yTicks.forEach(function (g) {
+      /* the outer two land on the frame itself, so they are labelled but
+         not ticked - a tick drawn on the spine is not a tick */
+      var y = YT(g[0]);
+      if (y > papTop + 0.5 && y < papBot - 0.5) {
+        f.line(px0, y, px0 + TICK.major, y, C.ink, LW.axis);
+        f.line(px0 + pw, y, px0 + pw - TICK.major, y, C.ink, LW.axis);
+      }
+      f.text(px0 - 3, y + 2.8, g[1], { size: T.tick, anchor: 'end' });
+    });
+    [[0, '0'], [p.shell_nm, p.shell_nm.toFixed(2)], [1, '1'],
+     [10, '10'], [100, '100'], [p.R_nm, Math.round(p.R_nm) + '']]
+      .forEach(function (g) {
+        if (g[0] > p.R_nm) return;
+        var x = XD(g[0]);
+        if (x > px0 + 0.5 && x < px0 + pw - 0.5) {
+          f.line(x, papBot, x, papBot - TICK.major, C.ink, LW.axis);
+          f.line(x, papTop, x, papTop + TICK.major, C.ink, LW.axis);
+        }
+        f.text(x, papBot + 9, g[1], { size: T.tick, anchor: 'middle' });
+      });
+    f.text(px0 + pw / 2, papBot + 21, 'depth from surface (nm)',
+      { size: T.body, anchor: 'middle' });
+    f.text(XD(p.shell_nm) + 5, papTop + 20, p.shell_pct.toFixed(1)
+      + '% of the inventory within ' + p.shell_nm.toFixed(2) + ' nm',
+      { size: T.small });
+
+    K.legend(f, 6, 206, [
+      { swatch: true, col: C.surface, text: 'surface, 1 O per cell' },
+      { swatch: true, col: C.subsurface,
+        text: 'subsurface, ' + (4 * nLay) + ' O per cell' },
+      { swatch: true, col: C.bulk, text: 'bulk, drawn as a tint' }
+    ], 11);
+    f.text(6, 243, acc ? 'fill = P(CO₂ refill), hollow = locked'
+      : 'one dot = one vacancy on one O site',
+      { size: T.small, fill: C.structure });
+    return f.done();
+  }
+
   return {
     CLASSES: CLASSES,
     distribution: distribution, accessible: accessible,
-    recovery: recovery, radial: radial,
+    recovery: recovery, radial: radial, particle: particle,
     FIGURES: { distribution: distribution, accessible: accessible,
-               recovery: recovery, radial: radial }
+               recovery: recovery, radial: radial, particle: particle }
   };
 });

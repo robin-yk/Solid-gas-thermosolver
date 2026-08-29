@@ -37,11 +37,31 @@ const tEnd = P.co2_kinetics.defaults.exposure_s;
 const sys = CG.build(P, T_C, vo, { d_um: P.defaults.particle_diameter_um });
 const r = CG.run(sys, tEnd, {});
 
+/* the cross-section reads geometry and occupancies, not the solver, so
+   the harness assembles the same block the page does */
+const aA = P.lattice_constants_A.a, cA = P.lattice_constants_A.c;
+const dUm = P.defaults.particle_diameter_um;
+const surfOcc = [];
+for (let i = 0; i < 32; i++) surfOcc.push((i * 7) % 13 < 6 ? 1 : 0);
+const shellU = out.umol_g.surface + out.umol_g.subsurface;
+
 const M = {
   T_C: T_C, vo: vo, geom: geom, out: out, bounds: bounds, acc: acc,
   sweep: { rows: rows, xmax: xmax },
   cg: { r: r, sys: sys, tEnd: tEnd, E_m_eV: P.kinetics_cgmc.E_m_bulk_eV,
-        target_s: tEnd, target_pct: r.recovered_fraction * 100 }
+        target_s: tEnd, target_pct: r.recovered_fraction * 100 },
+  pv: {
+    theta: out.theta,
+    theta_bulk_txt: (out.theta.bulk * 100).toFixed(2) + '%',
+    P: acc.P, accMode: false,
+    n_layers: geom.ss_layers,
+    layer_nm: aA / Math.SQRT2 / 10,
+    cell_nm: cA / 10,
+    shell_nm: geom.shell_nm,
+    d_um: dUm, R_nm: dUm * 1000 / 2,
+    surf_occ: surfOcc,
+    shell_pct: out.matched_umol_g ? shellU / out.matched_umol_g * 100 : 0
+  }
 };
 
 const res = { ids: [], svg: {}, errors: {} };

@@ -65,6 +65,20 @@ The CO2-accessibility calculation applies class-specific first-order refill prob
 
 A coarse-grained kinetic Monte Carlo transport layer (`solidgas/cgmc.py`, `web/cgmc.js`) follows Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003): radial coarse cells over the particle, exchange rates in detailed balance with the (1x1) site-class Hamiltonian (the closed system relaxes to the exact product-binomial equilibrium), the dilute limit reducing to spherical diffusion, and the CO2 surface refill as the one irreversible channel. With the neutral-vacancy bulk barrier (0.65 eV, Iddir et al.) transport is not rate-limiting at 600 C, so a measured partial recovery reads back as an effective migration barrier, which the panel can fit. Reconstruction kinetics are not modeled.
 
+## What this model does not carry
+
+Three limits that matter for reading any number above, stated here rather than left to be inferred.
+
+**One transport channel.** The CGMC moves oxygen vacancies and nothing else. Titanium interstitials are a real and, on reduced rutile, sometimes dominant mass-transport route (Henderson, Surf. Sci. 419, 174 (1999)): under reducing conditions Ti moves out through the lattice and regrows surface layers, which is a different process from a vacancy hopping inward. Nothing in this workspace represents it, so a fitted effective barrier absorbs whatever share of the real transport runs through that channel.
+
+**The dielectric correlation has no depth.** The stored power law relates the measured loss to the *total* vacancy inventory. It was fitted against a single number per sample and therefore cannot distinguish a surface-concentrated inventory from a uniform one. The partition on this page says those two states are very different; the correlation cannot see the difference, so it must not be read as a probe of where the vacancies are.
+
+**Polarons are not variables.** The site energies are polaron-relaxed values taken from DFT, which is not the same as tracking the Ti(3+) polarons themselves. The vacancy is most stable in the surface layer while the electrons it donates prefer subsurface Ti (Reticcioli et al., Phys. Rev. B 98, 045306 (2018)), and that separation is baked into the numbers rather than represented. In particular the fitted `E_m,eff` from the CGMC panel is a vacancy migration barrier absorbing everything not modelled; it is not a polaron hopping rate and should not be compared with one.
+
+## Steady-state redox
+
+`solidgas/redox.py` is a separate, smaller model that uses this one as a closure. It writes a reduction and an oxidation half-reaction against one common vacancy fraction and takes the steady state as their crossing. See `docs/redox-steady-state.md`; the connection is that the rate laws need the vacancy fraction on the *reacting face*, and the partition above is what supplies it.
+
 ## Verification
 
 `scripts/oracle_statmech.py` provides an independent 50-digit reference for the phase-aware analytic matching (including the closed-form boundary ladder), exact finite-lattice canonical ensembles, enumerated interacting lattices, and a high-precision matrix exponential of the dilute transport master equation. The JavaScript engines follow the Python production engines move for move under the same seed.

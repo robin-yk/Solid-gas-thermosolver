@@ -10,6 +10,7 @@ what it was last time."""
 import json
 import math
 import os
+import pathlib
 
 import pytest
 
@@ -365,3 +366,34 @@ def test_the_descriptor_reference_matches_the_rutile_dataset(p):
     # the functional spread is the uncertainty on placing a material
     assert '0.68 eV' in p['descriptor']['note']
     assert abs(4.39 - 3.71 - 0.68) < 1e-12
+
+
+# --------------------------------------------------------------- the writeup
+
+def test_the_documented_claims_are_the_ones_the_code_makes():
+    """The three results in docs/redox-steady-state.md, re-derived here.
+
+    A document that drifts from the engine is worse than no document, so
+    the numbers it quotes are computed rather than transcribed."""
+    doc = (pathlib.Path(ROOT) / 'docs' / 'redox-steady-state.md').read_text()
+    assert '1844x above the particle average' in doc
+    assert 'N_O_total / N_s = 1847' in doc
+    assert 'The steady rate does not move' in doc
+    assert 'the steady state stops existing' in doc
+    assert '0.68 eV spread' in doc
+    # and the model it describes is the one that ships
+    p = R.load_params()
+    a = p['half_reactions']['reduction']['bep_slope']
+    b = p['half_reactions']['oxidation']['bep_slope']
+    assert R.sabatier_optimum(p)['theta'] == pytest.approx(a / (a + b))
+
+
+def test_the_defect_model_states_what_it_does_not_carry():
+    """Three limits that a reader would otherwise have to infer."""
+    doc = (pathlib.Path(ROOT) / 'docs' / 'defect-model.md').read_text()
+    for claim in ('Henderson, Surf. Sci. 419, 174 (1999)',
+                  'Titanium interstitials',
+                  'cannot distinguish a surface-concentrated inventory',
+                  'not a polaron hopping rate',
+                  'docs/redox-steady-state.md'):
+        assert claim in doc, claim

@@ -192,6 +192,9 @@ a{color:var(--blue)}
   .dfx-tabs button { margin-right: 16px; font-size: 13px; }
 }
 
+.pubfig.wide .figbox svg { max-width: 914px; }
+.pubfig.wide figcaption, .pubfig.wide .figdl { max-width: 914px; }
+
 /* A published figure on the page. The SVG is the file that downloads, so
    it is never restyled here - only scaled, and the square aspect is the
    SVG's own. */
@@ -766,19 +769,21 @@ fixed in <code>data/rutile_dft.json</code>.</p>
         bridging row shows the sampled Monte Carlo arrangement, the subsurface
         sites use the calculated class occupancy, and the core fill tracks the
         bulk occupancy as a tint rather than placed vacancies, because the
-        partition carries no depth structure inside the bulk class.</p>
-        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-          <label style="display:flex;gap:7px;align-items:center;width:auto;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--ink);margin:0">
-            <input type="checkbox" id="smPvAcc" style="width:auto"> Colour by CO<sub>2</sub> accessibility
-          </label>
-          <button type="button" class="mini" id="smPvDl">Download SVG</button>
-        </div>
-        <div class="chartwrap" style="max-width:914px">
-          <svg id="smParticle" class="smchart" style="max-width:914px" viewBox="0 0 880 470"
-               role="img" aria-label="Oxygen-vacancy distribution across a spherical
-               particle cross-section with a magnified surface window and depth profile"></svg>
-        </div>
-        <div class="legrow" id="smPvLegend"></div>
+        partition carries no depth structure inside the bulk class. The
+        lower panel shows the same three values against radial depth.</p>
+        <label style="display:flex;gap:7px;align-items:center;width:auto;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--ink);margin:0 0 10px">
+          <input type="checkbox" id="smPvAcc" style="width:auto"> Colour by CO<sub>2</sub> accessibility
+        </label>
+        <figure class="pubfig wide" id="figParticle">
+          <div class="figbox" role="img" aria-label="Oxygen-vacancy distribution across a spherical particle cross-section with a magnified surface window and depth profile"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>Particle cross-section at true scale (a), the shell
+          magnified until one dot is one oxygen site (b), and the same three
+          occupancies against depth (c).</figcaption>
+        </figure>
         <div class="readout" id="smPvNote" style="margin-top:8px"></div>
       </section>
     </div>
