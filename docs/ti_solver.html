@@ -9,7 +9,9 @@
 :root{--blue:#087bd8;--navy:#12334d;--ink:#1c2b36;--muted:#657482;--line:#dbe5ed;
       --bg:#ffffff;--panel:#ffffff;--orange:#d66b13;--green:#16844b;--red:#c0392b;
       --code:#f4f7fa;--soft:#f6f9fb;--shadow:0 12px 32px #12334d0b;color-scheme:light;
-      --cSurf:#087bd8;--cSub:#d66b13;--cBulk:#7652c5}
+      /* The three site-class hues are the figure kit's roles, so a KPI
+         swatch and the bar it labels are the same colour. */
+      --cSurf:#0072B2;--cSub:#D55E00;--cBulk:#6A51A3}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Helvetica,Arial,sans-serif}
 .app-header{background:var(--panel);border-bottom:1px solid var(--line);padding:22px clamp(22px,5vw,72px) 34px}
@@ -108,6 +110,87 @@ a{color:var(--blue)}
 @keyframes pulse{to{background-position:-240% 0}}
 @media (max-width:980px){.grid{grid-template-columns:1fr}.thermo-grid>aside{position:static}.app-header{padding-left:22px;padding-right:22px}.pad{padding:22px}}
 @media (max-width:620px){h1{font-size:38px}.workspace-head>p:last-child{font-size:16px}.pair,.trio{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{min-height:112px;padding:16px}.panel{border-radius:13px}}
+
+/* ---- Defect workspace shell -----------------------------------------
+   One measured column of controls beside one column of results, sized to
+   the figures rather than to the viewport: a published figure is 3.5 in
+   wide and the results column holds one at its preview size with room for
+   a table beside nothing. Everything that is not one of the six controls
+   a reader actually turns lives in a closed accordion, so the page opens
+   at the size of the question rather than the size of the model. */
+.dfx { max-width: 1300px; margin: 0 auto; }
+.dfx-grid { display: grid; grid-template-columns: 330px minmax(0, 914px);
+  gap: 56px; align-items: start; }
+.dfx-controls { position: sticky; top: 20px; }
+.dfx-results > section { margin-bottom: 64px; }
+.dfx-results > section:last-child { margin-bottom: 0; }
+.dfx-results h2 { margin: 0 0 6px; font-size: 21px; letter-spacing: -.015em; }
+
+/* Controls. The six primaries carry no chrome of their own; the rest is
+   folded away and says how many settings it holds so nothing looks lost. */
+.dfx-primary { margin-bottom: 26px; }
+.dfx-status { font-size: 13px; line-height: 1.55; color: var(--muted);
+  border-left: 2px solid var(--line); padding: 2px 0 2px 11px;
+  margin: 0 0 22px; }
+.dfx-status b { color: var(--navy); font-weight: 700; }
+.dfx-status.warn { border-left-color: var(--orange); }
+.dfx-status.bad { border-left-color: var(--red); }
+.dfx-status .more { display: block; margin-top: 5px; }
+.dfx-status button { width: auto; border: 0; background: none; padding: 0;
+  font-size: 12px; color: var(--blue); cursor: pointer; text-decoration: underline; }
+.dfx-fold { border-top: 1px solid var(--line); }
+.dfx-fold:last-of-type { border-bottom: 1px solid var(--line); }
+.dfx-fold > summary { cursor: pointer; list-style: none; padding: 13px 0;
+  font-size: 13px; font-weight: 700; color: var(--navy);
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.dfx-fold > summary::-webkit-details-marker { display: none; }
+.dfx-fold > summary span { font-weight: 400; font-size: 11px;
+  color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.dfx-fold > summary::after { content: '+'; color: var(--blue);
+  font-size: 17px; line-height: 1; }
+.dfx-fold[open] > summary::after { content: '\2212'; }
+.dfx-fold-body { padding: 2px 0 20px; }
+
+/* The verdict line keeps its accent and loses its box, for the same
+   reason: it is a sentence about the solve, not an object beside it. */
+#smSummary.verdict { border: 0; border-left: 2px solid var(--line);
+  border-radius: 0; background: none; padding: 2px 0 2px 11px;
+  margin: 0 0 26px; font-size: 14px; line-height: 1.6; }
+#smSummary.verdict.red { border-left-color: var(--orange); }
+#smSummary.verdict.none { border-left-color: var(--green); }
+#smSummary .more { display: block; margin-top: 4px; font-size: 12.5px;
+  color: var(--muted); }
+
+/* Results. No card borders: the figure is the object, and a box around a
+   box reads as two objects. */
+.dfx-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line);
+  margin: 0 0 26px; }
+.dfx-tabs button { width: auto; border: 0; border-bottom: 2px solid transparent;
+  border-radius: 0; background: none; color: var(--muted); cursor: pointer;
+  font-size: 14px; font-weight: 700; padding: 10px 2px; margin-right: 24px; }
+.dfx-tabs button[aria-selected="true"] { color: var(--navy);
+  border-bottom-color: var(--blue); }
+.dfx-panel[hidden] { display: none; }
+
+/* At most four, and short enough that the row never becomes the page. */
+.dfx-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 26px; margin: 0 0 26px; }
+.dfx-kpis .kpi { min-height: 94px; background: none; border: 0;
+  border-radius: 0; padding: 0; }
+.dfx-kpis .kpi .v { font-size: 30px; margin: 7px 0 3px; }
+
+@media (max-width: 980px) {
+  .dfx-grid { grid-template-columns: 1fr; gap: 34px; }
+  .dfx-controls { position: static; }
+  .dfx-results > section { margin-bottom: 48px; }
+  .dfx-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+}
+@media (max-width: 620px) {
+  .dfx-kpis { gap: 16px; }
+  .dfx-kpis .kpi { min-height: 78px; }
+  .dfx-kpis .kpi .v { font-size: 25px; }
+  .dfx-tabs button { margin-right: 16px; font-size: 13px; }
+}
 
 /* A published figure on the page. The SVG is the file that downloads, so
    it is never restyled here - only scaled, and the square aspect is the
@@ -9165,6 +9248,8 @@ z
 </div>
 
 <div id="ws-defect" style="display:none">
+<div class="dfx">
+
 <details class="model-notes" id="defect-notes">
 <summary>Model scope and assumptions</summary>
 <div class="note calm">
@@ -9183,275 +9268,47 @@ z
   as extended defects. Nothing is clipped and no remainder is silently reassigned;
   the idealisations of each phase branch are declared in <code>data/rutile_dft.json</code>.
 </div>
-</details>
+<div class="technical-model-body">
 
-<div class="grid">
+<h3 style="margin-top:18px">Oxygen environment</h3>
+<p class="sub">The status line beside the controls is the equilibrium
+workspace&rsquo;s charge &mdash; gas, pressure, volume and solid &mdash;
+evaluated by the gas&ndash;solid Gibbs engine at the defect temperature. It
+bounds this workspace rather than feeding it: the defect model describes
+point defects in rutile, and the equilibrium verdict says whether rutile is
+the phase to be in. Open the equilibrium workspace to change the charge.</p>
 
-  <aside>
-    <div class="panel pad">
-      <h3 style="margin-top:0">Defect state</h3>
-      <div class="field pair">
-        <div><label for="smVO">Total V<sub>O</sub></label><input type="number" id="smVO" value="95" min="0.01" step="5"><div class="readout">&mu;mol-O per g TiO<sub>2</sub></div></div>
-        <div><label for="smT">Temperature</label><input type="number" id="smT" value="600" min="100" max="1200" step="25"><div class="readout">&deg;C</div></div>
-      </div>
-      <div class="field pair">
-        <div><label for="smGeoMode">Particle input</label>
-          <select id="smGeoMode">
-            <option value="d">diameter</option>
-            <option value="bet">BET area</option>
-          </select></div>
-        <div><label for="smGeoVal">Value</label><input type="number" id="smGeoVal" value="0.90" min="0.0001" step="0.1"><div class="readout" id="smGeoUnit">&mu;m (spherical particle)</div></div>
-      </div>
-      <div class="field">
-        <label for="smSS">Subsurface shell thickness</label>
-        <input type="number" id="smSS" value="1" min="1" max="4" step="1">
-        <div class="readout">oxygen layers below the bridging plane. One layer is d<sub>110</sub> = 0.325 nm and holds 4 O per (1&times;1) cell &mdash; four times the bridging row, so the subsurface class is never one atomic row. A declared model choice, not a fitted quantity: the shell/bulk split moves with it (see the model panel).</div>
-      </div>
-      <div class="readout" id="smDerived" style="margin:2px 0 12px"></div>
-      <div class="field">
-        <label>Mode</label>
-        <div style="display:flex;flex-direction:column;gap:5px">
-          <label style="text-transform:none;font-weight:400;font-size:13px;color:var(--ink);display:flex;gap:7px;align-items:center;margin:0;letter-spacing:0">
-            <input type="radio" name="smMode" value="measured" checked style="width:auto"> Measured V<sub>O</sub> (canonical)
-          </label>
-          <label style="text-transform:none;font-weight:400;font-size:13px;color:var(--muted);display:flex;gap:7px;align-items:center;margin:0;letter-spacing:0">
-            <input type="radio" name="smMode" value="thermo" disabled style="width:auto"> Thermodynamic &mu;<sub>O</sub> (grand-canonical)
-          </label>
-        </div>
-        <div class="readout">The second mode arrives with absolute DFT formation free
-        energies; the phase-validity bridge below already reads the equilibrium
-        workspace.</div>
-      </div>
-    </div>
+<h3>Reoxidation kinetics</h3>
+<p class="sub">Placeholder kinetics: first-order refill per class,
+k<sub>c</sub> = A<sub>c</sub> p<sup>m</sup> e<sup>&minus;Ea/kT</sup>,
+P<sub>c</sub> = 1 &minus; e<sup>&minus;kt</sup>. The prefactors are effective
+because deeper classes are transport-limited. None of these numbers is a
+literature value; every derived recoverable fraction is
+illustrative until fitted to the CO<sub>2</sub> recovery measurements. The transport layer is
+the group&rsquo;s coarse-grained KMC (Katsoulakis &amp; Vlachos, J. Chem.
+Phys. 119, 9412 (2003)): radial coarse cells over the particle,
+detailed-balance exchange rates against the same site-class Hamiltonian, and
+the irreversible surface refill as the only gas channel. E<sub>m</sub>
+defaults to the neutral-vacancy bulk barrier (Iddir et al.).</p>
 
-    <div class="panel pad">
-      <h3 style="margin-top:0">Oxygen environment</h3>
-      <div class="readout" style="margin-bottom:8px">The equilibrium workspace's
-      charge, including gas, pressure, volume and solid, evaluated by the
-      gas&ndash;solid Gibbs engine at the defect temperature. It bounds this tab:
-      the defect model describes point defects in rutile, and the equilibrium
-      verdict says whether rutile is the phase to be in.</div>
-      <div id="smEnv"></div>
-    </div>
+<h3>Sampling</h3>
+<p class="sub">A run samples the surface isotherm
+&theta;<sub>s</sub>(&mu;<sub>V</sub>) for the current temperature and
+energetics in a Web Worker (canonical swap Metropolis, Widom insertion).
+Inventory and particle size re-solve instantly without a new run. The second
+input mode &mdash; thermodynamic &mu;<sub>O</sub>, grand-canonical &mdash;
+arrives with absolute DFT formation free energies; this version is canonical,
+at a measured V<sub>O</sub>.</p>
 
-    <div class="panel pad">
-      <h3 style="margin-top:0">DFT energetics</h3>
-      <div class="field">
-        <label for="smPreset">Layer energies</label>
-        <select id="smPreset">
-          <option value="sx">sX hybrid &middot; Li et al. 2015 (0 / +0.59 / +1.31 eV)</option>
-          <option value="gga">GGA &middot; Li et al. 2015 (0 / +0.39 / +1.08 eV)</option>
-          <option value="custom">custom</option>
-        </select>
-        <div class="readout">Relative to the surface bridging-O vacancy; the oxygen
-        reference cancels at fixed inventory.</div>
-      </div>
-      <div class="field pair">
-        <div><label for="smEpsSS">Subsurface</label><input type="number" id="smEpsSS" step="0.01"><div class="readout">eV vs surface</div></div>
-        <div><label for="smEpsB">Bulk</label><input type="number" id="smEpsB" step="0.01"><div class="readout">eV vs surface</div></div>
-      </div>
-      <div class="field">
-        <label>Surface pair repulsion (along the O<sub>br</sub> row)</label>
-        <div class="trio">
-          <div><input type="number" id="smV1" step="0.01"><div class="readout">&Delta; = 1 site, eV</div></div>
-          <div><input type="number" id="smV2" step="0.01"><div class="readout">&Delta; = 2, eV</div></div>
-          <div><input type="number" id="smV3" step="0.01"><div class="readout">&Delta; = 3, eV</div></div>
-        </div>
-        <div class="readout">Calibrated to the published ordering constraints; cross-row
-        terms and the 10 &Aring; cutoff are fixed in <code>data/rutile_dft.json</code>.</div>
-      </div>
-      <div class="readout" style="line-height:1.6">
-        <b>Dataset.</b> Layer energetics: Li, Guo &amp; Robertson, J. Phys. Chem. C 119
-        (2015). Surface ordering: Birschitzky et al., npj Comput. Mater. 10 (2024).
-        Diffusion barriers (stored for a later kinetic version): Iddir et al., J. Phys.
-        Chem. C (2010); Wang et al., Phys. Rev. B 82 (2010).
-      </div>
-    </div>
+<h3>Dataset</h3>
+<p class="sub">Layer energetics: Li, Guo &amp; Robertson, J. Phys. Chem. C
+119 (2015). Surface ordering: Birschitzky et al., npj Comput. Mater. 10
+(2024). Diffusion barriers: Iddir et al., J. Phys. Chem. C (2010); Wang et
+al., Phys. Rev. B 82 (2010). Cross-row terms and the 10 &Aring; cutoff are
+fixed in <code>data/rutile_dft.json</code>.</p>
 
-    <div class="panel pad">
-      <h3 style="margin-top:0">CO<sub>2</sub> reoxidation</h3>
-      <div class="field">
-        <label>Refill barrier E<sub>a</sub> (eV)</label>
-        <div class="trio">
-          <div><input type="number" id="smEaS" step="0.05"><div class="readout">surface</div></div>
-          <div><input type="number" id="smEaSS" step="0.05"><div class="readout">subsurface</div></div>
-          <div><input type="number" id="smEaB" step="0.05"><div class="readout">bulk</div></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Effective prefactor A (s<sup>&minus;1</sup> atm<sup>&minus;1</sup>)</label>
-        <div class="trio">
-          <div><input type="number" id="smAS" step="any"><div class="readout">surface</div></div>
-          <div><input type="number" id="smASS" step="any"><div class="readout">subsurface</div></div>
-          <div><input type="number" id="smAB" step="any"><div class="readout">bulk</div></div>
-        </div>
-      </div>
-      <div class="field pair">
-        <div><label for="smKinT">Reoxidation T</label><input type="number" id="smKinT" step="25"><div class="readout">&deg;C</div></div>
-        <div><label for="smExp">Exposure</label><input type="number" id="smExp" step="30" min="0"><div class="readout">s</div></div>
-      </div>
-      <div class="field pair">
-        <div><label for="smPCO2">CO<sub>2</sub> pressure</label><input type="number" id="smPCO2" step="0.05" min="0"><div class="readout">atm</div></div>
-        <div></div>
-      </div>
-      <div class="readout">Placeholder kinetics: first-order refill per class,
-      k<sub>c</sub> = A<sub>c</sub> p<sup>m</sup> e<sup>&minus;Ea/kT</sup>,
-      P<sub>c</sub> = 1 &minus; e<sup>&minus;kt</sup>. The prefactors are effective
-      because deeper classes are transport-limited. None of these numbers
-      is a literature value; every derived recoverable fraction is illustrative
-      until fitted to the CO<sub>2</sub> recovery measurements.</div>
-    </div>
+<h3>Formulation and references</h3>
 
-    <div class="panel pad">
-      <h3 style="margin-top:0">Transport &mdash; CGMC</h3>
-      <div class="field pair">
-        <div><label for="cgEm">Bulk barrier E<sub>m</sub></label>
-          <input type="number" id="cgEm" value="0.65" step="0.05"><div class="readout">eV per hop</div></div>
-        <div><label for="cgCells">Coarse cells</label>
-          <input type="number" id="cgCells" value="28" step="4" min="6"><div class="readout">radial</div></div>
-      </div>
-      <div class="field pair">
-        <div><label for="cgTarget">Measured recovery</label>
-          <input type="number" id="cgTarget" step="1" min="0" max="100" placeholder="e.g. 40"><div class="readout">% at the exposure above</div></div>
-        <div style="align-self:end"><button class="act" id="cgFit" type="button">Fit E<sub>m,eff</sub></button></div>
-      </div>
-      <div class="readout" id="cgFitOut"></div>
-      <div class="readout">Coarse-grained KMC of reoxidation transport
-      (Katsoulakis &amp; Vlachos, J. Chem. Phys. 119, 9412 (2003)): radial coarse
-      cells over the particle, detailed-balance exchange rates against the same
-      site-class Hamiltonian, irreversible surface refill from the card above.
-      E<sub>m</sub> defaults to the neutral-vacancy bulk barrier (Iddir et al.).</div>
-    </div>
-
-    <div class="panel pad">
-      <h3 style="margin-top:0">Monte Carlo</h3>
-      <div class="field pair">
-        <div><label for="smQuality">Sampling</label>
-          <select id="smQuality">
-            <option value="0.3">fast survey</option>
-            <option value="1" selected>standard</option>
-            <option value="3">thorough</option>
-          </select></div>
-        <div><label for="smSeed">Seed</label><input type="number" id="smSeed" value="12345" step="1"></div>
-      </div>
-      <button class="act" id="smRun" type="button">Run model</button>
-      <div class="readout" id="smStatus" style="margin-top:9px"></div>
-      <div class="readout" style="margin-top:6px">A run samples the surface isotherm
-      &theta;<sub>s</sub>(&mu;<sub>V</sub>) for the current temperature and energetics in
-      a Web Worker (canonical swap Metropolis, Widom insertion). Inventory and particle
-      size re-solve instantly without a new run.</div>
-    </div>
-  </aside>
-
-  <section>
-    <div id="smSummary"></div>
-    <div class="kpis" id="smKpis"></div>
-
-    <div class="panel pad">
-      <h2>Vacancy distribution</h2>
-      <p class="sub">Conditional-equilibrium partition of the measured inventory at the
-      common vacancy chemical potential, using the geometric site counts of the
-      spherical particle and the phase-aware surface (the (1&times;2) reconstruction
-      and the CS ceiling enter as phases). The partition uses the formation energies
-      alone; the sampled surface Monte Carlo feeds only the ordering statistics below,
-      because its pair terms are effective parameters constrained to arrangement
-      statistics, not layer energetics.</p>
-      <figure class="pubfig" id="figDistribution">
-        <div class="figbox" role="img" aria-label="Vacancy inventory of each site class"></div>
-        <details class="figdl"><summary>Download figure</summary>
-          <button type="button" data-fmt="svg">SVG</button>
-          <button type="button" data-fmt="png">PNG, 600 dpi</button>
-        </details>
-        <figcaption>Vacancy inventory of each site class at the common chemical potential. Values are in the table below.</figcaption>
-      </figure>
-      <div class="tablewrap" style="margin-top:10px"><table id="smTable"></table></div>
-      <div class="readout" id="smSpacing" style="margin-top:8px"></div>
-      <div id="smNotes"></div>
-    </div>
-
-    <div class="panel pad">
-      <h2>Particle cross-section</h2>
-      <p class="sub">Spherical particle cross-section. The outer shell &mdash; the
-      bridging plane plus the declared subsurface layers, 0.41 nm at the default
-      thickness &mdash; is magnified at right on an isotropic scale, so one drawn dot
-      is one vacancy on one oxygen site: the bridging plane carries one O per
-      (1&times;1) column and each 0.325 nm layer below it carries four, drawn as two
-      sub-rows of two sites. The bridging row shows the
-      sampled Monte Carlo arrangement, the subsurface sites use the calculated
-      class occupancy, and the
-      core fill tracks the bulk occupancy as a tint rather than placed vacancies,
-      because the partition carries no depth structure inside the bulk class. The
-      lower plot shows the same three values against radial depth.</p>
-      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
-        <label style="display:flex;gap:7px;align-items:center;width:auto;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--ink);margin:0">
-          <input type="checkbox" id="smPvAcc" style="width:auto"> Colour by CO<sub>2</sub> accessibility
-        </label>
-        <button type="button" class="mini" id="smPvDl">Download SVG</button>
-      </div>
-      <div class="chartwrap" style="max-width:920px">
-        <svg id="smParticle" class="smchart" style="max-width:920px" viewBox="0 0 880 470"
-             role="img" aria-label="Oxygen-vacancy distribution across a spherical
-             particle cross-section with a magnified surface window and depth profile"></svg>
-      </div>
-      <div class="legrow" id="smPvLegend"></div>
-      <div class="readout" id="smPvNote" style="margin-top:8px"></div>
-    </div>
-
-    <div class="panel pad">
-      <h2>CO<sub>2</sub>-accessible inventory</h2>
-      <p class="sub">First-order refill of each site class during one CO<sub>2</sub>
-      exposure, applied to the distribution above (illustrative until the kinetics are
-      fitted). The figure walks the phase ladder along a total-inventory axis: the
-      surface crosses the (1&times;2) coexistence riser and holds at the line-phase
-      deficiency, the subsurface shell fills, and beyond the estimated CS ceiling the
-      excess precipitates as extended defects (shaded). Dashed verticals mark the
-      certified phase boundaries at the current temperature.</p>
-      <div class="kpis" id="smAccKpis"></div>
-      <figure class="pubfig" id="figAccessible">
-        <div class="figbox" role="img" aria-label="Total and CO2-accessible vacancy content against total inventory"></div>
-        <details class="figdl"><summary>Download figure</summary>
-          <button type="button" data-fmt="svg">SVG</button>
-          <button type="button" data-fmt="png">PNG, 600 dpi</button>
-        </details>
-        <figcaption>Total inventory against the fraction one CO₂ exposure can
-        reach. Light rules are the certified phase boundaries at this
-        temperature.</figcaption>
-      </figure>
-      <div class="readout" id="smAccNote" style="margin-top:8px"></div>
-      <div id="smCoupledNote"></div>
-    </div>
-
-    <div class="panel pad">
-      <h2>Reoxidation kinetics &mdash; CGMC</h2>
-      <p class="sub">Coarse-grained kinetic Monte Carlo of the whole particle during
-      one CO<sub>2</sub> exposure: radial coarse cells, Arrhenius exchange rates in
-      detailed balance with the (1&times;1) site-class Hamiltonian, and the
-      irreversible surface refill as the only gas channel. With the neutral-vacancy
-      barrier, transport is not rate-limiting at 600 &deg;C &mdash; a measured partial
-      recovery therefore reads back as an <i>effective</i> migration barrier.</p>
-      <div class="kpis" id="cgKpis"></div>
-      <figure class="pubfig" id="figRecovery">
-        <div class="figbox" role="img" aria-label="Recovered fraction against exposure time"></div>
-        <details class="figdl"><summary>Download figure</summary>
-          <button type="button" data-fmt="svg">SVG</button>
-          <button type="button" data-fmt="png">PNG, 600 dpi</button>
-        </details>
-        <figcaption>Recovered fraction against exposure. The marker is the measured recovery at the stated exposure.</figcaption>
-      </figure>
-      <figure class="pubfig" id="figRadial">
-        <div class="figbox" role="img" aria-label="Radial vacancy occupancy during reoxidation"></div>
-        <details class="figdl"><summary>Download figure</summary>
-          <button type="button" data-fmt="svg">SVG</button>
-          <button type="button" data-fmt="png">PNG, 600 dpi</button>
-        </details>
-        <figcaption>Vacancy occupancy against depth from the surface, at four times through the exposure.</figcaption>
-      </figure>
-      <div class="readout" id="cgNote" style="margin-top:8px"></div>
-    </div>
-
-    <details class="panel technical-model">
-      <summary>Model formulation and references</summary>
-      <div class="technical-model-body">
       <p>We calculate the conditional-equilibrium partitioning of the measured vacancy
       inventory to determine the thermodynamic tendency for vacancy redistribution
       among surface, subsurface and bulk environments. Three site classes hold the
@@ -17311,9 +17168,242 @@ z
   </g>
  </g>
 </svg></div>
+</div>
+</details>
+
+<div class="dfx-grid">
+
+  <aside class="dfx-controls">
+    <div class="dfx-primary">
+      <div class="field pair">
+        <div><label for="smVO">Total V<sub>O</sub></label><input type="number" id="smVO" value="95" min="0.01" step="5"><div class="readout">&mu;mol-O per g TiO<sub>2</sub></div></div>
+        <div><label for="smT">Temperature</label><input type="number" id="smT" value="600" min="100" max="1200" step="25"><div class="readout">&deg;C</div></div>
+      </div>
+      <div class="field pair">
+        <div><label for="smGeoMode">Particle input</label>
+          <select id="smGeoMode">
+            <option value="d">diameter</option>
+            <option value="bet">BET area</option>
+          </select></div>
+        <div><label for="smGeoVal">Value</label><input type="number" id="smGeoVal" value="0.90" min="0.0001" step="0.1"><div class="readout" id="smGeoUnit">&mu;m (spherical particle)</div></div>
+      </div>
+      <div class="field">
+        <label for="smSS">Subsurface shell thickness</label>
+        <input type="number" id="smSS" value="1" min="1" max="4" step="1">
+        <div class="readout">Oxygen layers below the bridging plane. One layer
+        is d<sub>110</sub> = 0.325 nm and holds four O per cell, four times
+        the bridging row. A declared model choice, not a fitted quantity: the
+        shell/bulk split moves with it.</div>
+      </div>
+      <div class="readout" id="smDerived" style="margin:0 0 16px"></div>
+      <button class="act" id="smRun" type="button">Run model</button>
+      <div class="readout" id="smStatus" style="margin-top:9px"></div>
+    </div>
+
+    <div class="dfx-status" id="smEnv"></div>
+
+    <details class="dfx-fold">
+      <summary>Layer energetics and interactions <span>5</span></summary>
+      <div class="dfx-fold-body">
+        <div class="field">
+          <label for="smPreset">Layer energies</label>
+          <select id="smPreset">
+            <option value="sx">sX hybrid &middot; Li et al. 2015 (0 / +0.59 / +1.31 eV)</option>
+            <option value="gga">GGA &middot; Li et al. 2015 (0 / +0.39 / +1.08 eV)</option>
+            <option value="custom">custom</option>
+          </select>
+          <div class="readout">Relative to the surface bridging-O vacancy; the
+          oxygen reference cancels at fixed inventory.</div>
+        </div>
+        <div class="field pair">
+          <div><label for="smEpsSS">Subsurface</label><input type="number" id="smEpsSS" step="0.01"><div class="readout">eV vs surface</div></div>
+          <div><label for="smEpsB">Bulk</label><input type="number" id="smEpsB" step="0.01"><div class="readout">eV vs surface</div></div>
+        </div>
+        <div class="field">
+          <label>Surface pair repulsion (along the O<sub>br</sub> row)</label>
+          <div class="trio">
+            <div><input type="number" id="smV1" step="0.01"><div class="readout">&Delta; = 1 site, eV</div></div>
+            <div><input type="number" id="smV2" step="0.01"><div class="readout">&Delta; = 2, eV</div></div>
+            <div><input type="number" id="smV3" step="0.01"><div class="readout">&Delta; = 3, eV</div></div>
+          </div>
+          <div class="readout">Calibrated to the published ordering
+          constraints. These are effective pair interactions and inform the
+          arrangement exhibits only; they never enter the layer partition.</div>
+        </div>
       </div>
     </details>
-  </section>
+
+    <details class="dfx-fold">
+      <summary>Recovery and transport <span>11</span></summary>
+      <div class="dfx-fold-body">
+        <div class="field">
+          <label>Refill barrier E<sub>a</sub> (eV)</label>
+          <div class="trio">
+            <div><input type="number" id="smEaS" step="0.05"><div class="readout">surface</div></div>
+            <div><input type="number" id="smEaSS" step="0.05"><div class="readout">subsurface</div></div>
+            <div><input type="number" id="smEaB" step="0.05"><div class="readout">bulk</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Effective prefactor A (s<sup>&minus;1</sup> atm<sup>&minus;1</sup>)</label>
+          <div class="trio">
+            <div><input type="number" id="smAS" step="any"><div class="readout">surface</div></div>
+            <div><input type="number" id="smASS" step="any"><div class="readout">subsurface</div></div>
+            <div><input type="number" id="smAB" step="any"><div class="readout">bulk</div></div>
+          </div>
+        </div>
+        <div class="field pair">
+          <div><label for="smKinT">Reoxidation T</label><input type="number" id="smKinT" step="25"><div class="readout">&deg;C</div></div>
+          <div><label for="smExp">Exposure</label><input type="number" id="smExp" step="30" min="0"><div class="readout">s</div></div>
+        </div>
+        <div class="field pair">
+          <div><label for="smPCO2">CO<sub>2</sub> pressure</label><input type="number" id="smPCO2" step="0.05" min="0"><div class="readout">atm</div></div>
+          <div><label for="cgEm">Bulk barrier E<sub>m</sub></label><input type="number" id="cgEm" value="0.65" step="0.05"><div class="readout">eV per hop</div></div>
+        </div>
+        <div class="field pair">
+          <div><label for="cgCells">Coarse cells</label><input type="number" id="cgCells" value="28" step="4" min="6"><div class="readout">radial</div></div>
+          <div><label for="cgTarget">Measured recovery</label><input type="number" id="cgTarget" step="1" min="0" max="100" placeholder="e.g. 40"><div class="readout">% at the exposure above</div></div>
+        </div>
+        <button class="act" id="cgFit" type="button">Fit E<sub>m,eff</sub></button>
+        <div class="readout" id="cgFitOut" style="margin-top:8px"></div>
+        <div class="readout">Placeholder kinetics until fitted; the model
+        panel says what each number is and is not.</div>
+      </div>
+    </details>
+
+    <details class="dfx-fold">
+      <summary>Surface ordering Monte Carlo <span>2</span></summary>
+      <div class="dfx-fold-body">
+        <div class="field pair">
+          <div><label for="smQuality">Sampling</label>
+            <select id="smQuality">
+              <option value="0.3">fast survey</option>
+              <option value="1" selected>standard</option>
+              <option value="3">thorough</option>
+            </select></div>
+          <div><label for="smSeed">Seed</label><input type="number" id="smSeed" value="12345" step="1"></div>
+        </div>
+        <div class="readout">Canonical swap Metropolis with Widom insertion,
+        in a Web Worker. The isotherm depends only on temperature and
+        energetics, so inventory and particle size re-solve without a run.</div>
+      </div>
+    </details>
+  </aside>
+
+  <div class="dfx-results">
+    <div class="dfx-tabs" id="dfxTabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" aria-controls="dfx-dist" data-panel="dfx-dist">Distribution</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="dfx-acc" data-panel="dfx-acc">Accessibility</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="dfx-kin" data-panel="dfx-kin">Kinetics</button>
+    </div>
+
+    <div class="dfx-panel" id="dfx-dist" role="tabpanel">
+      <div id="smSummary"></div>
+      <div class="dfx-kpis" id="smKpis"></div>
+
+      <section>
+        <h2>Vacancy distribution</h2>
+        <p class="sub">Conditional-equilibrium partition of the measured
+        inventory at the common vacancy chemical potential, over the real
+        geometric site counts of the particle. The (1&times;2) reconstruction
+        and the CS ceiling enter as phases.</p>
+        <figure class="pubfig" id="figDistribution">
+          <div class="figbox" role="img" aria-label="Vacancy inventory of each site class"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>Vacancy inventory of each site class at the common chemical potential. Values are in the table below.</figcaption>
+        </figure>
+        <div class="tablewrap" style="margin-top:10px"><table id="smTable"></table></div>
+        <div class="readout" id="smSpacing" style="margin-top:8px"></div>
+        <div id="smNotes"></div>
+      </section>
+
+      <section>
+        <h2>Particle cross-section</h2>
+        <p class="sub">Spherical particle cross-section. The outer shell is
+        magnified at right on an isotropic scale, so
+        one drawn dot is one vacancy on one oxygen site: the bridging
+        plane carries one O per
+        (1&times;1) column and each 0.325 nm layer below it carries four. The
+        bridging row shows the sampled Monte Carlo arrangement, the subsurface
+        sites use the calculated class occupancy, and the core fill tracks the
+        bulk occupancy as a tint rather than placed vacancies, because the
+        partition carries no depth structure inside the bulk class.</p>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <label style="display:flex;gap:7px;align-items:center;width:auto;text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--ink);margin:0">
+            <input type="checkbox" id="smPvAcc" style="width:auto"> Colour by CO<sub>2</sub> accessibility
+          </label>
+          <button type="button" class="mini" id="smPvDl">Download SVG</button>
+        </div>
+        <div class="chartwrap" style="max-width:914px">
+          <svg id="smParticle" class="smchart" style="max-width:914px" viewBox="0 0 880 470"
+               role="img" aria-label="Oxygen-vacancy distribution across a spherical
+               particle cross-section with a magnified surface window and depth profile"></svg>
+        </div>
+        <div class="legrow" id="smPvLegend"></div>
+        <div class="readout" id="smPvNote" style="margin-top:8px"></div>
+      </section>
+    </div>
+
+    <div class="dfx-panel" id="dfx-acc" role="tabpanel" hidden>
+      <section>
+        <h2>CO<sub>2</sub>-accessible inventory</h2>
+        <p class="sub">First-order refill of each site class during one
+        CO<sub>2</sub> exposure, applied to the distribution. The figure walks
+        the phase ladder along a total-inventory axis: the surface crosses the
+        (1&times;2) coexistence riser and holds at the line-phase deficiency,
+        the subsurface shell fills, and beyond the estimated CS ceiling the
+        excess precipitates as extended defects.</p>
+        <div class="dfx-kpis" id="smAccKpis"></div>
+        <figure class="pubfig" id="figAccessible">
+          <div class="figbox" role="img" aria-label="Total and CO2-accessible vacancy content against total inventory"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>Total inventory against the fraction one CO&#8322; exposure can
+          reach. Light rules are the certified phase boundaries at this
+          temperature.</figcaption>
+        </figure>
+        <div class="readout" id="smAccNote" style="margin-top:8px"></div>
+        <div id="smCoupledNote"></div>
+      </section>
+    </div>
+
+    <div class="dfx-panel" id="dfx-kin" role="tabpanel" hidden>
+      <section>
+        <h2>Reoxidation kinetics &mdash; CGMC</h2>
+        <p class="sub">Coarse-grained kinetic Monte Carlo of the whole particle
+        during one CO<sub>2</sub> exposure: radial coarse cells, Arrhenius
+        exchange rates in detailed balance with the (1&times;1) site-class
+        Hamiltonian, and the irreversible surface refill as the only gas
+        channel. With the neutral-vacancy barrier, transport is not
+        rate-limiting at 600 &deg;C &mdash; a measured partial recovery
+        therefore reads back as an <i>effective</i> migration barrier.</p>
+        <div class="dfx-kpis" id="cgKpis"></div>
+        <figure class="pubfig" id="figRecovery">
+          <div class="figbox" role="img" aria-label="Recovered fraction against exposure time"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>Recovered fraction against exposure. The marker is the measured recovery at the stated exposure.</figcaption>
+        </figure>
+        <figure class="pubfig" id="figRadial">
+          <div class="figbox" role="img" aria-label="Radial vacancy occupancy during reoxidation"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>Vacancy occupancy against depth from the surface, at four times through the exposure.</figcaption>
+        </figure>
+        <div class="readout" id="cgNote" style="margin-top:8px"></div>
+      </section>
+    </div>
+  </div>
+</div>
 </div>
 </div>
 
@@ -20993,6 +21083,23 @@ self.onmessage = function (ev) {
     }
   }
 
+  /* ------------------------------------------------- result tabs */
+
+  /* Three views of one solve. The panels are hidden rather than unbuilt,
+     so switching tabs never re-runs anything and the figures keep the SVG
+     they were mounted with. */
+  var dfxTabs = document.querySelectorAll('#dfxTabs button');
+  Array.prototype.forEach.call(dfxTabs, function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(dfxTabs, function (b) {
+        var on = b === btn;
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        var panel = $(b.dataset.panel);
+        if (panel) panel.hidden = !on;
+      });
+    });
+  });
+
   /* ------------------------------------------- workspace switching */
 
   var started = false;
@@ -21159,15 +21266,17 @@ self.onmessage = function (ev) {
     var tC = currentT();
     if (!TB) {
       env = null;
-      el.smEnv.innerHTML = '<div class="readout">The equilibrium workspace '
-        + 'is unavailable on this page.</div>';
+      el.smEnv.className = 'dfx-status';
+      el.smEnv.innerHTML = '<span class="more">The equilibrium workspace '
+        + 'is unavailable on this page.</span>';
       return;
     }
     var desc = TB.describe();
     if (!desc) {
       env = null;
-      el.smEnv.innerHTML = '<div class="readout">The equilibrium '
-        + "workspace's gas charge sums to zero.</div>";
+      el.smEnv.className = 'dfx-status';
+      el.smEnv.innerHTML = '<span class="more">The equilibrium '
+        + "workspace's gas charge sums to zero.</span>";
       return;
     }
     var key = tC + '|' + desc;
@@ -21199,57 +21308,47 @@ self.onmessage = function (ev) {
     return String(s).replace(/(\d+)/g, '<sub>$1</sub>');
   }
 
+  /* One line, because the equilibrium verdict bounds this workspace
+     rather than being part of it: the reader needs to know whether rutile
+     is the phase to be in, not the whole charge. The detail is one click
+     away in the workspace that owns it. */
   function renderEnv() {
     var box = el.smEnv;
     if (!env) return;
-    var h = '';
+    box.className = 'dfx-status';
+    var h;
     if (env.outOfRange) {
-      h = '<div class="note calm">' + env.T_C + ' °C is outside the '
-        + 'equilibrium data range (300–1650 °C); no verdict at this '
-        + 'temperature.</div>';
+      h = env.T_C + ' \u00B0C is outside the equilibrium data range '
+        + '(300\u20131650 \u00B0C); no phase verdict at this temperature.';
+      box.className += ' warn';
     } else if (env.error) {
-      h = '<div class="note">Equilibrium solve failed: ' + esc(env.error)
-        + '</div>';
+      h = 'Equilibrium solve failed: ' + esc(env.error);
+      box.className += ' bad';
     } else {
       var v = env.v;
-      h = '<div style="font-size:15px;line-height:1.8">'
-        + '<div><span class="k2">Charge</span> ' + env.desc + '</div>'
-        + '<div><span class="k2">Oxygen potential</span> μ<sub>O</sub> = '
-        + env.mu_O.toFixed(2) + ' kJ/mol-O at ' + env.T_C + ' °C</div>'
-        + '<div><span class="k2">Equilibrium phases</span> '
-        + env.active.map(subHtml).join(' + ') + '</div>';
       if (v.tier === 'stable') {
-        h += '<div><span class="k2">Nearest reduced</span> '
-          + subHtml(v.nearest_phase) + ' at r = +'
-          + v.margin_per_mol_O_kJ.toFixed(1) + ' kJ/mol-O</div>';
-      }
-      h += '</div>';
-      if (v.tier === 'stable') {
-        h += '<div class="note calm" style="margin:10px 0 4px"><b>Rutile '
-          + 'stable</b> under this charge at ' + env.T_C + ' °C, with a +'
-          + v.margin_per_mol_O_kJ.toFixed(1) + ' kJ/mol-O margin to '
-          + subHtml(v.nearest_phase) + '.</div>';
+        h = '<b>Rutile stable</b> \u00B7 margin to ' + subHtml(v.nearest_phase)
+          + ': +' + v.margin_per_mol_O_kJ.toFixed(1) + ' kJ\u00A0mol\u207B\u00B9-O';
       } else if (v.tier === 'boundary') {
-        h += '<div class="note" style="margin:10px 0 4px"><b>On the '
-          + 'reduction boundary.</b> TiO<sub>2</sub> coexists with '
-          + v.reduced_active.map(subHtml).join(' + ')
-          + ' at equilibrium; reduction begins at this condition.</div>';
+        h = '<b>On the reduction boundary</b> \u00B7 TiO<sub>2</sub> coexists '
+          + 'with ' + v.reduced_active.map(subHtml).join(' + ');
+        box.className += ' warn';
       } else {
-        h += '<div class="note" style="margin:10px 0 4px;border-left-color:'
-          + 'var(--red)"><b>Single-phase rutile model invalid at '
-          + 'equilibrium.</b> Thermodynamics predicts '
-          + v.reduced_active.map(subHtml).join(' + ')
-          + '. Rutile is absent under this charge at ' + env.T_C + ' °C.</div>';
+        h = '<b>Rutile absent at equilibrium</b> \u00B7 thermodynamics '
+          + 'predicts ' + v.reduced_active.map(subHtml).join(' + ')
+          + '; the single-phase model does not apply here';
+        box.className += ' bad';
       }
+      h += ' <span class="more">\u03BC<sub>O</sub> = ' + env.mu_O.toFixed(2)
+        + ' kJ/mol-O at ' + env.T_C + ' \u00B0C \u00B7 ' + env.desc + '</span>';
     }
-    h += '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
-      + '<button type="button" class="mini" id="smEnvOpen">Edit charge in '
-      + 'equilibrium workspace</button>';
+    h += '<span class="more"><button type="button" id="smEnvOpen">Edit '
+      + 'charge</button>';
     if (env.thermoT != null && Math.abs(env.thermoT - env.T_C) > 1e-9) {
-      h += '<button type="button" class="mini" id="smEnvMatch">Use '
-        + 'equilibrium T (' + env.thermoT + ' °C)</button>';
+      h += ' \u00B7 <button type="button" id="smEnvMatch">Use equilibrium T ('
+        + env.thermoT + ' \u00B0C)</button>';
     }
-    h += '</div>';
+    h += '</span>';
     box.innerHTML = h;
     var open = $('smEnvOpen');
     if (open) {
@@ -21355,12 +21454,26 @@ self.onmessage = function (ev) {
         + ' (' + pctf(out.fractions.extended) + ')');
     }
     el.smSummary.className = 'verdict ' + (bad ? 'red' : 'none');
+    var sp0 = out.surface_phase;
+    var phaseTxt = sp0.phase === '1x1' ? '(1×1) vacancy lattice gas'
+      : sp0.phase === '1x2' ? '(1×2) added-row Ti₂O₃, θ_eff = 0.5'
+      : '(1×1)+(1×2) coexistence, '
+        + (sp0.phi_reconstructed * 100).toFixed(0) + '% of area reconstructed';
     el.smSummary.innerHTML = '<b>' + f2(out.VO_total_umol_g)
       + ' μmol-O/g at ' + out.T_C
       + ' °C (conditional equilibrium):</b> ' + parts.join(', ')
-      + ' μmol-O/g. μ<sub>V</sub> = ' + out.mu_V_eV.toFixed(3) + ' eV. '
-      + REGIME_LABEL[out.regime];
+      + ' μmol-O/g. ' + REGIME_LABEL[out.regime]
+      + '<span class="more">Surface phase: ' + phaseTxt
+      + ' · μ<sub>V</sub> = ' + out.mu_V_eV.toFixed(3) + ' eV'
+      + (out.extended_defects_umol_g > 0
+         ? ' · the excess is CS planes by the lever rule, an estimate' : '')
+      + '</span>';
 
+    /* Four, and no more: the three site classes and the potential that
+       makes them one solve. The surface phase, the extended-defect count
+       and the recoverable fraction all have a home of their own - the
+       summary line, the table, and the accessibility tab - and repeating
+       them here only makes the row long enough to be scrolled past. */
     var k = '';
     CLASSES.forEach(function (c) {
       k += '<div class="kpi"><div class="k"><span class="swatch" style="'
@@ -21369,25 +21482,6 @@ self.onmessage = function (ev) {
         + '</div><div class="u">μmol-O/g · '
         + pctf(out.fractions[c.key]) + ' of inventory</div></div>';
     });
-    var sp = out.surface_phase;
-    k += '<div class="kpi"><div class="k">Surface phase</div>'
-      + '<div class="v" style="font-size:20px">'
-      + (sp.phase === '1x1' ? '(1×1)'
-         : sp.phase === '1x2' ? '(1×2)' : '(1×1)+(1×2)')
-      + '</div><div class="u">'
-      + (sp.phase === 'coexistence'
-         ? (sp.phi_reconstructed * 100).toFixed(0) + '% of area reconstructed'
-         : sp.phase === '1x2' ? 'added-row Ti₂O₃, θ_eff = 0.5'
-         : 'vacancy lattice gas') + '</div></div>';
-    if (out.extended_defects_umol_g > 0) {
-      k += '<div class="kpi"><div class="k">Extended defects</div>'
-        + '<div class="v">' + f2(out.extended_defects_umol_g) + '</div>'
-        + '<div class="u">μmol-O/g as CS planes (lever rule, est.)'
-        + '</div></div>';
-    }
-    k += '<div class="kpi"><div class="k">CO<sub>2</sub>-recoverable</div>'
-      + '<div class="v">' + pctf(acc.f_recoverable) + '</div>'
-      + '<div class="u">illustrative — placeholder kinetics</div></div>';
     k += '<div class="kpi"><div class="k">μ<sub>V</sub> (vacancy)</div>'
       + '<div class="v">' + out.mu_V_eV.toFixed(3) + '</div>'
       + '<div class="u">eV'
@@ -21406,8 +21500,8 @@ self.onmessage = function (ev) {
       + '<th>μmol-O/g</th><th>share of inventory</th></tr>';
     CLASSES.forEach(function (c) {
       var th = thf(out.theta[c.key]);
-      if (c.key === 'surface' && sp.phase !== '1x1') {
-        th += sp.phase === '1x2' ? ' · (1×2)' : ' · mixed';
+      if (c.key === 'surface' && sp0.phase !== '1x1') {
+        th += sp0.phase === '1x2' ? ' · (1×2)' : ' · mixed';
       }
       h += '<tr><td><span class="swatch" style="background:var(' + c.varname
         + ')"></span>' + c.label + '</td><td>' + th

@@ -72,6 +72,23 @@
     }
   }
 
+  /* ------------------------------------------------- result tabs */
+
+  /* Three views of one solve. The panels are hidden rather than unbuilt,
+     so switching tabs never re-runs anything and the figures keep the SVG
+     they were mounted with. */
+  var dfxTabs = document.querySelectorAll('#dfxTabs button');
+  Array.prototype.forEach.call(dfxTabs, function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(dfxTabs, function (b) {
+        var on = b === btn;
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        var panel = $(b.dataset.panel);
+        if (panel) panel.hidden = !on;
+      });
+    });
+  });
+
   /* ------------------------------------------- workspace switching */
 
   var started = false;
@@ -238,15 +255,17 @@
     var tC = currentT();
     if (!TB) {
       env = null;
-      el.smEnv.innerHTML = '<div class="readout">The equilibrium workspace '
-        + 'is unavailable on this page.</div>';
+      el.smEnv.className = 'dfx-status';
+      el.smEnv.innerHTML = '<span class="more">The equilibrium workspace '
+        + 'is unavailable on this page.</span>';
       return;
     }
     var desc = TB.describe();
     if (!desc) {
       env = null;
-      el.smEnv.innerHTML = '<div class="readout">The equilibrium '
-        + "workspace's gas charge sums to zero.</div>";
+      el.smEnv.className = 'dfx-status';
+      el.smEnv.innerHTML = '<span class="more">The equilibrium '
+        + "workspace's gas charge sums to zero.</span>";
       return;
     }
     var key = tC + '|' + desc;
@@ -278,57 +297,47 @@
     return String(s).replace(/(\d+)/g, '<sub>$1</sub>');
   }
 
+  /* One line, because the equilibrium verdict bounds this workspace
+     rather than being part of it: the reader needs to know whether rutile
+     is the phase to be in, not the whole charge. The detail is one click
+     away in the workspace that owns it. */
   function renderEnv() {
     var box = el.smEnv;
     if (!env) return;
-    var h = '';
+    box.className = 'dfx-status';
+    var h;
     if (env.outOfRange) {
-      h = '<div class="note calm">' + env.T_C + ' °C is outside the '
-        + 'equilibrium data range (300–1650 °C); no verdict at this '
-        + 'temperature.</div>';
+      h = env.T_C + ' \u00B0C is outside the equilibrium data range '
+        + '(300\u20131650 \u00B0C); no phase verdict at this temperature.';
+      box.className += ' warn';
     } else if (env.error) {
-      h = '<div class="note">Equilibrium solve failed: ' + esc(env.error)
-        + '</div>';
+      h = 'Equilibrium solve failed: ' + esc(env.error);
+      box.className += ' bad';
     } else {
       var v = env.v;
-      h = '<div style="font-size:15px;line-height:1.8">'
-        + '<div><span class="k2">Charge</span> ' + env.desc + '</div>'
-        + '<div><span class="k2">Oxygen potential</span> μ<sub>O</sub> = '
-        + env.mu_O.toFixed(2) + ' kJ/mol-O at ' + env.T_C + ' °C</div>'
-        + '<div><span class="k2">Equilibrium phases</span> '
-        + env.active.map(subHtml).join(' + ') + '</div>';
       if (v.tier === 'stable') {
-        h += '<div><span class="k2">Nearest reduced</span> '
-          + subHtml(v.nearest_phase) + ' at r = +'
-          + v.margin_per_mol_O_kJ.toFixed(1) + ' kJ/mol-O</div>';
-      }
-      h += '</div>';
-      if (v.tier === 'stable') {
-        h += '<div class="note calm" style="margin:10px 0 4px"><b>Rutile '
-          + 'stable</b> under this charge at ' + env.T_C + ' °C, with a +'
-          + v.margin_per_mol_O_kJ.toFixed(1) + ' kJ/mol-O margin to '
-          + subHtml(v.nearest_phase) + '.</div>';
+        h = '<b>Rutile stable</b> \u00B7 margin to ' + subHtml(v.nearest_phase)
+          + ': +' + v.margin_per_mol_O_kJ.toFixed(1) + ' kJ\u00A0mol\u207B\u00B9-O';
       } else if (v.tier === 'boundary') {
-        h += '<div class="note" style="margin:10px 0 4px"><b>On the '
-          + 'reduction boundary.</b> TiO<sub>2</sub> coexists with '
-          + v.reduced_active.map(subHtml).join(' + ')
-          + ' at equilibrium; reduction begins at this condition.</div>';
+        h = '<b>On the reduction boundary</b> \u00B7 TiO<sub>2</sub> coexists '
+          + 'with ' + v.reduced_active.map(subHtml).join(' + ');
+        box.className += ' warn';
       } else {
-        h += '<div class="note" style="margin:10px 0 4px;border-left-color:'
-          + 'var(--red)"><b>Single-phase rutile model invalid at '
-          + 'equilibrium.</b> Thermodynamics predicts '
-          + v.reduced_active.map(subHtml).join(' + ')
-          + '. Rutile is absent under this charge at ' + env.T_C + ' °C.</div>';
+        h = '<b>Rutile absent at equilibrium</b> \u00B7 thermodynamics '
+          + 'predicts ' + v.reduced_active.map(subHtml).join(' + ')
+          + '; the single-phase model does not apply here';
+        box.className += ' bad';
       }
+      h += ' <span class="more">\u03BC<sub>O</sub> = ' + env.mu_O.toFixed(2)
+        + ' kJ/mol-O at ' + env.T_C + ' \u00B0C \u00B7 ' + env.desc + '</span>';
     }
-    h += '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
-      + '<button type="button" class="mini" id="smEnvOpen">Edit charge in '
-      + 'equilibrium workspace</button>';
+    h += '<span class="more"><button type="button" id="smEnvOpen">Edit '
+      + 'charge</button>';
     if (env.thermoT != null && Math.abs(env.thermoT - env.T_C) > 1e-9) {
-      h += '<button type="button" class="mini" id="smEnvMatch">Use '
-        + 'equilibrium T (' + env.thermoT + ' °C)</button>';
+      h += ' \u00B7 <button type="button" id="smEnvMatch">Use equilibrium T ('
+        + env.thermoT + ' \u00B0C)</button>';
     }
-    h += '</div>';
+    h += '</span>';
     box.innerHTML = h;
     var open = $('smEnvOpen');
     if (open) {
@@ -434,12 +443,26 @@
         + ' (' + pctf(out.fractions.extended) + ')');
     }
     el.smSummary.className = 'verdict ' + (bad ? 'red' : 'none');
+    var sp0 = out.surface_phase;
+    var phaseTxt = sp0.phase === '1x1' ? '(1×1) vacancy lattice gas'
+      : sp0.phase === '1x2' ? '(1×2) added-row Ti₂O₃, θ_eff = 0.5'
+      : '(1×1)+(1×2) coexistence, '
+        + (sp0.phi_reconstructed * 100).toFixed(0) + '% of area reconstructed';
     el.smSummary.innerHTML = '<b>' + f2(out.VO_total_umol_g)
       + ' μmol-O/g at ' + out.T_C
       + ' °C (conditional equilibrium):</b> ' + parts.join(', ')
-      + ' μmol-O/g. μ<sub>V</sub> = ' + out.mu_V_eV.toFixed(3) + ' eV. '
-      + REGIME_LABEL[out.regime];
+      + ' μmol-O/g. ' + REGIME_LABEL[out.regime]
+      + '<span class="more">Surface phase: ' + phaseTxt
+      + ' · μ<sub>V</sub> = ' + out.mu_V_eV.toFixed(3) + ' eV'
+      + (out.extended_defects_umol_g > 0
+         ? ' · the excess is CS planes by the lever rule, an estimate' : '')
+      + '</span>';
 
+    /* Four, and no more: the three site classes and the potential that
+       makes them one solve. The surface phase, the extended-defect count
+       and the recoverable fraction all have a home of their own - the
+       summary line, the table, and the accessibility tab - and repeating
+       them here only makes the row long enough to be scrolled past. */
     var k = '';
     CLASSES.forEach(function (c) {
       k += '<div class="kpi"><div class="k"><span class="swatch" style="'
@@ -448,25 +471,6 @@
         + '</div><div class="u">μmol-O/g · '
         + pctf(out.fractions[c.key]) + ' of inventory</div></div>';
     });
-    var sp = out.surface_phase;
-    k += '<div class="kpi"><div class="k">Surface phase</div>'
-      + '<div class="v" style="font-size:20px">'
-      + (sp.phase === '1x1' ? '(1×1)'
-         : sp.phase === '1x2' ? '(1×2)' : '(1×1)+(1×2)')
-      + '</div><div class="u">'
-      + (sp.phase === 'coexistence'
-         ? (sp.phi_reconstructed * 100).toFixed(0) + '% of area reconstructed'
-         : sp.phase === '1x2' ? 'added-row Ti₂O₃, θ_eff = 0.5'
-         : 'vacancy lattice gas') + '</div></div>';
-    if (out.extended_defects_umol_g > 0) {
-      k += '<div class="kpi"><div class="k">Extended defects</div>'
-        + '<div class="v">' + f2(out.extended_defects_umol_g) + '</div>'
-        + '<div class="u">μmol-O/g as CS planes (lever rule, est.)'
-        + '</div></div>';
-    }
-    k += '<div class="kpi"><div class="k">CO<sub>2</sub>-recoverable</div>'
-      + '<div class="v">' + pctf(acc.f_recoverable) + '</div>'
-      + '<div class="u">illustrative — placeholder kinetics</div></div>';
     k += '<div class="kpi"><div class="k">μ<sub>V</sub> (vacancy)</div>'
       + '<div class="v">' + out.mu_V_eV.toFixed(3) + '</div>'
       + '<div class="u">eV'
@@ -485,8 +489,8 @@
       + '<th>μmol-O/g</th><th>share of inventory</th></tr>';
     CLASSES.forEach(function (c) {
       var th = thf(out.theta[c.key]);
-      if (c.key === 'surface' && sp.phase !== '1x1') {
-        th += sp.phase === '1x2' ? ' · (1×2)' : ' · mixed';
+      if (c.key === 'surface' && sp0.phase !== '1x1') {
+        th += sp0.phase === '1x2' ? ' · (1×2)' : ' · mixed';
       }
       h += '<tr><td><span class="swatch" style="background:var(' + c.varname
         + ')"></span>' + c.label + '</td><td>' + th

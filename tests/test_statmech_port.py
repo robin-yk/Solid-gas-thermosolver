@@ -11,6 +11,7 @@ Release gates: a missing interpreter or artefact fails, never skips.
 """
 
 import json
+import re
 import pathlib
 import shutil
 import subprocess
@@ -523,6 +524,113 @@ def test_the_slab_window_draws_one_dot_per_oxygen_site():
     assert 'var tShell = geom.shell_nm;' in ui             # engine value
     assert "'shell ' + tShell.toFixed(2)" in ui            # bracket label
     assert 'O per cell' in ui
+
+
+def test_the_defect_workspace_opens_with_six_controls_and_one_tab():
+    """The page must open at the size of the question, not of the model.
+
+    Six primary controls, everything else folded away, and one of the three
+    result views showing. Counted in the template rather than in a browser
+    so the gate says which markup owes the behaviour."""
+    html = (WEB / 'ti_solver_template.html').read_text()
+    shell = html[html.index('<aside class="dfx-controls">'):
+                 html.index('<div class="dfx-results">')]
+    primary = shell[shell.index('<div class="dfx-primary">'):
+                    shell.index('<div class="dfx-status"')]
+    fields = (primary.count('<input type="number"') + primary.count('<select')
+              + primary.count('<button class="act"'))
+    assert fields == 6, 'primary controls drifted to %d' % fields
+
+    folds = re.findall(r'<details class="dfx-fold"([^>]*)>', shell)
+    assert len(folds) == 3, folds
+    assert not any('open' in f for f in folds), 'a fold ships expanded'
+    for title in ('Layer energetics and interactions',
+                  'Recovery and transport', 'Surface ordering Monte Carlo'):
+        assert title in shell, title
+
+    results = html[html.index('<div class="dfx-results">'):
+                   html.index('<footer>')]
+    tabs = re.findall(r'role="tab" aria-selected="(\w+)"', results)
+    assert tabs == ['true', 'false', 'false'], tabs
+    panels = re.findall(r'<div class="dfx-panel" id="([\w-]+)"[^>]*?(hidden)?>',
+                        results)
+    assert [p[0] for p in panels] == ['dfx-dist', 'dfx-acc', 'dfx-kin']
+    assert results.count('role="tabpanel" hidden') == 2, \
+        'exactly two of the three result views start hidden'
+
+
+def test_the_defect_layout_holds_its_declared_widths():
+    """The column geometry is a stated measurement, so it is gated as one."""
+    css = (WEB / 'ti_solver_template.html').read_text()
+    css = css[css.index('.dfx { max-width'):css.index('</style>')]
+    content = int(re.search(r'\.dfx \{ max-width: (\d+)px', css).group(1))
+    cols = re.search(r'grid-template-columns: (\d+)px minmax\(0, (\d+)px\)', css)
+    gap = int(re.search(r'gap: (\d+)px;', css).group(1))
+    spacing = int(re.search(r'\.dfx-results > section \{ margin-bottom: (\d+)px',
+                            css).group(1))
+    control, results = int(cols.group(1)), int(cols.group(2))
+    assert content <= 1300, content
+    assert 320 <= control <= 340, control
+    assert 52 <= gap <= 60, gap
+    assert 880 <= results <= 920, results
+    assert 56 <= spacing <= 72, spacing
+    assert control + gap + results <= content, 'the columns must fit the page'
+    assert '@media (max-width: 980px)' in css
+    single = css[css.index('@media (max-width: 980px)'):]
+    assert 'grid-template-columns: 1fr' in single, 'no single-column fallback'
+    assert 'min-height: 94px' in css, 'KPI blocks must stay in the 90-100px band'
+    assert '.dfx-kpis .kpi { min-height: 94px; background: none; border: 0;' in css
+
+
+def test_the_result_sections_carry_no_card_border():
+    """A figure inside a bordered card reads as two objects, not one."""
+    html = (WEB / 'ti_solver_template.html').read_text()
+    results = html[html.index('<div class="dfx-results">'):
+                   html.index('<footer>')]
+    assert 'class="panel pad"' not in results, \
+        'a result section is still wrapped in a bordered card'
+    css = html[html.index('.dfx { max-width'):html.index('</style>')]
+    assert '#smSummary.verdict { border: 0;' in css
+
+
+def test_no_kpi_row_runs_past_four():
+    """Each of the three rows emits at most four blocks.
+
+    The distribution row builds three inside the class loop plus whatever
+    is written out literally, so the loop is counted explicitly rather than
+    assumed."""
+    ui = (WEB / 'statmech_ui.js').read_text()
+    for target, loop in (('el.smKpis.innerHTML', 3),
+                         ('el.smAccKpis.innerHTML', 0),
+                         ('el.cgKpis.innerHTML', 0)):
+        end = ui.index(target)
+        start = ui.rindex("var k = '", 0, end)
+        body = ui[start:end]
+        literal = body.count('<div class="kpi">')
+        # the accessibility row writes its dielectric block in an if/else,
+        # so a branch pair counts once
+        if target == 'el.smAccKpis.innerHTML':
+            literal -= 1
+        # the block written inside the class loop is one of the literals
+        total = literal + loop - (1 if loop else 0)
+        assert total <= 4, (target, total)
+    for gone in ('Surface phase</div>', 'CO<sub>2</sub>-recoverable',
+                 '<div class="k">Extended defects</div>'):
+        assert gone not in ui, 'trimmed KPI came back: %s' % gone
+
+
+def test_the_oxygen_environment_became_one_status_line():
+    """The card is gone; the verdict it carried is not."""
+    html = (WEB / 'ti_solver_template.html').read_text()
+    assert '<div class="dfx-status" id="smEnv"></div>' in html
+    assert 'Oxygen environment' in html, 'the explanation must survive the card'
+    scope = html[html.index('<details class="model-notes" id="defect-notes">'):
+                 html.index('<div class="dfx-grid">')]
+    for moved in ('Oxygen environment', 'Placeholder kinetics',
+                  'Widom insertion', 'Li, Guo &amp; Robertson', '__SM_EQS__'):
+        assert moved in scope, 'not moved into Model scope: %s' % moved
+    ui = (WEB / 'statmech_ui.js').read_text()
+    assert "'<b>Rutile stable</b> \\u00B7 margin to '" in ui
 
 
 def test_portal_fits_the_desktop_viewport_and_keeps_mobile_scroll():
