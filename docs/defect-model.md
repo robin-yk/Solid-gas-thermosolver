@@ -97,6 +97,22 @@ Three limits that matter for reading any number above, stated here rather than l
 
 **Polarons are not variables.** The site energies are polaron-relaxed values taken from DFT, which is not the same as tracking the Ti(3+) polarons themselves. The vacancy is most stable in the surface layer while the electrons it donates prefer subsurface Ti (Reticcioli et al., Phys. Rev. B 98, 045306 (2018)), and that separation is baked into the numbers rather than represented. In particular the fitted `E_m,eff` from the CGMC panel is a vacancy migration barrier absorbing everything not modelled; it is not a polaron hopping rate and should not be compared with one.
 
+## Cycling, and what one scalar cannot carry
+
+The partition above has a single scalar state, the total inventory, and it re-equilibrates that total on every call. That is the right model for one measurement at one condition and the wrong one for a sequence of them: it cannot tell a vacancy that has just been made from one that already refused to come out.
+
+The reported two-cycle experiment shows the difference. Against the inventory present at the start of each reoxidation, recovery falls from 0.860 to 0.694. A memoryless partition cannot produce that: with a smaller total it re-equilibrates into a distribution with a *larger* accessible share, so it can only predict the same fraction or a higher one. The sign of the change is the evidence, and the fix is a second reservoir.
+
+`solidgas/cycling.py` carries a pair — accessible `A` and locked `L` — with one parameter joining them. Reduction adds to `A`; reoxidation removes `f*A` and locks a fraction `lock` of what is left. At `lock = 0` nothing ever locks and the model is the memoryless one exactly, so the memory is a declared addition rather than a new assumption.
+
+Fitted to the two reported cycles it gives `f = 0.860` and `lock` pinned at its bound of 1: not only did none of the 13.3 umol-O/g residual return, complete locking is the least recovery the construction can predict and it still over-shoots the second cycle by 0.84 umol-O/g, 1.6%. So the fresh inventory itself recovered slightly less well the second time. That also settles a question of definition: normalising recovery against the *newly created* oxygen rather than the total present is the correct reading here, and it is correct because the residual is inert, not by assumption.
+
+`lock` is phenomenological. It is equally consistent with vacancies migrating beyond reach, with aggregation into an ordered defect, and with a local relaxation this model does not resolve; cycle integrals alone cannot choose. An unlocking rate is the obvious third parameter and is left out rather than fitted to data that cannot see it.
+
+**The experiment that measures it.** Two samples brought to the same total inventory by different paths — one long reduction against several reduce/reoxidise cycles — then reoxidised and compared. A memoryless inventory predicts a gap of exactly zero at any `f`, because total V_O is its whole state. At `f = 0.860` and complete locking the model predicts the cycled sample recovers 7.6 umol-O/g less out of 95, a 9.4% gap, and the gap is monotone in `lock`, so the measurement reads the parameter directly. `two_sample_prediction()` produces the number for any pair of values.
+
+**What still cannot be tested this way.** The dielectric correlation is fitted over roughly 95-5000 umol-O/g and the residuals of interest are 13 and 23, four to seven times below its calibration floor, so a residual-memory test against it is an extrapolation until low-inventory points exist. And because that correlation reads total V_O with no depth resolution, it cannot separate "deep vacancies remain" from "vacancies refilled but the structure did not recover" - both give the same loss at the same inventory.
+
 ## Steady-state redox
 
 `solidgas/redox.py` is a separate, smaller model that uses this one as a closure. It writes a reduction and an oxidation half-reaction against one common vacancy fraction and takes the steady state as their crossing. See `docs/redox-steady-state.md`; the connection is that the rate laws need the vacancy fraction on the *reacting face*, and the partition above is what supplies it.
