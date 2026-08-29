@@ -76,6 +76,16 @@ def main():
         sm_figs = fh.read()
     with (WEB / 'statmech_ui.js').open() as fh:
         sm_ui = fh.read()
+    with (DATA / 'redox.json').open() as fh:
+        rx_data = fh.read().strip()
+    with (WEB / 'redox.js').open() as fh:
+        rx_engine = fh.read()
+    with (WEB / 'cycling.js').open() as fh:
+        cy_engine = fh.read()
+    with (WEB / 'figures_redox.js').open() as fh:
+        rx_figs = fh.read()
+    with (WEB / 'redox_ui.js').open() as fh:
+        rx_ui = fh.read()
     ref = json.dumps(slim_reference(), separators=(',', ':'))
 
     for token, body in (('__DATA__', data), ('__REF__', ref),
@@ -86,7 +96,11 @@ def main():
                         ('__CG_ENGINE__', cg_engine),
                         ('__SM_WORKER__', sm_worker),
                         ('__FIGKIT__', figkit), ('__SM_FIGS__', sm_figs),
-                        ('__SM_UI__', sm_ui)):
+                        ('__SM_UI__', sm_ui),
+                        ('__RX_DATA__', rx_data),
+                        ('__RX_ENGINE__', rx_engine),
+                        ('__CY_ENGINE__', cy_engine),
+                        ('__RX_FIGS__', rx_figs), ('__RX_UI__', rx_ui)):
         assert token in html, f'{token} missing from the template'
         html = html.replace(token, body)
 

@@ -120,6 +120,18 @@
     f.text(X(12), Y(60), 'no steady state',
            { size: T.small, fill: C.subsurface });
 
+    /* Where the page is currently set, when a page is asking. The static
+       export leaves this out, so the figure on file is unchanged. */
+    if (d.current) {
+      var qx = X(Math.min(Math.max(d.current.K, d.K_lo), d.K_hi));
+      var qy = Y(Math.min(Math.max(d.current.E, d.E_lo), d.E_hi));
+      var col = d.current.usable ? C.gas : C.subsurface;
+      f.dot(qx, qy, 4.2, '#ffffff', col);      /* reads over the shading */
+      f.dot(qx, qy, 1.6, col);
+      f.text(qx, qy - 9, 'here', { size: T.small, anchor: 'middle',
+                                   fill: col, weight: 'bold' });
+    }
+
     for (i = 0; i < d.points.length; i++) {
       q = d.points[i];
       var px = X(Math.max(q.K, d.K_lo)), py = Y(q.E);

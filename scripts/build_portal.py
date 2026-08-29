@@ -1,7 +1,8 @@
 """Publish the workspace selector as the site root.
 
 The solver remains self-contained in ``ti_solver.html``. The root page offers
-two entries into its equilibrium and defect-statistical-mechanics workspaces.
+three entries into its equilibrium, defect-statistical-mechanics and
+steady-state-redox workspaces.
 """
 
 import shutil
@@ -20,7 +21,8 @@ def main():
     shutil.copyfile(src, dst)
     with dst.open() as fh:
         html = fh.read()
-    for target in ('ti_solver.html#thermo', 'ti_solver.html#defect'):
+    for target in ('ti_solver.html#thermo', 'ti_solver.html#defect',
+                   'ti_solver.html#redox'):
         assert f'href="{target}"' in html, f'portal does not link {target}'
     if not (DOCS / 'ti_solver.html').exists():
         raise SystemExit('docs/ti_solver.html is not built; run scripts/build_ti_solver.py')

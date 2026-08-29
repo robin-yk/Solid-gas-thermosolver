@@ -113,6 +113,8 @@ Fitted to the two reported cycles it gives `f = 0.860` and `lock` pinned at its 
 
 **The experiment that measures it.** Two samples brought to the same total inventory by different paths — one long reduction against several reduce/reoxidise cycles — then reoxidised and compared. A memoryless inventory predicts a gap of exactly zero at any `f`, because total V_O is its whole state. At `f = 0.860` and complete locking the model predicts the cycled sample recovers 7.6 umol-O/g less out of 95, a 9.4% gap, and the gap is monotone in `lock`, so the measurement reads the parameter directly. `two_sample_prediction()` produces the number for any pair of values.
 
+The card is in the browser, on the redox workspace (`ti_solver.html#redox`, *Cycling*): the per-cycle integrals are editable, `f` and `lock` follow, and the two-sample gap is quoted for any total and any number of build cycles. `web/cycling.js` is a line-for-line port and is held to equality with the Python module by `tests/test_redox_port.py`, including a five-cycle round trip that generates a schedule at (0.7, 0.35) and fits it back.
+
 **What still cannot be tested this way.** The dielectric correlation is fitted over roughly 95-5000 umol-O/g and the residuals of interest are 13 and 23, four to seven times below its calibration floor, so a residual-memory test against it is an extrapolation until low-inventory points exist. And because that correlation reads total V_O with no depth resolution, it cannot separate "deep vacancies remain" from "vacancies refilled but the structure did not recover" - both give the same loss at the same inventory.
 
 ## Steady-state redox

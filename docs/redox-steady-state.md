@@ -110,3 +110,11 @@ So the three claims above rest on the surface enrichment ratio and the (1x2) lin
 ## What this model does not carry
 
 It is a single well-mixed particle at one composition with two lumped half-reactions and no adsorbed intermediates, no site heterogeneity beyond the one mapping, and no transport. The reduction and oxidation channels are assumed simultaneous; a cycled carrier alternating between two gas feeds is a different problem with the same crossing hiding inside it. The linear free-energy slopes are assumed, not measured, and they are the parameters the volcano's width and position are most sensitive to.
+
+## In the browser
+
+`ti_solver.html#redox` is the workspace. Four inputs — the rate-constant ratio K, the surface enrichment E, the point-defect solubility and the face ceiling — and the two figures redraw live: the crossing, and the usable region over (K, E) with a ring on the current setting. The verdict line says which of the three things is true at that point: a usable steady state, a crossing outside the single-phase solid, or no steady state because the face has saturated. Opening the page at K = 0.5 and pressing *layer-resolved, E = 1844* is the whole argument in one click — the same K goes from unrunnable to runnable, and the turnover does not move.
+
+The browser engine is `web/redox.js`, and it is deliberately not a port. It carries the closed forms and nothing else; the bisection, the descriptor axis and the linear free-energy overlay stay in Python. `tests/test_redox_port.py` runs the real Python bisection over 455 (K, E) points — with the enrichment entered as the average-to-surface mapping the solver takes — and holds the page's arithmetic against it. The occupancies agree to 1e-12; the rate agrees to the solver's own convergence residual, which is the honest bound because the rate is the mean of the two numbers whose difference the bisection drove to zero.
+
+The two figures are drawn by the same `web/figures_redox.js` that writes `docs/figures/redox_crossing.svg` and `redox_phase.svg`, from the same payload, so the interactive plot and the manuscript file cannot disagree. The one thing the page adds is the "here" ring; the static export never sets it, and a gate checks the exported SVG does not contain it.

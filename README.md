@@ -32,6 +32,8 @@ Given a measured oxygen-deficiency inventory, a canonical lattice model computes
 
 A reductant that needs lattice oxygen and an oxidant that needs vacancies, written against one common vacancy fraction: one falls and one rises, so they cross once and the crossing is the steady state. Both barriers move with the same descriptor in opposite directions, so sweeping it gives a volcano whose peak has a closed form, and a family of solutions is available before any material is fitted. Feeding the layer-resolved partition in as the average-to-surface mapping leaves the steady rate untouched, moves the steady degree of reduction by three orders of magnitude, and removes the steady state entirely on the reducible half of the axis.
 
+The model runs in the browser at `ti_solver.html#redox`, alongside a two-reservoir cycle model that takes measured per-cycle integrals and returns the recovered fraction, how much of each residual locked, and the prediction for the experiment that separates the two: two samples at the same total V_O reached by different paths.
+
 See [docs/equilibrium-method.md](docs/equilibrium-method.md), [docs/defect-model.md](docs/defect-model.md) and [docs/redox-steady-state.md](docs/redox-steady-state.md) for the full formulations.
 
 ## Run locally

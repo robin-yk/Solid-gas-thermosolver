@@ -99,8 +99,9 @@
       Array.prototype.forEach.call(tabs, function (b) {
         b.classList.toggle('active', b === btn);
       });
-      ['ws-thermo', 'ws-defect'].forEach(function (ws) {
-        $(ws).style.display = ws === btn.dataset.ws ? '' : 'none';
+      ['ws-thermo', 'ws-defect', 'ws-redox'].forEach(function (ws) {
+        var host = $(ws);
+        if (host) host.style.display = ws === btn.dataset.ws ? '' : 'none';
       });
       if (btn.dataset.ws === 'ws-defect') {
         if (!started) {

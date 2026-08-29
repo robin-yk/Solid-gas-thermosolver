@@ -227,15 +227,28 @@ def test_the_raster_carries_its_resolution(figs):
 
 
 def test_the_page_mounts_the_figures_it_builds():
-    """The template holds a container for each figure and one menu each."""
+    """The template holds a container for each figure and one menu each.
+
+    Counted per workspace, not over the file: a figure added to one
+    workspace must not be able to satisfy the count owed by another."""
     html = (ROOT / 'web' / 'ti_solver_template.html').read_text()
     for fid in ('figDistribution', 'figAccessible', 'figRecovery',
                 'figParticle',
                 'figRadial'):
         assert f'id="{fid}"' in html, fid
-    assert html.count('class="pubfig"') == 4
-    assert html.count('data-fmt="svg"') == 5
-    assert html.count('data-fmt="png"') == 5
+    defect = html.split('<div id="ws-defect"')[1].split('<div id="ws-redox"')[0]
+    redox = html.split('<div id="ws-redox"')[1]
+    # the defect workspace: four square figures and one 7-inch cross-section
+    assert defect.count('class="pubfig"') == 4
+    assert defect.count('class="pubfig wide"') == 1
+    assert defect.count('data-fmt="svg"') == 5
+    assert defect.count('data-fmt="png"') == 5
+    # the redox workspace: the crossing and the phase map
+    for fid in ('figCrossing', 'figPhase'):
+        assert f'id="{fid}"' in redox, fid
+    assert redox.count('class="pubfig"') == 2
+    assert redox.count('data-fmt="svg"') == 2
+    assert redox.count('data-fmt="png"') == 2
     built = (ROOT / 'docs' / 'ti_solver.html').read_text()
     for src in ('figkit.js', 'figures_defect.js'):
         body = (ROOT / 'web' / src).read_text()

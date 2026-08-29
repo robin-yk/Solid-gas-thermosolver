@@ -43,6 +43,8 @@ input[type=range]{padding:0;border:0;background:transparent}
 .readout{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}
 button.act{background:var(--blue);color:#fff;border-color:var(--blue);font-size:15px;font-weight:700;cursor:pointer;padding:13px 15px}
 button.act:hover{background:#056fc5}button.mini{width:auto;padding:8px 12px;font-size:12px;cursor:pointer}
+.minirow{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+#cyIn input{max-width:150px;margin-left:auto;text-align:right;padding:8px 10px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:22px}
 .kpi{min-height:132px;background:var(--soft);border:1px solid var(--line);border-radius:15px;padding:20px}
 /* No text-transform: these labels carry formulae, and uppercasing turns
@@ -155,12 +157,13 @@ a{color:var(--blue)}
 
 /* The verdict line keeps its accent and loses its box, for the same
    reason: it is a sentence about the solve, not an object beside it. */
-#smSummary.verdict { border: 0; border-left: 2px solid var(--line);
+#smSummary.verdict, #rxSummary.verdict, #cySummary.verdict {
+  border: 0; border-left: 2px solid var(--line);
   border-radius: 0; background: none; padding: 2px 0 2px 11px;
   margin: 0 0 26px; font-size: 14px; line-height: 1.6; }
-#smSummary.verdict.red { border-left-color: var(--orange); }
-#smSummary.verdict.none { border-left-color: var(--green); }
-#smSummary .more { display: block; margin-top: 4px; font-size: 12.5px;
+#smSummary.verdict.red, #rxSummary.verdict.red, #cySummary.verdict.red { border-left-color: var(--orange); }
+#smSummary.verdict.none, #rxSummary.verdict.none, #cySummary.verdict.none { border-left-color: var(--green); }
+#smSummary .more, #rxSummary .more, #cySummary .more { display: block; margin-top: 4px; font-size: 12.5px;
   color: var(--muted); }
 
 /* Results. No card borders: the figure is the object, and a box around a
@@ -231,6 +234,11 @@ a{color:var(--blue)}
       <h1>Defect-state distribution</h1>
       <p>Calculates the equilibrium distribution of a measured oxygen-vacancy inventory across rutile sites.</p>
     </div>
+    <div class="workspace-head" id="head-redox">
+      <p class="eyebrow">Oxygen-carrier redox &middot; Vlachos Group</p>
+      <h1>Steady-state redox</h1>
+      <p>Solves the crossing of the two half-reaction rates, and says whether a carrier can be run there.</p>
+    </div>
   </div>
 </header>
 
@@ -238,6 +246,7 @@ a{color:var(--blue)}
 <div class="wstabs" id="wstabs">
   <button class="wstab active" data-ws="ws-thermo" type="button">Gas&ndash;solid equilibrium</button>
   <button class="wstab" data-ws="ws-defect" type="button">Defect stat mech</button>
+  <button class="wstab" data-ws="ws-redox" type="button">Steady-state redox</button>
 </div>
 
 <div id="ws-thermo">
@@ -17436,14 +17445,188 @@ z
 </div>
 </div>
 
+<div id="ws-redox" style="display:none">
+<div class="dfx">
+
+<details class="model-notes" id="redox-notes">
+<summary>Model scope and assumptions</summary>
+<div class="note calm">
+  <b>Scope.</b> Steady-state redox of an oxygen carrier under simultaneous exposure to a
+  reductant and an oxidant. The solid is one number, the vacancy fraction &theta; on the
+  reacting oxygen sites; the steady state is where the two half-reaction rates cross.
+  Mass action, unit site orders, one crossing &mdash; nothing here is methodologically new,
+  and that is the point: the question the model is asked is which carriers can be run at
+  their own optimum, not how to compute a rate.
+
+  <p><b>The axis.</b> At unit site orders the crossing is
+  &theta;(face) = K / (1 + K) with K = k(reduction) / k(oxidation), exactly, with no
+  temperature, no pressure and no prefactor left in it. Only the <i>ratio</i> of the two
+  rate constants is a material property of the carrier; the absolute values set how fast
+  it gets there, not where it lands. Every richer parameterisation &mdash; fitted rate
+  constants, a computed vacancy formation energy fed through Br&oslash;nsted&ndash;Evans&ndash;Polanyi
+  slopes &mdash; is a way of predicting K, and each adds an assumption the closed form
+  does not need. Those live in <code>solidgas/redox.py</code> and are deliberately not
+  on this page.</p>
+
+  <p><b>The two limits.</b> A crossing is not the same thing as an operating point. The
+  solid must stay one phase, &theta;(particle) &le; &theta;<sub>sol</sub>, or the
+  vacancies order into a second structure (in rutile, crystallographic shear planes) and
+  mass action in &theta; has left its domain. And the reacting face must stay below the
+  occupancy its own surface phase pins it at, &theta;(face) &le; &theta;<sub>max</sub>;
+  past that the oxidation rate stops rising with the inventory, the imbalance keeps its
+  sign, and there is no steady state to settle into.</p>
+
+  <p><b>The uniform assumption, and its price.</b> The two limits are connected by
+  E = &theta;(face) / &theta;(particle), the surface enrichment. A uniform particle sets
+  E = 1 without saying so; a layer-resolved partition supplies it. For 0.9 &micro;m rutile
+  at 600 &deg;C the defect workspace gives E &asymp; 1844, against a geometric ceiling of
+  1847 &mdash; nearly every vacancy is in the shell. That moves the largest usable K from
+  0.0040 to 1, a factor of 249. The turnover at a given K is <i>unchanged</i> by the
+  correction, because any strictly increasing average&rarr;face mapping only
+  reparameterises the same crossing; what changes is the inventory the particle must
+  hold to keep the face there, and therefore whether the solid survives it.</p>
+
+  <p><b>What is assumed.</b> Unit gas and site orders in both half-reactions; one
+  reacting face; no gradient within the particle beyond the single enrichment factor; no
+  transport limitation; the solubility as an estimate carried as a sensitivity
+  parameter. Parameters and their provenance are in <code>data/redox.json</code>, each
+  labelled <i>literature</i>, <i>estimate</i> or <i>assumed</i>. Engine:
+  <code>solidgas/redox.py</code>; the browser carries the closed forms only, held against
+  the Python bisection by <code>tests/test_redox_port.py</code>.</p>
+</div>
+</details>
+
+<div class="dfx-grid">
+
+  <aside class="dfx-controls">
+    <div class="dfx-primary">
+      <div class="field">
+        <label for="rxK">Rate-constant ratio</label>
+        <input type="range" id="rxKs" min="-4" max="4" step="0.01" value="-0.301">
+        <input type="number" id="rxK" value="0.5" step="any" min="0">
+        <div class="readout">K = k(reduction) / k(oxidation). The whole
+        material dependence of the steady state, and the only quantity in
+        it: K &gt; 1 means reduction outruns reoxidation.</div>
+      </div>
+      <div class="field">
+        <label for="rxE">Surface enrichment</label>
+        <input type="number" id="rxE" value="1" step="any" min="1">
+        <div class="minirow">
+          <button class="mini" type="button" data-e="1">uniform, E = 1</button>
+          <button class="mini" type="button" data-e="1844">layer-resolved, E = 1844</button>
+        </div>
+        <div class="readout" id="rxEnote"></div>
+      </div>
+      <div class="field pair">
+        <div><label for="rxSol">Solubility</label><input type="number" id="rxSol" value="0.008" step="0.001" min="0.0001"><div class="readout" id="rxSolNote">point-defect x in MO<sub>2&minus;x</sub></div></div>
+        <div><label for="rxMax">Face ceiling</label><input type="number" id="rxMax" value="0.5" step="0.05" min="0.01" max="0.99"><div class="readout">&theta;<sub>max</sub>, set by the surface phase</div></div>
+      </div>
+    </div>
+
+    <div class="dfx-status" id="rxEnv"></div>
+
+    <details class="dfx-fold">
+      <summary>Why the window is what it is <span>2 limits</span></summary>
+      <div class="dfx-fold-body">
+        <div class="readout" id="rxWindow"></div>
+      </div>
+    </details>
+  </aside>
+
+  <div class="dfx-results">
+    <div class="dfx-tabs" id="rxTabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" aria-controls="rx-ss" data-panel="rx-ss">Steady state</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="rx-cy" data-panel="rx-cy">Cycling</button>
+    </div>
+
+    <div class="dfx-panel" id="rx-ss" role="tabpanel">
+      <div id="rxSummary"></div>
+      <div class="dfx-kpis" id="rxKpis"></div>
+
+      <section>
+        <h2>The crossing</h2>
+        <p class="sub">Reduction consumes lattice oxygen so its rate falls as the
+        solid empties; oxidation consumes vacancies so its rate rises. Two opposed
+        monotone curves meet once, and that is the whole model.</p>
+        <figure class="pubfig" id="figCrossing">
+          <div class="figbox" role="img" aria-label="The two half-reaction rates against vacancy fraction"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>The two half-reaction rates against the vacancy fraction on the reacting face, in units of k(oxidation). They cross once, at &theta;* = K/(1+K).</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <h2>Where a carrier can be run</h2>
+        <p class="sub">The crossing always exists on paper. Two things decide
+        whether a real solid can sit at it, and the second axis here is the one
+        the uniform assumption sets to 1 without saying so.</p>
+        <figure class="pubfig" id="figPhase">
+          <div class="figbox" role="img" aria-label="Usable region over the rate-constant ratio and the surface enrichment"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>Shaded regions cannot be run: left of the ceiling the vacancies order into a second phase, right of it the face saturates and there is no steady state. The ring is the current setting.</figcaption>
+        </figure>
+        <div class="readout" id="rxPhaseNote" style="margin-top:8px"></div>
+      </section>
+    </div>
+
+    <div class="dfx-panel" id="rx-cy" role="tabpanel" hidden>
+      <div id="cySummary"></div>
+      <div class="dfx-kpis" id="cyKpis"></div>
+
+      <section>
+        <h2>Cycling with memory</h2>
+        <p class="sub">One inventory number cannot tell a vacancy that has just
+        been made from one that already refused to come out. This carries two
+        reservoirs instead: what an exposure can still reach, and what has stopped
+        responding. Enter the measured per-cycle integrals and the two parameters
+        follow &mdash; the first cycle fixes f, the later ones fix how much of each
+        residual survived.</p>
+        <div class="tablewrap"><table id="cyIn"></table></div>
+        <div class="minirow" style="margin-top:10px">
+          <button class="mini" type="button" id="cyAdd">add a cycle</button>
+          <button class="mini" type="button" id="cyReset">reset to the measured pair</button>
+        </div>
+        <div id="cyNotes" style="margin-top:12px"></div>
+        <div class="tablewrap" style="margin-top:12px"><table id="cyOut"></table></div>
+      </section>
+
+      <section>
+        <h2>The experiment that decides it</h2>
+        <p class="sub">Two samples at the same total V<sub>O</sub>, reached by
+        different paths: one long reduction, and several short reduce/reoxidise
+        cycles. A memoryless inventory says they must recover the same, because
+        the total is its entire state. A locked reservoir says the cycled sample
+        recovers less, by exactly the amount that has stopped responding &mdash; so
+        the gap <i>is</i> the lock parameter, read straight off the experiment.</p>
+        <div class="field pair" style="max-width:420px">
+          <div><label for="cyTotal">Total V<sub>O</sub> in both samples</label><input type="number" id="cyTotal" step="5" min="1"><div class="readout">&mu;mol-O per g</div></div>
+          <div><label for="cySplit">Cycles to build it</label><input type="number" id="cySplit" value="2" step="1" min="1" max="12"><div class="readout">short reduce / reoxidise pairs</div></div>
+        </div>
+        <div class="dfx-kpis" id="cyPredKpis"></div>
+        <div class="readout" id="cyPredNote"></div>
+      </section>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
 <footer>
   Gases: NIST-JANAF 4th ed. (Chase, 1998). Ti&ndash;O condensed phases: Waldner &amp;
   Eriksson, Calphad 23 (1999) 189&ndash;218, Appendix pp. 216&ndash;218. Defect
   energetics: Li et al., J. Phys. Chem. C 119 (2015); Birschitzky et al., npj Comput.
   Mater. 10 (2024); Iddir et al.; Wang et al. Parameters are stored in
-  <code>data/rutile_dft.json</code>.
+  <code>data/rutile_dft.json</code> and <code>data/redox.json</code>.
   Engines: <a href="https://github.com/robin-yk/Solid-gas-thermosolver">robin-yk/Solid-gas-thermosolver</a>
-  (<code>solidgas/activeset.py</code>, <code>solidgas/statmech.py</code>); verified
+  (<code>solidgas/activeset.py</code>, <code>solidgas/statmech.py</code>,
+  <code>solidgas/redox.py</code>, <code>solidgas/cycling.py</code>); verified
   against the Python implementations, an 80-digit equilibrium reference and a 50-digit
   stat-mech reference by the repository test suite.
 </footer>
@@ -17997,6 +18180,66 @@ z
       "equil_sweeps": 2500, "warm_equil_sweeps": 1000, "sample_sweeps": 4000,
       "widom_every": 10, "hist_every": 25, "blocks": 20
     }
+  }
+}</script>
+<script id="redox-data" type="application/json">{
+  "version": "0.1-uniform",
+  "model": "two half-reactions, one common vacancy variable, one crossing",
+  "scope": "Steady-state redox of an oxygen carrier under simultaneous exposure to a reductant and an oxidant. The solid is described by ONE number, the vacancy fraction theta on the reacting oxygen sites, and the steady state is the crossing of the two half-reaction rates. This is the uniform-particle model: theta is taken to be the same on the reacting surface as in the particle average. That assumption is the model's largest declared error and solidgas/redox.py measures it rather than hiding it (see surface_correction).",
+
+  "half_reactions": {
+    "reduction": {
+      "stoichiometry": "R(g) + O_lat -> RO(g) + V_O",
+      "order_gas": 1.0,
+      "order_site": 1.0,
+      "log10_A_s1": 8.0,
+      "E0_eV": 1.00,
+      "bep_slope": 0.5,
+      "label": "assumed",
+      "note": "Rate per oxygen site, r = A p^m (1-theta)^n exp(-E/kT). The site order n multiplies the AVAILABLE lattice oxygen, so the extent of reduction enters the rate as a factor and not as a shifted baseline. E rises with the descriptor: an oxide that holds its oxygen tightly is slow to reduce."
+    },
+    "oxidation": {
+      "stoichiometry": "OX(g) + V_O -> OXr(g) + O_lat",
+      "order_gas": 1.0,
+      "order_site": 1.0,
+      "log10_A_s1": 8.0,
+      "E0_eV": 1.00,
+      "bep_slope": 0.5,
+      "label": "assumed",
+      "note": "Rate per oxygen site, r = A p^m theta^n exp(-E/kT). E falls with the descriptor: a vacancy in a hard-to-reduce oxide is unstable and refills easily. The opposed signs of the two bep_slope entries are what makes the pair a volcano rather than a monotone ranking."
+    }
+  },
+
+  "descriptor": {
+    "name": "surface oxygen vacancy formation energy",
+    "symbol": "E_vac",
+    "reference_eV": 4.39,
+    "reference_material": "rutile TiO2 (110) bridging O, sX hybrid",
+    "reference_provenance": "Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), DOI 10.1021/acs.jpcc.5b02430.",
+    "offset_range_eV": [-1.5, 1.5],
+    "label": "literature (reference), assumed (range and slopes)",
+    "note": "The model is driven by the OFFSET from the reference, not by the absolute value, because only differences enter the two barriers. The absolute scale is quoted for orientation and is strongly functional dependent: the same authors report 4.39 eV with sX and 3.71 eV with GGA for the same site, a 0.68 eV spread. That spread is the systematic uncertainty on placing a material along this axis, and it is comparable to the width of the volcano itself, so a computed E_vac alone does not rank two materials that sit within ~0.7 eV of each other."
+  },
+
+  "conditions": {
+    "T_C": 600.0,
+    "p_red_atm": 0.1,
+    "p_ox_atm": 0.1,
+    "label": "assumed"
+  },
+
+  "structure": {
+    "oxygen_per_formula": 2.0,
+    "x_solubility": 0.008,
+    "x_solubility_range": [0.004, 0.015],
+    "label": "estimate",
+    "note": "Point-defect solubility of the reduced solid, x in MO(2-x). Above it the vacancies stop being independent point defects: rutile orders them into crystallographic shear planes (Magneli Ti(n)O(2n-1)), so theta is no longer a mass-action concentration and this rate model leaves its domain. theta_solubility = x_solubility / oxygen_per_formula. The default is the rutile estimate carried in data/rutile_dft.json; a fluorite oxide holds a far wider single-phase range and would be entered here as its own value. This one number is what separates a carrier that can sit at its kinetic optimum from one that must change phase to get there."
+  },
+
+  "regime_thresholds": {
+    "theta_lo": 0.25,
+    "theta_hi": 0.75,
+    "note": "Reporting bands only, not physics: below theta_lo the crossing is set by the reduction step and the solid stays oxidised; above theta_hi it is set by the oxidation step and the solid stays reduced."
   }
 }</script>
 <script>/* Active-set gas/solid Gibbs equilibrium for the browser.
@@ -21503,8 +21746,9 @@ self.onmessage = function (ev) {
       Array.prototype.forEach.call(tabs, function (b) {
         b.classList.toggle('active', b === btn);
       });
-      ['ws-thermo', 'ws-defect'].forEach(function (ws) {
-        $(ws).style.display = ws === btn.dataset.ws ? '' : 'none';
+      ['ws-thermo', 'ws-defect', 'ws-redox'].forEach(function (ws) {
+        var host = $(ws);
+        if (host) host.style.display = ws === btn.dataset.ws ? '' : 'none';
       });
       if (btn.dataset.ws === 'ws-defect') {
         if (!started) {
@@ -22330,26 +22574,957 @@ self.onmessage = function (ev) {
   }
 })();
 </script>
+<script id="rx-engine">/* Steady-state redox of an oxygen carrier, in the browser.
+
+   The whole model is one crossing. Reduction consumes lattice oxygen so
+   its rate falls as the solid empties; oxidation consumes vacancies so its
+   rate rises. Two opposed monotone curves meet once, and where they meet
+   is the steady state. At unit site orders the crossing has a closed form
+   and the only material quantity in it is the RATIO of the two rate
+   constants:
+
+       theta(face) = K / (1 + K),        K = k(reduction) / k(oxidation)
+
+   with no temperature, no pressure and no prefactor left in it. That is
+   why K is the axis this page is drawn on: every other parameterisation -
+   fitted rate constants, a vacancy formation energy fed through
+   Bronsted-Evans-Polanyi slopes - is a way of predicting K, and each adds
+   an assumption that the closed form above does not need.
+
+   Two things then decide whether a carrier can be RUN at that crossing:
+
+       the solid must stay one phase        theta(particle) <= theta_sol
+       the face must stay below its ceiling theta(face)     <= theta_max
+
+   and theta(face) = E * theta(particle), where E is the surface
+   enrichment a layer-resolved partition supplies and the uniform model
+   silently sets to 1.
+
+   This file mirrors the closed forms of solidgas/redox.py and nothing
+   else: the Python module's bisection, its descriptor axis and its BEP
+   overlay stay there. The forms here are certified against that solver by
+   tests/test_redox_port.py, which runs the real bisection - with the
+   enrichment entered as the average -> surface mapping - and compares. */
+
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.Redox = api;
+}(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  /* theta* = K/(1+K). Written as 1/(1+1/K) for large K so the ratio, not
+     the difference, sets the precision of the answer near saturation. */
+  function thetaOfRatio(K) {
+    if (!(K >= 0.0)) return 0.0;
+    if (!isFinite(K)) return 1.0;
+    return K <= 1.0 ? K / (1.0 + K) : 1.0 / (1.0 + 1.0 / K);
+  }
+
+  /* the inverse, K = theta/(1-theta): what ratio a given occupancy needs */
+  function ratioOfTheta(th) {
+    if (!(th > 0.0)) return 0.0;
+    return th < 1.0 ? th / (1.0 - th) : Infinity;
+  }
+
+  function usableWindow(enrichment, thetaSol, thetaMax) {
+    var thPhase = Math.min(1.0, enrichment * thetaSol);
+    var kPhase = ratioOfTheta(thPhase);
+    var kFace = ratioOfTheta(thetaMax);
+    return { enrichment: enrichment,
+             K_max: Math.min(kPhase, kFace),
+             K_second_phase: kPhase,
+             K_no_steady_state: kFace,
+             binding: kPhase < kFace ? 'second_phase' : 'no_steady_state' };
+  }
+
+  /* The enrichment at which the two limits swap places. Below it the solid
+     changes phase first; above it the face saturates first, and widening
+     the single-phase range stops buying anything. */
+  function crossoverEnrichment(thetaSol, thetaMax) {
+    return thetaMax / thetaSol;
+  }
+
+  function steady(K, opts) {
+    opts = opts || {};
+    var thSol = opts.theta_sol, thMax = opts.theta_surface_max;
+    var E = opts.enrichment != null ? opts.enrichment : 1.0;
+    var band = opts.bands || { theta_lo: 0.25, theta_hi: 0.75 };
+    var thFace = thetaOfRatio(K);
+    var thPart = E > 0.0 ? thFace / E : thFace;
+    var w = usableWindow(E, thSol, thMax);
+    /* Past the face ceiling the oxidation rate stops rising with the
+       inventory - the face is pinned at theta_max by its own surface
+       phase - so the imbalance keeps its sign and the particle reduces
+       without settling. This is the CEILING speaking, not the solver: the
+       mass-action crossing above still has a root, and what the flag says
+       is that the face cannot go there to supply it. */
+    var noSteadyState = K > w.K_no_steady_state;
+    /* the bands are a statement about the solid, so they read the
+       particle average - on an enriched particle the face can be well
+       into the balanced band while the solid is barely reduced */
+    var regime = thPart < band.theta_lo ? 'reduction_limited'
+      : thPart > band.theta_hi ? 'oxidation_limited' : 'balanced';
+    return { K: K, enrichment: E,
+             theta_surface: thFace, theta: thPart,
+             /* both half-rates equal theta(face) at the crossing, in units
+                of k(oxidation); only the ratio was given, so only a ratio
+                of rates can come back */
+             rate_over_k_ox: thFace,
+             regime: regime,
+             theta_solubility: thSol,
+             x_equiv: thPart * 2.0,
+             beyond_solubility: thPart > thSol,
+             no_steady_state: noSteadyState,
+             usable: !noSteadyState && thPart <= thSol,
+             window: w };
+  }
+
+  /* ------------------------------------------------------------ figures */
+
+  /* The two curves the crossing is read off, in units of k(oxidation).
+     They are the rate laws themselves at unit site orders - nothing here
+     is fitted or interpolated. */
+  function crossingData(K, n) {
+    n = n || 201;
+    var rows = [], i, th;
+    for (i = 0; i < n; i++) {
+      th = i / (n - 1);
+      rows.push({ theta: th, r_red: K * (1.0 - th), r_ox: th });
+    }
+    return { K: K, theta_star: thetaOfRatio(K),
+             rate_over_k_ox: thetaOfRatio(K), rows: rows };
+  }
+
+  /* The second-phase boundary over the enrichment axis, stopped where it
+     meets the face ceiling: above that enrichment the curve bounds
+     nothing and drawing it further would claim a limit that is not there. */
+  function phaseData(opts) {
+    opts = opts || {};
+    var thSol = opts.theta_sol, thMax = opts.theta_surface_max;
+    var kLo = opts.K_lo || 1e-4, kHi = opts.K_hi || 1e4;
+    var eLo = opts.E_lo || 1.0, eHi = opts.E_hi || 1e4;
+    var n = opts.n || 241;
+    var crossE = crossoverEnrichment(thSol, thMax);
+    var band = [], i, e, t;
+    for (i = 0; i < n; i++) {
+      e = Math.pow(10.0, Math.log10(eHi) * i / (n - 1));
+      if (e > crossE) break;
+      t = e * thSol;
+      band.push({ E: e, K: t / (1.0 - t) });
+    }
+    band.push({ E: crossE, K: ratioOfTheta(thMax) });
+    return { theta_sol: thSol, theta_surface_max: thMax,
+             K_lo: kLo, K_hi: kHi, E_lo: eLo, E_hi: eHi,
+             K_no_steady_state: ratioOfTheta(thMax),
+             crossover_E: crossE,
+             second_phase: band,
+             points: opts.points || [],
+             current: opts.current || null };
+  }
+
+  return { thetaOfRatio: thetaOfRatio, ratioOfTheta: ratioOfTheta,
+           usableWindow: usableWindow,
+           crossoverEnrichment: crossoverEnrichment,
+           steady: steady,
+           crossingData: crossingData, phaseData: phaseData };
+}));
+</script>
+<script id="cy-engine">/* Redox cycling with memory, in the browser.
+
+   Line-for-line port of solidgas/cycling.py. The state is two numbers, not
+   one:
+
+       A   accessible   inventory a CO2 exposure can still reach
+       L   locked       inventory that survived an exposure and stopped
+                        responding to them
+
+   A reduction adds its oxygen deficit to A. An exposure recovers a
+   fraction f of A and locks a fraction `lock` of what is left. At
+   lock = 0 nothing is ever locked and the model is the memoryless one
+   exactly, so the memory is a switch and not an assumption.
+
+   Two cycles constrain two parameters and no more. `lock` is a survival
+   probability, not a mechanism: migration out of reach, aggregation into
+   an ordered defect and a local relaxation all produce it, and cycle
+   integrals alone cannot tell them apart. */
+
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.Cycling = api;
+}(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  function initialState(accessible, locked) {
+    return { accessible: accessible || 0.0, locked: locked || 0.0 };
+  }
+  function total(st) { return st.accessible + st.locked; }
+
+  function reduceStep(st, created) {
+    if (created < 0.0) {
+      throw new Error('a reduction step cannot create negative inventory');
+    }
+    return { accessible: st.accessible + created, locked: st.locked };
+  }
+
+  function reoxidiseStep(st, fRec, lock) {
+    lock = lock == null ? 1.0 : lock;
+    if (!(fRec >= 0.0 && fRec <= 1.0)) {
+      throw new Error('f_rec is a fraction of the accessible pool');
+    }
+    if (!(lock >= 0.0 && lock <= 1.0)) {
+      throw new Error('lock is a probability');
+    }
+    var a = st.accessible;
+    var recovered = fRec * a;
+    var left = a - recovered;
+    return { state: { accessible: left * (1.0 - lock),
+                      locked: st.locked + left * lock },
+             recovered: recovered };
+  }
+
+  function run(schedule, fRec, lock, state) {
+    lock = lock == null ? 1.0 : lock;
+    var st = state || initialState();
+    var rows = [], i;
+    for (i = 0; i < schedule.length; i++) {
+      var beforeTotal = total(st);
+      st = reduceStep(st, schedule[i]);
+      var pre = { accessible: st.accessible, locked: st.locked };
+      var f = typeof fRec === 'function' ? fRec(i, st) : fRec;
+      var step = reoxidiseStep(st, f, lock);
+      st = step.state;
+      rows.push({ cycle: i + 1, created_umol_g: schedule[i],
+                  carried_in_umol_g: beforeTotal,
+                  pre_total_umol_g: total(pre),
+                  pre_accessible_umol_g: pre.accessible,
+                  pre_locked_umol_g: pre.locked,
+                  f_rec_used: f,
+                  recovered_umol_g: step.recovered,
+                  residual_umol_g: total(st),
+                  accessible_umol_g: st.accessible,
+                  locked_umol_g: st.locked,
+                  f_vs_created: schedule[i]
+                    ? step.recovered / schedule[i] : 0.0,
+                  f_vs_pre_total: total(pre)
+                    ? step.recovered / total(pre) : 0.0 });
+    }
+    return rows;
+  }
+
+  function fit(observations, lockMax) {
+    lockMax = lockMax == null ? 1.0 : lockMax;
+    var obs = observations.slice();
+    if (obs.length < 2) {
+      throw new Error('two cycles are the minimum that constrains lock');
+    }
+    var first = obs[0];
+    if (!(first.created > 0)) {
+      throw new Error('the first cycle must create some inventory');
+    }
+    var f = first.recovered / first.created;
+    if (!(f > 0.0 && f <= 1.0)) {
+      throw new Error('the first cycle recovers more than it created');
+    }
+
+    /* Only the part of the ACCESSIBLE pool that an exposure failed to
+       recover is available to lock; inventory locked in an earlier cycle
+       is already gone from A and must not be counted again. So the
+       denominator is A_n - R_n and not the cumulative residual - those
+       coincide for two cycles and diverge from the third onwards. */
+    var locks = [], raw = [], notes = [];
+    var left = first.created - first.recovered;
+    var n, row, need, carried, lk, over;
+    for (n = 1; n < obs.length; n++) {
+      row = obs[n];
+      need = row.recovered / f;
+      carried = need - row.created;
+      lk = left <= 0.0 ? lockMax : 1.0 - carried / left;
+      raw.push(lk);
+      if (lk > lockMax) {
+        over = f * row.created - row.recovered;
+        notes.push('cycle ' + (n + 1) + ': complete locking is the least '
+          + 'recovery this model can predict and it still over-predicts by '
+          + over.toFixed(2) + ' umol-O/g ('
+          + (100.0 * over / row.recovered).toFixed(1) + '%), so f is '
+          + 'falling as well as the residual surviving');
+        lk = lockMax;
+      }
+      if (lk < 0.0) {
+        notes.push('cycle ' + (n + 1) + ': implies negative locking, i.e. '
+          + 'the residual is more accessible than fresh inventory');
+      }
+      locks.push(lk);
+      left = need - row.recovered;
+    }
+
+    var lock = locks.reduce(function (a, v) { return a + v; }, 0)
+      / locks.length;
+    lock = Math.min(lockMax, Math.max(0.0, lock));
+    var pred = run(obs.map(function (o) { return o.created; }), f, lock);
+    var resid = obs.map(function (o, i) {
+      return pred[i].recovered_umol_g - o.recovered;
+    });
+    return { f_rec: f, lock: lock, lock_per_cycle: locks,
+             lock_unclamped: raw,
+             lock_at_bound: raw.some(function (x) { return x >= lockMax; }),
+             predicted: pred,
+             residual_umol_g: resid,
+             rms_umol_g: Math.sqrt(resid.reduce(function (a, r) {
+               return a + r * r; }, 0) / resid.length),
+             notes: notes,
+             f_per_cycle: obs.map(function (o) {
+               return o.created ? o.recovered / o.created : 0.0; }) };
+  }
+
+  /* The experiment that separates the two models: the same total V_O made
+     in one long reduction and in several short cycles. A memoryless
+     inventory says the two must recover the same, because the total is its
+     whole state; a locked reservoir says the cycled sample recovers less,
+     by exactly what has stopped responding. */
+  function twoSamplePrediction(totalVo, fRec, lock, split) {
+    lock = lock == null ? 1.0 : lock;
+    var recFresh = reoxidiseStep(initialState(totalVo), fRec, lock).recovered;
+    var n = split == null ? 2 : Math.round(split);
+    if (n < 1) throw new Error('the cycled sample needs at least one cycle');
+    var st = initialState();
+    var per = totalVo / (n + 1), i;
+    for (i = 0; i < n; i++) {
+      st = reduceStep(st, per);
+      st = reoxidiseStep(st, fRec, lock).state;
+    }
+    st = reduceStep(st, totalVo - total(st));
+    var cycled = { accessible: st.accessible, locked: st.locked };
+    var recCycled = reoxidiseStep(cycled, fRec, lock).recovered;
+    return { total_umol_g: totalVo, f_rec: fRec, lock: lock,
+             cycles_to_build: n,
+             fresh: { accessible: totalVo, locked: 0.0,
+                      recovered_umol_g: recFresh },
+             cycled: { accessible: cycled.accessible,
+                       locked: cycled.locked,
+                       recovered_umol_g: recCycled },
+             recovery_gap_umol_g: recFresh - recCycled,
+             recovery_ratio: recFresh ? recCycled / recFresh : NaN };
+  }
+
+  return { initialState: initialState, total: total,
+           reduceStep: reduceStep, reoxidiseStep: reoxidiseStep,
+           run: run, fit: fit,
+           twoSamplePrediction: twoSamplePrediction };
+}));
+</script>
+<script id="redox-figures">/* The two figures the steady-state redox model exists to produce.
+
+   crossing   the two half-reaction rates against the vacancy fraction,
+              meeting once. The whole model is this picture.
+   phase      where a carrier can actually be run, over the ratio of rate
+              constants and the surface enrichment. The second axis is the
+              one the uniform assumption sets to 1 without saying so.
+
+   Both are drawn from rows computed by solidgas/redox.py and written out
+   by scripts/export_redox_figures.py, so nothing here evaluates a rate
+   law or a boundary condition - a figure cannot disagree with the engine
+   it never calls. Style, colour roles and geometry are the kit's. */
+
+(function (root, factory) {
+  'use strict';
+  var kit = (typeof module !== 'undefined' && module.exports)
+    ? require('./figkit.js') : root.FigKit;
+  if (!kit) throw new Error('figures_redox.js needs figkit.js');
+  var api = factory(kit);
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.RedoxFigures = api;
+})(typeof self !== 'undefined' ? self : this, function (K) {
+  'use strict';
+
+  var C = K.C, LW = K.LW, TICK = K.TICK, T = K.FIGTYPE;
+  var lin = K.lin, lg = K.lg, frame = K.frame;
+  var axisX = K.axisX, axisY = K.axisY, series = K.series, tint = K.tint;
+
+  /* reduction consumes lattice oxygen and oxidation consumes vacancies, so
+     the gas role carries the reducing half and the surface role the
+     oxidising one - the same two things they carry everywhere else */
+  var RED = C.gas, OX = C.surface;
+
+  function crossing(D) {
+    var d = D.crossing;
+    var f = K.square();
+    var p = f.pane;
+    var X = lin(0, 1, p.x0, p.x1);
+    var top = 1.0;
+    var Y = lin(0, top, p.y1, p.y0);
+    frame(f, X, Y);
+    axisX(f, X, p.y1, [0, 0.25, 0.5, 0.75, 1],
+          'vacancy fraction on the reacting face, θ',
+          function (v) { return v.toFixed(2); });
+    axisY(f, Y, p.x0, [0, 0.25, 0.5, 0.75, 1], 'rate, in units of k(oxidation)',
+          function (v) { return v.toFixed(2); });
+
+    var red = d.rows.map(function (r) { return [r.theta, r.r_red]; });
+    var ox = d.rows.map(function (r) { return [r.theta, r.r_ox]; });
+    series(f, red, X, Y, RED, LW.curve, null);
+    series(f, ox, X, Y, OX, LW.curve, '5 2.5');
+
+    var cx = X(d.theta_star), cy = Y(d.rate_over_k_ox);
+    f.line(cx, p.y1, cx, cy, tint(C.ink, 0.35), LW.hair, '2 2');
+    f.line(p.x0, cy, cx, cy, tint(C.ink, 0.35), LW.hair, '2 2');
+    f.dot(cx, cy, 2.5, C.ink);
+    f.text(cx + 6, cy - 5, 'steady state', { size: T.small });
+    f.text(cx + 6, cy + 5, 'θ* = ' + d.theta_star.toFixed(3),
+           { size: T.small, fill: C.structure });
+
+    /* direct labels: a legend would repeat what the curves already say */
+    var iRed = Math.round(0.18 * (d.rows.length - 1));
+    var iOx = Math.round(0.80 * (d.rows.length - 1));
+    f.text(X(d.rows[iRed].theta) + 4, Y(d.rows[iRed].r_red) - 5,
+           'reduction ∝ K(1 − θ)', { size: T.small, fill: RED });
+    f.text(X(d.rows[iOx].theta) - 4, Y(d.rows[iOx].r_ox) + 11,
+           'oxidation ∝ θ', { size: T.small, fill: OX, anchor: 'end' });
+    f.text(p.x0 + 6, p.y0 + 11, 'K = k(red)/k(ox) = ' + d.K,
+           { size: T.small });
+    return f.done();
+  }
+
+  function phase(D) {
+    var d = D.phase;
+    var f = K.square();
+    var p = f.pane;
+    var X = lg(d.K_lo, d.K_hi, p.x0, p.x1);
+    var Y = lg(d.E_lo, d.E_hi, p.y1, p.y0);
+
+    /* Two regions are shaded because they are the ones a carrier cannot
+       be run in; what is left is usable and needs no wash of colour.
+
+       second phase   right of the boundary curve and left of the face
+                      ceiling, and only below the enrichment where those
+                      two meet - above it the curve bounds nothing.
+       no steady      right of the face ceiling, at every enrichment. */
+    var i, q;
+    var poly = '';
+    for (i = 0; i < d.second_phase.length; i++) {
+      q = d.second_phase[i];
+      poly += (i ? ' L' : 'M') + X(q.K) + ',' + Y(q.E);
+    }
+    poly += ' L' + X(d.K_no_steady_state) + ',' + Y(d.crossover_E)
+      + ' L' + X(d.K_no_steady_state) + ',' + Y(d.E_lo) + ' Z';
+    f.path(poly, 'none', 0, null, tint(C.bulk, 0.13));
+    f.rect(X(d.K_no_steady_state), p.y0,
+           p.x1 - X(d.K_no_steady_state), p.y1 - p.y0,
+           tint(C.subsurface, 0.13));
+
+    frame(f, X, Y);
+    axisX(f, X, p.y1, K.decades(d.K_lo, d.K_hi), 'K = k(reduction) / k(oxidation)',
+          K.expLabel);
+    axisY(f, Y, p.x0, K.decades(d.E_lo, d.E_hi),
+          'surface enrichment, θ(face) / θ(particle)', K.expLabel);
+
+    var curve = [];
+    for (i = 0; i < d.second_phase.length; i++) {
+      if (d.second_phase[i].E > d.E_hi) break;
+      curve.push([d.second_phase[i].K, d.second_phase[i].E]);
+    }
+    series(f, curve, X, Y, C.bulk, LW.curve, '5 2.5');
+    f.line(X(d.K_no_steady_state), p.y0,
+           X(d.K_no_steady_state), p.y1, C.subsurface, LW.curve);
+
+    f.text(X(1.2e-3), Y(2200), 'usable', { size: T.small, weight: 'bold' });
+    f.text(X(0.14), Y(9), 'second phase',
+           { size: T.small, anchor: 'middle', fill: C.bulk });
+    f.text(X(0.14), Y(5.2), 'vacancies order away',
+           { size: T.small, anchor: 'middle', fill: C.structure });
+    f.text(X(12), Y(60), 'no steady state',
+           { size: T.small, fill: C.subsurface });
+
+    /* Where the page is currently set, when a page is asking. The static
+       export leaves this out, so the figure on file is unchanged. */
+    if (d.current) {
+      var qx = X(Math.min(Math.max(d.current.K, d.K_lo), d.K_hi));
+      var qy = Y(Math.min(Math.max(d.current.E, d.E_lo), d.E_hi));
+      var col = d.current.usable ? C.gas : C.subsurface;
+      f.dot(qx, qy, 4.2, '#ffffff', col);      /* reads over the shading */
+      f.dot(qx, qy, 1.6, col);
+      f.text(qx, qy - 9, 'here', { size: T.small, anchor: 'middle',
+                                   fill: col, weight: 'bold' });
+    }
+
+    for (i = 0; i < d.points.length; i++) {
+      q = d.points[i];
+      var px = X(Math.max(q.K, d.K_lo)), py = Y(q.E);
+      var below = q.E < 3.0;              /* keep clear of the bottom spine */
+      f.dot(px, py, 2.5, C.ink);
+      f.text(px + 6, py + (below ? -6 : 3), q.label + ', K ≤ '
+             + (q.K < 0.01 ? q.K.toFixed(4) : q.K.toFixed(2)),
+             { size: T.small });
+    }
+    return f.done();
+  }
+
+  return { crossing: crossing, phase: phase,
+           FIGURES: { crossing: crossing, phase: phase } };
+});
+</script>
+<script>/* UI for the steady-state redox workspace.
+
+   Three inputs and two pictures. The engine is web/redox.js, which carries
+   the closed forms of solidgas/redox.py and nothing else, and the figures
+   are the same two web/figures_redox.js draws for the manuscript - the
+   page hands them a payload and gets back the SVG it downloads, so what
+   is on screen and what is in the file cannot differ.
+
+   The cycling card shares the workspace because it asks the second half
+   of the same question: the steady state says where one exposure lands,
+   and the cycle model says what a sequence of them does to a solid that
+   remembers. */
+
+(function () {
+  'use strict';
+
+  if (!window.Redox || !window.RedoxFigures) return;
+  var R = window.Redox, CY = window.Cycling;
+  var FIG = window.RedoxFigures, KIT = window.FigKit;
+  var P = JSON.parse(document.getElementById('redox-data').textContent);
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {};
+  ['rxK', 'rxKs', 'rxE', 'rxEnote', 'rxSol', 'rxSolNote', 'rxMax',
+   'rxEnv', 'rxWindow', 'rxSummary', 'rxKpis', 'rxPhaseNote',
+   'cySummary', 'cyKpis', 'cyIn', 'cyOut', 'cyNotes', 'cyAdd', 'cyReset',
+   'cyTotal', 'cySplit', 'cyPredKpis', 'cyPredNote'].forEach(function (id) {
+     el[id] = $(id);
+   });
+
+  var E_RESOLVED = 1844.0;   /* 0.9 um rutile at 600 C, layer-resolved */
+
+  /* -------------------------------------------------------- figures */
+
+  var figState = {};
+  function mountFigure(hostId, name, svg) {
+    var host = $(hostId);
+    if (!host) return;
+    figState[hostId] = { svg: svg, name: name };
+    host.querySelector('.figbox').innerHTML = svg;
+    var dl = host.querySelector('.figdl');
+    if (dl && !dl.dataset.wired) {
+      dl.dataset.wired = '1';
+      dl.addEventListener('click', function (ev) {
+        var fmt = ev.target && ev.target.getAttribute('data-fmt');
+        if (!fmt) return;
+        var st = figState[hostId];
+        if (!st) return;
+        if (fmt === 'svg') {
+          KIT.downloadSVG(st.svg, st.name);
+        } else {
+          ev.target.disabled = true;
+          KIT.downloadPNG(st.svg, st.name).catch(function (e) {
+            window.alert('PNG export failed: ' + e.message);
+          }).then(function () { ev.target.disabled = false; });
+        }
+        dl.open = false;
+      });
+    }
+  }
+  function figFail(hostId, why) {
+    var host = $(hostId);
+    if (host) host.querySelector('.figbox').textContent = why;
+  }
+
+  /* ----------------------------------------------------- formatting */
+
+  function num(node, fallback) {
+    var v = parseFloat(node.value);
+    return isFinite(v) ? v : fallback;
+  }
+  function sig(v, n) {
+    if (!isFinite(v)) return '∞';
+    if (v === 0) return '0';
+    var a = Math.abs(v);
+    if (a >= 1e4 || a < 1e-3) return v.toExponential((n || 3) - 1);
+    return v.toPrecision(n || 3).replace(/\.?0+$/, '');
+  }
+  function thf(th) {
+    if (th >= 0.001) return (th * 100).toFixed(2) + '%';
+    if (th > 0) return th.toExponential(2);
+    return '0';
+  }
+  function kpi(label, value, unit) {
+    return '<div class="kpi"><div class="k">' + label + '</div>'
+      + '<div class="v">' + value + '</div>'
+      + '<div class="u">' + unit + '</div></div>';
+  }
+
+  /* ------------------------------------------------- steady state */
+
+  function inputs() {
+    var x = num(el.rxSol, 0.008);
+    return { K: Math.max(0, num(el.rxK, 0.5)),
+             E: Math.max(1, num(el.rxE, 1)),
+             theta_sol: x / P.structure.oxygen_per_formula,
+             theta_max: Math.min(0.99, Math.max(0.01, num(el.rxMax, 0.5))) };
+  }
+
+  var REGIME = {
+    reduction_limited: 'Reduction-limited: the crossing is set by how fast '
+      + 'the reductant can strip oxygen, and the solid stays oxidised.',
+    balanced: 'Balanced: both half-reactions matter at the crossing. This '
+      + 'is the band a carrier is worth running in.',
+    oxidation_limited: 'Oxidation-limited: the crossing is set by how fast '
+      + 'the oxidant can refill, and the solid stays reduced.'
+  };
+
+  function solve() {
+    var q = inputs();
+    var s = R.steady(q.K, { theta_sol: q.theta_sol,
+                            theta_surface_max: q.theta_max,
+                            enrichment: q.E,
+                            bands: P.regime_thresholds });
+    var w = s.window;
+
+    el.rxSolNote.innerHTML = 'point-defect x in MO<sub>2−x</sub>, so '
+      + 'θ<sub>sol</sub> = ' + sig(q.theta_sol, 3) + ' · '
+      + P.structure.label;
+    el.rxEnote.innerHTML = q.E === 1
+      ? 'The uniform particle. Nothing says this is wrong; it says nothing '
+        + 'at all, which is the problem.'
+      : 'The face is ' + sig(q.E, 4) + '× as vacant as the particle '
+        + 'average, so the solid holds ' + sig(q.E, 4) + '× less inventory '
+        + 'to keep it there.';
+
+    /* the verdict is about whether the carrier can be RUN here, which is
+       a different question from whether the algebra has a root */
+    var ok = s.usable;
+    el.rxSummary.className = 'verdict ' + (ok ? 'none' : 'red');
+    var head, why;
+    if (s.no_steady_state) {
+      head = 'No steady state at K = ' + sig(q.K, 3) + '.';
+      why = 'The crossing wants θ(face) = ' + thf(s.theta_surface)
+        + ', above the ' + thf(q.theta_max) + ' its surface phase pins it '
+        + 'at. Past the ceiling the oxidation rate stops rising with the '
+        + 'inventory, so the imbalance keeps its sign and the particle '
+        + 'reduces until something outside this pair of rate laws stops '
+        + 'it. That is an answer about the carrier, not a failure to '
+        + 'converge.';
+    } else if (s.beyond_solubility) {
+      head = 'The crossing is outside the single-phase solid.';
+      why = 'It sits at θ(particle) = ' + thf(s.theta)
+        + ' (x = ' + sig(s.x_equiv, 3) + ' in MO<sub>2−x</sub>), above the '
+        + 'declared solubility θ = ' + sig(q.theta_sol, 3) + '. The '
+        + 'vacancies order into a second structure before the carrier gets '
+        + 'there, so the number below is where an unshearing solid <i>would'
+        + '</i> sit and the real one changes phase instead.';
+    } else {
+      head = 'Usable steady state at K = ' + sig(q.K, 3) + '.';
+      why = 'θ(particle) = ' + thf(s.theta) + ' stays inside the '
+        + 'single-phase range and θ(face) = ' + thf(s.theta_surface)
+        + ' stays under the ceiling.';
+    }
+    el.rxSummary.innerHTML = '<b>' + head + '</b> ' + why
+      + '<span class="more">' + REGIME[s.regime] + '</span>';
+
+    el.rxKpis.innerHTML =
+      kpi('θ on the reacting face', thf(s.theta_surface),
+          'K/(1+K), exactly')
+      + kpi('θ in the particle', thf(s.theta),
+            'x = ' + sig(s.x_equiv, 3) + ' in MO<sub>2−x</sub>')
+      + kpi('Turnover', sig(s.rate_over_k_ox, 3),
+            'per site, in units of k(oxidation)')
+      + kpi('Largest usable K', sig(w.K_max, 3),
+            w.binding === 'second_phase'
+              ? 'the solid changes phase first'
+              : 'the face saturates first');
+
+    var cross = R.crossoverEnrichment(q.theta_sol, q.theta_max);
+    el.rxWindow.innerHTML =
+      'At this enrichment the two limits are <b>K ≤ '
+      + sig(w.K_second_phase, 3) + '</b> before the solid leaves its '
+      + 'single-phase range and <b>K ≤ ' + sig(w.K_no_steady_state, 3)
+      + '</b> before the face saturates, so the window is K ≤ '
+      + sig(w.K_max, 3) + '. Which one binds swaps at E = '
+      + sig(cross, 4) + ': below it a wider single-phase range buys room, '
+      + 'above it only a higher face ceiling does. The uniform particle '
+      + 'is held to K ≤ ' + sig(R.usableWindow(1, q.theta_sol,
+                                               q.theta_max).K_max, 3)
+      + ' and the layer-resolved one to K ≤ '
+      + sig(R.usableWindow(E_RESOLVED, q.theta_sol,
+                           q.theta_max).K_max, 3) + '.';
+
+    el.rxEnv.innerHTML = 'At ' + P.conditions.T_C + ' °C, '
+      + P.conditions.p_red_atm + ' atm reductant and '
+      + P.conditions.p_ox_atm + ' atm oxidant &mdash; none of which enter '
+      + 'the crossing. <b>K is the only material quantity in it.</b>'
+      + '<span class="more">Temperature, pressure and both prefactors '
+      + 'cancel out of θ* = K/(1+K) at unit site orders. They set how fast '
+      + 'the carrier reaches the steady state, not where it is.</span>';
+
+    try {
+      mountFigure('figCrossing', 'redox-crossing',
+        FIG.crossing({ crossing: R.crossingData(q.K, 201) }));
+    } catch (e) { figFail('figCrossing', e.message); }
+
+    try {
+      var pd = R.phaseData({
+        theta_sol: q.theta_sol, theta_surface_max: q.theta_max,
+        points: [{ E: 1.0, label: 'uniform',
+                   K: R.usableWindow(1.0, q.theta_sol, q.theta_max).K_max },
+                 { E: E_RESOLVED, label: 'layer-resolved',
+                   K: R.usableWindow(E_RESOLVED, q.theta_sol,
+                                     q.theta_max).K_max }],
+        current: { K: q.K, E: q.E, usable: ok } });
+      mountFigure('figPhase', 'redox-phase', FIG.phase({ phase: pd }));
+    } catch (e2) { figFail('figPhase', e2.message); }
+
+    var uni = R.usableWindow(1.0, q.theta_sol, q.theta_max).K_max;
+    var res = R.usableWindow(E_RESOLVED, q.theta_sol, q.theta_max).K_max;
+    el.rxPhaseNote.innerHTML = 'Reading the diagram vertically is the '
+      + 'point. The uniform model is the bottom edge and answers K ≤ '
+      + sig(uni, 3) + '; the layer-resolved particle at E = '
+      + E_RESOLVED + ' answers K ≤ ' + sig(res, 3) + ', a factor of '
+      + sig(res / uni, 3) + '. The turnover at a given K is identical in '
+      + 'both — any strictly increasing average→face mapping only '
+      + 'reparameterises the same crossing. What the correction moves is '
+      + 'the inventory the solid must hold to keep the face there, and so '
+      + 'whether it survives being run at its own optimum.';
+  }
+
+  /* ------------------------------------------------------- cycling */
+
+  var MEASURED = [{ created: 94.8, recovered: 81.5 },
+                  { created: 61.0, recovered: 51.6 }];
+  var rows = MEASURED.map(function (r) { return { c: r.created,
+                                                  v: r.recovered }; });
+
+  function drawInputs() {
+    var h = '<tr><th>Cycle</th><th>V<sub>O</sub> made, μmol-O/g</th>'
+      + '<th>O recovered, μmol-O/g</th><th>f = out / in</th><th></th></tr>';
+    rows.forEach(function (r, i) {
+      var f = r.c ? r.v / r.c : 0;
+      h += '<tr><td>' + (i + 1) + '</td>'
+        + '<td><input type="number" step="any" min="0" data-row="' + i
+        + '" data-key="c" value="' + r.c + '"></td>'
+        + '<td><input type="number" step="any" min="0" data-row="' + i
+        + '" data-key="v" value="' + r.v + '"></td>'
+        + '<td>' + (r.c ? f.toFixed(3) : '—') + '</td>'
+        + '<td>' + (rows.length > 2
+          ? '<button class="mini" data-drop="' + i + '">remove</button>'
+          : '') + '</td></tr>';
+    });
+    el.cyIn.innerHTML = h;
+  }
+
+  function fitCycles() {
+    var obs = rows.map(function (r) {
+      return { created: r.c, recovered: r.v }; });
+    var fit;
+    try {
+      fit = CY.fit(obs);
+    } catch (e) {
+      el.cySummary.className = 'verdict red';
+      el.cySummary.textContent = e.message;
+      el.cyKpis.innerHTML = '';
+      el.cyOut.innerHTML = '';
+      el.cyNotes.innerHTML = '';
+      el.cyPredKpis.innerHTML = '';
+      el.cyPredNote.textContent = '';
+      return;
+    }
+
+    var made = obs.reduce(function (a, o) { return a + o.created; }, 0);
+    var got = obs.reduce(function (a, o) { return a + o.recovered; }, 0);
+
+    el.cySummary.className = 'verdict ' + (fit.lock_at_bound ? 'red' : 'none');
+    el.cySummary.innerHTML = '<b>f = ' + fit.f_rec.toFixed(3)
+      + ', lock = ' + fit.lock.toFixed(3) + '.</b> '
+      + 'One exposure recovers ' + (fit.f_rec * 100).toFixed(1) + '% of '
+      + 'what it can still reach, and ' + (fit.lock * 100).toFixed(1)
+      + '% of what it misses stops responding to later ones. Residual '
+      + 'after ' + obs.length + ' cycles: ' + (made - got).toFixed(1)
+      + ' μmol-O/g of the ' + made.toFixed(1) + ' made.'
+      + '<span class="more">lock = 0 is the memoryless model exactly, so '
+      + 'the memory is a switch and not a new assumption. Two cycles '
+      + 'constrain two parameters and no more: an unlocking rate is the '
+      + 'obvious third and is left out rather than fitted to data that '
+      + 'cannot see it.</span>';
+
+    el.cyKpis.innerHTML =
+      kpi('f, per exposure', fit.f_rec.toFixed(3),
+          'of the reachable pool')
+      + kpi('lock', fit.lock.toFixed(3),
+            'of the miss, per exposure')
+      + kpi('Residual', (made - got).toFixed(1),
+            'μmol-O/g still in the solid')
+      + kpi('Fit RMS', fit.rms_umol_g.toFixed(2),
+            'μmol-O/g over ' + obs.length + ' cycles');
+
+    var h = '<tr><th>Cycle</th><th>reachable before</th><th>locked before</th>'
+      + '<th>recovered, model</th><th>recovered, measured</th>'
+      + '<th>residual after</th></tr>';
+    fit.predicted.forEach(function (r, i) {
+      h += '<tr><td>' + r.cycle + '</td><td>'
+        + r.pre_accessible_umol_g.toFixed(1) + '</td><td>'
+        + r.pre_locked_umol_g.toFixed(1) + '</td><td>'
+        + r.recovered_umol_g.toFixed(1) + '</td><td>'
+        + obs[i].recovered.toFixed(1) + '</td><td>'
+        + r.residual_umol_g.toFixed(1) + '</td></tr>';
+    });
+    el.cyOut.innerHTML = h;
+
+    var n = '';
+    fit.notes.forEach(function (t) {
+      n += '<div class="note">' + t + '</div>';
+    });
+    if (fit.lock_at_bound && !fit.notes.length) {
+      n += '<div class="note">Locking is at its bound: the model cannot '
+        + 'predict less recovery than it already does.</div>';
+    }
+    el.cyNotes.innerHTML = n;
+
+    if (!el.cyTotal.value) el.cyTotal.value = made.toFixed(1);
+    predict(fit);
+  }
+
+  function predict(fit) {
+    var totalVo = num(el.cyTotal, 100);
+    var split = Math.max(1, Math.min(12, Math.round(num(el.cySplit, 2))));
+    var t = CY.twoSamplePrediction(totalVo, fit.f_rec, fit.lock, split);
+    el.cyPredKpis.innerHTML =
+      kpi('One long reduction', t.fresh.recovered_umol_g.toFixed(1),
+          'μmol-O/g recovered')
+      + kpi('Built in ' + split + ' cycles',
+            t.cycled.recovered_umol_g.toFixed(1), 'μmol-O/g recovered')
+      + kpi('Gap', t.recovery_gap_umol_g.toFixed(1),
+            'μmol-O/g, ' + ((1 - t.recovery_ratio) * 100).toFixed(1)
+            + '% less')
+      + kpi('Locked in the cycled one', t.cycled.locked.toFixed(1),
+            'μmol-O/g out of reach');
+    el.cyPredNote.innerHTML = 'A memoryless inventory predicts a gap of '
+      + '<b>zero</b> at any f, because the total is its entire state. So '
+      + 'the measurement is a yes/no about the model, not a fit to it — '
+      + 'and if the gap is there, its size <i>is</i> the lock parameter. '
+      + 'What the gap cannot say is <i>why</i>: migration beyond reach, '
+      + 'aggregation into an ordered defect and a local relaxation all '
+      + 'produce the same number, and cycle integrals alone do not '
+      + 'separate them.';
+  }
+
+  /* -------------------------------------------------------- wiring */
+
+  /* K spans eight decades, so the slider is in log10 and the box is the
+     number itself; each writes the other and neither is the master. */
+  function setK(v) {
+    el.rxK.value = parseFloat(v.toPrecision(4));
+    el.rxKs.value = Math.log10(Math.max(1e-4, Math.min(1e4, v)));
+  }
+  el.rxKs.addEventListener('input', function () {
+    setK(Math.pow(10, parseFloat(el.rxKs.value)));
+    solve();
+  });
+  el.rxK.addEventListener('input', function () {
+    var v = num(el.rxK, 0.5);
+    if (v > 0) el.rxKs.value = Math.log10(Math.max(1e-4, Math.min(1e4, v)));
+    solve();
+  });
+  [el.rxE, el.rxSol, el.rxMax].forEach(function (n) {
+    n.addEventListener('input', solve);
+  });
+  Array.prototype.forEach.call(
+    document.querySelectorAll('#ws-redox .mini[data-e]'), function (b) {
+      b.addEventListener('click', function () {
+        el.rxE.value = b.dataset.e;
+        solve();
+      });
+    });
+
+  el.cyIn.addEventListener('input', function (ev) {
+    var t = ev.target;
+    if (t.dataset.row == null) return;
+    var v = parseFloat(t.value);
+    rows[+t.dataset.row][t.dataset.key] = isFinite(v) ? v : 0;
+    fitCycles();
+    var f = rows[+t.dataset.row];
+    var cell = t.closest('tr').children[3];
+    if (cell) cell.textContent = f.c ? (f.v / f.c).toFixed(3) : '—';
+  });
+  el.cyIn.addEventListener('click', function (ev) {
+    var i = ev.target && ev.target.getAttribute('data-drop');
+    if (i == null) return;
+    rows.splice(+i, 1);
+    drawInputs();
+    fitCycles();
+  });
+  el.cyAdd.addEventListener('click', function () {
+    var last = rows[rows.length - 1];
+    rows.push({ c: +(last.c * 0.75).toFixed(1),
+                v: +(last.v * 0.75).toFixed(1) });
+    drawInputs();
+    fitCycles();
+  });
+  el.cyReset.addEventListener('click', function () {
+    rows = MEASURED.map(function (r) {
+      return { c: r.created, v: r.recovered }; });
+    el.cyTotal.value = '';
+    drawInputs();
+    fitCycles();
+  });
+  [el.cyTotal, el.cySplit].forEach(function (n) {
+    n.addEventListener('input', fitCycles);
+  });
+
+  var rxTabs = document.querySelectorAll('#rxTabs button');
+  Array.prototype.forEach.call(rxTabs, function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(rxTabs, function (b) {
+        var on = b === btn;
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        var panel = $(b.dataset.panel);
+        if (panel) panel.hidden = !on;
+      });
+    });
+  });
+
+  /* ------------------------------------------- workspace switching */
+
+  var started = false;
+  var tabs = document.querySelectorAll('#wstabs .wstab');
+  Array.prototype.forEach.call(tabs, function (btn) {
+    btn.addEventListener('click', function () {
+      if (btn.dataset.ws !== 'ws-redox' || started) return;
+      started = true;
+      setK(num(el.rxK, 0.5));
+      solve();
+      drawInputs();
+      fitCycles();
+    });
+  });
+}());
+</script>
 <script>
   (function () {
+    var WS = {
+      'ws-thermo': { head: 'head-thermo', notes: 'thermo-notes',
+                     title: 'Gas–solid equilibrium' },
+      'ws-defect': { head: 'head-defect', notes: 'defect-notes',
+                     title: 'Defect-state distribution' },
+      'ws-redox': { head: 'head-redox', notes: 'redox-notes',
+                    title: 'Steady-state redox' }
+    };
     var currentTarget = 'ws-thermo';
     function activateFromHash() {
-      currentTarget = window.location.hash.indexOf('defect') !== -1
-        ? 'ws-defect' : 'ws-thermo';
+      var h = window.location.hash;
+      currentTarget = h.indexOf('redox') !== -1 ? 'ws-redox'
+        : h.indexOf('defect') !== -1 ? 'ws-defect' : 'ws-thermo';
       var button = document.querySelector('#wstabs .wstab[data-ws="'
         + currentTarget + '"]');
       if (button) button.click();
-      document.getElementById('head-thermo').classList.toggle(
-        'active', currentTarget === 'ws-thermo');
-      document.getElementById('head-defect').classList.toggle(
-        'active', currentTarget === 'ws-defect');
-      document.title = currentTarget === 'ws-defect'
-        ? 'Defect-state distribution · Ti–O Thermodynamics'
-        : 'Gas–solid equilibrium · Ti–O Thermodynamics';
+      Object.keys(WS).forEach(function (ws) {
+        document.getElementById(WS[ws].head).classList.toggle(
+          'active', ws === currentTarget);
+      });
+      document.title = WS[currentTarget].title + ' · Ti–O Thermodynamics';
     }
     document.getElementById('modelLink').addEventListener('click', function () {
-      var detail = document.getElementById(
-        currentTarget === 'ws-defect' ? 'defect-notes' : 'thermo-notes');
+      var detail = document.getElementById(WS[currentTarget].notes);
       detail.open = true;
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
