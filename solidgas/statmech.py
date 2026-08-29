@@ -100,7 +100,8 @@ def density_g_cm3(p):
     return 2.0 * p['molar_mass_g_mol'] / (N_AVO * vcell_cm3)
 
 
-def geometry(p, d_um=None, bet_m2_g=None, ss_layers=None):
+def geometry(p, d_um=None, bet_m2_g=None, ss_layers=None,
+             resolved_layers=None):
     """Real site counts in umol-O/g for a spherical particle or a BET area.
 
     ss_layers is the declared thickness of the subsurface class in d110
@@ -110,6 +111,9 @@ def geometry(p, d_um=None, bet_m2_g=None, ss_layers=None):
     the shell/bulk split depends on it - see docs/defect-model.md."""
     if ss_layers is None:
         ss_layers = p['defaults']['subsurface_layers']
+    if resolved_layers is None:
+        resolved_layers = p.get('defaults', {}).get('resolved_layers', 1)
+    resolved_layers = max(1, int(resolved_layers))
     if bet_m2_g is not None:
         area_cm2_g = bet_m2_g * 1e4
     else:
@@ -119,12 +123,19 @@ def geometry(p, d_um=None, bet_m2_g=None, ss_layers=None):
     sig_b, sig_l = site_densities(p)
     n_o = 2.0 / p['molar_mass_g_mol'] * 1e6
     n_s = area_cm2_g * sig_b / N_AVO * 1e6
-    n_ss = area_cm2_g * sig_l * ss_layers / N_AVO * 1e6
+    # One resolved layer IS the declared shell, so the legacy capacity is
+    # reproduced exactly. Past one, resolution is the point and each
+    # resolved layer is a single d110 oxygen slab.
+    slabs = [ss_layers] if resolved_layers == 1 else [1] * resolved_layers
+    n_layers = [area_cm2_g * sig_l * k / N_AVO * 1e6 for k in slabs]
+    n_ss = sum(n_layers)
     d110_nm = p['lattice_constants_A']['a'] / math.sqrt(2.0) / 10.0
     return {'area_m2_g': area_cm2_g * 1e-4, 'N_s': n_s, 'N_ss': n_ss,
             'N_b': n_o - n_s - n_ss, 'N_O_total': n_o,
             'ss_layers': ss_layers, 'layer_nm': d110_nm,
-            'shell_nm': (1.0 + 4.0 * ss_layers) / 4.0 * d110_nm}
+            'resolved_layers': resolved_layers,
+            'slabs_per_layer': slabs, 'N_layers': n_layers,
+            'shell_nm': (1.0 + 4.0 * sum(slabs)) / 4.0 * d110_nm}
 
 
 # ---------------------------------------------------------------- lattice
@@ -408,12 +419,106 @@ def fd(mu, eps_i, kt):
     return 1.0 / (1.0 + math.exp(x))
 
 
-def energetics(p, preset=None):
+def theta_of_mu(mu, eps_i, omega_i, kt):
+    """Occupancy of a class whose sites feel a mean-field crowding cost.
+
+    The free energy per site carries eps*theta + (omega/2)*theta^2, so the
+    chemical potential of the class is
+
+        mu = eps + omega*theta + kT ln(theta/(1-theta))
+
+    which is implicit in theta and has no closed form once omega != 0. It
+    is solved in the logit z = ln(theta/(1-theta)), where the equation is
+    z = (mu - eps - omega*sigmoid(z))/kT and the sigmoid is bounded by 0
+    and 1, so z is bracketed between (mu-eps-omega)/kT and (mu-eps)/kT
+    with no search for a bracket. d(mu)/d(theta) = omega + kT/(theta
+    (1-theta)) is strictly positive for omega >= 0, so the root is unique
+    and bisection cannot miss it.
+
+    At omega = 0 the bracket collapses to a point and the answer is the
+    site-exclusion isotherm, which is returned directly rather than
+    bisected to: the legacy partition must reproduce bit for bit, not to
+    within a tolerance."""
+    if omega_i == 0.0:
+        return fd(mu, eps_i, kt)
+    hi = (mu - eps_i) / kt
+    lo = hi - omega_i / kt
+    if lo > hi:
+        lo, hi = hi, lo
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        # sigmoid(mid) without overflow, then the residual of g(theta)
+        if mid >= 0.0:
+            th = 1.0 / (1.0 + math.exp(-mid)) if mid < 700.0 else 1.0
+        else:
+            e = math.exp(mid) if mid > -700.0 else 0.0
+            th = e / (1.0 + e)
+        if eps_i + omega_i * th + kt * mid < mu:
+            lo = mid
+        else:
+            hi = mid
+    z = 0.5 * (lo + hi)
+    if z >= 0.0:
+        return 1.0 / (1.0 + math.exp(-z)) if z < 700.0 else 1.0
+    e = math.exp(z) if z > -700.0 else 0.0
+    return e / (1.0 + e)
+
+
+def energetics(p, preset=None, resolved_layers=None, coverage_penalty=None):
+    """Class energies, and the interaction that goes with each of them.
+
+    eps stays the legacy triple (surface, subsurface, bulk) so every caller
+    that wants three classes is untouched. eps_layers resolves the near-
+    surface shell into resolved_layers classes using the SHAPE stored in
+    layer_profile.span_fraction, applied between the preset's subsurface
+    and bulk values rather than as absolute numbers - so the first layer is
+    the preset's own subsurface energy exactly, and the profile carries
+    over to a different functional without being re-tabulated.
+
+    omega_layers is the effective mean-field crowding penalty per class.
+    The surface entry is held at zero by the dataset so the surface phase
+    ladder is untouched and any change in a deeper layer is attributable to
+    the layer interaction alone."""
     ve = p['vacancy_energetics']
     key = preset or ve['default_preset']
     q = ve['presets'][key]
-    return {'preset': key,
-            'eps': [q['surface_eV'], q['subsurface_eV'], q['bulk_eV']]}
+    eps = [q['surface_eV'], q['subsurface_eV'], q['bulk_eV']]
+
+    d = p.get('defaults', {})
+    if resolved_layers is None:
+        resolved_layers = d.get('resolved_layers', 1)
+    resolved_layers = max(1, int(resolved_layers))
+    prof = ve.get('layer_profile')
+    span = (prof or {}).get('span_fraction') or [0.0]
+    if resolved_layers > len(span):
+        raise ValueError('layer_profile resolves at most %d layers'
+                         % len(span))
+    eps_layers = [eps[1] + span[i] * (eps[2] - eps[1])
+                  for i in range(resolved_layers)]
+
+    if coverage_penalty is None:
+        coverage_penalty = d.get('coverage_penalty', 'off')
+    on = coverage_penalty not in (None, False, 'off')
+    om = (ve.get('coverage_penalty') or {}).get('omega_eV', {})
+    if on:
+        omega_s = om.get('surface', 0.0)
+        omega_layers = [om.get('layer%d' % (i + 1), 0.0)
+                        for i in range(resolved_layers)]
+        omega_b = om.get('bulk', 0.0)
+    else:
+        omega_s, omega_layers, omega_b = 0.0, [0.0] * resolved_layers, 0.0
+    for w in [omega_s] + omega_layers + [omega_b]:
+        if w < 0.0:
+            raise ValueError('only repulsive coverage penalties are '
+                             'admitted; omega < 0 can split a class into '
+                             'two phases, a construction this branch does '
+                             'not carry')
+    return {'preset': key, 'eps': eps,
+            'resolved_layers': resolved_layers,
+            'eps_layers': eps_layers,
+            'omega_surface': omega_s, 'omega_layers': omega_layers,
+            'omega_bulk': omega_b,
+            'coverage_penalty': 'on' if on else 'off'}
 
 
 def theta_s_interp(points, eps_s, kt):
@@ -467,7 +572,42 @@ def theta_s_interp(points, eps_s, kt):
     return f
 
 
-def phase_boundaries(p, t_c, geom, preset=None, eps=None):
+def _classes(p, geom, preset=None, eps=None, omega=None):
+    """The class table the deep sum runs over, from whatever was passed.
+
+    eps as a bare triple is the legacy call and still works: it names the
+    surface, one subsurface class and the bulk. omega defaults to the
+    dataset's declared state, which ships off."""
+    en = energetics(p, preset,
+                    resolved_layers=geom.get('resolved_layers', 1),
+                    coverage_penalty=omega)
+    if eps is not None:
+        en = dict(en)
+        en['eps'] = list(eps)
+        if len(en['eps_layers']) == 1:
+            en['eps_layers'] = [eps[1]]
+        else:
+            span = p['vacancy_energetics']['layer_profile']['span_fraction']
+            en['eps_layers'] = [eps[1] + span[i] * (eps[2] - eps[1])
+                                for i in range(len(en['eps_layers']))]
+    return en
+
+
+def _deep(en, geom, mu, kt):
+    """Inventory held below the bridging plane at a given mu.
+
+    At one resolved layer with no interaction this is the legacy
+    expression term for term, including the order of the additions."""
+    caps = geom.get('N_layers') or [geom['N_ss']]
+    total = 0.0
+    for i, cap in enumerate(caps):
+        total += cap * theta_of_mu(mu, en['eps_layers'][i],
+                                   en['omega_layers'][i], kt)
+    return total + geom['N_b'] * theta_of_mu(mu, en['eps'][2],
+                                             en['omega_bulk'], kt)
+
+
+def phase_boundaries(p, t_c, geom, preset=None, eps=None, omega=None):
     """Closed-form mu and inventory boundaries of the phase construction.
 
     Three certified rungs at a given temperature and geometry: the (1x2)
@@ -476,18 +616,21 @@ def phase_boundaries(p, t_c, geom, preset=None, eps=None):
     where the bulk point-defect solubility pins mu at rutile / CS-phase
     coexistence. All are closed forms of the site-exclusion isotherm."""
     kt = KB_EV * (t_c + 273.15)
-    if eps is None:
-        eps = energetics(p, preset)['eps']
+    en = _classes(p, geom, preset, eps, omega)
+    eps = en['eps']
     sp = p['surface_phases']
     th_t = sp['theta_transition']
     th_r = sp['theta_reconstructed_eff']
     th_sol = p['saturation']['x_max_shear'] / 2.0
-    mu_t = eps[0] + kt * math.log(th_t / (1.0 - th_t))
-    mu_cs = eps[2] + kt * math.log(th_sol / (1.0 - th_sol))
-    deep_t = (geom['N_ss'] * fd(mu_t, eps[1], kt)
-              + geom['N_b'] * fd(mu_t, eps[2], kt))
-    deep_cs = (geom['N_ss'] * fd(mu_cs, eps[1], kt)
-               + geom['N_b'] * fd(mu_cs, eps[2], kt))
+    mu_t = (eps[0] + en['omega_surface'] * th_t
+            + kt * math.log(th_t / (1.0 - th_t)))
+    # the CS coexistence is a condition on the BULK class, so the bulk
+    # interaction belongs in it: at the solubility the bulk sites are
+    # already crowded and mu is that much higher
+    mu_cs = (eps[2] + en['omega_bulk'] * th_sol
+             + kt * math.log(th_sol / (1.0 - th_sol)))
+    deep_t = _deep(en, geom, mu_t, kt)
+    deep_cs = _deep(en, geom, mu_cs, kt)
     return {'mu_t_eV': mu_t, 'mu_cs_eV': mu_cs,
             'theta_transition': th_t, 'theta_reconstructed_eff': th_r,
             'theta_sol': th_sol,
@@ -496,7 +639,8 @@ def phase_boundaries(p, t_c, geom, preset=None, eps=None):
             'VO_cs_umol_g': geom['N_s'] * th_r + deep_cs}
 
 
-def distribute(p, t_c, vo_total, geom, preset=None, eps=None):
+def distribute(p, t_c, vo_total, geom, preset=None, eps=None,
+               omega=None):
     """Split the total inventory over the real site counts at common mu,
     with the surface reconstruction and CS precipitation as PHASES.
 
@@ -519,33 +663,35 @@ def distribute(p, t_c, vo_total, geom, preset=None, eps=None):
                          precipitates as extended defects (lever rule),
                          reported as its own output class."""
     kt = KB_EV * (t_c + 273.15)
-    if eps is None:
-        eps = energetics(p, preset)['eps']
-    b = phase_boundaries(p, t_c, geom, eps=eps)
+    en = _classes(p, geom, preset, eps, omega)
+    eps = en['eps']
+    b = phase_boundaries(p, t_c, geom, eps=eps, omega=omega)
     n_s = geom['N_s']
     th_t = b['theta_transition']
     th_r = b['theta_reconstructed_eff']
 
     def deep(mu):
-        return (geom['N_ss'] * fd(mu, eps[1], kt)
-                + geom['N_b'] * fd(mu, eps[2], kt))
+        return _deep(en, geom, mu, kt)
+
+    def surf(mu):
+        return theta_of_mu(mu, eps[0], en['omega_surface'], kt)
 
     u_ext = 0.0
     if vo_total <= b['VO_onset_umol_g']:
         regime, phase = 'dilute', '1x1'
         lo, hi = -3.0, b['mu_t_eV']
         for _ in range(60):             # bracket even extreme temperatures
-            if n_s * fd(lo, eps[0], kt) + deep(lo) <= vo_total:
+            if n_s * surf(lo) + deep(lo) <= vo_total:
                 break
             lo = 2.0 * lo - hi
         for _ in range(200):
             mid = 0.5 * (lo + hi)
-            if n_s * fd(mid, eps[0], kt) + deep(mid) < vo_total:
+            if n_s * surf(mid) + deep(mid) < vo_total:
                 lo = mid
             else:
                 hi = mid
         mu = 0.5 * (lo + hi)
-        ts = fd(mu, eps[0], kt)
+        ts = surf(mu)
         us = n_s * ts
         phi = 0.0
     elif vo_total < b['VO_recon_complete_umol_g']:
@@ -573,9 +719,17 @@ def distribute(p, t_c, vo_total, geom, preset=None, eps=None):
         ts = th_r
         us = n_s * th_r
         phi = 1.0
-    tss = fd(mu, eps[1], kt)
-    tb = fd(mu, eps[2], kt)
-    uss = geom['N_ss'] * tss
+    caps = geom.get('N_layers') or [geom['N_ss']]
+    th_layers = [theta_of_mu(mu, en['eps_layers'][i], en['omega_layers'][i],
+                             kt) for i in range(len(caps))]
+    u_layers = [caps[i] * th_layers[i] for i in range(len(caps))]
+    uss = sum(u_layers)
+    # one resolved layer IS the shell, so its occupancy is reported
+    # directly rather than divided back out - the legacy number must not
+    # move by a rounding step
+    tss = th_layers[0] if len(caps) == 1 else (
+        uss / geom['N_ss'] if geom['N_ss'] else 0.0)
+    tb = theta_of_mu(mu, eps[2], en['omega_bulk'], kt)
     ub = geom['N_b'] * tb
     tot = us + uss + ub + u_ext
     mol_ti = 1e6 / p['molar_mass_g_mol']
@@ -633,6 +787,16 @@ def distribute(p, t_c, vo_total, geom, preset=None, eps=None):
             'T_C': t_c, 'VO_total_umol_g': vo_total,
             'mu_V_eV': mu,
             'theta': {'surface': ts, 'subsurface': tss, 'bulk': tb},
+            'layers': [{'index': i + 1, 'N_umol_g': caps[i],
+                        'eps_eV': en['eps_layers'][i],
+                        'omega_eV': en['omega_layers'][i],
+                        'theta': th_layers[i], 'umol_g': u_layers[i]}
+                       for i in range(len(caps))],
+            'energetics': {'preset': en['preset'],
+                           'resolved_layers': en['resolved_layers'],
+                           'coverage_penalty': en['coverage_penalty'],
+                           'omega_surface': en['omega_surface'],
+                           'omega_bulk': en['omega_bulk']},
             'surface_phase': {'phase': phase, 'phi_reconstructed': phi},
             'regime': regime,
             'umol_g': {'surface': us, 'subsurface': uss, 'bulk': ub},

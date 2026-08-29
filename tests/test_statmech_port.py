@@ -450,6 +450,70 @@ def test_dielectric_parity(pair):
         assert row['extrapolated'] == ref['extrapolated']
 
 
+def test_the_layer_resolved_partition_matches_the_python_engine(pair):
+    """Three-way parity for Stage 1: both engines, every branch.
+
+    Resolution and interaction are both off in the shipped dataset, so
+    these combinations would otherwise never be exercised across the port
+    boundary. mu is compared to 1e-11 rather than exactly because the
+    interacting root is bisected against a residual containing exp(), and
+    the two runtimes may differ in its last ulp; the occupancies that
+    follow from it are compared just as tightly."""
+    _, js = pair
+    rows = js['layers']
+    assert len(rows) == 30, len(rows)
+    for r in rows:
+        g = S.geometry(P, resolved_layers=r['n'])
+        d = S.distribute(P, 600.0, r['vo'], g, omega=r['omega'])
+        tag = (r['n'], r['omega'], r['vo'])
+        assert d['regime'] == r['regime'], tag
+        assert d['mu_V_eV'] == pytest.approx(r['mu_V_eV'], abs=1e-11), tag
+        assert g['shell_nm'] == pytest.approx(r['shell_nm'], rel=1e-15), tag
+        for a, b in zip(g['N_layers'], r['N_layers']):
+            assert a == pytest.approx(b, rel=1e-15), tag
+        for k in ('surface', 'subsurface', 'bulk'):
+            assert d['umol_g'][k] == pytest.approx(
+                r['umol_g'][k], abs=1e-9), (tag, k)
+            assert d['theta'][k] == pytest.approx(
+                r['theta'][k], abs=1e-11), (tag, k)
+        assert d['extended_defects_umol_g'] == pytest.approx(
+            r['extended'], abs=1e-9), tag
+        got = d['layers']
+        assert len(got) == len(r['layer_theta']) == r['n'], tag
+        for i, lay in enumerate(got):
+            assert lay['theta'] == pytest.approx(
+                r['layer_theta'][i], abs=1e-11), (tag, i)
+            assert lay['umol_g'] == pytest.approx(
+                r['layer_umol'][i], abs=1e-9), (tag, i)
+            assert lay['eps_eV'] == pytest.approx(
+                r['layer_eps'][i], rel=1e-15), (tag, i)
+            assert lay['omega_eV'] == r['layer_omega'][i], (tag, i)
+        for k in ('mu_t_eV', 'mu_cs_eV', 'VO_onset_umol_g',
+                  'VO_recon_complete_umol_g', 'VO_cs_umol_g'):
+            assert d['phase_boundaries'][k] == pytest.approx(
+                r['boundaries'][k], abs=1e-9), (tag, k)
+
+
+def test_the_implicit_occupancy_matches_across_the_port(pair):
+    """The solver on its own, including the omega = 0 short circuit.
+
+    At zero both engines return the site-exclusion isotherm rather than a
+    bisection, so what separates them is one call to exp() and nothing
+    else - a last-ulp difference, which is the whole reason this file
+    tolerates 1e-9 on mu elsewhere. Above zero the bisection carries its
+    own error on top, and the looser bound is the honest one."""
+    _, js = pair
+    kt = S.KB_EV * 873.15
+    rows = js['theta_of_mu']
+    assert len(rows) == 60, len(rows)
+    for r in rows:
+        got = S.theta_of_mu(r['mu'], r['eps'], r['w'], kt)
+        if r['w'] == 0.0:
+            assert got == pytest.approx(r['theta'], rel=1e-15), r
+        else:
+            assert got == pytest.approx(r['theta'], abs=1e-12), r
+
+
 # ------------------------------------------------------------ page gates
 
 def test_page_inlines_the_statmech_stack():

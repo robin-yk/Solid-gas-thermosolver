@@ -397,3 +397,66 @@ def test_the_defect_model_states_what_it_does_not_carry():
                   'not a polaron hopping rate',
                   'docs/redox-steady-state.md'):
         assert claim in doc, claim
+
+
+# ------------------------------------- robustness to the layer machinery
+
+@pytest.mark.parametrize('resolved,penalty', [
+    (1, 'off'), (2, 'off'), (3, 'off'), (1, 'on'), (2, 'on'), (3, 'on')])
+def test_the_redox_conclusions_survive_the_layer_model(p, resolved, penalty):
+    """The two least-constrained knobs in the defect model change nothing here.
+
+    Layer resolution and the mean-field crowding term both act on the
+    classes below the bridging plane, and both matter a great deal at the
+    inventories the measurements sit at. The redox steady state does not
+    sit there: it sits at theta_bar of order 1e-5, deep in the dilute
+    regime, where the deeper classes are Boltzmann-suppressed by
+    exp(-0.59/kT) ~ 1/2500 and the crowding term omega*theta vanishes with
+    theta. So the enrichment factor is the geometric one, and the three
+    claims that rest on it do not depend on the parts of the defect model
+    that are assumed rather than measured."""
+    d = json.load(open(os.path.join(DATA, 'rutile_dft.json')))
+    geom = S.geometry(d, d_um=0.90, ss_layers=1, resolved_layers=resolved)
+    n_o = geom['N_O_total']
+
+    def theta_surface(t_bar):
+        return S.distribute(d, 600.0, max(0.0, t_bar) * n_o, geom,
+                            omega=penalty)['theta']['surface']
+
+    # the enrichment, and its geometric ceiling
+    ceiling = n_o / geom['N_s']
+    factor = theta_surface(1e-6) / 1e-6
+    assert factor == pytest.approx(1844.0, rel=5e-3), factor
+    assert factor < ceiling
+
+    # the rate is still untouched, and the state still moves by ~1844x
+    c = R.surface_correction(p, theta_surface, dev=0.3)
+    assert c['rate_ratio'] == pytest.approx(1.0, rel=1e-9)
+    moved = c['uniform']['theta'] / c['corrected']['theta']
+    assert moved == pytest.approx(1844.0, rel=5e-3), moved
+
+    # and the runaway boundary is still the Sabatier descriptor, because
+    # omega_surface is pinned at zero so the ceiling that causes it cannot
+    # move
+    opt = R.sabatier_optimum(p)['dev_eV']
+    assert R.steady_state(p, dev=opt - 0.05,
+                          theta_of_average=theta_surface)['runaway'] \
+        == 'reduction'
+    assert R.steady_state(p, dev=opt + 0.05,
+                          theta_of_average=theta_surface)['runaway'] is None
+
+
+def test_the_layer_model_does_move_the_measurement_regime(p):
+    """The sensitivity check above would be vacuous if the knobs were inert.
+
+    At the inventory the experiments sit at they move the answer a lot;
+    the point of the test above is that the redox steady state is not at
+    that inventory."""
+    d = json.load(open(os.path.join(DATA, 'rutile_dft.json')))
+    flat = S.distribute(d, 600.0, 95.0,
+                        S.geometry(d, d_um=0.90, ss_layers=1))
+    deep = S.distribute(d, 600.0, 95.0,
+                        S.geometry(d, d_um=0.90, resolved_layers=3),
+                        omega='on')
+    assert deep['umol_g']['bulk'] / flat['umol_g']['bulk'] > 1.3
+    assert abs(deep['mu_V_eV'] - flat['mu_V_eV']) > 0.02

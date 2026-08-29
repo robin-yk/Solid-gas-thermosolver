@@ -58,7 +58,7 @@ This is where the uniform model runs into itself. With symmetric slopes the opti
 
 ## What the layer-resolved correction actually does
 
-`surface_correction()` takes a mapping from the particle-average vacancy fraction to the fraction on the reacting face — the partition in `solidgas/statmech.py` supplies one for rutile — and runs the same crossing twice. Three separate things come out, and only one of them is the one usually expected.
+`surface_correction()` takes a mapping from the particle-average vacancy fraction to the fraction on the reacting face — the layer-resolved partition supplies one, and resolving the shell or switching the crowding term on changes that mapping without any of the rate laws below being aware of it — — the partition in `solidgas/statmech.py` supplies one for rutile — and runs the same crossing twice. Three separate things come out, and only one of them is the one usually expected.
 
 **The steady rate does not move.** Any strictly increasing mapping is a reparameterisation of the same crossing in surface coverage, and that coverage is fixed by the rate constants alone. The turnover is identical to ten digits. The uniform model gets the rate right.
 
@@ -67,6 +67,16 @@ This is where the uniform model runs into itself. With symmetric slopes the opti
 **On half the descriptor axis the steady state stops existing.** The rutile mapping saturates: above a small inventory the surface is pinned at the (1x2) line-phase deficiency, so neither half-rate depends any more on how reduced the particle is and the imbalance keeps its sign. Every oxide easier to reduce than the balance point then has no crossing at all — it reduces until something outside this pair of rate laws stops it. The boundary coincides with the Sabatier descriptor to machine precision, because the surface ceiling and the peak coverage are both 1/2 here. The correction removes the root rather than moving it, which is not something a perturbative reading of the uniform model anticipates.
 
 The same separation resolves the objection above: once the face may differ from the average, the carrier runs its surface near the (1x2) deficiency while the particle average stays inside the declared point-defect solubility, and the flag clears.
+
+## How much of this depends on the parts that are assumed
+
+The defect model has two degrees of freedom that are declared rather than measured — how finely the near-surface shell is resolved, and the effective mean-field crowding penalty on each class. Both matter a great deal at the inventories the experiments sit at: resolving the shell into three layers and switching the penalty on moves the bulk remainder by more than 30% and mu_V by tens of meV at 95 umol-O/g.
+
+Neither changes anything above. The redox steady state does not sit at 95 umol-O/g; it sits at a particle average of order 1e-5, three orders of magnitude lower, and in that dilute regime the deeper classes are Boltzmann-suppressed by `exp(-0.59/kT)` — about 1/2500 at 600 C — so the average is set by the surface almost alone. The enrichment factor is then the geometric ratio `N_O_total / N_s` less a small correction, which is why it comes out at 1844 against a ceiling of 1847 regardless of what the shell is doing. The crowding term vanishes with theta for the same reason: `omega*theta` is negligible where theta is.
+
+The runaway boundary is untouched for a different and more deliberate reason: it is set by the surface's own ceiling, and `omega_surface` is pinned at zero in the dataset precisely so that the phase ladder cannot move when the deeper layers change.
+
+So the three claims above rest on the surface enrichment ratio and the (1x2) line-phase deficiency, both of which are geometry and a reported phase boundary, and not on the parts of the defect model that are least constrained. Checked across all six combinations of resolution and interaction, together with a companion test that the knobs do move the measurement regime — otherwise the robustness claim would be vacuous.
 
 ## Verification
 
