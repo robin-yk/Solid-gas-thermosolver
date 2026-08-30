@@ -86,6 +86,10 @@ def main():
         rx_figs = fh.read()
     with (WEB / 'redox_ui.js').open() as fh:
         rx_ui = fh.read()
+    with (WEB / 'figures_thermo.js').open() as fh:
+        th_figs = fh.read()
+    with (WEB / 'thermo_ui.js').open() as fh:
+        th_ui = fh.read()
     ref = json.dumps(slim_reference(), separators=(',', ':'))
 
     for token, body in (('__DATA__', data), ('__REF__', ref),
@@ -100,7 +104,8 @@ def main():
                         ('__RX_DATA__', rx_data),
                         ('__RX_ENGINE__', rx_engine),
                         ('__CY_ENGINE__', cy_engine),
-                        ('__RX_FIGS__', rx_figs), ('__RX_UI__', rx_ui)):
+                        ('__RX_FIGS__', rx_figs), ('__RX_UI__', rx_ui),
+                        ('__TH_FIGS__', th_figs), ('__TH_UI__', th_ui)):
         assert token in html, f'{token} missing from the template'
         html = html.replace(token, body)
 

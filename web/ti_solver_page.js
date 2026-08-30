@@ -8,6 +8,7 @@
   var REF = JSON.parse($('reference-data').textContent);
   var solver = new ActiveSet.Solver(D);
   var LAST = null;
+  var LISTENERS = [];
 
   var sub = function (s) {
     return String(s).replace(/([A-Za-z])(\d+)/g, '$1<sub>$2</sub>');
@@ -172,6 +173,9 @@
       + ' ms &middot; ' + R.iterations + ' Newton steps &middot; residual '
       + sci(R.newton_residual, 2) + ' &middot; method <code>gibbs_min</code>';
     render(R);
+    LISTENERS.forEach(function (fn) {
+      try { fn(R); } catch (e) { /* a figure must not break a solve */ }
+    });
   }
 
   /* ------------------------------------------------------------ render */
@@ -289,11 +293,21 @@
       var rc = R.inactive_phase_reduced_costs[s];
       if (!rc) return;
       var pf = rc.per_formula_kJ, po = rc.per_mol_O_kJ;
+      /* A phase with the same oxygen deficiency as the host has nothing
+         to divide by, so per mol O comes back null - and Math.abs(null)
+         is 0, which would drop the row straight into the degeneracy
+         branch. Both engines already guard this; the reading has to as
+         well, or a phase kJ away from appearing is reported as sitting
+         on the boundary. */
+      var normalisable = po !== null && isFinite(po);
       var reading = pf === null ? 'N/A'
         : !isFinite(pf) ? 'oxygen-free gas; formation direction unbounded'
+        : pf <= 0 ? 'negative reduced cost (not expected)'
+        : !normalisable ? 'absent (exactly zero); same oxygen deficiency as '
+            + 'the host, so there is nothing to normalise by'
         : Math.abs(po) < R.solver_tolerance.degeneracy_kJ_per_mol_O
           ? 'on the boundary (degenerate)'
-        : pf > 0 ? 'absent (exactly zero)' : 'negative reduced cost (not expected)';
+        : 'absent (exactly zero)';
       h += '<tr><td>' + sub(s) + '</td><td>'
         + (pf === null ? 'N/A' : !isFinite(pf) ? '−∞' : sci(pf, 5))
         + '</td><td>'
@@ -518,6 +532,10 @@
       D.solids.forEach(function (s) { m[s] = D.ti3[s] > 0; });
       return m;
     },
+    /* the result on screen, and a way to hear about the next one, for
+       anything that draws this workspace rather than solving in it */
+    last: function () { return LAST; },
+    onSolve: function (fn) { LISTENERS.push(fn); },
   };
 
   $('run').addEventListener('click', run);

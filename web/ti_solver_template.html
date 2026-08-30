@@ -357,6 +357,42 @@ a{color:var(--blue)}
       <p class="sub" style="margin-top:10px">
         <button type="button" class="mini" id="csv">Download CSV of this result</button></p>
       <div id="resNotes"></div>
+
+      <section>
+        <h3>How far from a different answer</h3>
+        <p class="sub">The same question the KKT tab answers in numbers, asked
+        twice: across the phases that were excluded at this condition, and
+        across temperature at this charge. Both bars and curve carry the
+        reduced cost <em>per formula unit</em> &mdash; the quantity the KKT test
+        is stated on, so it is positive at every reported solution. The
+        per&#8209;mol&#8209;O column stays on the KKT tab, next to the oxygen
+        deficiency it is divided by, which changes sign whenever a candidate
+        is less deficient than the host.</p>
+        <figure class="pubfig" id="figOptimality">
+          <div class="figbox" role="img" aria-label="Reduced cost of every excluded phase at this condition"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>What every excluded phase would have to give up to appear.
+          The shortest bar, in orange, is the phase that would come first.</figcaption>
+        </figure>
+        <p class="sub" style="margin-top:14px">
+          <button type="button" class="mini" id="sweepBtn">Sweep temperature</button>
+          <span id="sweepNote">121 solves at this charge, about half a second.</span></p>
+        <figure class="pubfig" id="figMargin">
+          <div class="figbox" role="img" aria-label="Margin to the nearest excluded phase against temperature"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>The smallest of those bars, at every temperature. The band
+          along the bottom is the winning assemblage: shaded where two phases
+          coexist, pale where one does. The curve touches zero at each edge of
+          that band, which is the same crossing seen from above; the green ring
+          is the temperature on the panel.</figcaption>
+        </figure>
+      </section>
     </div>
 
     <div class="panel pad page" id="p-kkt">
@@ -1084,6 +1120,8 @@ fixed in <code>data/rutile_dft.json</code>.</p>
 <script id="cy-engine">__CY_ENGINE__</script>
 <script id="redox-figures">__RX_FIGS__</script>
 <script>__RX_UI__</script>
+<script id="thermo-figures">__TH_FIGS__</script>
+<script>__TH_UI__</script>
 <script>
   (function () {
     var WS = {

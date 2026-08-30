@@ -18,11 +18,13 @@ An equilibrated CO2/H2 = 1:1 feed does not reduce rutile from 500 to 1500 °C. T
 
 Detailed tables and stability margins are in [docs/results.md](docs/results.md).
 
-## Two workspaces
+## Three workspaces
 
 ### Gas-solid equilibrium
 
 Active-set Gibbs minimization determines the stable gas composition and Ti-O phase assemblage at fixed temperature, pressure, volume, and elemental inventory. Condensed-phase stability is evaluated from KKT reduced costs. The model is a closed, finite-inventory equilibrium calculation.
+
+The workspace at `ti_solver.html#thermo` draws that stability twice: one bar per excluded phase at the condition on the panel, and the smallest of those bars swept across temperature with the winning assemblage as a band underneath, which is where the Magnéli ladder becomes visible. Both use the reduced cost per formula unit — the basis the KKT test is stated on, and the only one that stays positive once the host, feed and temperature are all free to move.
 
 ### Defect statistical mechanics
 
