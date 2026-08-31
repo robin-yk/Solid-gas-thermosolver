@@ -209,6 +209,20 @@ a{color:var(--blue)}
 .pubfig figcaption { max-width: 520px; margin-top: 8px; font-size: 12.5px;
   line-height: 1.5; color: var(--muted); }
 .figdl { max-width: 520px; margin-top: 6px; font-size: 12px; }
+/* two square figures that answer one question between them */
+.figpair { display: grid; gap: 20px; grid-template-columns: 1fr;
+  margin: 12px 0 4px; }
+@media (min-width: 1120px) { .figpair { grid-template-columns: 1fr 1fr; } }
+/* the reading tables the particle card puts under each figure */
+table.kv { border-collapse: collapse; width: 100%; max-width: 560px;
+  font-size: 13px; margin: 6px 0 2px; }
+table.kv th { text-align: left; font-weight: 400; color: var(--muted);
+  padding: 4px 12px 4px 0; white-space: nowrap; vertical-align: top; }
+table.kv td { padding: 4px 0; font-variant-numeric: tabular-nums; }
+table.kv tr + tr th, table.kv tr + tr td {
+  border-top: 1px solid var(--line); }
+.kv .dim { color: var(--muted); font-size: 12px; }
+p.warn { color: var(--orange); }
 .figdl > summary { cursor: pointer; color: var(--muted); list-style: none;
   display: inline-block; padding: 2px 0; }
 .figdl > summary::-webkit-details-marker { display: none; }
@@ -829,6 +843,65 @@ fixed in <code>data/rutile_dft.json</code>.</p>
       </section>
 
       <section>
+        <h2>The same inventory, resolved by depth</h2>
+        <p class="sub">The partition above splits the particle into a
+        bridging row, one subsurface slab and everything else. This card
+        answers the same question with a depth coordinate instead: the
+        vacancy formation energy relaxes towards the bulk value over a
+        decay length <b>derived from the DFT triple</b> rather than an
+        assumed profile shape, and the interior is summed as the stack of
+        d<sub>110</sub> oxygen layers it physically is. It also makes two
+        checks the class model has no way to state &mdash; whether the
+        equilibrium is reachable inside the exposure, and whether local
+        electroneutrality is allowed. Engine:
+        <code>solidgas/particle/</code>, mirrored in
+        <code>web/particle.js</code>.</p>
+        <div id="pxSummary"></div>
+        <div class="figpair">
+          <figure class="pubfig" id="figDepth">
+            <div class="figbox" role="img" aria-label="Vacant oxygen site fraction against depth below the bridging plane"></div>
+            <details class="figdl"><summary>Download figure</summary>
+              <button type="button" data-fmt="svg">SVG</button>
+              <button type="button" data-fmt="png">PNG, 600 dpi</button>
+            </details>
+            <figcaption>Fraction of the oxygen missing at each depth. One
+            dot is one d<sub>110</sub> layer. The bridging row is drawn in
+            its own column because it is not a deeper layer of the same
+            lattice gas: past the transition it is the added-row
+            (1&times;2) phase, whose deficiency is counted per bridging
+            site and whose stoichiometry is Ti<sub>2</sub>O<sub>3</sub>
+            outright. The shaded ceiling is where the cation sublattice
+            fills for the interior gas.</figcaption>
+          </figure>
+          <figure class="pubfig" id="figWhere">
+            <div class="figbox" role="img" aria-label="Cumulative fraction of oxygen and of volume within each depth of the surface"></div>
+            <details class="figdl"><summary>Download figure</summary>
+              <button type="button" data-fmt="svg">SVG</button>
+              <button type="button" data-fmt="png">PNG, 600 dpi</button>
+            </details>
+            <figcaption>How much of the oxygen sits inside each depth,
+            against how much of the volume that depth is. The gap between
+            the curves is the enrichment.</figcaption>
+          </figure>
+        </div>
+        <h3>State</h3>
+        <div id="pxState"></div>
+        <h3>Is the equilibrium reachable?</h3>
+        <p class="sub">A Crank sphere-diffusion clock against the
+        exposure. Claiming transport is fast is only worth something with
+        the distance to it not being fast, so the barrier that would
+        close the gap is reported next to the literature one.</p>
+        <div id="pxReach"></div>
+        <h3>Is local electroneutrality allowed?</h3>
+        <p class="sub">The profile assumes each vacancy drags its two
+        polarons with it pointwise. That holds when screening is much
+        shorter than segregation. Both lengths are computed here rather
+        than inherited from the ceria case this construction comes
+        from, which ran an order of magnitude more concentrated.</p>
+        <div id="pxCharge"></div>
+      </section>
+
+      <section>
         <h2>Particle cross-section</h2>
         <p class="sub">Spherical particle cross-section. The outer shell is
         magnified at right on an isotropic scale, so
@@ -1166,6 +1239,9 @@ fixed in <code>data/rutile_dft.json</code>.</p>
 <script>__RX_UI__</script>
 <script id="thermo-figures">__TH_FIGS__</script>
 <script>__TH_UI__</script>
+<script id="px-engine">__PX_ENGINE__</script>
+<script id="particle-figures">__PX_FIGS__</script>
+<script>__PX_UI__</script>
 <script>
   (function () {
     var WS = {

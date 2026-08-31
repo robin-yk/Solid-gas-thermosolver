@@ -30,13 +30,15 @@ The workspace at `ti_solver.html#thermo` draws that stability twice: one bar per
 
 Given a measured oxygen-deficiency inventory, a canonical lattice model computes its conditional-equilibrium partition among rutile (110) surface, first-subsurface, and bulk sites, using particle geometry, site energetics, and site exclusion. The (1x2) surface reconstruction and the shear-plane solubility ceiling enter as competing phases (lever rule at pinned chemical potential), so nothing is clipped and the phase boundaries are certified numbers. A coarse-grained KMC layer adds reoxidation transport. It reports thermodynamic tendency, not a diffusion profile or reduction kinetics.
 
+`solidgas/particle/` answers the same question with the site classes replaced by a depth coordinate: the formation energy relaxes towards the bulk value over a decay length derived from the DFT triple rather than an assumed profile shape, and the interior is summed as the layer stack it physically is. It also carries the two checks the class model could not state — whether the equilibrium is reachable inside the exposure (Crank sphere diffusion; 0.54 ms against 300 s at 600 C, with the barrier that would close that gap reported alongside), and whether local electroneutrality is allowed (the Debye length and the segregation depth come out the same size here, so it is on the edge). Its first-class output is the point-defect ceiling: 112 umol-O/g at 600 C for a 0.9 um particle, which the shipped loading is already 85 percent of. See [docs/particle-model.md](docs/particle-model.md).
+
 ### Steady-state redox
 
 A reductant that needs lattice oxygen and an oxidant that needs vacancies, written against one common vacancy fraction: one falls and one rises, so they cross once and the crossing is the steady state. Both barriers move with the same descriptor in opposite directions, so sweeping it gives a volcano whose peak has a closed form, and a family of solutions is available before any material is fitted. Feeding the layer-resolved partition in as the average-to-surface mapping leaves the steady rate untouched, moves the steady degree of reduction by three orders of magnitude, and removes the steady state entirely on the reducible half of the axis.
 
 The model runs in the browser at `ti_solver.html#redox`, alongside a two-reservoir cycle model that takes measured per-cycle integrals and returns the recovered fraction, how much of each residual locked, and the prediction for the experiment that separates the two: two samples at the same total V_O reached by different paths.
 
-See [docs/equilibrium-method.md](docs/equilibrium-method.md), [docs/defect-model.md](docs/defect-model.md) and [docs/redox-steady-state.md](docs/redox-steady-state.md) for the full formulations.
+See [docs/equilibrium-method.md](docs/equilibrium-method.md), [docs/defect-model.md](docs/defect-model.md), [docs/particle-model.md](docs/particle-model.md) and [docs/redox-steady-state.md](docs/redox-steady-state.md) for the full formulations.
 
 ## Run locally
 
@@ -60,7 +62,7 @@ Manuscript figures are drawn to print size from frozen solver output: `scripts/e
 
 ## Verification
 
-Production results are checked against an independent 80-digit thermodynamic oracle and a 50-digit statistical-mechanical oracle. The test suite also enforces Python-to-JavaScript parity, elemental balance, active-set KKT conditions, deterministic Monte Carlo trajectories, embedded-page freshness, and self-contained browser builds.
+Production results are checked against an independent 80-digit thermodynamic oracle and two 50-digit statistical-mechanical oracles, one per engine; the particle oracle shares no code with the engine and reaches the same numbers by a different substitution and plain bisection. The test suite also enforces Python-to-JavaScript parity, elemental balance, active-set KKT conditions, deterministic Monte Carlo trajectories, embedded-page freshness, and self-contained browser builds.
 
 Numerical methods and measured error bounds are documented in [docs/verification.md](docs/verification.md).
 
@@ -71,6 +73,8 @@ Numerical methods and measured error bounds are documented in [docs/verification
 - CH4 calculations exclude graphite and should not be quoted.
 - CO2-refill kinetic parameters are placeholders.
 - The unreconstructed rutile (110) surface Hamiltonian is extrapolative beyond reconstruction onset.
-- The subsurface class thickness is a declared choice (one oxygen layer by default, four O per surface cell); the shell/bulk split moves with it and the workspace exposes the ladder.
+- The subsurface class thickness is a declared choice (one oxygen layer by default, four O per surface cell); the shell/bulk split moves with it and the workspace exposes the ladder. The particle engine removes this choice by resolving depth continuously, but it does not yet drive the workspace.
+- Both defect engines assume local electroneutrality. At the shipped loading the Debye length and the segregation depth are the same size, so the outermost few nanometres carry an error neither engine quantifies, running towards more surface enrichment.
+- DFT energies are for rutile (110) and the particle is treated as a sphere; facets are not weighted.
 
 Data scope and planned extensions are tracked in [docs/thermodynamic-data.md](docs/thermodynamic-data.md) and [docs/roadmap.md](docs/roadmap.md).

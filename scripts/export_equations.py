@@ -48,7 +48,14 @@ def render_svg(tex, fontsize, prefix, glyphs, glyph_prefix):
     w = (bbox.width + 2 * pad) / fig.dpi
     h = (bbox.height + 2 * pad) / fig.dpi
     fig.set_size_inches(w, h)
-    t.set_position((pad / (w * fig.dpi), pad / (h * fig.dpi)))
+    # The extent is measured from the text's anchor, and the anchor is on
+    # the baseline, so bbox.y0 is negative by the descent. Placing the
+    # anchor pad above the bottom edge therefore cuts off everything below
+    # the baseline - which for a stacked fraction is its whole denominator.
+    # Offsetting by the extent's own corner puts the INK, not the anchor,
+    # inside the padding.
+    t.set_position(((pad - bbox.x0) / (w * fig.dpi),
+                    (pad - bbox.y0) / (h * fig.dpi)))
     buf = io.StringIO()
     fig.savefig(buf, format='svg', transparent=True, bbox_inches=None)
     plt.close(fig)
