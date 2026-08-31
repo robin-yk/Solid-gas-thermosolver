@@ -186,9 +186,13 @@ def test_the_solver_inverts_its_own_chemical_potential(p):
                 # 1 - theta is a subtraction, so the round trip runs out of
                 # digits before the solver does; the window is where the
                 # check measures the solver and not its own arithmetic
-                if not 1e-4 < th < 1.0 - 1e-4:
+                # the compensated relation lives on (0, THETA_CAP), and
+                # both 1 - theta and cap - theta are subtractions, so the
+                # window is where the check measures the solver rather
+                # than its own arithmetic
+                if not 1e-4 < th < S.THETA_CAP - 1e-6:
                     continue
-                back = eps + w * th + kt * math.log(th / (1.0 - th))
+                back = S.mu_of_theta(th, eps, w, kt)
                 worst = max(worst, abs(back - mu))
                 checked += 1
     assert checked > 20, checked

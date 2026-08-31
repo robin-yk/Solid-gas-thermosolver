@@ -404,25 +404,81 @@
     return e / (1.0 + e);
   }
 
-  function thetaOfMu(mu, epsI, omegaI, kt) {
-    /* mu = eps + omega*theta + kT ln(theta/(1-theta)), solved in the
-       logit where the sigmoid bounds the root between (mu-eps-omega)/kT
-       and (mu-eps)/kT with no search for a bracket. At omega = 0 the
-       bracket collapses and fd is returned directly, so the legacy
-       partition reproduces bit for bit rather than to a tolerance.
+  /* One removed lattice oxygen leaves two Ti(3+); rutile has two Ti per
+     four O, so theta_Ti3 = 4 theta_V and the cation sublattice fills at
+     theta_V = 0.25 - which is Ti2O3. The cap is not imposed anywhere: the
+     cation entropy diverges there on its own. */
+  var POLARON_RATIO = 4.0;
+  var THETA_CAP = 1.0 / POLARON_RATIO;
+
+  function muOfTheta(theta, epsI, omegaI, kt, compensation) {
+    /* mu = eps + omega*theta
+            + kT[ ln(th/(1-th)) + 2 ln(r*th/(1 - r*th)) ]
+       The second bracket is the configurational entropy of the cation
+       sublattice the compensating polarons sit on. In the dilute limit
+       the two logs give 3 kT ln(theta), so theta ~ p(O2)^(-1/6) - the
+       standard doubly-ionised vacancy. Dropping it gives p^(-1/2), a
+       NEUTRAL vacancy, and an enrichment that is the cube of the right
+       one. Line-for-line port of solidgas/statmech.py::mu_of_theta. */
+    if (compensation === 'none') {
+      return epsI + omegaI * theta + kt * Math.log(theta / (1.0 - theta));
+    }
+    if (theta <= 0.0) return -Infinity;
+    var tp = POLARON_RATIO * theta;
+    if (tp >= 1.0) return Infinity;
+    return epsI + omegaI * theta
+      + kt * (Math.log(theta / (1.0 - theta)) + 2.0 * Math.log(tp / (1.0 - tp)));
+  }
+
+  function thetaOfMu(mu, epsI, omegaI, kt, compensation) {
+    /* Inverse of muOfTheta. The compensated branch is bisected in
+       ln(theta) below half the cap and in ln(cap - theta) above it: mu
+       diverges at both ends of (0, cap) and no single variable holds
+       precision across both, while each half has an exactly linear limit
+       and so an analytic bracket. compensation === 'none' is the legacy
+       neutral relation, which at omega = 0 returns the closed form so the
+       pre-compensation partition reproduces bit for bit.
        Line-for-line port of solidgas/statmech.py::theta_of_mu. */
-    if (omegaI === 0.0) return fd(mu, epsI, kt);
-    var hi = (mu - epsI) / kt;
-    var lo = hi - omegaI / kt;
-    var t;
-    if (lo > hi) { t = lo; lo = hi; hi = t; }
-    var it, mid, th;
+    var it, mid, th, lo, hi, t;
+    if (compensation === 'none') {
+      if (omegaI === 0.0) return fd(mu, epsI, kt);
+      hi = (mu - epsI) / kt;
+      lo = hi - omegaI / kt;
+      if (lo > hi) { t = lo; lo = hi; hi = t; }
+      for (it = 0; it < 200; it++) {
+        mid = 0.5 * (lo + hi);
+        th = sigmoid(mid);
+        if (epsI + omegaI * th + kt * mid < mu) lo = mid; else hi = mid;
+      }
+      return sigmoid(0.5 * (lo + hi));
+    }
+    var half = 0.5 * THETA_CAP;
+    if (mu < muOfTheta(half, epsI, omegaI, kt)) {
+      hi = Math.min(Math.log(half),
+        (mu - epsI - 2.0 * kt * Math.log(POLARON_RATIO)) / (3.0 * kt));
+      lo = -745.0;
+      if (muOfTheta(Math.exp(lo), epsI, omegaI, kt) > mu) return Math.exp(lo);
+      for (it = 0; it < 200; it++) {
+        mid = 0.5 * (lo + hi);
+        if (muOfTheta(Math.exp(mid), epsI, omegaI, kt) < mu) lo = mid;
+        else hi = mid;
+      }
+      return Math.exp(0.5 * (lo + hi));
+    }
+    var c = epsI + omegaI * THETA_CAP
+      + kt * (Math.log(THETA_CAP / (1.0 - THETA_CAP))
+              + 2.0 * Math.log(POLARON_RATIO * THETA_CAP));
+    hi = Math.min(Math.log(half), (c - mu) / (2.0 * kt));
+    lo = -745.0;
+    if (muOfTheta(THETA_CAP - Math.exp(lo), epsI, omegaI, kt) < mu) {
+      return THETA_CAP - Math.exp(lo);
+    }
     for (it = 0; it < 200; it++) {
       mid = 0.5 * (lo + hi);
-      th = sigmoid(mid);
-      if (epsI + omegaI * th + kt * mid < mu) lo = mid; else hi = mid;
+      if (muOfTheta(THETA_CAP - Math.exp(mid), epsI, omegaI, kt) > mu) lo = mid;
+      else hi = mid;
     }
-    return sigmoid(0.5 * (lo + hi));
+    return THETA_CAP - Math.exp(0.5 * (lo + hi));
   }
 
   function energetics(p, preset, resolvedLayers, coveragePenalty) {
@@ -514,9 +570,9 @@
       ths.push(run);
     }
     return function (mu) {
-      if (!mus.length) return fd(mu, epsS, kt);
+      if (!mus.length) return thetaOfMu(mu, epsS, 0.0, kt);
       if (mu <= mus[0]) {
-        var t = fd(mu, epsS, kt);
+        var t = thetaOfMu(mu, epsS, 0.0, kt);
         return t < ths[0] ? t : ths[0];
       }
       if (mu >= mus[mus.length - 1]) {
@@ -552,12 +608,10 @@
     var thT = sp.theta_transition;
     var thR = sp.theta_reconstructed_eff;
     var thSol = p.saturation.x_max_shear / 2.0;
-    var muT = eps[0] + en.omega_surface * thT
-      + kt * Math.log(thT / (1.0 - thT));
+    var muT = muOfTheta(thT, eps[0], en.omega_surface, kt);
     /* the CS coexistence is a condition on the BULK class, so the bulk
        interaction belongs in it */
-    var muCs = eps[2] + en.omega_bulk * thSol
-      + kt * Math.log(thSol / (1.0 - thSol));
+    var muCs = muOfTheta(thSol, eps[2], en.omega_bulk, kt);
     var deepT = deepOf(en, geom, muT, kt);
     var deepCs = deepOf(en, geom, muCs, kt);
     return { mu_t_eV: muT, mu_cs_eV: muCs,
@@ -896,7 +950,8 @@
 
   return { KB_EV: KB_EV, N_AVO: N_AVO,
            makeRng: makeRng, siteDensities: siteDensities,
-           thetaOfMu: thetaOfMu,
+           thetaOfMu: thetaOfMu, muOfTheta: muOfTheta,
+           POLARON_RATIO: POLARON_RATIO, THETA_CAP: THETA_CAP,
            densityGCm3: densityGCm3, geometry: geometry,
            buildLattice: buildLattice, inter: inter,
            totalEnergy: totalEnergy, adjustFilling: adjustFilling,

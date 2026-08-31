@@ -101,7 +101,11 @@ CGMC_NO_FILL = {'A_eff_per_s_atm': {'surface': 0.0}}
 CGMC_ALL_BULK = {'surface': 0.0, 'subsurface': 0.0, 'bulk': 1.0}
 CGMC_STOCH_CG = {'E_m_bulk_eV': 1.9, 'n_cells': 8,
                  'stochastic_column_counts': 50000}
-LADDER_VO = [1.0, 3.5, 9.0, 95.0, 200.0]
+# One loading in each of the four regimes. The rungs moved when the
+# cation-sublattice entropy went in: the (1x2) onset is at 32.75 umol/g
+# now, not ~3, because a compensated vacancy costs three configurational
+# terms to place instead of one and the surface fills more slowly.
+LADDER_VO = [1.0, 34.0, 60.0, 95.0, 200.0]
 SHELL_LAYERS = [1, 2, 3, 4]
 
 

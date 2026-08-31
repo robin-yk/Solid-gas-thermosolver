@@ -411,6 +411,13 @@ def isotherm_scan(p, t_c, seed=None, quality=1.0, preset=None, eps=None,
 # ---------------------------------------------------------------- matching
 
 def fd(mu, eps_i, kt):
+    """Site-exclusion isotherm on the oxygen sublattice alone.
+
+    This is the occupancy of a NEUTRAL vacancy: one site, one species, one
+    configurational term. It is kept because it is the legacy relation and
+    because comparing against it is how the size of the compensation term
+    is measured, but it is no longer what the model uses. See
+    theta_of_mu."""
     x = (eps_i - mu) / kt
     if x > 700.0:
         return 0.0
@@ -419,49 +426,135 @@ def fd(mu, eps_i, kt):
     return 1.0 / (1.0 + math.exp(x))
 
 
-def theta_of_mu(mu, eps_i, omega_i, kt):
-    """Occupancy of a class whose sites feel a mean-field crowding cost.
+# The charge-compensation stoichiometry, and the cap that follows from it.
+# Removing one lattice oxygen from rutile leaves two electrons behind, and
+# they localise as two Ti(3+). Rutile has two Ti per four O, so each vacancy
+# converts 2 / (1/2) = 4 times its own site fraction of the cation
+# sublattice: theta_Ti3 = POLARON_RATIO * theta_V. The cation sublattice
+# fills at theta_V = 1 / POLARON_RATIO = 0.25, which is TiO(1.5) - Ti2O3.
+# Nothing may take theta past it, and nothing has to be told not to: the
+# cation entropy diverges there on its own.
+POLARON_RATIO = 4.0
+THETA_CAP = 1.0 / POLARON_RATIO
 
-    The free energy per site carries eps*theta + (omega/2)*theta^2, so the
-    chemical potential of the class is
 
-        mu = eps + omega*theta + kT ln(theta/(1-theta))
+def mu_of_theta(theta, eps_i, omega_i, kt, compensation='polaron'):
+    """Chemical potential of a vacancy at occupancy theta.
 
-    which is implicit in theta and has no closed form once omega != 0. It
-    is solved in the logit z = ln(theta/(1-theta)), where the equation is
-    z = (mu - eps - omega*sigmoid(z))/kT and the sigmoid is bounded by 0
-    and 1, so z is bracketed between (mu-eps-omega)/kT and (mu-eps)/kT
-    with no search for a bracket. d(mu)/d(theta) = omega + kT/(theta
-    (1-theta)) is strictly positive for omega >= 0, so the root is unique
-    and bisection cannot miss it.
+    The free energy per oxygen site carries eps*theta, the mean-field
+    crowding term (omega/2)*theta^2, the configurational entropy of the
+    oxygen sublattice, AND the configurational entropy of the cation
+    sublattice the compensating polarons sit on:
 
-    At omega = 0 the bracket collapses to a point and the answer is the
-    site-exclusion isotherm, which is returned directly rather than
-    bisected to: the legacy partition must reproduce bit for bit, not to
-    within a tolerance."""
-    if omega_i == 0.0:
-        return fd(mu, eps_i, kt)
-    hi = (mu - eps_i) / kt
-    lo = hi - omega_i / kt
-    if lo > hi:
-        lo, hi = hi, lo
+        mu = eps + omega*theta
+             + kT [ ln(theta/(1-theta)) + 2 ln(r*theta/(1 - r*theta)) ]
+
+    with r = POLARON_RATIO. The second bracket is not a correction. In the
+    dilute limit the two logs together give 3 kT ln(theta), so the
+    isotherm is theta ~ exp(mu/3kT) and the oxygen-pressure dependence is
+    p^(-1/6) - the standard result for a doubly ionised vacancy with
+    electronic compensation. Dropping it gives p^(-1/2), which is a
+    neutral vacancy, and an enrichment between two classes that is the
+    CUBE of the right one.
+
+    compensation='none' restores that neutral form. It is not the model;
+    it is there so the difference can be measured and the pre-compensation
+    numbers reproduced."""
+    if compensation == 'none':
+        return eps_i + omega_i * theta + kt * math.log(theta / (1.0 - theta))
+    if theta <= 0.0:
+        return float('-inf')
+    tp = POLARON_RATIO * theta
+    if tp >= 1.0:
+        return float('inf')
+    return (eps_i + omega_i * theta
+            + kt * (math.log(theta / (1.0 - theta))
+                    + 2.0 * math.log(tp / (1.0 - tp))))
+
+
+def theta_of_mu(mu, eps_i, omega_i, kt, compensation='polaron'):
+    """Occupancy of a class at a given chemical potential.
+
+    Inverts mu_of_theta, which is strictly increasing in theta for
+    omega >= 0 - each log is increasing and the crowding term is
+    non-decreasing - so the root is unique and bisection cannot miss it.
+
+    The compensated branch is solved in u = ln(theta) rather than in the
+    logit, because the domain is (0, 1/POLARON_RATIO) and the interesting
+    occupancies are five to thirty orders of magnitude below the cap: in u
+    the dilute limit is exactly linear, mu -> eps + 3kT u + 2kT ln r, so a
+    fixed bracket resolves theta to full relative precision at any depth,
+    while a logit bracket would spend all its bits near the cap. Both ends
+    of the bracket are analytic, so there is no search for one.
+
+    compensation='none' is the legacy neutral-vacancy relation, kept so
+    the pre-compensation partition can be reproduced exactly; at omega = 0
+    it returns the closed-form site-exclusion isotherm rather than
+    bisecting to it."""
+    if compensation == 'none':
+        if omega_i == 0.0:
+            return fd(mu, eps_i, kt)
+        hi = (mu - eps_i) / kt
+        lo = hi - omega_i / kt
+        if lo > hi:
+            lo, hi = hi, lo
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            if mid >= 0.0:
+                th = 1.0 / (1.0 + math.exp(-mid)) if mid < 700.0 else 1.0
+            else:
+                e = math.exp(mid) if mid > -700.0 else 0.0
+                th = e / (1.0 + e)
+            if eps_i + omega_i * th + kt * mid < mu:
+                lo = mid
+            else:
+                hi = mid
+        z = 0.5 * (lo + hi)
+        if z >= 0.0:
+            return 1.0 / (1.0 + math.exp(-z)) if z < 700.0 else 1.0
+        e = math.exp(z) if z > -700.0 else 0.0
+        return e / (1.0 + e)
+
+    # Compensated branch. mu diverges at both ends of (0, cap), so no
+    # single variable is well conditioned across the whole domain: below
+    # the halfway point every bit of theta is in ln(theta), above it every
+    # bit is in ln(cap - theta). Which half we are in is decided by one
+    # evaluation of mu, and each half then has an exactly linear limit and
+    # an analytic bracket, so both resolve to full relative precision.
+    half = 0.5 * THETA_CAP
+    if mu < mu_of_theta(half, eps_i, omega_i, kt):
+        #   dilute: mu -> eps + 3 kT u + 2 kT ln r, and dropping the two
+        #   (1 - .) denominators only lowers mu, so this u is an upper bound
+        u_hi = min(math.log(half),
+                   (mu - eps_i - 2.0 * kt * math.log(POLARON_RATIO))
+                   / (3.0 * kt))
+        lo, hi = -745.0, u_hi
+        if mu_of_theta(math.exp(lo), eps_i, omega_i, kt) > mu:
+            return math.exp(lo)                  # below double precision
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            if mu_of_theta(math.exp(mid), eps_i, omega_i, kt) < mu:
+                lo = mid
+            else:
+                hi = mid
+        return math.exp(0.5 * (lo + hi))
+    #   at the cap: 1 - r*theta = r*(cap - theta), so mu -> C - 2 kT v,
+    #   and keeping the other terms at their cap values only raises mu,
+    #   so this v is again an upper bound on the gap
+    c = (eps_i + omega_i * THETA_CAP
+         + kt * (math.log(THETA_CAP / (1.0 - THETA_CAP))
+                 + 2.0 * math.log(POLARON_RATIO * THETA_CAP)))
+    v_hi = min(math.log(half), (c - mu) / (2.0 * kt))
+    lo, hi = -745.0, v_hi
+    if mu_of_theta(THETA_CAP - math.exp(lo), eps_i, omega_i, kt) < mu:
+        return THETA_CAP - math.exp(lo)
     for _ in range(200):
         mid = 0.5 * (lo + hi)
-        # sigmoid(mid) without overflow, then the residual of g(theta)
-        if mid >= 0.0:
-            th = 1.0 / (1.0 + math.exp(-mid)) if mid < 700.0 else 1.0
-        else:
-            e = math.exp(mid) if mid > -700.0 else 0.0
-            th = e / (1.0 + e)
-        if eps_i + omega_i * th + kt * mid < mu:
+        if mu_of_theta(THETA_CAP - math.exp(mid), eps_i, omega_i, kt) > mu:
             lo = mid
         else:
             hi = mid
-    z = 0.5 * (lo + hi)
-    if z >= 0.0:
-        return 1.0 / (1.0 + math.exp(-z)) if z < 700.0 else 1.0
-    e = math.exp(z) if z > -700.0 else 0.0
-    return e / (1.0 + e)
+    return THETA_CAP - math.exp(0.5 * (lo + hi))
 
 
 def energetics(p, preset=None, resolved_layers=None, coverage_penalty=None):
@@ -543,9 +636,9 @@ def theta_s_interp(points, eps_s, kt):
 
     def f(mu):
         if not mus:
-            return fd(mu, eps_s, kt)
+            return theta_of_mu(mu, eps_s, 0.0, kt)
         if mu <= mus[0]:
-            t = fd(mu, eps_s, kt)
+            t = theta_of_mu(mu, eps_s, 0.0, kt)
             return t if t < ths[0] else ths[0]
         if mu >= mus[-1]:
             if len(mus) < 2 or mus[-1] <= mus[-2]:
@@ -593,7 +686,7 @@ def _classes(p, geom, preset=None, eps=None, omega=None):
     return en
 
 
-def _deep(en, geom, mu, kt):
+def _deep(en, geom, mu, kt, compensation='polaron'):
     """Inventory held below the bridging plane at a given mu.
 
     At one resolved layer with no interaction this is the legacy
@@ -602,12 +695,14 @@ def _deep(en, geom, mu, kt):
     total = 0.0
     for i, cap in enumerate(caps):
         total += cap * theta_of_mu(mu, en['eps_layers'][i],
-                                   en['omega_layers'][i], kt)
+                                   en['omega_layers'][i], kt, compensation)
     return total + geom['N_b'] * theta_of_mu(mu, en['eps'][2],
-                                             en['omega_bulk'], kt)
+                                             en['omega_bulk'], kt,
+                                             compensation)
 
 
-def phase_boundaries(p, t_c, geom, preset=None, eps=None, omega=None):
+def phase_boundaries(p, t_c, geom, preset=None, eps=None, omega=None,
+                     compensation='polaron'):
     """Closed-form mu and inventory boundaries of the phase construction.
 
     Three certified rungs at a given temperature and geometry: the (1x2)
@@ -622,15 +717,13 @@ def phase_boundaries(p, t_c, geom, preset=None, eps=None, omega=None):
     th_t = sp['theta_transition']
     th_r = sp['theta_reconstructed_eff']
     th_sol = p['saturation']['x_max_shear'] / 2.0
-    mu_t = (eps[0] + en['omega_surface'] * th_t
-            + kt * math.log(th_t / (1.0 - th_t)))
+    mu_t = mu_of_theta(th_t, eps[0], en['omega_surface'], kt, compensation)
     # the CS coexistence is a condition on the BULK class, so the bulk
     # interaction belongs in it: at the solubility the bulk sites are
     # already crowded and mu is that much higher
-    mu_cs = (eps[2] + en['omega_bulk'] * th_sol
-             + kt * math.log(th_sol / (1.0 - th_sol)))
-    deep_t = _deep(en, geom, mu_t, kt)
-    deep_cs = _deep(en, geom, mu_cs, kt)
+    mu_cs = mu_of_theta(th_sol, eps[2], en['omega_bulk'], kt, compensation)
+    deep_t = _deep(en, geom, mu_t, kt, compensation)
+    deep_cs = _deep(en, geom, mu_cs, kt, compensation)
     return {'mu_t_eV': mu_t, 'mu_cs_eV': mu_cs,
             'theta_transition': th_t, 'theta_reconstructed_eff': th_r,
             'theta_sol': th_sol,
@@ -640,7 +733,7 @@ def phase_boundaries(p, t_c, geom, preset=None, eps=None, omega=None):
 
 
 def distribute(p, t_c, vo_total, geom, preset=None, eps=None,
-               omega=None):
+               omega=None, compensation='polaron'):
     """Split the total inventory over the real site counts at common mu,
     with the surface reconstruction and CS precipitation as PHASES.
 
@@ -665,16 +758,18 @@ def distribute(p, t_c, vo_total, geom, preset=None, eps=None,
     kt = KB_EV * (t_c + 273.15)
     en = _classes(p, geom, preset, eps, omega)
     eps = en['eps']
-    b = phase_boundaries(p, t_c, geom, eps=eps, omega=omega)
+    b = phase_boundaries(p, t_c, geom, eps=eps, omega=omega,
+                         compensation=compensation)
     n_s = geom['N_s']
     th_t = b['theta_transition']
     th_r = b['theta_reconstructed_eff']
 
     def deep(mu):
-        return _deep(en, geom, mu, kt)
+        return _deep(en, geom, mu, kt, compensation)
 
     def surf(mu):
-        return theta_of_mu(mu, eps[0], en['omega_surface'], kt)
+        return theta_of_mu(mu, eps[0], en['omega_surface'], kt,
+                           compensation)
 
     u_ext = 0.0
     if vo_total <= b['VO_onset_umol_g']:
@@ -721,7 +816,7 @@ def distribute(p, t_c, vo_total, geom, preset=None, eps=None,
         phi = 1.0
     caps = geom.get('N_layers') or [geom['N_ss']]
     th_layers = [theta_of_mu(mu, en['eps_layers'][i], en['omega_layers'][i],
-                             kt) for i in range(len(caps))]
+                             kt, compensation) for i in range(len(caps))]
     u_layers = [caps[i] * th_layers[i] for i in range(len(caps))]
     uss = sum(u_layers)
     # one resolved layer IS the shell, so its occupancy is reported
@@ -729,7 +824,7 @@ def distribute(p, t_c, vo_total, geom, preset=None, eps=None,
     # move by a rounding step
     tss = th_layers[0] if len(caps) == 1 else (
         uss / geom['N_ss'] if geom['N_ss'] else 0.0)
-    tb = theta_of_mu(mu, eps[2], en['omega_bulk'], kt)
+    tb = theta_of_mu(mu, eps[2], en['omega_bulk'], kt, compensation)
     ub = geom['N_b'] * tb
     tot = us + uss + ub + u_ext
     mol_ti = 1e6 / p['molar_mass_g_mol']

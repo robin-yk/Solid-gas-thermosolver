@@ -59,7 +59,80 @@ def geometry(d_um=None, bet_m2_g=None, ss_layers=1):
 
 
 def fd(mu, eps, kt):
+    """Neutral-vacancy site exclusion: oxygen sublattice only.
+
+    Kept so the pre-compensation partition stays reproducible at 50
+    digits; the model uses theta_of_mu below."""
     return 1 / (1 + mexp((eps - mu) / kt))
+
+
+# One removed lattice oxygen leaves two Ti(3+); rutile has two Ti per four
+# O, so theta_Ti3 = 4 theta_V and the cation sublattice fills at
+# theta_V = 0.25, which is Ti2O3. Independent of the production constant
+# on purpose - if the two ever disagree the parity gate says so.
+R_POL = mpf(4)
+CAP = 1 / R_POL
+
+
+def mu_of_theta(theta, eps, omega, kt):
+    """mu = eps + omega*theta + kT[ln(th/(1-th)) + 2 ln(r*th/(1-r*th))].
+
+    Guarded at both ends so a bisection may probe them: outside (0, cap)
+    the chemical potential is infinite, which is the right answer and the
+    one that keeps the bracket logic simple."""
+    if theta <= 0:
+        return mpf('-inf')
+    tp = R_POL * theta
+    if tp >= 1:
+        return mpf('inf')
+    return (eps + omega * theta
+            + kt * (mlog(theta / (1 - theta)) + 2 * mlog(tp / (1 - tp))))
+
+
+def theta_of_mu(mu, eps, omega, kt):
+    """Inverse of mu_of_theta by bisection at working precision.
+
+    Same two-variable split as the production code and for the same
+    reason: mu diverges at both ends of (0, cap), so below half the cap
+    every digit lives in ln(theta) and above it in ln(cap - theta). Each
+    half has an exactly linear limit, and the factors dropped to reach
+    that limit are bounded and move mu one way only, so each limit
+    inverts to a genuine one-sided bound. Derived from this module's own
+    formula; nothing is imported from the engine."""
+    half = CAP / 2
+    if mu < mu_of_theta(half, eps, omega, kt):
+        #   dilute: mu -> eps + 3 kT u + 2 kT ln r; the dropped
+        #   denominators only lower mu, so this u is an upper bound
+        hi = min(mlog(half), (mu - eps - 2 * kt * mlog(R_POL)) / (3 * kt))
+        lo = hi - 1
+        while mu_of_theta(mexp(lo), eps, omega, kt) > mu:
+            lo -= 8
+            if lo < -1500:
+                return mexp(lo)
+        for _ in range(250):
+            mid = (lo + hi) / 2
+            if mu_of_theta(mexp(mid), eps, omega, kt) < mu:
+                lo = mid
+            else:
+                hi = mid
+        return mexp((lo + hi) / 2)
+    #   at the cap: 1 - r*theta = r*(cap - theta), so mu -> C - 2 kT v,
+    #   and holding the other factors at their cap values only raises mu
+    c = (eps + omega * CAP
+         + kt * (mlog(CAP / (1 - CAP)) + 2 * mlog(R_POL * CAP)))
+    hi = min(mlog(half), (c - mu) / (2 * kt))
+    lo = hi - 1
+    while mu_of_theta(CAP - mexp(lo), eps, omega, kt) < mu:
+        lo -= 8
+        if lo < -400:
+            return CAP - mexp(lo)
+    for _ in range(250):
+        mid = (lo + hi) / 2
+        if mu_of_theta(CAP - mexp(mid), eps, omega, kt) > mu:
+            lo = mid
+        else:
+            hi = mid
+    return CAP - mexp((lo + hi) / 2)
 
 
 def eps_of(preset):
@@ -77,12 +150,12 @@ def boundaries(t_c, geom, preset):
     th_t = mpf(str(sp['theta_transition']))
     th_r = mpf(str(sp['theta_reconstructed_eff']))
     th_sol = mpf(str(P['saturation']['x_max_shear'])) / 2
-    mu_t = eps[0] + kt * mlog(th_t / (1 - th_t))
-    mu_cs = eps[2] + kt * mlog(th_sol / (1 - th_sol))
-    deep_t = (geom['N_ss'] * fd(mu_t, eps[1], kt)
-              + geom['N_b'] * fd(mu_t, eps[2], kt))
-    deep_cs = (geom['N_ss'] * fd(mu_cs, eps[1], kt)
-               + geom['N_b'] * fd(mu_cs, eps[2], kt))
+    mu_t = mu_of_theta(th_t, eps[0], mpf(0), kt)
+    mu_cs = mu_of_theta(th_sol, eps[2], mpf(0), kt)
+    deep_t = (geom['N_ss'] * theta_of_mu(mu_t, eps[1], mpf(0), kt)
+              + geom['N_b'] * theta_of_mu(mu_t, eps[2], mpf(0), kt))
+    deep_cs = (geom['N_ss'] * theta_of_mu(mu_cs, eps[1], mpf(0), kt)
+               + geom['N_b'] * theta_of_mu(mu_cs, eps[2], mpf(0), kt))
     return {'mu_t': mu_t, 'mu_cs': mu_cs, 'th_t': th_t, 'th_r': th_r,
             'th_sol': th_sol, 'kt': kt, 'eps': eps,
             'vo_onset': geom['N_s'] * th_t + deep_t,
@@ -99,20 +172,20 @@ def match(t_c, vo, geom, preset):
     vo_mp = mpf(str(vo))
 
     def deep(mu):
-        return (geom['N_ss'] * fd(mu, eps[1], kt)
-                + geom['N_b'] * fd(mu, eps[2], kt))
+        return (geom['N_ss'] * theta_of_mu(mu, eps[1], mpf(0), kt)
+                + geom['N_b'] * theta_of_mu(mu, eps[2], mpf(0), kt))
     ext = mpf(0)
     if vo_mp <= b['vo_onset']:
         regime, phase = 'dilute', '1x1'
         lo, hi = mpf(-40), b['mu_t']
         for _ in range(240):
             mid = (lo + hi) / 2
-            if geom['N_s'] * fd(mid, eps[0], kt) + deep(mid) < vo_mp:
+            if geom['N_s'] * theta_of_mu(mid, eps[0], mpf(0), kt) + deep(mid) < vo_mp:
                 lo = mid
             else:
                 hi = mid
         mu = (lo + hi) / 2
-        ts = fd(mu, eps[0], kt)
+        ts = theta_of_mu(mu, eps[0], mpf(0), kt)
         us = geom['N_s'] * ts
         phi = mpf(0)
     elif vo_mp < b['vo_recon']:
@@ -140,8 +213,8 @@ def match(t_c, vo, geom, preset):
         ts = b['th_r']
         us = geom['N_s'] * b['th_r']
         phi = mpf(1)
-    tss = fd(mu, eps[1], kt)
-    tb = fd(mu, eps[2], kt)
+    tss = theta_of_mu(mu, eps[1], mpf(0), kt)
+    tb = theta_of_mu(mu, eps[2], mpf(0), kt)
     uss, ub = geom['N_ss'] * tss, geom['N_b'] * tb
     tot = us + uss + ub + ext
     x = vo_mp / (mpf('1e6') / mpf(str(P['molar_mass_g_mol'])))
@@ -190,7 +263,7 @@ def theta_of_mu_mp(mu, eps, omega, kt):
     algorithm checked against itself. Bracketed by the sigmoid's own
     bounds, as in the engine."""
     if omega == 0:
-        return fd(mu, eps, kt)
+        return theta_of_mu(mu, eps, mpf(0), kt)
     hi = (mu - eps) / kt
     lo = hi - omega / kt
     if lo > hi:
