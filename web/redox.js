@@ -110,15 +110,32 @@
   /* The two curves the crossing is read off, in units of k(oxidation).
      They are the rate laws themselves at unit site orders - nothing here
      is fitted or interpolated. */
-  function crossingData(K, n) {
+  /* The rows are the two rate laws; the rest is where the axis stops
+     describing the solid. theta here is the reacting face, so the
+     particle's single-phase limit lands on this axis at theta_sol*E and
+     moves with the enrichment, while the face ceiling does not move at
+     all. Both are the same two limits the phase map draws, seen along
+     one line instead of over a plane. */
+  function crossingData(K, n, opts) {
     n = n || 201;
+    opts = opts || {};
     var rows = [], i, th;
     for (i = 0; i < n; i++) {
       th = i / (n - 1);
       rows.push({ theta: th, r_red: K * (1.0 - th), r_ox: th });
     }
-    return { K: K, theta_star: thetaOfRatio(K),
-             rate_over_k_ox: thetaOfRatio(K), rows: rows };
+    var out = { K: K, theta_star: thetaOfRatio(K),
+                rate_over_k_ox: thetaOfRatio(K), rows: rows };
+    if (opts.theta_sol != null) {
+      var E = opts.enrichment == null ? 1.0 : opts.enrichment;
+      out.theta_sol = opts.theta_sol;
+      out.enrichment = E;
+      out.theta_face_at_solubility = Math.min(1.0, opts.theta_sol * E);
+    }
+    if (opts.theta_surface_max != null) {
+      out.theta_surface_max = opts.theta_surface_max;
+    }
+    return out;
   }
 
   /* The second-phase boundary over the enrichment axis, stopped where it

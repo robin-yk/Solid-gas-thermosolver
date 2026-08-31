@@ -45,7 +45,13 @@ const windows = ES.map(function (E) {
 
 /* the two figure payloads, so the gate can check the page draws the same
    rows the exporter froze */
-const crossing = R.crossingData(0.5, 201);
+/* the exported figure is the uniform reading, E = 1, so the harness asks
+   for it the same way and the gate can hold the two side by side */
+const crossing = R.crossingData(0.5, 201, {
+  theta_sol: thSol, theta_surface_max: thMax, enrichment: 1.0 });
+/* and the layer-resolved reading, where the particle limit leaves the axis */
+const crossingResolved = R.crossingData(0.5, 201, {
+  theta_sol: thSol, theta_surface_max: thMax, enrichment: 1844.0 });
 const phase = R.phaseData({ theta_sol: thSol, theta_surface_max: thMax });
 
 /* cycling: the measured pair, a synthetic five-cycle round trip, and the
@@ -70,7 +76,7 @@ process.stdout.write(JSON.stringify({
   theta_sol: thSol, theta_surface_max: thMax,
   crossover_E: R.crossoverEnrichment(thSol, thMax),
   steady: steady, windows: windows,
-  crossing: crossing, phase: phase,
+  crossing: crossing, crossing_resolved: crossingResolved, phase: phase,
   cycling: { measured: measured, synthetic_rows: synth,
              synthetic_fit: back, two_sample: two, two_sample_4: two4 }
 }, inf));

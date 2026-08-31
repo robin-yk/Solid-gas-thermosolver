@@ -4,7 +4,17 @@
 
 An oxygen carrier sits in a gas that both reduces and oxidises it. A reductant pulls lattice oxygen out and leaves a vacancy; an oxidant fills a vacancy and puts oxygen back. Where does the solid settle, and how fast does it turn over there?
 
-The model is one nonlinear equation. Nothing in it is new — it is 1970s reaction engineering — and the point is not the method but that the question has not been carried through for this class of material with the solid described honestly.
+This is a **Mars–van Krevelen** mechanism, and the model is the Mars–van Krevelen site balance at steady state: nothing adsorbs, there are no surface intermediates, and the two steps are written straight onto the lattice-oxygen sites. The model is one nonlinear equation. Nothing in it is new — it is 1970s reaction engineering — and the point is not the method but that the question has not been carried through for this class of material with the solid described honestly.
+
+## What theta counts
+
+Vacancies on the **two-coordinate bridging oxygen rows of rutile (110)**, as a fraction of those sites.
+
+That is not a free choice; it is the site the rest of the model is already referenced to. The descriptor is `E_vac` for (110) bridging O — 4.39 eV, sX hybrid, Li, Guo & Robertson, *J. Phys. Chem. C* **119** (2015) — and the face ceiling `theta_max = 0.5` is the (1x2) added-row reconstruction, which is a bridging-row phase. Both numbers are bridging-O numbers, so `theta` has to be a bridging-O coverage or the two do not belong in the same equation.
+
+Three-coordinate in-plane oxygen is **not** counted. It is bound more strongly, its removal energy is not the descriptor's, and averaging the two into one `theta` would produce a number describing neither site. The cost of keeping them apart is that the reacting inventory here is the bridging rows alone: a mechanism that consumes in-plane oxygen is outside this model, and so is any face other than (110).
+
+The particle-average `theta` is a different kind of quantity. It is stoichiometric bookkeeping, `x/2` in `MO(2-x)`, and carries no claim about which defect holds the reduction — in rutile at low `x` the majority point defect is the titanium interstitial, not the oxygen vacancy, and past the solubility the solid stops making point defects at all and shears instead. The face `theta` is a coverage on a named site; the particle `theta` is a composition. Keeping them separate is the whole content of the enrichment factor below.
 
 ## The two half-reactions
 
@@ -109,7 +119,11 @@ So the three claims above rest on the surface enrichment ratio and the (1x2) lin
 
 ## What this model does not carry
 
-It is a single well-mixed particle at one composition with two lumped half-reactions and no adsorbed intermediates, no site heterogeneity beyond the one mapping, and no transport. The reduction and oxidation channels are assumed simultaneous; a cycled carrier alternating between two gas feeds is a different problem with the same crossing hiding inside it. The linear free-energy slopes are assumed, not measured, and they are the parameters the volcano's width and position are most sensitive to.
+It is a single well-mixed particle at one composition with two lumped half-reactions and no adsorbed intermediates, no site heterogeneity beyond the one mapping, and no transport.
+
+Holding `E` fixed while the carrier turns over is a statement about timescales, not only about geometry: the face and the interior are taken to be in equilibrium partition at every instant, so oxygen exchange between shell and bulk is fast compared with both half-reactions. If it is not — if the interior cannot resupply the face on the turnover timescale — this is the wrong model and the problem becomes transport into the particle rather than a boundary condition on it. The partition is the defect workspace's equilibrium answer, so the assumption is inherited from there rather than made a second time here.
+
+The reductant and the oxidant are deliberately unnamed. The rate parameters in `data/redox.json` are identical placeholders for both half-reactions (`log10_A = 8`, `E0 = 1.0 eV`, both labelled *assumed*), so attaching a gas pair would assert chemistry the numbers do not carry. What the model does require of them is stated: unit order in gas and in site, for both halves. A pair whose order is not one — methane is the obvious case — breaks the claim that temperature, pressure and prefactor cancel out of the crossing, because that cancellation is what unit orders buy. The reduction and oxidation channels are assumed simultaneous; a cycled carrier alternating between two gas feeds is a different problem with the same crossing hiding inside it. The linear free-energy slopes are assumed, not measured, and they are the parameters the volcano's width and position are most sensitive to.
 
 ## In the browser
 

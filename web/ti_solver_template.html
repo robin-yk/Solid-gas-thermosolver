@@ -923,12 +923,35 @@ fixed in <code>data/rutile_dft.json</code>.</p>
 <details class="model-notes" id="redox-notes">
 <summary>Model scope and assumptions</summary>
 <div class="note calm">
-  <b>Scope.</b> Steady-state redox of an oxygen carrier under simultaneous exposure to a
-  reductant and an oxidant. The solid is one number, the vacancy fraction &theta; on the
-  reacting oxygen sites; the steady state is where the two half-reaction rates cross.
-  Mass action, unit site orders, one crossing &mdash; nothing here is methodologically new,
-  and that is the point: the question the model is asked is which carriers can be run at
-  their own optimum, not how to compute a rate.
+  <b>Scope.</b> Steady-state <b>Mars&ndash;van Krevelen</b> redox of an oxygen carrier under
+  simultaneous exposure to a reductant and an oxidant. The reductant takes lattice oxygen
+  and leaves a vacancy; the oxidant fills a vacancy and puts lattice oxygen back. Nothing
+  adsorbs and there are no surface intermediates: the two steps are written straight onto
+  the lattice-oxygen site balance. The solid is one number, the vacancy fraction &theta;
+  on the reacting oxygen sites, and the steady state is where the two half-reaction rates
+  cross. Mass action, unit site orders, one crossing &mdash; nothing here is
+  methodologically new, and that is the point: the question the model is asked is which
+  carriers can be run at their own optimum, not how to compute a rate.
+
+  <p><b>What &theta; counts.</b> Vacancies on the <b>two-coordinate bridging oxygen rows
+  of rutile (110)</b>, as a fraction of those sites. That is the site the descriptor is
+  referenced to &mdash; E<sub>vac</sub> = 4.39 eV for (110) bridging O, sX hybrid, Li, Guo
+  &amp; Robertson 2015 &mdash; and it is where the face ceiling comes from:
+  &theta;<sub>max</sub> = 0.5 is the (1&times;2) added-row reconstruction, which is a
+  bridging-row phase. Three-coordinate in-plane oxygen is <i>not</i> counted. It is held
+  more strongly, so its removal energy is not the descriptor's, and putting both into one
+  &theta; would average two different sites into a number that describes neither. The
+  price of not doing that is that the reacting inventory here is the bridging rows alone:
+  a mechanism that consumes in-plane oxygen is outside this model, and so is any face
+  other than (110).</p>
+
+  <p><b>&theta; is not a defect population.</b> The particle-average &theta; is
+  stoichiometric bookkeeping, x/2 in MO(2&minus;x), and carries no claim about which
+  defect holds the reduction. In rutile at low x the majority point defect is the titanium
+  interstitial rather than the oxygen vacancy, and past the solubility the solid stops
+  making point defects at all and relieves reduction by crystallographic shear. The face
+  &theta; is a coverage on a named site; the particle &theta; is a composition. They are
+  different kinds of quantity, which is why the model keeps them apart.</p>
 
   <p><b>The axis.</b> At unit site orders the crossing is
   &theta;(face) = K / (1 + K) with K = k(reduction) / k(oxidation), exactly, with no
@@ -950,7 +973,14 @@ fixed in <code>data/rutile_dft.json</code>.</p>
 
   <p><b>The uniform assumption, and its price.</b> The two limits are connected by
   E = &theta;(face) / &theta;(particle), the surface enrichment. A uniform particle sets
-  E = 1 without saying so; a layer-resolved partition supplies it. For 0.9 &micro;m rutile
+  E = 1 without saying so; a layer-resolved partition supplies it. Holding E fixed while
+  the carrier turns over is a statement about <i>timescales</i>, not only about geometry:
+  the face and the interior are taken to be in equilibrium partition at every instant, so
+  oxygen exchange between shell and bulk is fast compared with both half-reactions. If it
+  is not &mdash; if the interior cannot resupply the face on the turnover timescale
+  &mdash; this is the wrong model, and the problem becomes transport into the particle
+  rather than a boundary condition on it. The partition itself is the defect workspace's
+  equilibrium answer, so the assumption is inherited from there and not made twice. For 0.9 &micro;m rutile
   at 600 &deg;C the defect workspace gives E &asymp; 1844, against a geometric ceiling of
   1847 &mdash; nearly every vacancy is in the shell. That moves the largest usable K from
   0.0040 to 1, a factor of 249. The turnover at a given K is <i>unchanged</i> by the
@@ -959,9 +989,13 @@ fixed in <code>data/rutile_dft.json</code>.</p>
   hold to keep the face there, and therefore whether the solid survives it.</p>
 
   <p><b>What is assumed.</b> Unit gas and site orders in both half-reactions; one
-  reacting face; no gradient within the particle beyond the single enrichment factor; no
-  transport limitation; the solubility as an estimate carried as a sensitivity
-  parameter. Parameters and their provenance are in <code>data/redox.json</code>, each
+  reacting face, (110), and one oxygen site on it, the bridging row; shell&ndash;bulk
+  exchange fast enough that the enrichment is an equilibrium partition; no gradient within
+  the particle beyond that single factor; no transport limitation; the solubility as an
+  estimate carried as a sensitivity parameter. The reductant and the oxidant are left
+  unnamed on purpose: the rate parameters in the dataset are identical placeholders for
+  both halves, so naming a gas pair would assert chemistry the numbers do not carry. Any
+  pair that is first order in gas and in site gives the same K axis. Parameters and their provenance are in <code>data/redox.json</code>, each
   labelled <i>literature</i>, <i>estimate</i> or <i>assumed</i>. Engine:
   <code>solidgas/redox.py</code>; the browser carries the closed forms only, held against
   the Python bisection by <code>tests/test_redox_port.py</code>.</p>
@@ -1017,16 +1051,26 @@ fixed in <code>data/rutile_dft.json</code>.</p>
 
       <section>
         <h2>The crossing</h2>
-        <p class="sub">Reduction consumes lattice oxygen so its rate falls as the
-        solid empties; oxidation consumes vacancies so its rate rises. Two opposed
-        monotone curves meet once, and that is the whole model.</p>
+        <p class="sub">The Mars&ndash;van Krevelen pair. Reduction consumes lattice
+        oxygen so its rate falls as the solid empties; oxidation consumes vacancies so
+        its rate rises. Two opposed monotone curves meet once, and that is the whole
+        model.</p>
         <figure class="pubfig" id="figCrossing">
-          <div class="figbox" role="img" aria-label="The two half-reaction rates against vacancy fraction"></div>
+          <div class="figbox" role="img" aria-label="The two half-reaction rates against vacancy fraction, with the bands where the solid leaves its single phase and where the face saturates"></div>
           <details class="figdl"><summary>Download figure</summary>
             <button type="button" data-fmt="svg">SVG</button>
             <button type="button" data-fmt="png">PNG, 600 dpi</button>
           </details>
-          <figcaption>The two half-reaction rates against the vacancy fraction on the reacting face, in units of k(oxidation). They cross once, at &theta;* = K/(1+K).</figcaption>
+          <figcaption>The two half-reaction rates against the vacancy fraction on the
+          reacting face, in units of k(oxidation). They cross once, at
+          &theta;* = K/(1+K). The bands are the phase map's two limits seen along one
+          line: purple where the <i>particle</i> has left its single-phase field &mdash;
+          that edge sits at &theta;<sub>sol</sub>&thinsp;&times;&thinsp;E, so it moves
+          when you change the enrichment &mdash; and orange where the <i>face</i> has
+          saturated and there is no steady state to settle into. &theta; = 1 would be
+          every bridging oxygen gone, which is MO, a different compound, not a reduced
+          rutile: the far end of this axis is arithmetic, not a state of this
+          material.</figcaption>
         </figure>
       </section>
 

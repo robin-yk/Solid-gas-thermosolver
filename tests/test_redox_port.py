@@ -310,3 +310,136 @@ def test_the_interactive_phase_map_marks_the_current_point_and_the_file_does_not
     frozen = json.loads(
         (ROOT / 'data' / 'redox_figure_data.json').read_text())
     assert 'current' not in frozen['phase']
+
+
+# ------------------------------------------------- what the model is
+
+def _prose():
+    """Page, docs and engine as one haystack, with the page's JS string
+    literals rejoined so a phrase split across a concatenation still
+    counts as written."""
+    page = (ROOT / 'docs' / 'ti_solver.html').read_text()
+    ui = re.sub(r"'\s*\+\s*'", '', (WEB / 'redox_ui.js').read_text())
+    doc = (ROOT / 'docs' / 'redox-steady-state.md').read_text()
+    eng = (ROOT / 'solidgas' / 'redox.py').read_text()
+    data = (ROOT / 'data' / 'redox.json').read_text()
+    return {'page': ' '.join((page + ui).split()),
+            'doc': ' '.join(doc.split()),
+            'engine': ' '.join(eng.split()),
+            'data': ' '.join(data.split())}
+
+
+def test_the_mechanism_is_named():
+    """Mars-van Krevelen is the one phrase that tells a reaction engineer
+    what this is in a single word, and it was missing from every file."""
+    p = _prose()
+    assert 'Mars&ndash;van Krevelen' in p['page'] or 'Mars-van Krevelen' in p['page']
+    assert 'Mars–van Krevelen' in p['doc']
+    assert 'Mars-van Krevelen' in p['engine']
+    assert 'Mars-van Krevelen' in p['data']
+    for where in ('page', 'doc', 'engine'):
+        assert 'no surface intermediates' in p[where], where
+
+
+def test_theta_says_which_face_and_which_oxygen():
+    """A vacancy fraction with no site attached is not a coverage.
+
+    The site is not a free choice: the descriptor is referenced to (110)
+    bridging O and theta_max = 0.5 is the (1x2) added-row phase, which is
+    a bridging-row reconstruction. Both numbers are already in the
+    dataset, so theta has to be that site or they do not belong in the
+    same equation - and the in-plane oxygen has to be excluded out loud,
+    because averaging two removal energies describes neither site."""
+    p = _prose()
+    params = R.load_params()
+    assert 'bridging O' in params['descriptor']['reference_material']
+    assert '(110)' in params['descriptor']['reference_material']
+    for where in ('page', 'doc', 'engine', 'data'):
+        assert 'bridging oxygen rows of rutile (110)' in p[where] \
+            or 'BRIDGING OXYGEN ROWS of\nrutile (110)'.replace('\n', ' ') \
+            in p[where], where
+    for where in ('page', 'doc', 'engine'):
+        assert 'in-plane oxygen is' in p[where].replace('<i>', '') \
+            .replace('</i>', '').replace('**', ''), where
+    # and the particle number is named as a composition, not a defect count
+    for where in ('page', 'doc', 'engine'):
+        assert 'titanium interstitial' in p[where], where
+
+
+def test_a_fixed_enrichment_is_declared_as_a_timescale_assumption():
+    """Holding E constant says shell and bulk stay in equilibrium
+    partition while the carrier turns over. If that fails the problem is
+    transport into the particle, not a boundary condition on it, and the
+    page has to say so rather than leave it as geometry."""
+    p = _prose()
+    for where in ('page', 'doc'):
+        assert 'equilibrium partition' in p[where], where
+        assert 'fast compared with both half-reactions' in p[where], where
+        assert 'transport into the particle' in p[where], where
+
+
+def test_the_gases_stay_unnamed_and_the_page_says_why():
+    """A deliberate omission, pinned so it is not quietly filled in.
+
+    Both half-reactions carry identical placeholder rate parameters, so a
+    named pair would assert chemistry the numbers do not hold. What the
+    model does require of the pair - unit order in gas and in site - is
+    stated instead."""
+    params = R.load_params()
+    red = params['half_reactions']['reduction']
+    ox = params['half_reactions']['oxidation']
+    for key in ('log10_A_s1', 'E0_eV', 'order_gas', 'order_site'):
+        assert red[key] == ox[key], key
+    assert red['label'] == ox['label'] == 'assumed'
+    assert red['stoichiometry'].startswith('R(g)')
+    assert ox['stoichiometry'].startswith('OX(g)')
+    p = _prose()
+    for where in ('page', 'doc', 'engine', 'data'):
+        assert 'unnamed' in p[where], where
+    for where in ('page', 'doc', 'engine'):
+        assert 'unit order in gas and in site' in p[where], where
+
+
+def test_the_crossing_figure_says_where_its_axis_stops_being_the_material(js):
+    """theta on that axis is the face, so the particle's single-phase
+    limit lands at theta_sol * E and moves with the enrichment: at E = 1
+    it is at 0.004 and the crossing at theta* = 1/3 is inside the second
+    phase, at E = 1844 it leaves the axis entirely. The face ceiling does
+    not move. Both are the phase map's own limits, in the phase map's own
+    colours, seen along one line."""
+    params = R.load_params()
+    st = params['structure']
+    sol = st['x_solubility'] / st['oxygen_per_formula']
+    th_max = st.get('theta_surface_max', 0.5)
+
+    for key, E in (('crossing', 1.0), ('crossing_resolved', 1844.0)):
+        c = js[key]
+        assert rel(c['theta_sol'], sol) < 1e-15, key
+        assert rel(c['theta_surface_max'], th_max) < 1e-15, key
+        assert c['enrichment'] == E
+        assert rel(c['theta_face_at_solubility'], min(1.0, sol * E)) < 1e-15
+
+    assert js['crossing']['theta_face_at_solubility'] < \
+        js['crossing']['theta_star'], 'the uniform crossing must be past it'
+    assert js['crossing_resolved']['theta_face_at_solubility'] == 1.0, \
+        'the layer-resolved reading takes the limit off the axis'
+
+    figs = (WEB / 'figures_redox.js').read_text()
+    assert 'd.theta_face_at_solubility' in figs
+    assert "bandLabel(xSol, 'second phase', C.bulk)" in figs
+    assert "bandLabel(xMax, 'no steady state', C.subsurface)" in figs
+    # the same two tints the phase map uses for the same two statements
+    assert figs.count('tint(C.bulk, 0.13)') == 2
+    assert figs.count('tint(C.subsurface, 0.13)') == 2
+
+    exported = (ROOT / 'docs' / 'figures' / 'redox_crossing.svg').read_text()
+    assert '>second phase<' in exported
+    assert '>no steady state<' in exported
+    frozen = json.loads(
+        (ROOT / 'data' / 'redox_figure_data.json').read_text())
+    assert frozen['crossing']['enrichment'] == 1.0, \
+        'the exported crossing is the uniform reading'
+    assert rel(frozen['crossing']['theta_face_at_solubility'], sol) < 1e-15
+
+    hay = ' '.join((ROOT / 'docs' / 'ti_solver.html').read_text().split())
+    assert 'a different compound, not a reduced rutile' in hay

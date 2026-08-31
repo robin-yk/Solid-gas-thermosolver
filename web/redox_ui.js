@@ -192,7 +192,9 @@
 
     try {
       mountFigure('figCrossing', 'redox-crossing',
-        FIG.crossing({ crossing: R.crossingData(q.K, 201) }));
+        FIG.crossing({ crossing: R.crossingData(q.K, 201, {
+          theta_sol: q.theta_sol, theta_surface_max: q.theta_max,
+          enrichment: q.E }) }));
     } catch (e) { figFail('figCrossing', e.message); }
 
     try {

@@ -1,9 +1,30 @@
-"""Steady-state redox of an oxygen carrier: two half-reactions, one crossing.
+"""Steady-state Mars-van Krevelen redox: two half-reactions, one crossing.
 
-The solid is carried by a single number, the vacancy fraction theta on the
-reacting oxygen sites. A reductant removes lattice oxygen at a rate that
-needs oxygen to remove, and an oxidant refills vacancies at a rate that needs
-vacancies to fill:
+The mechanism is Mars-van Krevelen and this is its site balance at steady
+state: the reductant takes lattice oxygen and leaves a vacancy, the oxidant
+fills a vacancy and puts lattice oxygen back, nothing adsorbs, and there are
+no surface intermediates.
+
+theta is the vacancy fraction on the TWO-COORDINATE BRIDGING OXYGEN ROWS of
+rutile (110), as a fraction of those sites. That is where the rest of the
+model is already referenced: the descriptor is E_vac for (110) bridging O
+(4.39 eV, sX, Li/Guo/Robertson 2015) and the face ceiling theta_max = 0.5 is
+the (1x2) added-row reconstruction, a bridging-row phase. Three-coordinate
+in-plane oxygen is not counted - it is held more strongly, its removal energy
+is not the descriptor's, and one theta over both would describe neither site.
+The particle-average theta is a different quantity: stoichiometric
+bookkeeping, x/2 in MO(2-x), with no claim about which defect carries the
+reduction (in rutile at low x that is the titanium interstitial, and past the
+solubility the solid shears rather than making more point defects).
+
+The reductant and the oxidant are deliberately unnamed. The rate parameters
+in data/redox.json are identical placeholders for both halves, so naming a
+gas pair would assert chemistry the numbers do not carry; what the model does
+require of the pair is unit order in gas and in site, which is what lets
+temperature, pressure and prefactor cancel out of the crossing.
+
+A reductant removes lattice oxygen at a rate that needs oxygen to remove, and
+an oxidant refills vacancies at a rate that needs vacancies to fill:
 
     r_red(theta) = A_r p_r^m_r (1 - theta)^n_r exp(-E_r/kT)     decreasing
     r_ox (theta) = A_o p_o^m_o      theta ^n_o exp(-E_o/kT)     increasing

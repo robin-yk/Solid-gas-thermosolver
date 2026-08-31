@@ -1012,6 +1012,10 @@
     "r_ox": 1.0
    }
   ],
+  "theta_sol": 0.004,
+  "enrichment": 1.0,
+  "theta_face_at_solubility": 0.004,
+  "theta_surface_max": 0.5,
   "descriptor_k_ox_s1": 16.906353706960523
  },
  "phase": {

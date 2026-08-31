@@ -38,6 +38,38 @@
     var X = lin(0, 1, p.x0, p.x1);
     var top = 1.0;
     var Y = lin(0, top, p.y1, p.y0);
+    /* Where the axis stops describing the solid the model is about. The
+       shading and the words are the phase map's, so the two figures say
+       the same thing in the same colours: bulk purple where the particle
+       has left its single-phase field, subsurface orange where the face
+       has saturated and no crossing can be settled at. theta is the
+       face, so the particle limit lands here at theta_sol * E and moves
+       with the enrichment - at E = 1 it is at 0.004 and nearly the whole
+       axis is already a different structure, which is the uniform
+       model's own verdict on itself. */
+    var xSol = d.theta_face_at_solubility;
+    var xMax = d.theta_surface_max;
+    var edge = xMax == null ? 1.0 : Math.min(1.0, xMax);
+    /* the names hang off their own boundary line, running up from the
+       bottom spine: a band on this figure can be four points wide or four
+       fifths of the axis, and only a vertical label fits both */
+    function bandLabel(x, s, col) {
+      f.text(X(x) + 9, p.y1 - 9, s,
+             { size: T.small, fill: col, rotate: -90 });
+    }
+    if (xSol != null && xSol < edge) {
+      f.rect(X(xSol), p.y0, X(edge) - X(xSol), p.y1 - p.y0,
+             tint(C.bulk, 0.13));
+      f.line(X(xSol), p.y0, X(xSol), p.y1, C.bulk, LW.guide, '3 2');
+      bandLabel(xSol, 'second phase', C.bulk);
+    }
+    if (xMax != null && xMax < 1.0) {
+      f.rect(X(xMax), p.y0, p.x1 - X(xMax), p.y1 - p.y0,
+             tint(C.subsurface, 0.13));
+      f.line(X(xMax), p.y0, X(xMax), p.y1, C.subsurface, LW.curve);
+      bandLabel(xMax, 'no steady state', C.subsurface);
+    }
+
     frame(f, X, Y);
     axisX(f, X, p.y1, [0, 0.25, 0.5, 0.75, 1],
           'vacancy fraction on the reacting face, θ',

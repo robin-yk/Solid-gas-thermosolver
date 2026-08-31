@@ -65,6 +65,14 @@ def build(p):
             'rate_over_k_ox': ratio['rate_s1'],
             'regime': ratio['regime'],
             'rows': rows,
+            # the exported crossing is the uniform reading, E = 1, so the
+            # particle's single-phase limit lands on the face axis at
+            # theta_sol itself - which is the figure's own comment on the
+            # assumption it is drawn under
+            'theta_sol': sol,
+            'enrichment': 1.0,
+            'theta_face_at_solubility': min(1.0, sol),
+            'theta_surface_max': th_max,
             'descriptor_k_ox_s1': scale},
         'phase': {
             'theta_sol': sol, 'theta_surface_max': th_max,
