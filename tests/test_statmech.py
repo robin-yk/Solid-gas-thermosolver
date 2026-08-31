@@ -102,8 +102,14 @@ def test_the_shell_thickness_ladder_matches_the_oracle():
         mus.append(row['mu_V_eV'])
     assert shares == sorted(shares)
     assert mus == sorted(mus, reverse=True)
-    assert shares[0] == pytest.approx(0.616, abs=0.005)
-    assert shares[1] == pytest.approx(0.941, abs=0.005)
+    assert shares[0] == pytest.approx(0.109, abs=0.005)
+    assert shares[1] == pytest.approx(0.145, abs=0.005)
+    # a shell four slabs thick still holds only a fifth of the inventory.
+    # Before the compensating polarons were in the free energy the first
+    # slab alone held sixty-two percent; the surface-to-bulk enrichment
+    # is now the CUBE ROOT of what it was, and against a bulk with two
+    # thousand times the sites that is not enough to win.
+    assert shares[-1] < 0.25
 
 
 def test_hand_anchors():
@@ -258,14 +264,38 @@ def test_pipeline_is_deterministic_for_a_seed():
     assert a['fractions'] == b['fractions']
 
 
-def test_low_loading_lives_on_the_surface():
-    """Below the surface capacity the equilibrium expectation is
-    surface-first: the sX energies put subsurface 0.59 eV up."""
+def test_even_low_loading_lives_mostly_in_the_bulk():
+    """The result that reversed when the vacancy started paying for its
+    electrons, and the one most likely to be misremembered.
+
+    A compensated vacancy has three configurational logarithms, so the
+    dilute isotherm goes as exp(mu/3kT) and the surface-to-bulk
+    enrichment is exp(dE/3kT) = 333 rather than exp(dE/kT) = 3.7e7. The
+    bulk has 1846 times the sites of the bridging row, so 333 does not
+    buy the surface the inventory: even at 1 umol-O/g, four fifths of the
+    oxygen is in the bulk. The old form said the opposite, by four orders
+    of magnitude, and it was the neutral-vacancy exponent that said it."""
     g = S.geometry(P)
     r = S.distribute(P, 600.0, 1.0, g)
-    assert r['fractions']['surface'] > 0.995
-    assert r['fractions']['bulk'] < 1e-3
+    assert r['fractions']['bulk'] > 0.8
+    assert r['fractions']['surface'] < 0.2
     assert not r['surface_reconstruction_regime']
+
+    kt = S.KB_EV * 873.15
+    eps = S.energetics(P)['eps']
+
+    def enrichment(vo):
+        q = S.distribute(P, 600.0, vo, g)
+        return (S.theta_of_mu(q['mu_V_eV'], eps[0], kt)
+                / S.theta_of_mu(q['mu_V_eV'], eps[2], kt))
+
+    want = math.exp((eps[2] - eps[0]) / (3 * kt))
+    assert want == pytest.approx(331.45, abs=0.1)
+    # asymptotic, so it is checked as a limit rather than at one point
+    assert enrichment(0.05) == pytest.approx(want, rel=0.005)
+    assert enrichment(1.0) == pytest.approx(want, rel=0.05)
+    assert abs(enrichment(0.05) - want) < abs(enrichment(1.0) - want)
+    assert g['N_b'] / g['N_s'] > 1000.0
 
 
 def test_high_temperature_limit_is_proportional_to_site_counts():
@@ -288,14 +318,14 @@ def test_the_phase_ladder_and_its_lever_rules():
     coexistence branches, and continuity across every boundary."""
     g = S.geometry(P)
     b = S.phase_boundaries(P, 600.0, g)
-    cases = [(1.0, 'dilute'), (3.5, 'surface_coexistence'),
-             (9.0, 'reconstructed'), (95.0, 'reconstructed'),
+    cases = [(1.0, 'dilute'), (35.0, 'surface_coexistence'),
+             (60.0, 'reconstructed'), (95.0, 'reconstructed'),
              (200.0, 'cs_coexistence')]
     for vo, regime in cases:
         d = S.distribute(P, 600.0, vo, g)
         assert d['regime'] == regime, vo
         assert d['matched_umol_g'] == pytest.approx(vo, rel=1e-9), vo
-    co = S.distribute(P, 600.0, 3.5, g)
+    co = S.distribute(P, 600.0, 35.0, g)
     assert co['mu_V_eV'] == b['mu_t_eV']                 # riser: mu pinned
     assert 0.0 < co['surface_phase']['phi_reconstructed'] < 1.0
     cs = S.distribute(P, 600.0, 200.0, g)
@@ -314,15 +344,20 @@ def test_the_phase_ladder_and_its_lever_rules():
 
 
 def test_boundary_ladder_matches_the_hand_calculation():
-    """mu_t = eps_s + kT ln(th/(1-th)) and friends, checked as numbers:
-    2.31 / 6.78 / 160 umol-O/g at 600 C for the shipped dataset."""
+    """mu_t = mu_V(theta_t, eps_s) and friends, checked as numbers:
+    32.8 / 37.2 / 110.8 umol-O/g at 600 C for the shipped dataset.
+
+    The onset moved up by an order of magnitude when the compensating
+    polarons went into the free energy: at the same coverage the surface
+    now needs far more inventory behind it, because the deep classes take
+    a much larger share on the way there."""
     g = S.geometry(P)
     b = S.phase_boundaries(P, 600.0, g)
-    assert b['mu_t_eV'] == pytest.approx(-0.11931, abs=2e-5)
-    assert b['mu_cs_eV'] == pytest.approx(0.89485, abs=2e-5)
-    assert b['VO_onset_umol_g'] == pytest.approx(2.3092, abs=2e-4)
-    assert b['VO_recon_complete_umol_g'] == pytest.approx(6.7830, abs=2e-4)
-    assert b['VO_cs_umol_g'] == pytest.approx(159.98, abs=0.05)
+    assert b['mu_t_eV'] == pytest.approx(-0.0058752, abs=2e-6)
+    assert b['mu_cs_eV'] == pytest.approx(0.2750032, abs=2e-6)
+    assert b['VO_onset_umol_g'] == pytest.approx(32.7514, abs=2e-4)
+    assert b['VO_recon_complete_umol_g'] == pytest.approx(37.2253, abs=2e-4)
+    assert b['VO_cs_umol_g'] == pytest.approx(110.763, abs=0.005)
     hot = S.phase_boundaries(P, 800.0, g)
     assert hot['VO_onset_umol_g'] > b['VO_onset_umol_g']
 
@@ -418,7 +453,7 @@ def test_sweep_walks_the_phase_ladder():
     only beyond the CS ceiling, and the recoverable fraction falls as the
     inventory is forced deep."""
     g = S.geometry(P)
-    rows = S.sweep(P, 600.0, g, [2.0, 4.0, 20.0, 60.0, 95.0, 150.0, 200.0])
+    rows = S.sweep(P, 600.0, g, [2.0, 35.0, 60.0, 80.0, 95.0, 105.0, 200.0])
     b = S.phase_boundaries(P, 600.0, g)
     line_umol = b['theta_reconstructed_eff'] * g['N_s']
     surface = [r['surface'] for r in rows]
@@ -430,9 +465,14 @@ def test_sweep_walks_the_phase_ladder():
     assert [r['regime'] for r in rows][-1] == 'cs_coexistence'
     assert rows[-1]['extended'] > 0.0
     assert all(r['extended'] == 0.0 for r in rows[:-1])
+    # The recoverable fraction is low at EVERY loading now, and falls
+    # monotonically: the oxygen is in the bulk from the start, so there
+    # is no dilute regime in which CO2 can reach most of it. Before the
+    # compensation went in this started above 0.95, because the model
+    # put nearly the whole inventory on the surface.
     fr = [r['f_recoverable'] for r in rows]
-    assert fr[0] > 0.95
-    assert fr[-1] < fr[-2] < fr[2]
+    assert fr[0] < 0.25
+    assert all(y < x for x, y in zip(fr, fr[1:])), fr
     acc = [r['accessible'] for r in rows[:-1]]
     assert all(y >= a for a, y in zip(acc, acc[1:]))
 
@@ -530,12 +570,23 @@ def test_mode_note_discloses_scope():
     assert out['surface_reconstruction_regime'] is True
     assert out['regime'] == 'reconstructed'
     kinds = [w['kind'] for w in out['warnings']]
-    assert 'surface_phase' in kinds and 'subsurface_dense' in kinds
+    assert 'surface_phase' in kinds
     phase_note = next(w['text'] for w in out['warnings']
                       if w['kind'] == 'surface_phase')
     assert 'added-row' in phase_note
     assert 'line compound' in phase_note
-    shell = next(w['text'] for w in out['warnings']
-                 if w['kind'] == 'subsurface_dense')
-    assert 'dilute-defect approximation fails' in shell
-    assert 'heavily reduced' in shell
+
+    # the dense-subsurface warning no longer fires at the shipped
+    # condition and should not: the first subsurface layer sits at 0.066,
+    # not the 0.95 the uncompensated free energy put it at. It still has
+    # to fire when the class really is dense.
+    assert 'subsurface_dense' not in kinds
+    assert out['theta']['subsurface'] < P['saturation'][
+        'subsurface_dilute_warn']
+    dense = S.distribute(P, 400.0, 108.0, S.geometry(P, ss_layers=1))
+    if dense['theta']['subsurface'] > P['saturation'][
+            'subsurface_dilute_warn']:
+        shell = next(w['text'] for w in dense['warnings']
+                     if w['kind'] == 'subsurface_dense')
+        assert 'dilute-defect approximation fails' in shell
+        assert 'heavily reduced' in shell

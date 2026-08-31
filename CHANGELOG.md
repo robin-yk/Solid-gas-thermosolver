@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Built the particle engine on the ceria equilibrium construction (`solidgas/particle/`): compensated free energy, a depth profile whose decay length is derived from the DFT triple rather than assumed, an exact layer-stack sum, a Crank transport clock, and a Debye-against-segregation check. Certified against an independent 50-digit oracle and mirrored in the browser; wired into the defect workspace as a depth-resolved card.
+- Retired the layer-resolution and mean-field-crowding degrees of freedom from the three-class engine, its browser port, the dataset and the workspace controls. Both were standing in for the cation-sublattice entropy that is now in the free energy: with the compensation in place, resolving the shell into three layers moves the bulk inventory by 2 percent rather than 30.
+- Made `solidgas/statmech.py` re-export the compensated free energy instead of carrying its own, so there is one such relation in the repository and the coarse partition cannot drift from the depth-resolved one.
+- Rewrote the typeset formulation (S1)-(S21) around the compensated vacancy; the sheet had been printing the plain Fermi-Dirac isotherm, which is a neutral vacancy. Fixed a renderer bug that clipped the denominator of every stacked fraction on both sheets.
 - Drew all twelve manuscript plates, rewrote the captions in a plain declarative register, and replaced two panels that the data could not support: the dead radial profile became a barrier-calibration curve, and the candidate scatter became the optimality certificate of the selected assemblage.
 - Added a manuscript figure-plate pipeline: a registry of what each figure claims, a frozen extract of every value the plates carry, a print drawing kit at journal column widths, and a self-contained proof sheet with per-plate SVG and 600 dpi export.
 - Corrected the 500 and 700 C entries of the RWGS stability-margin table, which quoted the legacy oxygen-potential ladder margin from the CH4-containing run instead of the certified KKT reduced cost, and added a gate that holds the table and the README to the reference.

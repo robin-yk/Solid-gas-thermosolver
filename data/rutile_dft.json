@@ -1,135 +1,175 @@
 {
-  "version": "0.3-phase",
-  "material": "rutile TiO2",
-  "facet": "(110)",
-  "lattice_constants_A": {"a": 4.5937, "c": 2.9587},
-  "molar_mass_g_mol": 79.866,
-
-  "site_geometry": {
-    "O_per_1x1_cell_bridging": 1,
-    "O_per_1x1_cell_layer": 4,
-    "layer_thickness": "d110 = a/sqrt(2) = 3.248 A",
-    "note": "The (110) 1x1 cell is c x a*sqrt(2) = 19.22 A^2. It carries one bridging O; an oxygen slab of thickness d110 below the bridging plane carries four O per cell, which reproduces the bulk oxygen density exactly. The subsurface class is therefore not one atomic row: at the default subsurface_layers = 1 it is a 0.325 nm slab holding four times the bridging-row capacity (54.23 vs 13.56 umol-O/g at d = 0.9 um), and the near-surface shell holds 1 + 4*subsurface_layers O per cell.",
-    "shell_thickness_parameter": "subsurface_layers (defaults block) is a declared model choice, not a fitted quantity. The default 1 follows the DFT set, which resolves one first-subsurface energy and takes deeper layers as bulk. Because the subsurface energy is far below the bulk energy, the shell/bulk split is sensitive to it: at 600 C and 95 umol-O/g the subsurface class holds 51.8 / 82.6 / 86.3 / 87.1 umol-O/g for 1 / 2 / 3 / 4 layers, with the bulk taking 36.5 / 5.6 / 2.0 / 1.2. The certified ladder is in reference_statmech.json (shell_ladder) and the reading is discussed in docs/defect-model.md. Real formation energies relax smoothly towards the bulk value over the first few layers, so the physical answer lies between the one- and two-layer columns."
+ "version": "0.3-phase",
+ "material": "rutile TiO2",
+ "facet": "(110)",
+ "lattice_constants_A": {
+  "a": 4.5937,
+  "c": 2.9587
+ },
+ "molar_mass_g_mol": 79.866,
+ "site_geometry": {
+  "O_per_1x1_cell_bridging": 1,
+  "O_per_1x1_cell_layer": 4,
+  "layer_thickness": "d110 = a/sqrt(2) = 3.248 A",
+  "note": "The (110) 1x1 cell is c x a*sqrt(2) = 19.22 A^2. It carries one bridging O; an oxygen slab of thickness d110 below the bridging plane carries four O per cell, which reproduces the bulk oxygen density exactly. The subsurface class is therefore not one atomic row: at the default subsurface_layers = 1 it is a 0.325 nm slab holding four times the bridging-row capacity (54.23 vs 13.56 umol-O/g at d = 0.9 um), and the near-surface shell holds 1 + 4*subsurface_layers O per cell.",
+  "shell_thickness_parameter": "subsurface_layers (defaults block) is a declared model choice, not a fitted quantity. The default 1 follows the DFT set, which resolves one first-subsurface energy and takes deeper layers as bulk. Because the subsurface energy is far below the bulk energy, the shell/bulk split is sensitive to it: at 600 C and 95 umol-O/g the subsurface class holds 51.8 / 82.6 / 86.3 / 87.1 umol-O/g for 1 / 2 / 3 / 4 layers, with the bulk taking 36.5 / 5.6 / 2.0 / 1.2. The certified ladder is in reference_statmech.json (shell_ladder) and the reading is discussed in docs/defect-model.md. Real formation energies relax smoothly towards the bulk value over the first few layers, so the physical answer lies between the one- and two-layer columns."
+ },
+ "vacancy_energetics": {
+  "reference_state": "surface bridging O vacancy",
+  "default_preset": "sx",
+  "presets": {
+   "sx": {
+    "label": "sX hybrid, Li et al. 2015",
+    "surface_eV": 0.0,
+    "subsurface_eV": 0.59,
+    "bulk_eV": 1.31
+   },
+   "gga": {
+    "label": "GGA, Li et al. 2015",
+    "surface_eV": 0.0,
+    "subsurface_eV": 0.39,
+    "bulk_eV": 1.08
+   }
   },
-
-  "vacancy_energetics": {
-    "reference_state": "surface bridging O vacancy",
-    "default_preset": "sx",
-    "presets": {
-      "sx": {"label": "sX hybrid, Li et al. 2015",
-             "surface_eV": 0.0, "subsurface_eV": 0.59, "bulk_eV": 1.31},
-      "gga": {"label": "GGA, Li et al. 2015",
-              "surface_eV": 0.0, "subsurface_eV": 0.39, "bulk_eV": 1.08}
-    },
-    "layer_profile": {
-      "resolved_layers_max": 3,
-      "span_fraction": [0.0, 0.36, 0.64],
-      "eps_eV_sx_illustrative": [0.59, 0.85, 1.05],
-      "range_eV": {"layer1": [0.3, 0.8], "layer2": [0.5, 1.1],
-                   "layer3": [0.7, 1.3], "bulk": [1.0, 1.6]},
-      "label": "assumed",
-      "note": "Depth profile of the dilute vacancy formation energy. Layer 1 is the DFT first-subsurface value of the active preset and the bulk class keeps the DFT bulk value; a resolved layer between them sits at span_fraction of the subsurface-to-bulk interval, so the endpoints are literature and only the SHAPE is assumed. span_fraction 0.36 / 0.64 places layers 2 and 3 at 0.85 / 1.05 eV on the sx preset. The ranges are sampling intervals for the uncertainty study, not error bars: no published DFT set resolves these layers separately. resolved_layers = 1 (the default) collapses layers 2-3 back into the bulk class and reproduces the legacy partition exactly."
-    },
-    "coverage_penalty": {
-      "omega_eV": {"surface": 0.0, "layer1": 0.60, "layer2": 0.45,
-                   "layer3": 0.30, "bulk": 0.15},
-      "range_eV": [0.0, 1.0],
-      "label": "assumed",
-      "sign_convention": "repulsive, omega >= 0",
-      "note": "Effective mean-field coverage penalty. The free energy per site carries eps_i*theta + (omega_i/2)*theta^2, so the chemical potential carries omega_i*theta and crowding costs energy. omega_i ~ sum_j z_ij J_ij is an EFFECTIVE quantity, not a vacancy-pair energy: the surface_ordering pair table must not be summed into it directly, because coordination and pair counting would be double counted. The planned route for omega_surface is to back it out of the sampled mu(theta) of the surface Monte Carlo; until then it is held at 0 so the surface phase ladder is untouched and any change in layer-1 occupancy is attributable to the layer interaction alone. omega = 0 for every class recovers the non-interacting site-exclusion isotherm exactly. Only repulsive values are admitted: omega < -4kT would make mu(theta) non-monotone and split a layer into two phases, a construction this branch does not carry.",
-      "provenance": "No literature value. The magnitudes are chosen to bring the first subsurface layer out of near-saturation at the flagship condition and are carried as a sampling range, not as a measurement."
-    },
-    "provenance": "Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), DOI 10.1021/acs.jpcc.5b02430. Absolute neutral V_O formation energies on rutile (110): sX 4.39 / 4.98 / 5.70 eV, GGA 3.71 / 4.10 / 4.79 eV (surface / first subsurface / bulk). Relative values are used; the oxygen chemical potential cancels in the canonical ensemble. Site energies are polaron-relaxed: Ti3+ small polarons are not explicit variables (context: Reticcioli et al., Phys. Rev. B 98 (2018) 045306)."
+  "provenance": "Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), DOI 10.1021/acs.jpcc.5b02430. Absolute neutral V_O formation energies on rutile (110): sX 4.39 / 4.98 / 5.70 eV, GGA 3.71 / 4.10 / 4.79 eV (surface / first subsurface / bulk). Relative values are used; the oxygen chemical potential cancels in the canonical ensemble. Site energies are polaron-relaxed: Ti3+ small polarons are not explicit variables (context: Reticcioli et al., Phys. Rev. B 98 (2018) 045306).",
+  "retired": "Two blocks were removed in favour of solidgas/particle/. layer_profile held a span_fraction that placed intermediate near-surface layers at a declared fraction of the subsurface-to-bulk interval; its own note labelled the shape \"assumed\". It is superseded by E(z) = E_bulk - dE_seg exp(-z/xi) with xi derived from the three energies above, which has no free shape parameter and reproduces the declared fractions to within a few hundredths. coverage_penalty held a mean-field crowding term omega with no literature value, whose magnitudes its own provenance said were chosen to bring the first subsurface layer out of near-saturation - that was the symptom of the missing cation-sublattice entropy, so it was standing in for a term that is now in the free energy itself. With the compensation in place, resolving the shell into three layers moves the bulk inventory by 2 percent rather than the 30 it used to."
+ },
+ "surface_ordering": {
+  "pair_eV": {
+   "along_row": [
+    0.4,
+    0.2,
+    0.05
+   ],
+   "cross_row": [
+    0.05,
+    0.02
+   ]
   },
-
-  "surface_ordering": {
-    "pair_eV": {"along_row": [0.40, 0.20, 0.05], "cross_row": [0.05, 0.02]},
-    "interaction_cutoff_A": 10.0,
-    "critical_coverage": 0.17,
-    "reconstruction_coverage": 0.20,
-    "disfavored_spacing_sites": [1, 2],
-    "preferred_spacing_sites": [4, 5],
-    "pair_table_note": "Pair energies are calibrated, not computed: chosen so that spacings of 1-2 bridging sites are suppressed and the modal spacing near critical coverage is 4-5 sites, with the ordering energy scale of the published low-energy configurations (~0.2-0.3 eV). Replace with project DFT configuration energies when available.",
-    "provenance": "Birschitzky et al., npj Comput. Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4. DFT+U (U = 3.9 eV) + ML + Metropolis MC on rutile (110): experiment reports an average reconstruction onset near 17%, DFT places the transition near 20%, and vacancy-rich local regions reach about 20%; these values mark a phase-change interval, not a maximum allowed coverage. Interaction range is ~10 A, in-row spacings of 1-2 sites are nearly absent, and the most probable spacing is 4-5 sites. Reconstruction mechanism: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053."
+  "interaction_cutoff_A": 10.0,
+  "critical_coverage": 0.17,
+  "reconstruction_coverage": 0.2,
+  "disfavored_spacing_sites": [
+   1,
+   2
+  ],
+  "preferred_spacing_sites": [
+   4,
+   5
+  ],
+  "pair_table_note": "Pair energies are calibrated, not computed: chosen so that spacings of 1-2 bridging sites are suppressed and the modal spacing near critical coverage is 4-5 sites, with the ordering energy scale of the published low-energy configurations (~0.2-0.3 eV). Replace with project DFT configuration energies when available.",
+  "provenance": "Birschitzky et al., npj Comput. Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4. DFT+U (U = 3.9 eV) + ML + Metropolis MC on rutile (110): experiment reports an average reconstruction onset near 17%, DFT places the transition near 20%, and vacancy-rich local regions reach about 20%; these values mark a phase-change interval, not a maximum allowed coverage. Interaction range is ~10 A, in-row spacings of 1-2 sites are nearly absent, and the most probable spacing is 4-5 sites. Reconstruction mechanism: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053."
+ },
+ "surface_phases": {
+  "theta_transition": 0.17,
+  "transition_interval": [
+   0.17,
+   0.2
+  ],
+  "theta_reconstructed_eff": 0.5,
+  "note": "The (1x2) reconstruction is treated as a competing surface PHASE, not a cap and not an extrapolation: the (1x1) vacancy lattice gas holds up to theta_transition; there the added-row Ti2O3 phase takes over by a first-order transition (lever-rule coexistence at fixed mu_V), with a stoichiometric areal O deficiency of theta_reconstructed_eff = 0.5 in bridging-monolayer units (one added Ti2O3 unit per (1x2) cell = one O vacancy per two bridging sites). Declared idealisations: the reconstructed phase is a zero-width line compound (no configurational entropy; cross-linked (1x2) variants not distinguished), no surface phase beyond theta_eff = 0.5 is modelled, and the high-coverage branch of the (1x1) lattice gas (theta_s > theta_transition) is EXCLUDED from the phase set - the ideal-exclusion free energy is artificially low there, while the repulsive ordering energies and the observed/DFT surface phase behaviour under strong reduction give reconstructed phases, not a bridging-row-stripped (1x1). theta_transition is the experimental onset; the DFT value 0.20 bounds the interval (sensitivity, not a second phase).",
+  "provenance": "Added-row Ti2O3 structure of the (1x2): Onishi & Iwasawa, Surf. Sci. 313 (1994) L783; confirmed stable under reduction by DFT+U: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053. Transition location: the 17-20% onset interval of Birschitzky et al. (see surface_ordering.provenance)."
+ },
+ "saturation": {
+  "subsurface_dilute_warn": 0.25,
+  "x_max_shear": 0.008,
+  "note": "x_max_shear is the approximate rutile point-defect range before crystallographic shear (CS) planes; the partition uses it as the bulk solubility: theta_sol = x_max_shear/2 pins mu_V at the estimated rutile / CS-phase coexistence, and inventory beyond that total precipitates as extended defects by the lever rule (reported as its own output, not forced into the point-defect classes). The value is approximate and is labelled an estimate wherever it is used. subsurface_dilute_warn flags the first subsurface O layer leaving the dilute regime; read that as a heavily reduced near-surface shell, not isolated vacancies."
+ },
+ "co2_kinetics": {
+  "Ea_eV": {
+   "surface": 0.45,
+   "subsurface": 1.25,
+   "bulk": 2.1
   },
-
-  "surface_phases": {
-    "theta_transition": 0.17,
-    "transition_interval": [0.17, 0.20],
-    "theta_reconstructed_eff": 0.5,
-    "note": "The (1x2) reconstruction is treated as a competing surface PHASE, not a cap and not an extrapolation: the (1x1) vacancy lattice gas holds up to theta_transition; there the added-row Ti2O3 phase takes over by a first-order transition (lever-rule coexistence at fixed mu_V), with a stoichiometric areal O deficiency of theta_reconstructed_eff = 0.5 in bridging-monolayer units (one added Ti2O3 unit per (1x2) cell = one O vacancy per two bridging sites). Declared idealisations: the reconstructed phase is a zero-width line compound (no configurational entropy; cross-linked (1x2) variants not distinguished), no surface phase beyond theta_eff = 0.5 is modelled, and the high-coverage branch of the (1x1) lattice gas (theta_s > theta_transition) is EXCLUDED from the phase set - the ideal-exclusion free energy is artificially low there, while the repulsive ordering energies and the observed/DFT surface phase behaviour under strong reduction give reconstructed phases, not a bridging-row-stripped (1x1). theta_transition is the experimental onset; the DFT value 0.20 bounds the interval (sensitivity, not a second phase).",
-    "provenance": "Added-row Ti2O3 structure of the (1x2): Onishi & Iwasawa, Surf. Sci. 313 (1994) L783; confirmed stable under reduction by DFT+U: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053. Transition location: the 17-20% onset interval of Birschitzky et al. (see surface_ordering.provenance)."
+  "A_eff_per_s_atm": {
+   "surface": 10000000000000.0,
+   "subsurface": 300000.0,
+   "bulk": 100000.0
   },
-
-  "saturation": {
-    "subsurface_dilute_warn": 0.25,
-    "x_max_shear": 0.008,
-    "note": "x_max_shear is the approximate rutile point-defect range before crystallographic shear (CS) planes; the partition uses it as the bulk solubility: theta_sol = x_max_shear/2 pins mu_V at the estimated rutile / CS-phase coexistence, and inventory beyond that total precipitates as extended defects by the lever rule (reported as its own output, not forced into the point-defect classes). The value is approximate and is labelled an estimate wherever it is used. subsurface_dilute_warn flags the first subsurface O layer leaving the dilute regime; read that as a heavily reduced near-surface shell, not isolated vacancies."
-  },
-
-  "co2_kinetics": {
-    "Ea_eV": {"surface": 0.45, "subsurface": 1.25, "bulk": 2.10},
-    "A_eff_per_s_atm": {"surface": 1e13, "subsurface": 3e5, "bulk": 1e5},
-    "p_order_m": 1.0,
-    "defaults": {"exposure_s": 300, "p_CO2_atm": 0.20, "T_reox_C": 600},
-    "note": "Placeholder effective kinetics: k_c = A_c p^m exp(-Ea_c/kT), P_c(t) = 1 - exp(-k_c t). The barriers are the first-sketch values; the prefactors are EFFECTIVE, far below an attempt frequency for the deeper classes because subsurface and bulk refill are transport-limited, and are set to give a plausible recovery pattern at 600 C / 300 s / 0.2 atm (surface complete, subsurface partial, bulk negligible). Replace with fitted or DFT values; none of these numbers is a literature result."
-  },
-
-  "dielectric_correlation": {
-    "form": "power_law",
-    "log10_intercept": -3.07028,
-    "log10_intercept_err": 0.695,
-    "exponent": 1.22355,
-    "exponent_err": 0.2302,
-    "eps_prime": null,
-    "fit_stats": {"pearson_r": 0.96637, "r_squared": 0.93388,
-                  "adj_r_squared": 0.90082, "residual_ss": 0.18029,
-                  "n_points": 4},
-    "fit_range_umol_g": [95, 5000],
-    "note": "Empirical dielectric loss factor of this work: linear regression of log10(eps'') on log10(VO_total), i.e. eps'' = 10^a * VO^b with a = -3.07028 +/- 0.695 and b = 1.22355 +/- 0.2302 (OriginLab, no weighting, N = 4, Pearson r 0.96637, R^2 0.93388, adj. R^2 0.90082, RSS 0.18029). Fitted over roughly 95-5000 umol-O/g; below that range the value is an extrapolation and the card marks it. Set eps_prime to display tan delta.",
-    "provenance": "Measured in this work (Kwak et al.): dielectric loss factor vs total oxygen-vacancy content from H2O-integration titration of reduced rutile."
-  },
-
-  "kinetics_cgmc": {
-    "nu0_per_s": 1e13,
-    "E_m_bulk_eV": 0.65,
-    "n_cells": 28,
-    "eps_ctrl": 0.08,
-    "stochastic_column_counts": 200000,
-    "note": "Coarse-grained KMC of reoxidation transport, after the group's framework: radial coarse cells over the particle, exchange rates R(k->l) = Lambda_kl eta_k (q_l - eta_l) exp(beta eps_k) with a symmetric kernel Lambda_kl = nu0 a^2 A_kl exp(-beta E_TS) / (d_kl v_O q_k q_l) and a common saddle E_TS = E_m + eps_bulk, so the activation to leave cell k is E_TS - eps_k. This satisfies detailed balance against the product-binomial Gibbs measure with H = sum eps_k eta_k (the closed system relaxes exactly to the (1x1) three-class equilibrium split) and reduces in the dilute limit to the finite-volume discretisation of spherical diffusion with D = a^2 nu0 exp(-beta E_m). Surface refill (CO2) is the one irreversible channel and uses the surface entry of co2_kinetics. Reconstruction kinetics are not modelled: the transport network uses the (1x1) site classes. E_m defaults to the neutral-vacancy bulk barrier; with it, transport is NOT rate-limiting at 600 C - a measured partial recovery therefore reads back as an EFFECTIVE barrier (charged migration, trapping, aggregation), which the panel can fit.",
-    "provenance": "Framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003). E_m default: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a (neutral V_O, c-axis)."
-  },
-
-  "experimental_recovery": {
-    "points": [],
-    "schema": {"VO_total_umol_g": "x", "recovered_umol_g": "y",
-               "label": "optional"},
-    "note": "Measured CO2 recovery for the overlay on the sweep plot; empty until digitised from experiment."
-  },
-
-  "diffusion_eV": {
-    "bulk_c_axis": 0.65,
-    "surface_001": 1.19,
-    "surface_crossrow_concerted": 0.91,
-    "note": "Stored for a later kinetic version; not used by the equilibrium model. The surface-to-subsurface exchange barrier is a different path and is not any of these numbers. The planned kinetic layer follows the coarse-grained kinetic Monte Carlo framework of the group: radial coarse cells over the particle, Arrhenius exchange rates, detailed balance against the same Gibbs measure, q^2 time coarse-graining.",
-    "provenance": "Bulk: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a. Surface (unstrained rutile 110): Wang et al., Phys. Rev. B 82 (2010) 165309. Coarse-grained KMC framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003)."
-  },
-
+  "p_order_m": 1.0,
   "defaults": {
-    "T_C": 600,
-    "VO_total_umol_g": 95.0,
-    "particle_diameter_um": 0.90,
-    "subsurface_layers": 1,
-    "resolved_layers": 1,
-    "coverage_penalty": "off",
-    "energetics_preset": "sx",
-    "mc": {
-      "seed": 12345,
-      "rows": 8, "row_sites": 25, "ss_layers": 1, "bulk_layers": 8,
-      "fillings": [2, 4, 7, 12, 20, 32, 50, 75, 110, 160],
-      "equil_sweeps": 2500, "warm_equil_sweeps": 1000, "sample_sweeps": 4000,
-      "widom_every": 10, "hist_every": 25, "blocks": 20
-    }
+   "exposure_s": 300,
+   "p_CO2_atm": 0.2,
+   "T_reox_C": 600
+  },
+  "note": "Placeholder effective kinetics: k_c = A_c p^m exp(-Ea_c/kT), P_c(t) = 1 - exp(-k_c t). The barriers are the first-sketch values; the prefactors are EFFECTIVE, far below an attempt frequency for the deeper classes because subsurface and bulk refill are transport-limited, and are set to give a plausible recovery pattern at 600 C / 300 s / 0.2 atm (surface complete, subsurface partial, bulk negligible). Replace with fitted or DFT values; none of these numbers is a literature result."
+ },
+ "dielectric_correlation": {
+  "form": "power_law",
+  "log10_intercept": -3.07028,
+  "log10_intercept_err": 0.695,
+  "exponent": 1.22355,
+  "exponent_err": 0.2302,
+  "eps_prime": null,
+  "fit_stats": {
+   "pearson_r": 0.96637,
+   "r_squared": 0.93388,
+   "adj_r_squared": 0.90082,
+   "residual_ss": 0.18029,
+   "n_points": 4
+  },
+  "fit_range_umol_g": [
+   95,
+   5000
+  ],
+  "note": "Empirical dielectric loss factor of this work: linear regression of log10(eps'') on log10(VO_total), i.e. eps'' = 10^a * VO^b with a = -3.07028 +/- 0.695 and b = 1.22355 +/- 0.2302 (OriginLab, no weighting, N = 4, Pearson r 0.96637, R^2 0.93388, adj. R^2 0.90082, RSS 0.18029). Fitted over roughly 95-5000 umol-O/g; below that range the value is an extrapolation and the card marks it. Set eps_prime to display tan delta.",
+  "provenance": "Measured in this work (Kwak et al.): dielectric loss factor vs total oxygen-vacancy content from H2O-integration titration of reduced rutile."
+ },
+ "kinetics_cgmc": {
+  "nu0_per_s": 10000000000000.0,
+  "E_m_bulk_eV": 0.65,
+  "n_cells": 28,
+  "eps_ctrl": 0.08,
+  "stochastic_column_counts": 200000,
+  "note": "Coarse-grained KMC of reoxidation transport, after the group's framework: radial coarse cells over the particle, exchange rates R(k->l) = Lambda_kl eta_k (q_l - eta_l) exp(beta eps_k) with a symmetric kernel Lambda_kl = nu0 a^2 A_kl exp(-beta E_TS) / (d_kl v_O q_k q_l) and a common saddle E_TS = E_m + eps_bulk, so the activation to leave cell k is E_TS - eps_k. This satisfies detailed balance against the product-binomial Gibbs measure with H = sum eps_k eta_k (the closed system relaxes exactly to the (1x1) three-class equilibrium split) and reduces in the dilute limit to the finite-volume discretisation of spherical diffusion with D = a^2 nu0 exp(-beta E_m). Surface refill (CO2) is the one irreversible channel and uses the surface entry of co2_kinetics. Reconstruction kinetics are not modelled: the transport network uses the (1x1) site classes. E_m defaults to the neutral-vacancy bulk barrier; with it, transport is NOT rate-limiting at 600 C - a measured partial recovery therefore reads back as an EFFECTIVE barrier (charged migration, trapping, aggregation), which the panel can fit.",
+  "provenance": "Framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003). E_m default: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a (neutral V_O, c-axis)."
+ },
+ "experimental_recovery": {
+  "points": [],
+  "schema": {
+   "VO_total_umol_g": "x",
+   "recovered_umol_g": "y",
+   "label": "optional"
+  },
+  "note": "Measured CO2 recovery for the overlay on the sweep plot; empty until digitised from experiment."
+ },
+ "diffusion_eV": {
+  "bulk_c_axis": 0.65,
+  "surface_001": 1.19,
+  "surface_crossrow_concerted": 0.91,
+  "note": "Stored for a later kinetic version; not used by the equilibrium model. The surface-to-subsurface exchange barrier is a different path and is not any of these numbers. The planned kinetic layer follows the coarse-grained kinetic Monte Carlo framework of the group: radial coarse cells over the particle, Arrhenius exchange rates, detailed balance against the same Gibbs measure, q^2 time coarse-graining.",
+  "provenance": "Bulk: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a. Surface (unstrained rutile 110): Wang et al., Phys. Rev. B 82 (2010) 165309. Coarse-grained KMC framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003)."
+ },
+ "defaults": {
+  "T_C": 600,
+  "VO_total_umol_g": 95.0,
+  "particle_diameter_um": 0.9,
+  "subsurface_layers": 1,
+  "energetics_preset": "sx",
+  "mc": {
+   "seed": 12345,
+   "rows": 8,
+   "row_sites": 25,
+   "ss_layers": 1,
+   "bulk_layers": 8,
+   "fillings": [
+    2,
+    4,
+    7,
+    12,
+    20,
+    32,
+    50,
+    75,
+    110,
+    160
+   ],
+   "equil_sweeps": 2500,
+   "warm_equil_sweeps": 1000,
+   "sample_sweeps": 4000,
+   "widom_every": 10,
+   "hist_every": 25,
+   "blocks": 20
   }
+ }
 }

@@ -34,7 +34,7 @@ Given a measured oxygen-deficiency inventory, a canonical lattice model computes
 
 ### Steady-state redox
 
-A reductant that needs lattice oxygen and an oxidant that needs vacancies, written against one common vacancy fraction: one falls and one rises, so they cross once and the crossing is the steady state. Both barriers move with the same descriptor in opposite directions, so sweeping it gives a volcano whose peak has a closed form, and a family of solutions is available before any material is fitted. Feeding the layer-resolved partition in as the average-to-surface mapping leaves the steady rate untouched, moves the steady degree of reduction by three orders of magnitude, and removes the steady state entirely on the reducible half of the axis.
+A reductant that needs lattice oxygen and an oxidant that needs vacancies, written against one common vacancy fraction: one falls and one rises, so they cross once and the crossing is the steady state. Both barriers move with the same descriptor in opposite directions, so sweeping it gives a volcano whose peak has a closed form, and a family of solutions is available before any material is fitted. Feeding the depth-weighted partition in as the average-to-surface mapping leaves the steady rate untouched, moves the steady degree of reduction by two orders of magnitude, and removes the steady state entirely on the reducible half of the axis.
 
 The model runs in the browser at `ti_solver.html#redox`, alongside a two-reservoir cycle model that takes measured per-cycle integrals and returns the recovered fraction, how much of each residual locked, and the prediction for the experiment that separates the two: two samples at the same total V_O reached by different paths.
 
@@ -73,7 +73,7 @@ Numerical methods and measured error bounds are documented in [docs/verification
 - CH4 calculations exclude graphite and should not be quoted.
 - CO2-refill kinetic parameters are placeholders.
 - The unreconstructed rutile (110) surface Hamiltonian is extrapolative beyond reconstruction onset.
-- The subsurface class thickness is a declared choice (one oxygen layer by default, four O per surface cell); the shell/bulk split moves with it and the workspace exposes the ladder. The particle engine removes this choice by resolving depth continuously, but it does not yet drive the workspace.
+- The three-class engine gives every slab in the subsurface shell the first-subsurface energy, so its declared thickness (one oxygen layer by default) moves the shell/bulk split. The particle engine removes that choice by resolving depth from the DFT triple; the two coexist and agree to about 1.5 percent at the shipped condition.
 - Both defect engines assume local electroneutrality. At the shipped loading the Debye length and the segregation depth are the same size, so the outermost few nanometres carry an error neither engine quantifies, running towards more surface enrichment.
 - DFT energies are for rutile (110) and the particle is treated as a sphere; facets are not weighted.
 

@@ -1,7 +1,8 @@
 /* Worker shell for the defect stat-mech engine. The page assembles this
-   worker from a Blob whose source is statmech.js followed by this file, so
-   the StatMech global defined there is in scope; the dataset arrives in the
-   message, so the worker makes no requests of its own. */
+   worker from a Blob whose source is particle.js, then statmech.js, then
+   this file, so the StatMech global is in scope and so is the Particle
+   global its free energy comes from; the dataset arrives in the message,
+   so the worker makes no requests of its own. */
 
 'use strict';
 

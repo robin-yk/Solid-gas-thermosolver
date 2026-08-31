@@ -118,36 +118,26 @@ if (spec.shell_layers) {
   });
 }
 
-/* Stage 1: the layer-resolved free energy, in every combination of
-   resolution and interaction, so the port is compared on the branches the
-   dataset ships switched off as well as the one it ships on. */
-out.layers = [];
-[1, 2, 3].forEach(n => ['off', 'on'].forEach(cp => {
-  const g = SM.geometry(P, { resolved_layers: n });
-  [1.0, 2.5, 5.0, 95.0, 400.0].forEach(vo => {
-    const d = SM.distribute(P, 600.0, vo, g, { omega: cp });
-    out.layers.push({
-      n: n, omega: cp, vo: vo, mu_V_eV: d.mu_V_eV, regime: d.regime,
-      N_layers: g.N_layers, shell_nm: g.shell_nm,
-      theta: d.theta, umol_g: d.umol_g,
-      extended: d.extended_defects_umol_g,
-      layer_theta: d.layers.map(l => l.theta),
-      layer_umol: d.layers.map(l => l.umol_g),
-      layer_eps: d.layers.map(l => l.eps_eV),
-      layer_omega: d.layers.map(l => l.omega_eV),
-      boundaries: d.phase_boundaries
-    });
+/* The compensated three-class construction, walked over every branch of
+   the phase ladder so the port is compared where it can differ. */
+out.ladder = [];
+[1.0, 2.5, 5.0, 34.0, 95.0, 400.0].forEach(vo => {
+  const g = SM.geometry(P, {});
+  const d = SM.distribute(P, 600.0, vo, g, {});
+  out.ladder.push({
+    vo: vo, mu_V_eV: d.mu_V_eV, regime: d.regime, shell_nm: g.shell_nm,
+    theta: d.theta, umol_g: d.umol_g,
+    extended: d.extended_defects_umol_g,
+    boundaries: d.phase_boundaries
   });
-}));
+});
 
 /* the implicit occupancy on its own, away from any partition */
 out.theta_of_mu = [];
-[0.0, 0.15, 0.6, 1.0].forEach(w => {
-  [-0.4, 0.0, 0.5, 0.85, 1.2].forEach(mu => {
-    [0.0, 0.59, 1.31].forEach(eps => {
-      out.theta_of_mu.push({ w: w, mu: mu, eps: eps,
-        theta: SM.thetaOfMu(mu, eps, w, 8.617333262e-5 * 873.15) });
-    });
+[-0.4, 0.0, 0.5, 0.85, 1.2].forEach(mu => {
+  [0.0, 0.59, 1.31].forEach(eps => {
+    out.theta_of_mu.push({ mu: mu, eps: eps,
+      theta: SM.thetaOfMu(mu, eps, 8.617333262e-5 * 873.15) });
   });
 });
 

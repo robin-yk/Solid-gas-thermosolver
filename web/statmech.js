@@ -64,9 +64,6 @@
     opts = opts || {};
     var ssLayers = opts.ss_layers != null ? opts.ss_layers
       : p.defaults.subsurface_layers;
-    var nRes = opts.resolved_layers != null ? opts.resolved_layers
-      : (p.defaults.resolved_layers || 1);
-    nRes = Math.max(1, Math.round(nRes));
     var area;
     if (opts.bet_m2_g != null) {
       area = opts.bet_m2_g * 1e4;
@@ -77,24 +74,12 @@
     var sig = siteDensities(p);
     var nO = 2.0 / p.molar_mass_g_mol * 1e6;
     var nS = area * sig[0] / N_AVO * 1e6;
-    /* One resolved layer IS the declared shell, so the legacy capacity
-       is reproduced exactly. Past one, resolution is the point and each
-       resolved layer is a single d110 oxygen slab. */
-    var slabs = [], i;
-    if (nRes === 1) slabs.push(ssLayers);
-    else for (i = 0; i < nRes; i++) slabs.push(1);
-    var nLayers = [], nSS = 0.0, slabSum = 0;
-    for (i = 0; i < slabs.length; i++) {
-      nLayers.push(area * sig[1] * slabs[i] / N_AVO * 1e6);
-      nSS += nLayers[i];
-      slabSum += slabs[i];
-    }
+    var nSS = area * sig[1] * ssLayers / N_AVO * 1e6;
     var d110nm = p.lattice_constants_A.a / Math.sqrt(2) / 10;
     return { area_m2_g: area * 1e-4, N_s: nS, N_ss: nSS,
              N_b: nO - nS - nSS, N_O_total: nO, ss_layers: ssLayers,
-             layer_nm: d110nm, resolved_layers: nRes,
-             slabs_per_layer: slabs, N_layers: nLayers,
-             shell_nm: (1 + 4 * slabSum) / 4 * d110nm };
+             layer_nm: d110nm,
+             shell_nm: (1 + 4 * ssLayers) / 4 * d110nm };
   }
 
   /* --------------------------------------------------------- lattice */
@@ -411,148 +396,52 @@
   var POLARON_RATIO = 4.0;
   var THETA_CAP = 1.0 / POLARON_RATIO;
 
-  function muOfTheta(theta, epsI, omegaI, kt, compensation) {
-    /* mu = eps + omega*theta
-            + kT[ ln(th/(1-th)) + 2 ln(r*th/(1 - r*th)) ]
-       The second bracket is the configurational entropy of the cation
-       sublattice the compensating polarons sit on. In the dilute limit
-       the two logs give 3 kT ln(theta), so theta ~ p(O2)^(-1/6) - the
-       standard doubly-ionised vacancy. Dropping it gives p^(-1/2), a
-       NEUTRAL vacancy, and an enrichment that is the cube of the right
-       one. Line-for-line port of solidgas/statmech.py::mu_of_theta. */
-    if (compensation === 'none') {
-      return epsI + omegaI * theta + kt * Math.log(theta / (1.0 - theta));
-    }
-    if (theta <= 0.0) return -Infinity;
-    var tp = POLARON_RATIO * theta;
-    if (tp >= 1.0) return Infinity;
-    return epsI + omegaI * theta
-      + kt * (Math.log(theta / (1.0 - theta)) + 2.0 * Math.log(tp / (1.0 - tp)));
+  /* There is one compensated free energy in the browser bundle and it
+     lives in web/particle.js, mirroring solidgas/particle/freeenergy.py.
+     It is borrowed here rather than reimplemented so the three-class
+     partition and the depth-resolved one cannot drift.
+
+     The mean-field crowding penalty that used to sit alongside it is
+     gone: it had no literature value, and its magnitudes were chosen to
+     bring the first subsurface layer out of near-saturation, which was
+     the symptom of the missing cation entropy. */
+  var PX = (typeof module !== 'undefined' && module.exports)
+    ? require('./particle.js')
+    : (typeof self !== 'undefined' ? self.Particle : null);
+  if (!PX) throw new Error('statmech.js needs particle.js loaded first');
+
+  var POLARON_RATIO = PX.POLARON_RATIO;
+  var THETA_CAP = PX.THETA_CAP;
+
+  function muOfTheta(theta, epsI, kt) {
+    return PX.muOfTheta(theta, epsI, kt);
   }
 
-  function thetaOfMu(mu, epsI, omegaI, kt, compensation) {
-    /* Inverse of muOfTheta. The compensated branch is bisected in
-       ln(theta) below half the cap and in ln(cap - theta) above it: mu
-       diverges at both ends of (0, cap) and no single variable holds
-       precision across both, while each half has an exactly linear limit
-       and so an analytic bracket. compensation === 'none' is the legacy
-       neutral relation, which at omega = 0 returns the closed form so the
-       pre-compensation partition reproduces bit for bit.
-       Line-for-line port of solidgas/statmech.py::theta_of_mu. */
-    var it, mid, th, lo, hi, t;
-    if (compensation === 'none') {
-      if (omegaI === 0.0) return fd(mu, epsI, kt);
-      hi = (mu - epsI) / kt;
-      lo = hi - omegaI / kt;
-      if (lo > hi) { t = lo; lo = hi; hi = t; }
-      for (it = 0; it < 200; it++) {
-        mid = 0.5 * (lo + hi);
-        th = sigmoid(mid);
-        if (epsI + omegaI * th + kt * mid < mu) lo = mid; else hi = mid;
-      }
-      return sigmoid(0.5 * (lo + hi));
-    }
-    var half = 0.5 * THETA_CAP;
-    if (mu < muOfTheta(half, epsI, omegaI, kt)) {
-      hi = Math.min(Math.log(half),
-        (mu - epsI - 2.0 * kt * Math.log(POLARON_RATIO)) / (3.0 * kt));
-      lo = -745.0;
-      if (muOfTheta(Math.exp(lo), epsI, omegaI, kt) > mu) return Math.exp(lo);
-      for (it = 0; it < 200; it++) {
-        mid = 0.5 * (lo + hi);
-        if (muOfTheta(Math.exp(mid), epsI, omegaI, kt) < mu) lo = mid;
-        else hi = mid;
-      }
-      return Math.exp(0.5 * (lo + hi));
-    }
-    var c = epsI + omegaI * THETA_CAP
-      + kt * (Math.log(THETA_CAP / (1.0 - THETA_CAP))
-              + 2.0 * Math.log(POLARON_RATIO * THETA_CAP));
-    hi = Math.min(Math.log(half), (c - mu) / (2.0 * kt));
-    lo = -745.0;
-    if (muOfTheta(THETA_CAP - Math.exp(lo), epsI, omegaI, kt) < mu) {
-      return THETA_CAP - Math.exp(lo);
-    }
-    for (it = 0; it < 200; it++) {
-      mid = 0.5 * (lo + hi);
-      if (muOfTheta(THETA_CAP - Math.exp(mid), epsI, omegaI, kt) > mu) lo = mid;
-      else hi = mid;
-    }
-    return THETA_CAP - Math.exp(0.5 * (lo + hi));
+  function thetaOfMu(mu, epsI, kt) {
+    return PX.thetaOfMu(mu, epsI, kt);
   }
 
-  function energetics(p, preset, resolvedLayers, coveragePenalty) {
+  function energetics(p, preset) {
+    /* The three class energies of the active preset. The depth profile
+       between them is not this engine's business: resolving the shell
+       needs a shape, and the only defensible shape is the exponential
+       derived from these same three numbers, which is what
+       web/particle.js does with them. */
     var ve = p.vacancy_energetics;
     var key = preset || ve.default_preset;
     var q = ve.presets[key];
-    var eps = [q.surface_eV, q.subsurface_eV, q.bulk_eV];
-    var d = p.defaults || {};
-    var nRes = resolvedLayers != null ? resolvedLayers
-      : (d.resolved_layers || 1);
-    nRes = Math.max(1, Math.round(nRes));
-    var prof = ve.layer_profile || {};
-    var span = prof.span_fraction || [0.0];
-    if (nRes > span.length) {
-      throw new Error('layer_profile resolves at most ' + span.length
-                      + ' layers');
-    }
-    var epsLayers = [], i;
-    for (i = 0; i < nRes; i++) {
-      epsLayers.push(eps[1] + span[i] * (eps[2] - eps[1]));
-    }
-    var cp = coveragePenalty != null ? coveragePenalty
-      : (d.coverage_penalty || 'off');
-    var on = !(cp === null || cp === false || cp === 'off');
-    var om = (ve.coverage_penalty || {}).omega_eV || {};
-    var omegaS = 0.0, omegaB = 0.0, omegaLayers = [];
-    for (i = 0; i < nRes; i++) {
-      omegaLayers.push(on ? (om['layer' + (i + 1)] || 0.0) : 0.0);
-    }
-    if (on) { omegaS = om.surface || 0.0; omegaB = om.bulk || 0.0; }
-    var all = [omegaS].concat(omegaLayers, [omegaB]);
-    for (i = 0; i < all.length; i++) {
-      if (all[i] < 0.0) {
-        throw new Error('only repulsive coverage penalties are admitted');
-      }
-    }
-    return { preset: key, eps: eps, resolved_layers: nRes,
-             eps_layers: epsLayers, omega_surface: omegaS,
-             omega_layers: omegaLayers, omega_bulk: omegaB,
-             coverage_penalty: on ? 'on' : 'off' };
+    return { preset: key, eps: [q.surface_eV, q.subsurface_eV, q.bulk_eV] };
   }
 
   function classesOf(p, geom, opts) {
-    /* The class table the deep sum runs over. eps as a bare triple is the
-       legacy call and still names surface / one subsurface / bulk. */
-    var en = energetics(p, opts.preset, geom.resolved_layers || 1,
-                        opts.omega);
+    var en = energetics(p, opts.preset);
     if (opts.eps == null) return en;
-    var out = {}, k;
-    for (k in en) if (en.hasOwnProperty(k)) out[k] = en[k];
-    out.eps = opts.eps.slice();
-    if (en.eps_layers.length === 1) {
-      out.eps_layers = [opts.eps[1]];
-    } else {
-      var span = p.vacancy_energetics.layer_profile.span_fraction;
-      out.eps_layers = [];
-      for (var i = 0; i < en.eps_layers.length; i++) {
-        out.eps_layers.push(opts.eps[1] + span[i]
-                            * (opts.eps[2] - opts.eps[1]));
-      }
-    }
-    return out;
+    return { preset: en.preset, eps: opts.eps.slice() };
   }
 
   function deepOf(en, geom, mu, kt) {
-    /* At one resolved layer with no interaction this is the legacy
-       expression term for term, including the order of the additions. */
-    var caps = geom.N_layers || [geom.N_ss];
-    var total = 0.0, i;
-    for (i = 0; i < caps.length; i++) {
-      total += caps[i] * thetaOfMu(mu, en.eps_layers[i],
-                                   en.omega_layers[i], kt);
-    }
-    return total + geom.N_b * thetaOfMu(mu, en.eps[2], en.omega_bulk, kt);
+    return geom.N_ss * thetaOfMu(mu, en.eps[1], kt)
+      + geom.N_b * thetaOfMu(mu, en.eps[2], kt);
   }
 
   function thetaSInterp(points, epsS, kt) {
@@ -608,10 +497,10 @@
     var thT = sp.theta_transition;
     var thR = sp.theta_reconstructed_eff;
     var thSol = p.saturation.x_max_shear / 2.0;
-    var muT = muOfTheta(thT, eps[0], en.omega_surface, kt);
+    var muT = muOfTheta(thT, eps[0], kt);
     /* the CS coexistence is a condition on the BULK class, so the bulk
        interaction belongs in it */
-    var muCs = muOfTheta(thSol, eps[2], en.omega_bulk, kt);
+    var muCs = muOfTheta(thSol, eps[2], kt);
     var deepT = deepOf(en, geom, muT, kt);
     var deepCs = deepOf(en, geom, muCs, kt);
     return { mu_t_eV: muT, mu_cs_eV: muCs,
@@ -631,7 +520,7 @@
     var kt = KB_EV * (tC + 273.15);
     var en = classesOf(p, geom, opts);
     var eps = en.eps;
-    var b = phaseBoundaries(p, tC, geom, { eps: eps, omega: opts.omega });
+    var b = phaseBoundaries(p, tC, geom, { eps: eps });
     var nS = geom.N_s;
     var thT = b.theta_transition;
     var thR = b.theta_reconstructed_eff;
@@ -640,7 +529,7 @@
       return deepOf(en, geom, mu, kt);
     }
     function surf(mu) {
-      return thetaOfMu(mu, eps[0], en.omega_surface, kt);
+      return thetaOfMu(mu, eps[0], kt);
     }
 
     var uExt = 0.0;
@@ -687,19 +576,9 @@
       us = nS * thR;
       phi = 1.0;
     }
-    var caps = geom.N_layers || [geom.N_ss];
-    var thLayers = [], uLayers = [], uss = 0.0, li;
-    for (li = 0; li < caps.length; li++) {
-      thLayers.push(thetaOfMu(mu, en.eps_layers[li], en.omega_layers[li],
-                              kt));
-      uLayers.push(caps[li] * thLayers[li]);
-      uss += uLayers[li];
-    }
-    /* one resolved layer IS the shell, so its occupancy is reported
-       directly rather than divided back out */
-    var tss = caps.length === 1 ? thLayers[0]
-      : (geom.N_ss ? uss / geom.N_ss : 0.0);
-    var tb = thetaOfMu(mu, eps[2], en.omega_bulk, kt);
+    var tss = thetaOfMu(mu, eps[1], kt);
+    var uss = geom.N_ss * tss;
+    var tb = thetaOfMu(mu, eps[2], kt);
     var ub = geom.N_b * tb;
     var tot = us + uss + ub + uExt;
     var molTi = 1e6 / p.molar_mass_g_mol;
@@ -754,21 +633,7 @@
              T_C: tC, VO_total_umol_g: voTotal,
              mu_V_eV: mu,
              theta: { surface: ts, subsurface: tss, bulk: tb },
-             layers: (function () {
-               var out = [], i;
-               for (i = 0; i < caps.length; i++) {
-                 out.push({ index: i + 1, N_umol_g: caps[i],
-                            eps_eV: en.eps_layers[i],
-                            omega_eV: en.omega_layers[i],
-                            theta: thLayers[i], umol_g: uLayers[i] });
-               }
-               return out;
-             }()),
-             energetics: { preset: en.preset,
-                           resolved_layers: en.resolved_layers,
-                           coverage_penalty: en.coverage_penalty,
-                           omega_surface: en.omega_surface,
-                           omega_bulk: en.omega_bulk },
+             energetics: { preset: en.preset, eps_eV: eps.slice() },
              surface_phase: { phase: phase, phi_reconstructed: phi },
              regime: regime,
              umol_g: { surface: us, subsurface: uss, bulk: ub },

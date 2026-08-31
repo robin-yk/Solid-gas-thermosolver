@@ -719,28 +719,16 @@ fixed in <code>data/rutile_dft.json</code>.</p>
           <div><label for="smEpsSS">Subsurface</label><input type="number" id="smEpsSS" step="0.01"><div class="readout">eV vs surface</div></div>
           <div><label for="smEpsB">Bulk</label><input type="number" id="smEpsB" step="0.01"><div class="readout">eV vs surface</div></div>
         </div>
-        <div class="field pair">
-          <div><label for="smRes">Resolved layers</label>
-            <select id="smRes">
-              <option value="1">1 &middot; one shell (default)</option>
-              <option value="2">2 &middot; shell split in two</option>
-              <option value="3">3 &middot; shell split in three</option>
-            </select></div>
-          <div><label for="smOmega">Crowding penalty &Omega;</label>
-            <select id="smOmega">
-              <option value="off">off</option>
-              <option value="on">on</option>
-            </select></div>
-        </div>
-        <div class="readout" style="margin:-8px 0 16px">Past one layer the
-        shell is resolved into single 0.325&nbsp;nm oxygen slabs and the
-        thickness set above no longer applies; each slab sits at an assumed
-        fraction of the subsurface&ndash;bulk interval (the endpoints are
-        DFT, only the shape is assumed). &Omega; adds a repulsive
-        &Omega;<sub>i</sub>&theta;<sub>i</sub> term to each layer&rsquo;s
-        chemical potential; at &Omega;&nbsp;=&nbsp;0 the partition is the
-        non-interacting one exactly. Both are declared model choices with
-        no measurement behind them.</div>
+        <div class="readout" style="margin:-8px 0 16px">The shell is one
+        class at the first-subsurface energy, however many slabs thick it
+        is declared to be. Resolving it into separate layers needed a
+        depth profile, and the only one with no assumed shape is the
+        exponential derived from these same three energies &mdash; which
+        is what the depth-resolved card below does with them. The crowding
+        penalty that used to sit here is gone too: its magnitudes were
+        chosen to bring the first subsurface layer out of near-saturation,
+        and that was the missing cation-sublattice entropy, which is now
+        in the free energy itself.</div>
         <div class="field">
           <label>Surface pair repulsion (along the O<sub>br</sub> row)</label>
           <div class="trio">
@@ -1046,7 +1034,7 @@ fixed in <code>data/rutile_dft.json</code>.</p>
 
   <p><b>The uniform assumption, and its price.</b> The two limits are connected by
   E = &theta;(face) / &theta;(particle), the surface enrichment. A uniform particle sets
-  E = 1 without saying so; a layer-resolved partition supplies it. Holding E fixed while
+  E = 1 without saying so; a depth-weighted partition supplies it. Holding E fixed while
   the carrier turns over is a statement about <i>timescales</i>, not only about geometry:
   the face and the interior are taken to be in equilibrium partition at every instant, so
   oxygen exchange between shell and bulk is fast compared with both half-reactions. If it
@@ -1054,9 +1042,13 @@ fixed in <code>data/rutile_dft.json</code>.</p>
   &mdash; this is the wrong model, and the problem becomes transport into the particle
   rather than a boundary condition on it. The partition itself is the defect workspace's
   equilibrium answer, so the assumption is inherited from there and not made twice. For 0.9 &micro;m rutile
-  at 600 &deg;C the defect workspace gives E &asymp; 1844, against a geometric ceiling of
-  1847 &mdash; nearly every vacancy is in the shell. That moves the largest usable K from
-  0.0040 to 1, a factor of 249. The turnover at a given K is <i>unchanged</i> by the
+  at 600 &deg;C the defect workspace gives E &asymp; 269, well below the geometric ceiling
+  of 1847: a compensated vacancy enriches the surface by exp(&Delta;E/3kT) = 333, and
+  there are 1846 times as many bulk sites to dilute that into, so most of the inventory
+  is in the bulk even in the dilute limit. It is still enough to move the largest usable
+  K from 0.0040 to 1, a factor of 249, because &theta;<sub>sol</sub>&thinsp;&times;&thinsp;E
+  = 1.08 is past one and the bulk solubility stops binding &mdash; but only just, where
+  the uncompensated form had a margin of 7.4. The turnover at a given K is <i>unchanged</i> by the
   correction, because any strictly increasing average&rarr;face mapping only
   reparameterises the same crossing; what changes is the inventory the particle must
   hold to keep the face there, and therefore whether the solid survives it.</p>
@@ -1092,7 +1084,7 @@ fixed in <code>data/rutile_dft.json</code>.</p>
         <input type="number" id="rxE" value="1" step="any" min="1">
         <div class="minirow">
           <button class="mini" type="button" data-e="1">uniform, E = 1</button>
-          <button class="mini" type="button" data-e="1844">layer-resolved, E = 1844</button>
+          <button class="mini" type="button" data-e="269">depth-weighted, E = 269</button>
         </div>
         <div class="readout" id="rxEnote"></div>
       </div>
@@ -1227,6 +1219,7 @@ fixed in <code>data/rutile_dft.json</code>.</p>
 <script id="redox-data" type="application/json">__RX_DATA__</script>
 <script>__ENGINE__</script>
 <script>__PAGE__</script>
+<script id="px-engine">__PX_ENGINE__</script>
 <script id="sm-engine">__SM_ENGINE__</script>
 <script id="cg-engine">__CG_ENGINE__</script>
 <script type="text/plain" id="sm-worker-src">__SM_WORKER__</script>
@@ -1239,7 +1232,6 @@ fixed in <code>data/rutile_dft.json</code>.</p>
 <script>__RX_UI__</script>
 <script id="thermo-figures">__TH_FIGS__</script>
 <script>__TH_UI__</script>
-<script id="px-engine">__PX_ENGINE__</script>
 <script id="particle-figures">__PX_FIGS__</script>
 <script>__PX_UI__</script>
 <script>

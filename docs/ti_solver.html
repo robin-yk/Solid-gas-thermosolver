@@ -23264,28 +23264,16 @@ z
           <div><label for="smEpsSS">Subsurface</label><input type="number" id="smEpsSS" step="0.01"><div class="readout">eV vs surface</div></div>
           <div><label for="smEpsB">Bulk</label><input type="number" id="smEpsB" step="0.01"><div class="readout">eV vs surface</div></div>
         </div>
-        <div class="field pair">
-          <div><label for="smRes">Resolved layers</label>
-            <select id="smRes">
-              <option value="1">1 &middot; one shell (default)</option>
-              <option value="2">2 &middot; shell split in two</option>
-              <option value="3">3 &middot; shell split in three</option>
-            </select></div>
-          <div><label for="smOmega">Crowding penalty &Omega;</label>
-            <select id="smOmega">
-              <option value="off">off</option>
-              <option value="on">on</option>
-            </select></div>
-        </div>
-        <div class="readout" style="margin:-8px 0 16px">Past one layer the
-        shell is resolved into single 0.325&nbsp;nm oxygen slabs and the
-        thickness set above no longer applies; each slab sits at an assumed
-        fraction of the subsurface&ndash;bulk interval (the endpoints are
-        DFT, only the shape is assumed). &Omega; adds a repulsive
-        &Omega;<sub>i</sub>&theta;<sub>i</sub> term to each layer&rsquo;s
-        chemical potential; at &Omega;&nbsp;=&nbsp;0 the partition is the
-        non-interacting one exactly. Both are declared model choices with
-        no measurement behind them.</div>
+        <div class="readout" style="margin:-8px 0 16px">The shell is one
+        class at the first-subsurface energy, however many slabs thick it
+        is declared to be. Resolving it into separate layers needed a
+        depth profile, and the only one with no assumed shape is the
+        exponential derived from these same three energies &mdash; which
+        is what the depth-resolved card below does with them. The crowding
+        penalty that used to sit here is gone too: its magnitudes were
+        chosen to bring the first subsurface layer out of near-saturation,
+        and that was the missing cation-sublattice entropy, which is now
+        in the free energy itself.</div>
         <div class="field">
           <label>Surface pair repulsion (along the O<sub>br</sub> row)</label>
           <div class="trio">
@@ -23591,7 +23579,7 @@ z
 
   <p><b>The uniform assumption, and its price.</b> The two limits are connected by
   E = &theta;(face) / &theta;(particle), the surface enrichment. A uniform particle sets
-  E = 1 without saying so; a layer-resolved partition supplies it. Holding E fixed while
+  E = 1 without saying so; a depth-weighted partition supplies it. Holding E fixed while
   the carrier turns over is a statement about <i>timescales</i>, not only about geometry:
   the face and the interior are taken to be in equilibrium partition at every instant, so
   oxygen exchange between shell and bulk is fast compared with both half-reactions. If it
@@ -23599,9 +23587,13 @@ z
   &mdash; this is the wrong model, and the problem becomes transport into the particle
   rather than a boundary condition on it. The partition itself is the defect workspace's
   equilibrium answer, so the assumption is inherited from there and not made twice. For 0.9 &micro;m rutile
-  at 600 &deg;C the defect workspace gives E &asymp; 1844, against a geometric ceiling of
-  1847 &mdash; nearly every vacancy is in the shell. That moves the largest usable K from
-  0.0040 to 1, a factor of 249. The turnover at a given K is <i>unchanged</i> by the
+  at 600 &deg;C the defect workspace gives E &asymp; 269, well below the geometric ceiling
+  of 1847: a compensated vacancy enriches the surface by exp(&Delta;E/3kT) = 333, and
+  there are 1846 times as many bulk sites to dilute that into, so most of the inventory
+  is in the bulk even in the dilute limit. It is still enough to move the largest usable
+  K from 0.0040 to 1, a factor of 249, because &theta;<sub>sol</sub>&thinsp;&times;&thinsp;E
+  = 1.08 is past one and the bulk solubility stops binding &mdash; but only just, where
+  the uncompensated form had a margin of 7.4. The turnover at a given K is <i>unchanged</i> by the
   correction, because any strictly increasing average&rarr;face mapping only
   reparameterises the same crossing; what changes is the inventory the particle must
   hold to keep the face there, and therefore whether the solid survives it.</p>
@@ -23637,7 +23629,7 @@ z
         <input type="number" id="rxE" value="1" step="any" min="1">
         <div class="minirow">
           <button class="mini" type="button" data-e="1">uniform, E = 1</button>
-          <button class="mini" type="button" data-e="1844">layer-resolved, E = 1844</button>
+          <button class="mini" type="button" data-e="269">depth-weighted, E = 269</button>
         </div>
         <div class="readout" id="rxEnote"></div>
       </div>
@@ -24182,139 +24174,179 @@ z
 }</script>
 <script id="reference-data" type="application/json">{"precision":"mpmath, 90 working digits, 80 certified","method":"gibbs_min","cases_feeds":{"rwgs_1_1":{"CO2":1,"H2":1},"h2_rich":{"CO2":1,"H2":3},"product_mix":{"CO2":3,"H2":3,"CO":2,"H2O":2},"pure_h2":{"H2":1},"pure_n2":{"N2":1},"n2_10ppm_o2":{"N2":999990,"O2":10}},"rows":[{"case":"rwgs_1_1","T_C":500,"active":["TiO2"],"gas_fractions":{"CO2":0.34678089109494636,"H2":0.34678089109494636,"CO":0.15321910890505364,"H2O":0.15321910890505364,"N2":0.0,"O2":3.9820932258244495e-29},"r_per_mol_O":{"Ti10O19":70.3953163938429,"Ti8O15":71.42759240507262,"Ti6O11":73.28283827494293,"Ti5O9":74.93400656802575,"Ti4O7":76.9777195018133,"Ti3O5":83.89668857951648,"Ti2O3":89.47610392409527},"log10_traces":{"O2":-31.804343840988626},"reduced_pct":0.0},{"case":"rwgs_1_1","T_C":700,"active":["TiO2"],"gas_fractions":{"CO2":0.27973188248579994,"H2":0.27973188248579994,"CO":0.22026811751420003,"H2O":0.22026811751420003,"N2":0.0,"O2":9.098063469409851e-22},"r_per_mol_O":{"Ti10O19":62.789260493179945,"Ti8O15":64.10654564747983,"Ti6O11":66.31154141119764,"Ti5O9":68.18012377183206,"Ti4O7":70.84472853191554,"Ti3O5":77.04225028437762,"Ti2O3":85.3859138149082},"log10_traces":{"O2":-24.545422328734084},"reduced_pct":0.0},{"case":"rwgs_1_1","T_C":900,"active":["TiO2"],"gas_fractions":{"CO2":0.23495202422895647,"H2":0.23495202422895659,"CO":0.2650479757710435,"H2O":0.2650479757710434,"N2":0.0,"O2":6.524460411024822e-17},"r_per_mol_O":{"Ti10O19":54.743136328513046,"Ti8O15":56.34543058325036,"Ti6O11":58.90017623870647,"Ti5O9":60.9861726682347,"Ti4O7":64.27166925116269,"Ti3O5":70.21251346130057,"Ti2O3":80.78637626184869},"log10_traces":{"O2":-19.77100044863235},"reduced_pct":0.0},{"case":"rwgs_1_1","T_C":1100,"active":["TiO2"],"gas_fractions":{"CO2":0.20536548199329446,"H2":0.20536548199365592,"CO":0.29463451800661516,"H2O":0.29463451800625373,"N2":0.0,"O2":1.8072138501252096e-13},"r_per_mol_O":{"Ti10O19":46.16919772764154,"Ti8O15":48.056501058542814,"Ti6O11":50.96099660476112,"Ti5O9":53.26440710380431,"Ti4O7":57.17079550797958,"Ti3O5":63.10528390788978,"Ti2O3":75.69870593438125},"log10_traces":{"O2":-16.396899938925987},"reduced_pct":0.0},{"case":"rwgs_1_1","T_C":1300,"active":["TiO2"],"gas_fractions":{"CO2":0.1852141713510819,"H2":0.18521417148432937,"CO":0.3147858286156062,"H2O":0.31478582848235875,"N2":0.0,"O2":6.662373005869165e-11},"r_per_mol_O":{"Ti10O19":37.02646796212602,"Ti8O15":39.198780354060226,"Ti6O11":42.45302579052765,"Ti5O9":44.97385035941231,"Ti4O7":49.50113058399526,"Ti3O5":55.485859821540565,"Ti2O3":70.14758687063554},"log10_traces":{"O2":-13.889332694692747},"reduced_pct":0.0},{"case":"rwgs_1_1","T_C":1500,"active":["TiO2"],"gas_fractions":{"CO2":0.1709862844209685,"H2":0.17098629733161658,"CO":0.3290137123513695,"H2O":0.3290136994407214,"N2":0.0,"O2":6.4553240437175984e-09},"r_per_mol_O":{"Ti10O19":27.298866453485687,"Ti8O15":29.7561878963856,"Ti6O11":33.36018322280685,"Ti5O9":36.0984218617209,"Ti4O7":41.24659390622835,"Ti3O5":47.16995659878341,"Ti2O3":64.15581905845517},"log10_traces":{},"reduced_pct":0.0},{"case":"h2_rich","T_C":500,"active":["TiO2"],"gas_fractions":{"CO2":0.12594463142920412,"H2":0.6259446314292041,"CO":0.12405536857079587,"H2O":0.12405536857079587,"N2":0.0,"O2":8.012262402475997e-30},"r_per_mol_O":{"Ti10O19":65.24165819420148,"Ti8O15":66.27393420543119,"Ti6O11":68.1291800753015,"Ti5O9":69.78034836838432,"Ti4O7":71.82406130217187,"Ti3O5":78.74303037987505,"Ti2O3":84.32244572445384},"log10_traces":{"O2":-32.50070010013401},"reduced_pct":0.0},{"case":"h2_rich","T_C":700,"active":["TiO2"],"gas_fractions":{"CO2":0.08017375200460848,"H2":0.5801737520046085,"CO":0.1698262479953915,"H2O":0.1698262479953915,"N2":0.0,"O2":1.2572541963478195e-22},"r_per_mol_O":{"Ti10O19":54.782458162669926,"Ti8O15":56.099743316969814,"Ti6O11":58.304739080687625,"Ti5O9":60.17332144132204,"Ti4O7":62.83792620140552,"Ti3O5":69.0354479538676,"Ti2O3":77.37911148439818},"log10_traces":{"O2":-25.40494819709616},"reduced_pct":0.0},{"case":"h2_rich","T_C":900,"active":["TiO2"],"gas_fractions":{"CO2":0.05429594118061754,"H2":0.5542959411806175,"CO":0.19570405881938246,"H2O":0.19570405881938244,"N2":0.0,"O2":6.391021337044912e-18},"r_per_mol_O":{"Ti10O19":43.412507019175855,"Ti8O15":45.01480127391318,"Ti6O11":47.56954692936928,"Ti5O9":49.65554335889751,"Ti4O7":52.9410399418255,"Ti3O5":58.88188415196338,"Ti2O3":69.45574695251149},"log10_traces":{"O2":-20.77997478141728},"reduced_pct":0.0},{"case":"h2_rich","T_C":1100,"active":["TiO2"],"gas_fractions":{"CO2":0.03977710754462324,"H2":0.5397771075446433,"CO":0.21022289245537343,"H2O":0.21022289245534678,"N2":0.0,"O2":1.3317671066074852e-14},"r_per_mol_O":{"Ti10O19":31.282179447842648,"Ti8O15":33.16948277874393,"Ti6O11":36.07397832496223,"Ti5O9":38.37738882400542,"Ti4O7":42.28377722818069,"Ti3O5":48.21826562809089,"Ti2O3":60.81168765458237},"log10_traces":{"O2":-17.529481201172544},"reduced_pct":0.0},{"case":"h2_rich","T_C":1300,"active":["TiO2"],"gas_fractions":{"CO2":0.031200003001103996,"H2":0.5312000030069737,"CO":0.21879999699791772,"H2O":0.21879999699009142,"N2":0.0,"O2":3.913141130102002e-12},"r_per_mol_O":{"Ti10O19":18.48752172619087,"Ti8O15":20.659834118125072,"Ti6O11":23.914079554592494,"Ti5O9":26.43490412347716,"Ti4O7":30.96218434806011,"Ti3O5":36.946913585605415,"Ti2O3":51.60864063470038},"log10_traces":{"O2":-15.120436127264727},"reduced_pct":0.0},{"case":"h2_rich","T_C":1500,"active":["TiO2"],"gas_fractions":{"CO2":0.025815120918291197,"H2":0.5258151213936817,"CO":0.22418487900247705,"H2O":0.22418487836862314,"N2":0.0,"O2":3.169269627783506e-10},"r_per_mol_O":{"Ti10O19":5.081537703341143,"Ti8O15":7.538859146241058,"Ti6O11":11.14285447266231,"Ti5O9":13.881093111576359,"Ti4O7":19.029265156083802,"Ti3O5":24.95262784863887,"Ti2O3":41.93849030831062},"log10_traces":{"O2":-13.26397779154746},"reduced_pct":0.0},{"case":"product_mix","T_C":500,"active":["TiO2"],"gas_fractions":{"CO2":0.34678089109494636,"H2":0.34678089109494636,"CO":0.15321910890505364,"H2O":0.15321910890505364,"N2":0.0,"O2":3.9820932258244495e-29},"r_per_mol_O":{"Ti10O19":70.3953163938429,"Ti8O15":71.42759240507262,"Ti6O11":73.28283827494293,"Ti5O9":74.93400656802575,"Ti4O7":76.9777195018133,"Ti3O5":83.89668857951648,"Ti2O3":89.47610392409527},"log10_traces":{"O2":-31.804343840988626},"reduced_pct":0.0},{"case":"product_mix","T_C":700,"active":["TiO2"],"gas_fractions":{"CO2":0.27973188248579994,"H2":0.27973188248579994,"CO":0.22026811751420003,"H2O":0.22026811751420003,"N2":0.0,"O2":9.098063469409851e-22},"r_per_mol_O":{"Ti10O19":62.789260493179945,"Ti8O15":64.10654564747983,"Ti6O11":66.31154141119764,"Ti5O9":68.18012377183206,"Ti4O7":70.84472853191554,"Ti3O5":77.04225028437762,"Ti2O3":85.3859138149082},"log10_traces":{"O2":-24.545422328734084},"reduced_pct":0.0},{"case":"product_mix","T_C":900,"active":["TiO2"],"gas_fractions":{"CO2":0.23495202422895647,"H2":0.23495202422895659,"CO":0.2650479757710435,"H2O":0.2650479757710434,"N2":0.0,"O2":6.524460411024822e-17},"r_per_mol_O":{"Ti10O19":54.743136328513046,"Ti8O15":56.34543058325036,"Ti6O11":58.90017623870647,"Ti5O9":60.9861726682347,"Ti4O7":64.27166925116269,"Ti3O5":70.21251346130057,"Ti2O3":80.78637626184869},"log10_traces":{"O2":-19.77100044863235},"reduced_pct":0.0},{"case":"product_mix","T_C":1100,"active":["TiO2"],"gas_fractions":{"CO2":0.20536548199329446,"H2":0.20536548199365592,"CO":0.29463451800661516,"H2O":0.29463451800625373,"N2":0.0,"O2":1.8072138501252096e-13},"r_per_mol_O":{"Ti10O19":46.16919772764154,"Ti8O15":48.056501058542814,"Ti6O11":50.96099660476112,"Ti5O9":53.26440710380431,"Ti4O7":57.17079550797958,"Ti3O5":63.10528390788978,"Ti2O3":75.69870593438125},"log10_traces":{"O2":-16.396899938925987},"reduced_pct":0.0},{"case":"product_mix","T_C":1300,"active":["TiO2"],"gas_fractions":{"CO2":0.1852141713510819,"H2":0.18521417148432937,"CO":0.3147858286156062,"H2O":0.31478582848235875,"N2":0.0,"O2":6.662373005869165e-11},"r_per_mol_O":{"Ti10O19":37.02646796212602,"Ti8O15":39.198780354060226,"Ti6O11":42.45302579052765,"Ti5O9":44.97385035941231,"Ti4O7":49.50113058399526,"Ti3O5":55.485859821540565,"Ti2O3":70.14758687063554},"log10_traces":{"O2":-13.889332694692747},"reduced_pct":0.0},{"case":"product_mix","T_C":1500,"active":["TiO2"],"gas_fractions":{"CO2":0.1709862844209685,"H2":0.17098629733161658,"CO":0.3290137123513695,"H2O":0.3290136994407214,"N2":0.0,"O2":6.4553240437175984e-09},"r_per_mol_O":{"Ti10O19":27.298866453485687,"Ti8O15":29.7561878963856,"Ti6O11":33.36018322280685,"Ti5O9":36.0984218617209,"Ti4O7":41.24659390622835,"Ti3O5":47.16995659878341,"Ti2O3":64.15581905845517},"log10_traces":{},"reduced_pct":0.0},{"case":"pure_h2","T_C":500,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.9999922484587748,"CO":0.0,"H2O":7.751541225285632e-06,"N2":0.0,"O2":1.2256846023967987e-38},"r_per_mol_O":{"Ti8O15":1.0322760112297187,"Ti6O11":2.8875218811000294,"Ti5O9":4.538690174182854,"Ti4O7":6.582403107970391,"Ti3O5":13.501372185673583,"Ti2O3":19.08078753025237},"log10_traces":{"O2":-41.3160765338519},"reduced_pct":0.00048788704753319613},{"case":"pure_h2","T_C":700,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.9996643648560822,"CO":0.0,"H2O":0.0003356351439177392,"N2":0.0,"O2":1.65407825985466e-28},"r_per_mol_O":{"Ti8O15":1.3172851542998838,"Ti6O11":3.522280918017699,"Ti5O9":5.390863278652112,"Ti4O7":8.055468038735595,"Ti3O5":14.252989791197676,"Ti2O3":22.596653321728258},"log10_traces":{"O2":-31.285815237344263},"reduced_pct":0.01678350373942391},{"case":"pure_h2","T_C":900,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.995896397360795,"CO":0.0,"H2O":0.004103602639204913,"N2":0.0,"O2":8.704749486058111e-22},"r_per_mol_O":{"Ti8O15":1.6022942547373182,"Ti6O11":4.157039910193423,"Ti5O9":6.243036339721652,"Ti4O7":9.528532922649644,"Ti3O5":15.469377132787528,"Ti2O3":26.043239933335638},"log10_traces":{"O2":-24.645788771828055},"reduced_pct":0.17021849377220685},{"case":"pure_h2","T_C":1100,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.9754682331721954,"CO":0.0,"H2O":0.024531766827804505,"N2":0.0,"O2":5.55301168819423e-17},"r_per_mol_O":{"Ti8O15":1.8873033309012783,"Ti6O11":4.791798877119581,"Ti5O9":7.095209376162776,"Ti4O7":11.001597780338038,"Ti3O5":16.93608618024824,"Ti2O3":29.52950820673972},"log10_traces":{"O2":-19.909380897603718},"reduced_pct":0.8693723720941287},{"case":"pure_h2","T_C":1300,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.908910922161555,"CO":0.0,"H2O":0.09108907783821331,"N2":0.0,"O2":2.31652500207071e-13},"r_per_mol_O":{"Ti8O15":2.172312391934202,"Ti6O11":5.426557828401623,"Ti5O9":7.947382397286289,"Ti4O7":12.47466262186924,"Ti3O5":18.45939185941454,"Ti2O3":33.12111890850951},"log10_traces":{"O2":-16.34812464670558},"reduced_pct":2.817676685620668},{"case":"pure_h2","T_C":1500,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.7680187769576718,"CO":0.0,"H2O":0.2319812228832632,"N2":0.0,"O2":1.5906502261482795e-10},"r_per_mol_O":{"Ti8O15":2.4573214428999144,"Ti6O11":6.061316769321167,"Ti5O9":8.799555408235216,"Ti4O7":13.947727452742662,"Ti3O5":19.871090145297725,"Ti2O3":36.85695260496948},"log10_traces":{"O2":-13.563362288723642},"reduced_pct":6.3665234850013315},{"case":"pure_n2","T_C":500,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":1.0,"O2":1.2256846023967987e-38},"r_per_mol_O":{"Ti8O15":1.0322760112297187,"Ti6O11":2.8875218811000294,"Ti5O9":4.538690174182854,"Ti4O7":6.582403107970391,"Ti3O5":13.501372185673583,"Ti2O3":19.08078753025237},"log10_traces":{"O2":-41.3160765338519,"Ti10O19":-41.01504653818792},"reduced_pct":1.542907725033065e-36},{"case":"pure_n2","T_C":700,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":1.0,"O2":1.65407825985466e-28},"r_per_mol_O":{"Ti8O15":1.3172851542998838,"Ti6O11":3.522280918017699,"Ti5O9":5.390863278652112,"Ti4O7":8.055468038735595,"Ti3O5":14.252989791197676,"Ti2O3":22.596653321728258},"log10_traces":{"O2":-31.285815237344263,"Ti10O19":-30.98478524168028},"reduced_pct":1.6542504062908545e-26},{"case":"pure_n2","T_C":900,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":1.0,"O2":8.704749486058111e-22},"r_per_mol_O":{"Ti8O15":1.6022942547373182,"Ti6O11":4.157039910193423,"Ti5O9":6.243036339721652,"Ti4O7":9.528532922649644,"Ti3O5":15.469377132787528,"Ti2O3":26.043239933335638},"log10_traces":{"O2":-24.645788771828055,"Ti10O19":-24.344758776164074},"reduced_pct":7.22150498698524e-20},{"case":"pure_n2","T_C":1100,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.9999999999999999,"O2":5.55301168819423e-17},"r_per_mol_O":{"Ti8O15":1.8873033309012783,"Ti6O11":4.791798877119581,"Ti5O9":7.095209376162776,"Ti4O7":11.001597780338038,"Ti3O5":16.93608618024824,"Ti2O3":29.52950820673972},"log10_traces":{"O2":-19.909380897603718,"Ti10O19":-19.608350901939737},"reduced_pct":3.935823275606987e-15},{"case":"pure_n2","T_C":1300,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.9999999999997683,"O2":2.31652500207071e-13},"r_per_mol_O":{"Ti8O15":2.172312391934202,"Ti6O11":5.426557828401623,"Ti5O9":7.947382397286289,"Ti4O7":12.47466262186924,"Ti3O5":18.45939185941454,"Ti2O3":33.12111890850951},"log10_traces":{"O2":-16.34812464670558,"Ti10O19":-16.047094651041597},"reduced_pct":1.4331506355903713e-11},{"case":"pure_n2","T_C":1500,"active":["TiO2","Ti10O19"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.999999999840935,"O2":1.5906502261482795e-10},"r_per_mol_O":{"Ti8O15":2.4573214428999144,"Ti6O11":6.061316769321167,"Ti5O9":8.799555408235216,"Ti4O7":13.947727452742662,"Ti3O5":19.871090145297725,"Ti2O3":36.85695260496948},"log10_traces":{"O2":-13.563362288723642,"Ti10O19":-13.26233229305966},"reduced_pct":8.730803192984354e-09},{"case":"n2_10ppm_o2","T_C":500,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":243.57538916659988,"Ti8O15":244.60766517782957,"Ti6O11":246.4629110476999,"Ti5O9":248.11407934078272,"Ti4O7":250.15779227457026,"Ti3O5":257.0767613522734,"Ti2O3":262.65617669685224},"log10_traces":{},"reduced_pct":0.0},{"case":"n2_10ppm_o2","T_C":700,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":212.21760181581286,"Ti8O15":213.53488697011272,"Ti6O11":215.73988273383054,"Ti5O9":217.60846509446495,"Ti4O7":220.27306985454845,"Ti3O5":226.47059160701053,"Ti2O3":234.8142551375411},"log10_traces":{},"reduced_pct":0.0},{"case":"n2_10ppm_o2","T_C":900,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":180.35411043589676,"Ti8O15":181.9564046906341,"Ti6O11":184.51115034609018,"Ti5O9":186.5971467756184,"Ti4O7":189.8826433585464,"Ti3O5":195.82348756868427,"Ti2O3":206.39735036923238},"log10_traces":{},"reduced_pct":0.0},{"case":"n2_10ppm_o2","T_C":1100,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":147.94559494291266,"Ti8O15":149.83289827381395,"Ti6O11":152.73739382003225,"Ti5O9":155.04080431907545,"Ti4O7":158.9471927232507,"Ti3O5":164.88168112316092,"Ti2O3":177.4751031496524},"log10_traces":{},"reduced_pct":0.0},{"case":"n2_10ppm_o2","T_C":1300,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":114.97642908665293,"Ti8O15":117.14874147858714,"Ti6O11":120.40298691505456,"Ti5O9":122.92381148393922,"Ti4O7":127.45109170852217,"Ti3O5":133.43582094606748,"Ti2O3":148.09754799516244},"log10_traces":{},"reduced_pct":0.0},{"case":"n2_10ppm_o2","T_C":1500,"active":["TiO2"],"gas_fractions":{"CO2":0.0,"H2":0.0,"CO":0.0,"H2O":0.0,"N2":0.99999,"O2":1e-05},"r_per_mol_O":{"Ti10O19":81.445029241995,"Ti8O15":83.90235068489491,"Ti6O11":87.50634601131617,"Ti5O9":90.24458465023021,"Ti4O7":95.39275669473766,"Ti3O5":101.31611938729273,"Ti2O3":118.30198184696448},"log10_traces":{},"reduced_pct":0.0}],"h2_h2o_boundary":{"T_C":900,"mu_O_critical_kJ_per_mol_O":-368.2779953652982,"H2O_over_H2_critical_ratio":0.004120511581405242,"note":"feeds H2 + r*H2O at r = ratio*(1 -/+ 1e-3) must land on the two-phase buffer / single-phase rutile respectively"}}</script>
 <script id="statmech-data" type="application/json">{
-  "version": "0.3-phase",
-  "material": "rutile TiO2",
-  "facet": "(110)",
-  "lattice_constants_A": {"a": 4.5937, "c": 2.9587},
-  "molar_mass_g_mol": 79.866,
-
-  "site_geometry": {
-    "O_per_1x1_cell_bridging": 1,
-    "O_per_1x1_cell_layer": 4,
-    "layer_thickness": "d110 = a/sqrt(2) = 3.248 A",
-    "note": "The (110) 1x1 cell is c x a*sqrt(2) = 19.22 A^2. It carries one bridging O; an oxygen slab of thickness d110 below the bridging plane carries four O per cell, which reproduces the bulk oxygen density exactly. The subsurface class is therefore not one atomic row: at the default subsurface_layers = 1 it is a 0.325 nm slab holding four times the bridging-row capacity (54.23 vs 13.56 umol-O/g at d = 0.9 um), and the near-surface shell holds 1 + 4*subsurface_layers O per cell.",
-    "shell_thickness_parameter": "subsurface_layers (defaults block) is a declared model choice, not a fitted quantity. The default 1 follows the DFT set, which resolves one first-subsurface energy and takes deeper layers as bulk. Because the subsurface energy is far below the bulk energy, the shell/bulk split is sensitive to it: at 600 C and 95 umol-O/g the subsurface class holds 51.8 / 82.6 / 86.3 / 87.1 umol-O/g for 1 / 2 / 3 / 4 layers, with the bulk taking 36.5 / 5.6 / 2.0 / 1.2. The certified ladder is in reference_statmech.json (shell_ladder) and the reading is discussed in docs/defect-model.md. Real formation energies relax smoothly towards the bulk value over the first few layers, so the physical answer lies between the one- and two-layer columns."
+ "version": "0.3-phase",
+ "material": "rutile TiO2",
+ "facet": "(110)",
+ "lattice_constants_A": {
+  "a": 4.5937,
+  "c": 2.9587
+ },
+ "molar_mass_g_mol": 79.866,
+ "site_geometry": {
+  "O_per_1x1_cell_bridging": 1,
+  "O_per_1x1_cell_layer": 4,
+  "layer_thickness": "d110 = a/sqrt(2) = 3.248 A",
+  "note": "The (110) 1x1 cell is c x a*sqrt(2) = 19.22 A^2. It carries one bridging O; an oxygen slab of thickness d110 below the bridging plane carries four O per cell, which reproduces the bulk oxygen density exactly. The subsurface class is therefore not one atomic row: at the default subsurface_layers = 1 it is a 0.325 nm slab holding four times the bridging-row capacity (54.23 vs 13.56 umol-O/g at d = 0.9 um), and the near-surface shell holds 1 + 4*subsurface_layers O per cell.",
+  "shell_thickness_parameter": "subsurface_layers (defaults block) is a declared model choice, not a fitted quantity. The default 1 follows the DFT set, which resolves one first-subsurface energy and takes deeper layers as bulk. Because the subsurface energy is far below the bulk energy, the shell/bulk split is sensitive to it: at 600 C and 95 umol-O/g the subsurface class holds 51.8 / 82.6 / 86.3 / 87.1 umol-O/g for 1 / 2 / 3 / 4 layers, with the bulk taking 36.5 / 5.6 / 2.0 / 1.2. The certified ladder is in reference_statmech.json (shell_ladder) and the reading is discussed in docs/defect-model.md. Real formation energies relax smoothly towards the bulk value over the first few layers, so the physical answer lies between the one- and two-layer columns."
+ },
+ "vacancy_energetics": {
+  "reference_state": "surface bridging O vacancy",
+  "default_preset": "sx",
+  "presets": {
+   "sx": {
+    "label": "sX hybrid, Li et al. 2015",
+    "surface_eV": 0.0,
+    "subsurface_eV": 0.59,
+    "bulk_eV": 1.31
+   },
+   "gga": {
+    "label": "GGA, Li et al. 2015",
+    "surface_eV": 0.0,
+    "subsurface_eV": 0.39,
+    "bulk_eV": 1.08
+   }
   },
-
-  "vacancy_energetics": {
-    "reference_state": "surface bridging O vacancy",
-    "default_preset": "sx",
-    "presets": {
-      "sx": {"label": "sX hybrid, Li et al. 2015",
-             "surface_eV": 0.0, "subsurface_eV": 0.59, "bulk_eV": 1.31},
-      "gga": {"label": "GGA, Li et al. 2015",
-              "surface_eV": 0.0, "subsurface_eV": 0.39, "bulk_eV": 1.08}
-    },
-    "layer_profile": {
-      "resolved_layers_max": 3,
-      "span_fraction": [0.0, 0.36, 0.64],
-      "eps_eV_sx_illustrative": [0.59, 0.85, 1.05],
-      "range_eV": {"layer1": [0.3, 0.8], "layer2": [0.5, 1.1],
-                   "layer3": [0.7, 1.3], "bulk": [1.0, 1.6]},
-      "label": "assumed",
-      "note": "Depth profile of the dilute vacancy formation energy. Layer 1 is the DFT first-subsurface value of the active preset and the bulk class keeps the DFT bulk value; a resolved layer between them sits at span_fraction of the subsurface-to-bulk interval, so the endpoints are literature and only the SHAPE is assumed. span_fraction 0.36 / 0.64 places layers 2 and 3 at 0.85 / 1.05 eV on the sx preset. The ranges are sampling intervals for the uncertainty study, not error bars: no published DFT set resolves these layers separately. resolved_layers = 1 (the default) collapses layers 2-3 back into the bulk class and reproduces the legacy partition exactly."
-    },
-    "coverage_penalty": {
-      "omega_eV": {"surface": 0.0, "layer1": 0.60, "layer2": 0.45,
-                   "layer3": 0.30, "bulk": 0.15},
-      "range_eV": [0.0, 1.0],
-      "label": "assumed",
-      "sign_convention": "repulsive, omega >= 0",
-      "note": "Effective mean-field coverage penalty. The free energy per site carries eps_i*theta + (omega_i/2)*theta^2, so the chemical potential carries omega_i*theta and crowding costs energy. omega_i ~ sum_j z_ij J_ij is an EFFECTIVE quantity, not a vacancy-pair energy: the surface_ordering pair table must not be summed into it directly, because coordination and pair counting would be double counted. The planned route for omega_surface is to back it out of the sampled mu(theta) of the surface Monte Carlo; until then it is held at 0 so the surface phase ladder is untouched and any change in layer-1 occupancy is attributable to the layer interaction alone. omega = 0 for every class recovers the non-interacting site-exclusion isotherm exactly. Only repulsive values are admitted: omega < -4kT would make mu(theta) non-monotone and split a layer into two phases, a construction this branch does not carry.",
-      "provenance": "No literature value. The magnitudes are chosen to bring the first subsurface layer out of near-saturation at the flagship condition and are carried as a sampling range, not as a measurement."
-    },
-    "provenance": "Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), DOI 10.1021/acs.jpcc.5b02430. Absolute neutral V_O formation energies on rutile (110): sX 4.39 / 4.98 / 5.70 eV, GGA 3.71 / 4.10 / 4.79 eV (surface / first subsurface / bulk). Relative values are used; the oxygen chemical potential cancels in the canonical ensemble. Site energies are polaron-relaxed: Ti3+ small polarons are not explicit variables (context: Reticcioli et al., Phys. Rev. B 98 (2018) 045306)."
+  "provenance": "Li, Guo & Robertson, J. Phys. Chem. C 119 (2015), DOI 10.1021/acs.jpcc.5b02430. Absolute neutral V_O formation energies on rutile (110): sX 4.39 / 4.98 / 5.70 eV, GGA 3.71 / 4.10 / 4.79 eV (surface / first subsurface / bulk). Relative values are used; the oxygen chemical potential cancels in the canonical ensemble. Site energies are polaron-relaxed: Ti3+ small polarons are not explicit variables (context: Reticcioli et al., Phys. Rev. B 98 (2018) 045306).",
+  "retired": "Two blocks were removed in favour of solidgas/particle/. layer_profile held a span_fraction that placed intermediate near-surface layers at a declared fraction of the subsurface-to-bulk interval; its own note labelled the shape \"assumed\". It is superseded by E(z) = E_bulk - dE_seg exp(-z/xi) with xi derived from the three energies above, which has no free shape parameter and reproduces the declared fractions to within a few hundredths. coverage_penalty held a mean-field crowding term omega with no literature value, whose magnitudes its own provenance said were chosen to bring the first subsurface layer out of near-saturation - that was the symptom of the missing cation-sublattice entropy, so it was standing in for a term that is now in the free energy itself. With the compensation in place, resolving the shell into three layers moves the bulk inventory by 2 percent rather than the 30 it used to."
+ },
+ "surface_ordering": {
+  "pair_eV": {
+   "along_row": [
+    0.4,
+    0.2,
+    0.05
+   ],
+   "cross_row": [
+    0.05,
+    0.02
+   ]
   },
-
-  "surface_ordering": {
-    "pair_eV": {"along_row": [0.40, 0.20, 0.05], "cross_row": [0.05, 0.02]},
-    "interaction_cutoff_A": 10.0,
-    "critical_coverage": 0.17,
-    "reconstruction_coverage": 0.20,
-    "disfavored_spacing_sites": [1, 2],
-    "preferred_spacing_sites": [4, 5],
-    "pair_table_note": "Pair energies are calibrated, not computed: chosen so that spacings of 1-2 bridging sites are suppressed and the modal spacing near critical coverage is 4-5 sites, with the ordering energy scale of the published low-energy configurations (~0.2-0.3 eV). Replace with project DFT configuration energies when available.",
-    "provenance": "Birschitzky et al., npj Comput. Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4. DFT+U (U = 3.9 eV) + ML + Metropolis MC on rutile (110): experiment reports an average reconstruction onset near 17%, DFT places the transition near 20%, and vacancy-rich local regions reach about 20%; these values mark a phase-change interval, not a maximum allowed coverage. Interaction range is ~10 A, in-row spacings of 1-2 sites are nearly absent, and the most probable spacing is 4-5 sites. Reconstruction mechanism: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053."
+  "interaction_cutoff_A": 10.0,
+  "critical_coverage": 0.17,
+  "reconstruction_coverage": 0.2,
+  "disfavored_spacing_sites": [
+   1,
+   2
+  ],
+  "preferred_spacing_sites": [
+   4,
+   5
+  ],
+  "pair_table_note": "Pair energies are calibrated, not computed: chosen so that spacings of 1-2 bridging sites are suppressed and the modal spacing near critical coverage is 4-5 sites, with the ordering energy scale of the published low-energy configurations (~0.2-0.3 eV). Replace with project DFT configuration energies when available.",
+  "provenance": "Birschitzky et al., npj Comput. Mater. 10 (2024), DOI 10.1038/s41524-024-01289-4. DFT+U (U = 3.9 eV) + ML + Metropolis MC on rutile (110): experiment reports an average reconstruction onset near 17%, DFT places the transition near 20%, and vacancy-rich local regions reach about 20%; these values mark a phase-change interval, not a maximum allowed coverage. Interaction range is ~10 A, in-row spacings of 1-2 sites are nearly absent, and the most probable spacing is 4-5 sites. Reconstruction mechanism: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053."
+ },
+ "surface_phases": {
+  "theta_transition": 0.17,
+  "transition_interval": [
+   0.17,
+   0.2
+  ],
+  "theta_reconstructed_eff": 0.5,
+  "note": "The (1x2) reconstruction is treated as a competing surface PHASE, not a cap and not an extrapolation: the (1x1) vacancy lattice gas holds up to theta_transition; there the added-row Ti2O3 phase takes over by a first-order transition (lever-rule coexistence at fixed mu_V), with a stoichiometric areal O deficiency of theta_reconstructed_eff = 0.5 in bridging-monolayer units (one added Ti2O3 unit per (1x2) cell = one O vacancy per two bridging sites). Declared idealisations: the reconstructed phase is a zero-width line compound (no configurational entropy; cross-linked (1x2) variants not distinguished), no surface phase beyond theta_eff = 0.5 is modelled, and the high-coverage branch of the (1x1) lattice gas (theta_s > theta_transition) is EXCLUDED from the phase set - the ideal-exclusion free energy is artificially low there, while the repulsive ordering energies and the observed/DFT surface phase behaviour under strong reduction give reconstructed phases, not a bridging-row-stripped (1x1). theta_transition is the experimental onset; the DFT value 0.20 bounds the interval (sensitivity, not a second phase).",
+  "provenance": "Added-row Ti2O3 structure of the (1x2): Onishi & Iwasawa, Surf. Sci. 313 (1994) L783; confirmed stable under reduction by DFT+U: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053. Transition location: the 17-20% onset interval of Birschitzky et al. (see surface_ordering.provenance)."
+ },
+ "saturation": {
+  "subsurface_dilute_warn": 0.25,
+  "x_max_shear": 0.008,
+  "note": "x_max_shear is the approximate rutile point-defect range before crystallographic shear (CS) planes; the partition uses it as the bulk solubility: theta_sol = x_max_shear/2 pins mu_V at the estimated rutile / CS-phase coexistence, and inventory beyond that total precipitates as extended defects by the lever rule (reported as its own output, not forced into the point-defect classes). The value is approximate and is labelled an estimate wherever it is used. subsurface_dilute_warn flags the first subsurface O layer leaving the dilute regime; read that as a heavily reduced near-surface shell, not isolated vacancies."
+ },
+ "co2_kinetics": {
+  "Ea_eV": {
+   "surface": 0.45,
+   "subsurface": 1.25,
+   "bulk": 2.1
   },
-
-  "surface_phases": {
-    "theta_transition": 0.17,
-    "transition_interval": [0.17, 0.20],
-    "theta_reconstructed_eff": 0.5,
-    "note": "The (1x2) reconstruction is treated as a competing surface PHASE, not a cap and not an extrapolation: the (1x1) vacancy lattice gas holds up to theta_transition; there the added-row Ti2O3 phase takes over by a first-order transition (lever-rule coexistence at fixed mu_V), with a stoichiometric areal O deficiency of theta_reconstructed_eff = 0.5 in bridging-monolayer units (one added Ti2O3 unit per (1x2) cell = one O vacancy per two bridging sites). Declared idealisations: the reconstructed phase is a zero-width line compound (no configurational entropy; cross-linked (1x2) variants not distinguished), no surface phase beyond theta_eff = 0.5 is modelled, and the high-coverage branch of the (1x1) lattice gas (theta_s > theta_transition) is EXCLUDED from the phase set - the ideal-exclusion free energy is artificially low there, while the repulsive ordering energies and the observed/DFT surface phase behaviour under strong reduction give reconstructed phases, not a bridging-row-stripped (1x1). theta_transition is the experimental onset; the DFT value 0.20 bounds the interval (sensitivity, not a second phase).",
-    "provenance": "Added-row Ti2O3 structure of the (1x2): Onishi & Iwasawa, Surf. Sci. 313 (1994) L783; confirmed stable under reduction by DFT+U: Reticcioli et al., Phys. Rev. X 7 (2017) 031053, DOI 10.1103/PhysRevX.7.031053. Transition location: the 17-20% onset interval of Birschitzky et al. (see surface_ordering.provenance)."
+  "A_eff_per_s_atm": {
+   "surface": 10000000000000.0,
+   "subsurface": 300000.0,
+   "bulk": 100000.0
   },
-
-  "saturation": {
-    "subsurface_dilute_warn": 0.25,
-    "x_max_shear": 0.008,
-    "note": "x_max_shear is the approximate rutile point-defect range before crystallographic shear (CS) planes; the partition uses it as the bulk solubility: theta_sol = x_max_shear/2 pins mu_V at the estimated rutile / CS-phase coexistence, and inventory beyond that total precipitates as extended defects by the lever rule (reported as its own output, not forced into the point-defect classes). The value is approximate and is labelled an estimate wherever it is used. subsurface_dilute_warn flags the first subsurface O layer leaving the dilute regime; read that as a heavily reduced near-surface shell, not isolated vacancies."
-  },
-
-  "co2_kinetics": {
-    "Ea_eV": {"surface": 0.45, "subsurface": 1.25, "bulk": 2.10},
-    "A_eff_per_s_atm": {"surface": 1e13, "subsurface": 3e5, "bulk": 1e5},
-    "p_order_m": 1.0,
-    "defaults": {"exposure_s": 300, "p_CO2_atm": 0.20, "T_reox_C": 600},
-    "note": "Placeholder effective kinetics: k_c = A_c p^m exp(-Ea_c/kT), P_c(t) = 1 - exp(-k_c t). The barriers are the first-sketch values; the prefactors are EFFECTIVE, far below an attempt frequency for the deeper classes because subsurface and bulk refill are transport-limited, and are set to give a plausible recovery pattern at 600 C / 300 s / 0.2 atm (surface complete, subsurface partial, bulk negligible). Replace with fitted or DFT values; none of these numbers is a literature result."
-  },
-
-  "dielectric_correlation": {
-    "form": "power_law",
-    "log10_intercept": -3.07028,
-    "log10_intercept_err": 0.695,
-    "exponent": 1.22355,
-    "exponent_err": 0.2302,
-    "eps_prime": null,
-    "fit_stats": {"pearson_r": 0.96637, "r_squared": 0.93388,
-                  "adj_r_squared": 0.90082, "residual_ss": 0.18029,
-                  "n_points": 4},
-    "fit_range_umol_g": [95, 5000],
-    "note": "Empirical dielectric loss factor of this work: linear regression of log10(eps'') on log10(VO_total), i.e. eps'' = 10^a * VO^b with a = -3.07028 +/- 0.695 and b = 1.22355 +/- 0.2302 (OriginLab, no weighting, N = 4, Pearson r 0.96637, R^2 0.93388, adj. R^2 0.90082, RSS 0.18029). Fitted over roughly 95-5000 umol-O/g; below that range the value is an extrapolation and the card marks it. Set eps_prime to display tan delta.",
-    "provenance": "Measured in this work (Kwak et al.): dielectric loss factor vs total oxygen-vacancy content from H2O-integration titration of reduced rutile."
-  },
-
-  "kinetics_cgmc": {
-    "nu0_per_s": 1e13,
-    "E_m_bulk_eV": 0.65,
-    "n_cells": 28,
-    "eps_ctrl": 0.08,
-    "stochastic_column_counts": 200000,
-    "note": "Coarse-grained KMC of reoxidation transport, after the group's framework: radial coarse cells over the particle, exchange rates R(k->l) = Lambda_kl eta_k (q_l - eta_l) exp(beta eps_k) with a symmetric kernel Lambda_kl = nu0 a^2 A_kl exp(-beta E_TS) / (d_kl v_O q_k q_l) and a common saddle E_TS = E_m + eps_bulk, so the activation to leave cell k is E_TS - eps_k. This satisfies detailed balance against the product-binomial Gibbs measure with H = sum eps_k eta_k (the closed system relaxes exactly to the (1x1) three-class equilibrium split) and reduces in the dilute limit to the finite-volume discretisation of spherical diffusion with D = a^2 nu0 exp(-beta E_m). Surface refill (CO2) is the one irreversible channel and uses the surface entry of co2_kinetics. Reconstruction kinetics are not modelled: the transport network uses the (1x1) site classes. E_m defaults to the neutral-vacancy bulk barrier; with it, transport is NOT rate-limiting at 600 C - a measured partial recovery therefore reads back as an EFFECTIVE barrier (charged migration, trapping, aggregation), which the panel can fit.",
-    "provenance": "Framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003). E_m default: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a (neutral V_O, c-axis)."
-  },
-
-  "experimental_recovery": {
-    "points": [],
-    "schema": {"VO_total_umol_g": "x", "recovered_umol_g": "y",
-               "label": "optional"},
-    "note": "Measured CO2 recovery for the overlay on the sweep plot; empty until digitised from experiment."
-  },
-
-  "diffusion_eV": {
-    "bulk_c_axis": 0.65,
-    "surface_001": 1.19,
-    "surface_crossrow_concerted": 0.91,
-    "note": "Stored for a later kinetic version; not used by the equilibrium model. The surface-to-subsurface exchange barrier is a different path and is not any of these numbers. The planned kinetic layer follows the coarse-grained kinetic Monte Carlo framework of the group: radial coarse cells over the particle, Arrhenius exchange rates, detailed balance against the same Gibbs measure, q^2 time coarse-graining.",
-    "provenance": "Bulk: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a. Surface (unstrained rutile 110): Wang et al., Phys. Rev. B 82 (2010) 165309. Coarse-grained KMC framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003)."
-  },
-
+  "p_order_m": 1.0,
   "defaults": {
-    "T_C": 600,
-    "VO_total_umol_g": 95.0,
-    "particle_diameter_um": 0.90,
-    "subsurface_layers": 1,
-    "resolved_layers": 1,
-    "coverage_penalty": "off",
-    "energetics_preset": "sx",
-    "mc": {
-      "seed": 12345,
-      "rows": 8, "row_sites": 25, "ss_layers": 1, "bulk_layers": 8,
-      "fillings": [2, 4, 7, 12, 20, 32, 50, 75, 110, 160],
-      "equil_sweeps": 2500, "warm_equil_sweeps": 1000, "sample_sweeps": 4000,
-      "widom_every": 10, "hist_every": 25, "blocks": 20
-    }
+   "exposure_s": 300,
+   "p_CO2_atm": 0.2,
+   "T_reox_C": 600
+  },
+  "note": "Placeholder effective kinetics: k_c = A_c p^m exp(-Ea_c/kT), P_c(t) = 1 - exp(-k_c t). The barriers are the first-sketch values; the prefactors are EFFECTIVE, far below an attempt frequency for the deeper classes because subsurface and bulk refill are transport-limited, and are set to give a plausible recovery pattern at 600 C / 300 s / 0.2 atm (surface complete, subsurface partial, bulk negligible). Replace with fitted or DFT values; none of these numbers is a literature result."
+ },
+ "dielectric_correlation": {
+  "form": "power_law",
+  "log10_intercept": -3.07028,
+  "log10_intercept_err": 0.695,
+  "exponent": 1.22355,
+  "exponent_err": 0.2302,
+  "eps_prime": null,
+  "fit_stats": {
+   "pearson_r": 0.96637,
+   "r_squared": 0.93388,
+   "adj_r_squared": 0.90082,
+   "residual_ss": 0.18029,
+   "n_points": 4
+  },
+  "fit_range_umol_g": [
+   95,
+   5000
+  ],
+  "note": "Empirical dielectric loss factor of this work: linear regression of log10(eps'') on log10(VO_total), i.e. eps'' = 10^a * VO^b with a = -3.07028 +/- 0.695 and b = 1.22355 +/- 0.2302 (OriginLab, no weighting, N = 4, Pearson r 0.96637, R^2 0.93388, adj. R^2 0.90082, RSS 0.18029). Fitted over roughly 95-5000 umol-O/g; below that range the value is an extrapolation and the card marks it. Set eps_prime to display tan delta.",
+  "provenance": "Measured in this work (Kwak et al.): dielectric loss factor vs total oxygen-vacancy content from H2O-integration titration of reduced rutile."
+ },
+ "kinetics_cgmc": {
+  "nu0_per_s": 10000000000000.0,
+  "E_m_bulk_eV": 0.65,
+  "n_cells": 28,
+  "eps_ctrl": 0.08,
+  "stochastic_column_counts": 200000,
+  "note": "Coarse-grained KMC of reoxidation transport, after the group's framework: radial coarse cells over the particle, exchange rates R(k->l) = Lambda_kl eta_k (q_l - eta_l) exp(beta eps_k) with a symmetric kernel Lambda_kl = nu0 a^2 A_kl exp(-beta E_TS) / (d_kl v_O q_k q_l) and a common saddle E_TS = E_m + eps_bulk, so the activation to leave cell k is E_TS - eps_k. This satisfies detailed balance against the product-binomial Gibbs measure with H = sum eps_k eta_k (the closed system relaxes exactly to the (1x1) three-class equilibrium split) and reduces in the dilute limit to the finite-volume discretisation of spherical diffusion with D = a^2 nu0 exp(-beta E_m). Surface refill (CO2) is the one irreversible channel and uses the surface entry of co2_kinetics. Reconstruction kinetics are not modelled: the transport network uses the (1x1) site classes. E_m defaults to the neutral-vacancy bulk barrier; with it, transport is NOT rate-limiting at 600 C - a measured partial recovery therefore reads back as an EFFECTIVE barrier (charged migration, trapping, aggregation), which the panel can fit.",
+  "provenance": "Framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003). E_m default: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a (neutral V_O, c-axis)."
+ },
+ "experimental_recovery": {
+  "points": [],
+  "schema": {
+   "VO_total_umol_g": "x",
+   "recovered_umol_g": "y",
+   "label": "optional"
+  },
+  "note": "Measured CO2 recovery for the overlay on the sweep plot; empty until digitised from experiment."
+ },
+ "diffusion_eV": {
+  "bulk_c_axis": 0.65,
+  "surface_001": 1.19,
+  "surface_crossrow_concerted": 0.91,
+  "note": "Stored for a later kinetic version; not used by the equilibrium model. The surface-to-subsurface exchange barrier is a different path and is not any of these numbers. The planned kinetic layer follows the coarse-grained kinetic Monte Carlo framework of the group: radial coarse cells over the particle, Arrhenius exchange rates, detailed balance against the same Gibbs measure, q^2 time coarse-graining.",
+  "provenance": "Bulk: Iddir et al., J. Phys. Chem. C (2010), DOI 10.1021/jp107986a. Surface (unstrained rutile 110): Wang et al., Phys. Rev. B 82 (2010) 165309. Coarse-grained KMC framework: Katsoulakis & Vlachos, J. Chem. Phys. 119, 9412 (2003), DOI 10.1063/1.1616513; Katsoulakis, Majda & Vlachos, Proc. Natl. Acad. Sci. USA 100, 782 (2003)."
+ },
+ "defaults": {
+  "T_C": 600,
+  "VO_total_umol_g": 95.0,
+  "particle_diameter_um": 0.9,
+  "subsurface_layers": 1,
+  "energetics_preset": "sx",
+  "mc": {
+   "seed": 12345,
+   "rows": 8,
+   "row_sites": 25,
+   "ss_layers": 1,
+   "bulk_layers": 8,
+   "fillings": [
+    2,
+    4,
+    7,
+    12,
+    20,
+    32,
+    50,
+    75,
+    110,
+    160
+   ],
+   "equil_sweeps": 2500,
+   "warm_equil_sweeps": 1000,
+   "sample_sweeps": 4000,
+   "widom_every": 10,
+   "hist_every": 25,
+   "blocks": 20
   }
+ }
 }</script>
 <script id="redox-data" type="application/json">{
   "version": "0.1-uniform",
@@ -25490,6 +25522,535 @@ root.Solver = Solver;
   run();
 })();
 </script>
+<script id="px-engine">/* Vacancy distribution in one oxide particle, from a titrated inventory.
+
+   Line-for-line port of solidgas/particle/: same branches, same bracket
+   algebra, same layer stack summed in the same order, so the browser and
+   the Python engine agree to the last bits (verified by
+   tests/test_particle_port.py against the same fifty-digit reference).
+
+   The physics is in the Python module headers and in
+   docs/particle-model.md; the short version is that an oxygen vacancy
+   leaves two electrons behind, they localise as two Ti(3+) on a cation
+   sublattice half the size of the oxygen one, and counting that
+   sublattice is what caps reduction at Ti2O3 and turns the dilute
+   isotherm from p(O2)^(-1/2) into p(O2)^(-1/6). */
+
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.Particle = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var KB_EV = 8.617333262e-5;
+  var N_AVO = 6.02214076e23;
+
+  var POLARON_RATIO = 4.0;
+  var THETA_CAP = 1.0 / POLARON_RATIO;
+  var ITERS = 80;
+
+  /* --------------------------------------------------------- free energy */
+
+  function cap(ratio) { return 1.0 / (ratio === undefined ? POLARON_RATIO : ratio); }
+
+  function phi(theta, ratio) {
+    ratio = ratio === undefined ? POLARON_RATIO : ratio;
+    if (theta <= 0.0) return -Infinity;
+    if (theta >= 1.0 / ratio) return Infinity;
+    var p = ratio * theta;
+    return Math.log(theta / (1.0 - theta)) + 2.0 * Math.log(p / (1.0 - p));
+  }
+
+  function phiOxygenOnly(theta) {
+    if (theta <= 0.0) return -Infinity;
+    if (theta >= 1.0) return Infinity;
+    return Math.log(theta / (1.0 - theta));
+  }
+
+  function brackets(ratio) {
+    var half = 0.5 / ratio;
+    return { phiHalf: Math.log(half / (1.0 - half)),
+             logRatio2: 2.0 * Math.log(ratio),
+             slack: -Math.log(1.0 - half) - 2.0 * Math.log(0.5) };
+  }
+
+  function thetaOfPhi(x, compensated, ratio) {
+    compensated = compensated === undefined ? true : compensated;
+    ratio = ratio === undefined ? POLARON_RATIO : ratio;
+    if (!compensated) {
+      if (x > 700.0) return 1.0;
+      if (x < -700.0) return 0.0;
+      return 1.0 / (1.0 + Math.exp(-x));
+    }
+    var b = brackets(ratio), top = 1.0 / ratio, lo, hi, mid, i, t;
+
+    if (x <= b.phiHalf) {
+      hi = (x - b.logRatio2) / 3.0;
+      if (hi < -745.0) return 0.0;
+      lo = Math.max((x - b.logRatio2 - b.slack) / 3.0, -745.0);
+      for (i = 0; i < ITERS; i++) {
+        mid = 0.5 * (lo + hi);
+        if (phi(Math.exp(mid), ratio) < x) lo = mid; else hi = mid;
+      }
+      return Math.exp(0.5 * (lo + hi));
+    }
+
+    hi = Math.log(0.5 * top);
+    lo = hi - 1.0;
+    while (lo > -745.0 && phi(top - Math.exp(lo), ratio) < x) {
+      lo = hi - 2.0 * (hi - lo);
+    }
+    if (lo <= -745.0) {
+      if (phi(top - Math.exp(-745.0), ratio) < x) return top;
+      lo = -745.0;
+    }
+    for (i = 0; i < ITERS; i++) {
+      mid = 0.5 * (lo + hi);
+      t = top - Math.exp(mid);
+      if (t <= 0.0 || phi(t, ratio) > x) lo = mid; else hi = mid;
+    }
+    return top - Math.exp(0.5 * (lo + hi));
+  }
+
+  function muOfTheta(theta, eForm, kt, compensated, ratio) {
+    var f = (compensated === undefined || compensated)
+      ? phi(theta, ratio) : phiOxygenOnly(theta);
+    return eForm + kt * f;
+  }
+
+  function thetaOfMu(mu, eForm, kt, compensated, ratio) {
+    return thetaOfPhi((mu - eForm) / kt, compensated, ratio);
+  }
+
+  function diluteTheta(mu, eForm, kt, ratio) {
+    ratio = ratio === undefined ? POLARON_RATIO : ratio;
+    return Math.exp(((mu - eForm) / kt - 2.0 * Math.log(ratio)) / 3.0);
+  }
+
+  function freeEnergyPerSite(theta, eForm, kt, compensated, ratio) {
+    ratio = ratio === undefined ? POLARON_RATIO : ratio;
+    if (theta <= 0.0) return 0.0;
+    var ideal = theta * Math.log(theta) + (1.0 - theta) * Math.log(1.0 - theta);
+    var f = eForm * theta + kt * ideal;
+    if (compensated === false) return f;
+    var p = ratio * theta;
+    if (p >= 1.0) return Infinity;
+    var catTerm = p * Math.log(p) + (1.0 - p) * Math.log(1.0 - p);
+    return f + kt * catTerm * (2.0 / ratio);
+  }
+
+  /* ------------------------------------------------------------ material */
+
+  function segregation(p, preset) {
+    var ve = p.vacancy_energetics;
+    var key = preset || ve.default_preset;
+    var q = ve.presets[key];
+    var eS = q.surface_eV, eSs = q.subsurface_eV, eB = q.bulk_eV;
+    var d110 = p.lattice_constants_A.a / Math.SQRT2 / 10.0;
+    var de = eB - eS, rem = eB - eSs;
+    if (!(de > 0.0 && rem > 0.0 && rem < de)) {
+      throw new Error('the ' + key + ' triple does not decay monotonically '
+                      + 'towards the bulk, so E(z) = E_bulk - dE exp(-z/xi) '
+                      + 'cannot pass through all three');
+    }
+    var xi = -d110 / Math.log(rem / de);
+    return { preset: key, label: q.label || key,
+             e_surface_eV: eS, e_subsurface_eV: eSs, e_bulk_eV: eB,
+             dE_seg_eV: de, xi_nm: xi, d110_nm: d110,
+             xi_in_layers: xi / d110 };
+  }
+
+  function formationEnergy(zNm, seg) {
+    return seg.e_bulk_eV - seg.dE_seg_eV * Math.exp(-Math.max(0.0, zNm) / seg.xi_nm);
+  }
+
+  function densityGCm3(p) {
+    var a = p.lattice_constants_A.a, c = p.lattice_constants_A.c;
+    return 2.0 * p.molar_mass_g_mol / (N_AVO * a * a * c * 1e-24);
+  }
+
+  function bridgingDensityCm2(p) {
+    var a = p.lattice_constants_A.a, c = p.lattice_constants_A.c;
+    return 1e16 / (c * a * Math.SQRT2);
+  }
+
+  function particle(p, opts) {
+    opts = opts || {};
+    var areaCm2G;
+    if (opts.bet_m2_g != null) {
+      areaCm2G = opts.bet_m2_g * 1e4;
+    } else {
+      var dUm = opts.d_um != null ? opts.d_um : p.defaults.particle_diameter_um;
+      areaCm2G = 6.0 / (densityGCm3(p) * dUm * 1e-4);
+    }
+    var nO = 2.0 / p.molar_mass_g_mol * 1e6;
+    var nSurface = areaCm2G * bridgingDensityCm2(p) / N_AVO * 1e6;
+    var rNm = 3.0 / (densityGCm3(p) * areaCm2G) * 1e7;
+    var xShear = (p.saturation || {}).x_max_shear;
+    var ph = p.surface_phases || {};
+    return { area_m2_g: areaCm2G * 1e-4, radius_nm: rNm,
+             diameter_um: 2.0 * rNm * 1e-3,
+             N_surface_umol_g: nSurface,
+             N_interior_umol_g: nO - nSurface,
+             N_oxygen_umol_g: nO,
+             segregation: segregation(p, opts.preset),
+             x_max_shear: xShear == null ? null : xShear,
+             theta_solubility: xShear == null ? null : 0.5 * xShear,
+             surface_phases: {
+               theta_transition: ph.theta_transition,
+               theta_reconstructed_eff: ph.theta_reconstructed_eff,
+               transition_interval: ph.transition_interval } };
+  }
+
+  function thetaFromLoading(vo, part) { return vo / part.N_oxygen_umol_g; }
+  function loadingFromTheta(th, part) { return th * part.N_oxygen_umol_g; }
+  function ktEV(tC) { return KB_EV * (tC + 273.15); }
+
+  /* ------------------------------------------------------------- profile */
+
+  function layerGeometry(part) {
+    var d = part.segregation.d110_nm;
+    var rIn = part.radius_nm - 0.5 * d;
+    return { d: d, rIn: rIn, vol: rIn * rIn * rIn / 3.0 };
+  }
+
+  function interiorAverage(mu, kt, part, compensated, ratio, relTol) {
+    relTol = relTol === undefined ? 1e-15 : relTol;
+    var seg = part.segregation, g = layerGeometry(part);
+    var thBulk = thetaOfMu(mu, seg.e_bulk_eV, kt, compensated, ratio);
+    var excess = 0.0, k = 1, nMax = Math.floor(g.rIn / g.d), ro, ri, v, e, term;
+    while (k <= nMax) {
+      ro = g.rIn - (k - 1) * g.d;
+      ri = Math.max(0.0, g.rIn - k * g.d);
+      v = (ro * ro * ro - ri * ri * ri) / 3.0;
+      e = formationEnergy(k * g.d, seg);
+      term = v * (thetaOfMu(mu, e, kt, compensated, ratio) - thBulk);
+      excess += term;
+      if (Math.abs(term) <= relTol * Math.max(Math.abs(excess), 1e-300) && k > 4) break;
+      k++;
+    }
+    return thBulk + excess / g.vol;
+  }
+
+  function surfaceState(mu, kt, part, compensated, ratio, reconstruction) {
+    var seg = part.segregation, eS = seg.e_surface_eV;
+    var th11 = thetaOfMu(mu, eS, kt, compensated, ratio);
+    var ph = part.surface_phases || {};
+    if (reconstruction === false || ph.theta_transition == null
+        || ph.theta_reconstructed_eff == null) {
+      return { theta: th11, phase: '1x1', reconstructed_fraction: 0.0,
+               mu_transition_eV: null };
+    }
+    var muT = muOfTheta(ph.theta_transition, eS, kt, compensated, ratio);
+    if (mu < muT) {
+      return { theta: th11, phase: '1x1', reconstructed_fraction: 0.0,
+               mu_transition_eV: muT };
+    }
+    if (mu > muT) {
+      return { theta: ph.theta_reconstructed_eff, phase: '1x2',
+               reconstructed_fraction: 1.0, mu_transition_eV: muT };
+    }
+    return { theta: ph.theta_transition, phase: 'coexistence',
+             reconstructed_fraction: 0.0, mu_transition_eV: muT };
+  }
+
+  function inventory(mu, kt, part, compensated, ratio, reconstruction, surfFraction) {
+    var s = surfaceState(mu, kt, part, compensated, ratio, reconstruction);
+    var thS = surfFraction == null ? s.theta : surfFraction;
+    return part.N_surface_umol_g * thS
+      + part.N_interior_umol_g * interiorAverage(mu, kt, part, compensated, ratio);
+  }
+
+  function bracketMu(target, kt, part, compensated, ratio, reconstruction) {
+    var seg = part.segregation;
+    var th = Math.min(Math.max(target / part.N_oxygen_umol_g, 1e-300), 0.5 / ratio);
+    var guess = seg.e_bulk_eV + kt * (3.0 * Math.log(th) + 2.0 * Math.log(ratio));
+    var lo = guess - 1.0, hi = guess + 1.0, i;
+    for (i = 0; i < 60; i++) {
+      if (inventory(lo, kt, part, compensated, ratio, reconstruction) <= target) break;
+      lo -= (hi - lo);
+    }
+    for (i = 0; i < 60; i++) {
+      if (inventory(hi, kt, part, compensated, ratio, reconstruction) >= target) break;
+      hi += (hi - lo);
+    }
+    return [lo, hi];
+  }
+
+  function equilibrate(voUmolG, tC, part, opts) {
+    opts = opts || {};
+    var compensated = opts.compensated === undefined ? true : opts.compensated;
+    var ratio = opts.ratio === undefined ? POLARON_RATIO : opts.ratio;
+    var reconstruction = opts.reconstruction === undefined ? true : opts.reconstruction;
+    var shearLimit = opts.shear_limit === undefined ? true : opts.shear_limit;
+
+    var kt = ktEV(tC), seg = part.segregation;
+    var capTotal = part.N_oxygen_umol_g / ratio;
+    if (voUmolG > capTotal) {
+      throw new Error('a loading of ' + voUmolG + ' umol-O/g is past the cation '
+        + 'sublattice itself (' + capTotal.toFixed(1) + ' umol-O/g is theta = 1/'
+        + ratio + ' everywhere, which is Ti2O3, not reduced rutile)');
+    }
+
+    var muCs = null;
+    if (shearLimit && part.theta_solubility) {
+      muCs = muOfTheta(part.theta_solubility, seg.e_bulk_eV, kt, compensated, ratio);
+    }
+    var ph = part.surface_phases || {};
+    var thT = reconstruction ? ph.theta_transition : null;
+    var thR = reconstruction ? ph.theta_reconstructed_eff : null;
+    var muT = thT == null ? null
+      : muOfTheta(thT, seg.e_surface_eV, kt, compensated, ratio);
+
+    var mu = null, limitedBy = null, extended = 0.0, thS = null, frac = 0.0;
+
+    if (muT != null && (muCs == null || muT <= muCs)) {
+      var loInv = inventory(muT, kt, part, compensated, ratio, reconstruction, thT);
+      var hiInv = inventory(muT, kt, part, compensated, ratio, reconstruction, thR);
+      if (loInv <= voUmolG && voUmolG <= hiInv) {
+        mu = muT;
+        frac = hiInv > loInv ? (voUmolG - loInv) / (hiInv - loInv) : 0.0;
+        thS = thT + frac * (thR - thT);
+        limitedBy = 'surface reconstruction';
+      }
+    }
+
+    if (mu === null) {
+      var b = bracketMu(voUmolG, kt, part, compensated, ratio, reconstruction);
+      var lo = b[0], hi = b[1], mid;
+      for (var i = 0; i < 200; i++) {
+        mid = 0.5 * (lo + hi);
+        if (inventory(mid, kt, part, compensated, ratio, reconstruction) < voUmolG) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+      mu = 0.5 * (lo + hi);
+    }
+
+    if (muCs != null && mu > muCs) {
+      mu = muCs; thS = null; limitedBy = 'crystallographic shear';
+      extended = voUmolG - inventory(mu, kt, part, compensated, ratio, reconstruction);
+    }
+
+    var surf = surfaceState(mu, kt, part, compensated, ratio, reconstruction);
+    if (thS != null) {
+      surf = { theta: thS, phase: 'coexistence', reconstructed_fraction: frac,
+               mu_transition_eV: surf.mu_transition_eV };
+    }
+    var thI = interiorAverage(mu, kt, part, compensated, ratio);
+    var heldS = part.N_surface_umol_g * surf.theta;
+    var heldI = part.N_interior_umol_g * thI;
+
+    return {
+      mu_eV: mu, kt_eV: kt, T_C: tC,
+      compensated: compensated, polaron_ratio: ratio,
+      loading_umol_g: voUmolG,
+      theta_particle: voUmolG / part.N_oxygen_umol_g,
+      surface: surf,
+      theta_interior_mean: thI,
+      theta_bulk_plateau: thetaOfMu(mu, seg.e_bulk_eV, kt, compensated, ratio),
+      theta_first_layer: thetaOfMu(mu, formationEnergy(seg.d110_nm, seg), kt,
+                                   compensated, ratio),
+      umol_surface: heldS, umol_interior: heldI,
+      umol_extended: extended,
+      held_umol_g: heldS + heldI,
+      limited_by: limitedBy,
+      mu_shear_eV: muCs, mu_transition_eV: muT,
+      point_defect_ceiling_umol_g: muCs == null ? null
+        : inventory(muCs, kt, part, compensated, ratio, reconstruction)
+    };
+  }
+
+  function depthProfile(res, part, n, zMaxNm) {
+    n = n || 160;
+    var seg = part.segregation, kt = res.kt_eV;
+    var zmax = zMaxNm != null ? zMaxNm
+      : Math.min(part.radius_nm, 40.0 * seg.xi_nm);
+    var out = [{ z_nm: 0.0, theta: res.surface.theta, pool: 'bridging row' }];
+    for (var i = 0; i < n; i++) {
+      var z = 0.5 * seg.d110_nm
+        + (zmax - 0.5 * seg.d110_nm) * Math.pow(i / (n - 1.0), 3);
+      out.push({ z_nm: z,
+                 theta: thetaOfMu(res.mu_eV, formationEnergy(z, seg), kt,
+                                  res.compensated, res.polaron_ratio),
+                 pool: 'interior' });
+    }
+    return out;
+  }
+
+  function shellSplit(res, part, depthsNm) {
+    depthsNm = depthsNm || [1.0, 2.0, 5.0, 10.0];
+    var seg = part.segregation, kt = res.kt_eV, mu = res.mu_eV;
+    var g = layerGeometry(part), total = res.held_umol_g, rows = [];
+    for (var j = 0; j < depthsNm.length; j++) {
+      var dep = depthsNm[j];
+      if (dep >= g.rIn) continue;
+      var acc = 0.0, k = 1, nMax = Math.floor(g.rIn / g.d);
+      while (k <= nMax) {
+        var zOut = (k - 1) * g.d;
+        if (zOut >= dep) break;
+        var ro = g.rIn - zOut;
+        var ri = Math.max(g.rIn - Math.min(k * g.d, dep), 0.0);
+        acc += (ro * ro * ro - ri * ri * ri) / 3.0
+          * thetaOfMu(mu, formationEnergy(k * g.d, seg), kt,
+                      res.compensated, res.polaron_ratio);
+        k++;
+      }
+      var umol = res.umol_surface + part.N_interior_umol_g * acc / g.vol;
+      rows.push({ depth_nm: dep,
+                  volume_fraction: 1.0 - Math.pow((g.rIn - dep) / g.rIn, 3),
+                  umol_g: umol,
+                  inventory_fraction: total ? umol / total : 0.0 });
+    }
+    return rows;
+  }
+
+  /* ----------------------------------------------------------- transport */
+
+  function diffusivity(tC, eM, nu0, aNm) {
+    return aNm * aNm * nu0 * Math.exp(-eM / (KB_EV * (tC + 273.15)));
+  }
+
+  function uptake(tau) {
+    if (tau <= 0.0) return 0.0;
+    var s = 0.0;
+    for (var n = 1; n <= 200; n++) {
+      var x = n * n * Math.PI * Math.PI * tau;
+      if (x > 700.0) break;
+      s += Math.exp(-x) / (n * n);
+    }
+    return Math.max(0.0, Math.min(1.0, 1.0 - 6.0 / (Math.PI * Math.PI) * s));
+  }
+
+  function tauForUptake(f) {
+    if (!(f > 0.0 && f < 1.0)) {
+      throw new Error('uptake fraction must be strictly between 0 and 1');
+    }
+    var lo = 1e-12, hi = 10.0, mid;
+    for (var i = 0; i < 200; i++) {
+      mid = Math.sqrt(lo * hi);
+      if (uptake(mid) < f) lo = mid; else hi = mid;
+    }
+    return Math.sqrt(lo * hi);
+  }
+
+  function timescales(tC, part, p, opts) {
+    opts = opts || {};
+    var kin = (p || {}).kinetics_cgmc || {};
+    var eM = opts.e_m_eV != null ? opts.e_m_eV : kin.E_m_bulk_eV;
+    var nu0 = opts.nu0_per_s != null ? opts.nu0_per_s : kin.nu0_per_s;
+    var aNm = opts.a_nm != null ? opts.a_nm : p.lattice_constants_A.c / 10.0;
+    var fractions = opts.fractions || [0.5, 0.9, 0.99];
+    var d = diffusivity(tC, eM, nu0, aNm);
+    var scale = part.radius_nm * part.radius_nm / d;
+    var times = {};
+    for (var i = 0; i < fractions.length; i++) {
+      times[fractions[i]] = tauForUptake(fractions[i]) * scale;
+    }
+    return { T_C: tC, E_m_eV: eM, nu0_per_s: nu0, a_nm: aNm,
+             radius_nm: part.radius_nm, D_nm2_per_s: d, D_cm2_per_s: d * 1e-14,
+             tau_unit_s: scale, times_s: times };
+  }
+
+  function barrierForTime(tC, part, tTargetS, nu0, aNm, fraction) {
+    fraction = fraction === undefined ? 0.99 : fraction;
+    var kt = KB_EV * (tC + 273.15);
+    var need = tauForUptake(fraction) * part.radius_nm * part.radius_nm / tTargetS;
+    return kt * Math.log(aNm * aNm * nu0 / need);
+  }
+
+  function verdict(tC, part, exposureS, p, opts) {
+    opts = opts || {};
+    var fraction = opts.fraction === undefined ? 0.99 : opts.fraction;
+    var ts = timescales(tC, part, p,
+                        { e_m_eV: opts.e_m_eV, nu0_per_s: opts.nu0_per_s,
+                          a_nm: opts.a_nm, fractions: [fraction] });
+    var tHom = ts.times_s[fraction];
+    var eBreak = barrierForTime(tC, part, exposureS, ts.nu0_per_s, ts.a_nm, fraction);
+    ts.fraction = fraction;
+    ts.exposure_s = exposureS;
+    ts.t_homogenise_s = tHom;
+    ts.ratio = exposureS ? tHom / exposureS : Infinity;
+    ts.equilibrium_reachable = tHom < exposureS;
+    ts.E_m_that_would_break_it_eV = eBreak;
+    ts.barrier_margin_eV = eBreak - ts.E_m_eV;
+    return ts;
+  }
+
+  /* --------------------------------------------------------- space charge */
+
+  var E_CHARGE = 1.602176634e-19;
+  var EPS0_F_PER_CM = 8.8541878128e-14;
+  var EPS_R_RUTILE = 100.0;
+
+  function oxygenDensityCm3(p) {
+    var a = p.lattice_constants_A.a, c = p.lattice_constants_A.c;
+    return 4.0 / (a * a * c * 1e-24);
+  }
+
+  function debyeLengthNm(thetaV, p, tC, epsR, ratio) {
+    epsR = epsR === undefined ? EPS_R_RUTILE : epsR;
+    ratio = ratio === undefined ? POLARON_RATIO : ratio;
+    var z2n = (4.0 * thetaV + 0.5 * ratio * thetaV) * oxygenDensityCm3(p);
+    if (z2n <= 0.0) return Infinity;
+    var ktJ = KB_EV * (tC + 273.15) * E_CHARGE;
+    return Math.sqrt(epsR * EPS0_F_PER_CM * ktJ / (E_CHARGE * E_CHARGE * z2n)) * 1e7;
+  }
+
+  function assess(res, part, p, epsR) {
+    epsR = epsR === undefined ? EPS_R_RUTILE : epsR;
+    var xi = part.segregation.xi_nm;
+    var lam = debyeLengthNm(res.theta_bulk_plateau, p, res.T_C, epsR,
+                            res.polaron_ratio);
+    var r = lam / xi, verdictText;
+    if (r < 0.2) {
+      verdictText = 'screening is much shorter than the segregation depth, '
+        + 'so charge follows chemistry and pointwise electroneutrality is safe';
+    } else if (r < 2.0) {
+      verdictText = 'screening and segregation happen over the same distance, '
+        + 'so they cannot be separated; the outer few nanometres of this '
+        + 'profile carry an error that this model does not quantify, and the '
+        + 'ceria study finds that error runs towards MORE surface enrichment';
+    } else {
+      verdictText = 'screening is longer than the segregation depth, so a '
+        + 'genuine space-charge layer extends past the chemically perturbed '
+        + 'shell and pointwise electroneutrality is not a safe assumption here';
+    }
+    return { eps_r: epsR, theta_bulk_plateau: res.theta_bulk_plateau,
+             debye_nm_at_bulk: lam,
+             debye_nm_at_first_layer: debyeLengthNm(
+               Math.max(res.theta_first_layer, 1e-30), p, res.T_C, epsR,
+               res.polaron_ratio),
+             xi_nm: xi, ratio_debye_over_xi: r,
+             radius_nm: part.radius_nm,
+             fraction_of_radius: lam / part.radius_nm,
+             verdict: verdictText };
+  }
+
+  return { KB_EV: KB_EV, N_AVO: N_AVO,
+           POLARON_RATIO: POLARON_RATIO, THETA_CAP: THETA_CAP,
+           cap: cap, phi: phi, phiOxygenOnly: phiOxygenOnly,
+           thetaOfPhi: thetaOfPhi, muOfTheta: muOfTheta,
+           thetaOfMu: thetaOfMu, diluteTheta: diluteTheta,
+           freeEnergyPerSite: freeEnergyPerSite,
+           segregation: segregation, formationEnergy: formationEnergy,
+           densityGCm3: densityGCm3, bridgingDensityCm2: bridgingDensityCm2,
+           particle: particle, thetaFromLoading: thetaFromLoading,
+           loadingFromTheta: loadingFromTheta, ktEV: ktEV,
+           interiorAverage: interiorAverage, surfaceState: surfaceState,
+           inventory: inventory, equilibrate: equilibrate,
+           depthProfile: depthProfile, shellSplit: shellSplit,
+           diffusivity: diffusivity, uptake: uptake,
+           tauForUptake: tauForUptake, timescales: timescales,
+           barrierForTime: barrierForTime, verdict: verdict,
+           debyeLengthNm: debyeLengthNm, assess: assess,
+           EPS_R_RUTILE: EPS_R_RUTILE };
+});
+</script>
 <script id="sm-engine">/* Canonical defect statistical mechanics for oxygen vacancies in rutile.
    Line-for-line port of solidgas/statmech.py: same loops, same operation
    order, same sfc32 RNG, so a same-seed run is bit-reproducible against the
@@ -25556,9 +26117,6 @@ root.Solver = Solver;
     opts = opts || {};
     var ssLayers = opts.ss_layers != null ? opts.ss_layers
       : p.defaults.subsurface_layers;
-    var nRes = opts.resolved_layers != null ? opts.resolved_layers
-      : (p.defaults.resolved_layers || 1);
-    nRes = Math.max(1, Math.round(nRes));
     var area;
     if (opts.bet_m2_g != null) {
       area = opts.bet_m2_g * 1e4;
@@ -25569,24 +26127,12 @@ root.Solver = Solver;
     var sig = siteDensities(p);
     var nO = 2.0 / p.molar_mass_g_mol * 1e6;
     var nS = area * sig[0] / N_AVO * 1e6;
-    /* One resolved layer IS the declared shell, so the legacy capacity
-       is reproduced exactly. Past one, resolution is the point and each
-       resolved layer is a single d110 oxygen slab. */
-    var slabs = [], i;
-    if (nRes === 1) slabs.push(ssLayers);
-    else for (i = 0; i < nRes; i++) slabs.push(1);
-    var nLayers = [], nSS = 0.0, slabSum = 0;
-    for (i = 0; i < slabs.length; i++) {
-      nLayers.push(area * sig[1] * slabs[i] / N_AVO * 1e6);
-      nSS += nLayers[i];
-      slabSum += slabs[i];
-    }
+    var nSS = area * sig[1] * ssLayers / N_AVO * 1e6;
     var d110nm = p.lattice_constants_A.a / Math.sqrt(2) / 10;
     return { area_m2_g: area * 1e-4, N_s: nS, N_ss: nSS,
              N_b: nO - nS - nSS, N_O_total: nO, ss_layers: ssLayers,
-             layer_nm: d110nm, resolved_layers: nRes,
-             slabs_per_layer: slabs, N_layers: nLayers,
-             shell_nm: (1 + 4 * slabSum) / 4 * d110nm };
+             layer_nm: d110nm,
+             shell_nm: (1 + 4 * ssLayers) / 4 * d110nm };
   }
 
   /* --------------------------------------------------------- lattice */
@@ -25903,148 +26449,52 @@ root.Solver = Solver;
   var POLARON_RATIO = 4.0;
   var THETA_CAP = 1.0 / POLARON_RATIO;
 
-  function muOfTheta(theta, epsI, omegaI, kt, compensation) {
-    /* mu = eps + omega*theta
-            + kT[ ln(th/(1-th)) + 2 ln(r*th/(1 - r*th)) ]
-       The second bracket is the configurational entropy of the cation
-       sublattice the compensating polarons sit on. In the dilute limit
-       the two logs give 3 kT ln(theta), so theta ~ p(O2)^(-1/6) - the
-       standard doubly-ionised vacancy. Dropping it gives p^(-1/2), a
-       NEUTRAL vacancy, and an enrichment that is the cube of the right
-       one. Line-for-line port of solidgas/statmech.py::mu_of_theta. */
-    if (compensation === 'none') {
-      return epsI + omegaI * theta + kt * Math.log(theta / (1.0 - theta));
-    }
-    if (theta <= 0.0) return -Infinity;
-    var tp = POLARON_RATIO * theta;
-    if (tp >= 1.0) return Infinity;
-    return epsI + omegaI * theta
-      + kt * (Math.log(theta / (1.0 - theta)) + 2.0 * Math.log(tp / (1.0 - tp)));
+  /* There is one compensated free energy in the browser bundle and it
+     lives in web/particle.js, mirroring solidgas/particle/freeenergy.py.
+     It is borrowed here rather than reimplemented so the three-class
+     partition and the depth-resolved one cannot drift.
+
+     The mean-field crowding penalty that used to sit alongside it is
+     gone: it had no literature value, and its magnitudes were chosen to
+     bring the first subsurface layer out of near-saturation, which was
+     the symptom of the missing cation entropy. */
+  var PX = (typeof module !== 'undefined' && module.exports)
+    ? require('./particle.js')
+    : (typeof self !== 'undefined' ? self.Particle : null);
+  if (!PX) throw new Error('statmech.js needs particle.js loaded first');
+
+  var POLARON_RATIO = PX.POLARON_RATIO;
+  var THETA_CAP = PX.THETA_CAP;
+
+  function muOfTheta(theta, epsI, kt) {
+    return PX.muOfTheta(theta, epsI, kt);
   }
 
-  function thetaOfMu(mu, epsI, omegaI, kt, compensation) {
-    /* Inverse of muOfTheta. The compensated branch is bisected in
-       ln(theta) below half the cap and in ln(cap - theta) above it: mu
-       diverges at both ends of (0, cap) and no single variable holds
-       precision across both, while each half has an exactly linear limit
-       and so an analytic bracket. compensation === 'none' is the legacy
-       neutral relation, which at omega = 0 returns the closed form so the
-       pre-compensation partition reproduces bit for bit.
-       Line-for-line port of solidgas/statmech.py::theta_of_mu. */
-    var it, mid, th, lo, hi, t;
-    if (compensation === 'none') {
-      if (omegaI === 0.0) return fd(mu, epsI, kt);
-      hi = (mu - epsI) / kt;
-      lo = hi - omegaI / kt;
-      if (lo > hi) { t = lo; lo = hi; hi = t; }
-      for (it = 0; it < 200; it++) {
-        mid = 0.5 * (lo + hi);
-        th = sigmoid(mid);
-        if (epsI + omegaI * th + kt * mid < mu) lo = mid; else hi = mid;
-      }
-      return sigmoid(0.5 * (lo + hi));
-    }
-    var half = 0.5 * THETA_CAP;
-    if (mu < muOfTheta(half, epsI, omegaI, kt)) {
-      hi = Math.min(Math.log(half),
-        (mu - epsI - 2.0 * kt * Math.log(POLARON_RATIO)) / (3.0 * kt));
-      lo = -745.0;
-      if (muOfTheta(Math.exp(lo), epsI, omegaI, kt) > mu) return Math.exp(lo);
-      for (it = 0; it < 200; it++) {
-        mid = 0.5 * (lo + hi);
-        if (muOfTheta(Math.exp(mid), epsI, omegaI, kt) < mu) lo = mid;
-        else hi = mid;
-      }
-      return Math.exp(0.5 * (lo + hi));
-    }
-    var c = epsI + omegaI * THETA_CAP
-      + kt * (Math.log(THETA_CAP / (1.0 - THETA_CAP))
-              + 2.0 * Math.log(POLARON_RATIO * THETA_CAP));
-    hi = Math.min(Math.log(half), (c - mu) / (2.0 * kt));
-    lo = -745.0;
-    if (muOfTheta(THETA_CAP - Math.exp(lo), epsI, omegaI, kt) < mu) {
-      return THETA_CAP - Math.exp(lo);
-    }
-    for (it = 0; it < 200; it++) {
-      mid = 0.5 * (lo + hi);
-      if (muOfTheta(THETA_CAP - Math.exp(mid), epsI, omegaI, kt) > mu) lo = mid;
-      else hi = mid;
-    }
-    return THETA_CAP - Math.exp(0.5 * (lo + hi));
+  function thetaOfMu(mu, epsI, kt) {
+    return PX.thetaOfMu(mu, epsI, kt);
   }
 
-  function energetics(p, preset, resolvedLayers, coveragePenalty) {
+  function energetics(p, preset) {
+    /* The three class energies of the active preset. The depth profile
+       between them is not this engine's business: resolving the shell
+       needs a shape, and the only defensible shape is the exponential
+       derived from these same three numbers, which is what
+       web/particle.js does with them. */
     var ve = p.vacancy_energetics;
     var key = preset || ve.default_preset;
     var q = ve.presets[key];
-    var eps = [q.surface_eV, q.subsurface_eV, q.bulk_eV];
-    var d = p.defaults || {};
-    var nRes = resolvedLayers != null ? resolvedLayers
-      : (d.resolved_layers || 1);
-    nRes = Math.max(1, Math.round(nRes));
-    var prof = ve.layer_profile || {};
-    var span = prof.span_fraction || [0.0];
-    if (nRes > span.length) {
-      throw new Error('layer_profile resolves at most ' + span.length
-                      + ' layers');
-    }
-    var epsLayers = [], i;
-    for (i = 0; i < nRes; i++) {
-      epsLayers.push(eps[1] + span[i] * (eps[2] - eps[1]));
-    }
-    var cp = coveragePenalty != null ? coveragePenalty
-      : (d.coverage_penalty || 'off');
-    var on = !(cp === null || cp === false || cp === 'off');
-    var om = (ve.coverage_penalty || {}).omega_eV || {};
-    var omegaS = 0.0, omegaB = 0.0, omegaLayers = [];
-    for (i = 0; i < nRes; i++) {
-      omegaLayers.push(on ? (om['layer' + (i + 1)] || 0.0) : 0.0);
-    }
-    if (on) { omegaS = om.surface || 0.0; omegaB = om.bulk || 0.0; }
-    var all = [omegaS].concat(omegaLayers, [omegaB]);
-    for (i = 0; i < all.length; i++) {
-      if (all[i] < 0.0) {
-        throw new Error('only repulsive coverage penalties are admitted');
-      }
-    }
-    return { preset: key, eps: eps, resolved_layers: nRes,
-             eps_layers: epsLayers, omega_surface: omegaS,
-             omega_layers: omegaLayers, omega_bulk: omegaB,
-             coverage_penalty: on ? 'on' : 'off' };
+    return { preset: key, eps: [q.surface_eV, q.subsurface_eV, q.bulk_eV] };
   }
 
   function classesOf(p, geom, opts) {
-    /* The class table the deep sum runs over. eps as a bare triple is the
-       legacy call and still names surface / one subsurface / bulk. */
-    var en = energetics(p, opts.preset, geom.resolved_layers || 1,
-                        opts.omega);
+    var en = energetics(p, opts.preset);
     if (opts.eps == null) return en;
-    var out = {}, k;
-    for (k in en) if (en.hasOwnProperty(k)) out[k] = en[k];
-    out.eps = opts.eps.slice();
-    if (en.eps_layers.length === 1) {
-      out.eps_layers = [opts.eps[1]];
-    } else {
-      var span = p.vacancy_energetics.layer_profile.span_fraction;
-      out.eps_layers = [];
-      for (var i = 0; i < en.eps_layers.length; i++) {
-        out.eps_layers.push(opts.eps[1] + span[i]
-                            * (opts.eps[2] - opts.eps[1]));
-      }
-    }
-    return out;
+    return { preset: en.preset, eps: opts.eps.slice() };
   }
 
   function deepOf(en, geom, mu, kt) {
-    /* At one resolved layer with no interaction this is the legacy
-       expression term for term, including the order of the additions. */
-    var caps = geom.N_layers || [geom.N_ss];
-    var total = 0.0, i;
-    for (i = 0; i < caps.length; i++) {
-      total += caps[i] * thetaOfMu(mu, en.eps_layers[i],
-                                   en.omega_layers[i], kt);
-    }
-    return total + geom.N_b * thetaOfMu(mu, en.eps[2], en.omega_bulk, kt);
+    return geom.N_ss * thetaOfMu(mu, en.eps[1], kt)
+      + geom.N_b * thetaOfMu(mu, en.eps[2], kt);
   }
 
   function thetaSInterp(points, epsS, kt) {
@@ -26100,10 +26550,10 @@ root.Solver = Solver;
     var thT = sp.theta_transition;
     var thR = sp.theta_reconstructed_eff;
     var thSol = p.saturation.x_max_shear / 2.0;
-    var muT = muOfTheta(thT, eps[0], en.omega_surface, kt);
+    var muT = muOfTheta(thT, eps[0], kt);
     /* the CS coexistence is a condition on the BULK class, so the bulk
        interaction belongs in it */
-    var muCs = muOfTheta(thSol, eps[2], en.omega_bulk, kt);
+    var muCs = muOfTheta(thSol, eps[2], kt);
     var deepT = deepOf(en, geom, muT, kt);
     var deepCs = deepOf(en, geom, muCs, kt);
     return { mu_t_eV: muT, mu_cs_eV: muCs,
@@ -26123,7 +26573,7 @@ root.Solver = Solver;
     var kt = KB_EV * (tC + 273.15);
     var en = classesOf(p, geom, opts);
     var eps = en.eps;
-    var b = phaseBoundaries(p, tC, geom, { eps: eps, omega: opts.omega });
+    var b = phaseBoundaries(p, tC, geom, { eps: eps });
     var nS = geom.N_s;
     var thT = b.theta_transition;
     var thR = b.theta_reconstructed_eff;
@@ -26132,7 +26582,7 @@ root.Solver = Solver;
       return deepOf(en, geom, mu, kt);
     }
     function surf(mu) {
-      return thetaOfMu(mu, eps[0], en.omega_surface, kt);
+      return thetaOfMu(mu, eps[0], kt);
     }
 
     var uExt = 0.0;
@@ -26179,19 +26629,9 @@ root.Solver = Solver;
       us = nS * thR;
       phi = 1.0;
     }
-    var caps = geom.N_layers || [geom.N_ss];
-    var thLayers = [], uLayers = [], uss = 0.0, li;
-    for (li = 0; li < caps.length; li++) {
-      thLayers.push(thetaOfMu(mu, en.eps_layers[li], en.omega_layers[li],
-                              kt));
-      uLayers.push(caps[li] * thLayers[li]);
-      uss += uLayers[li];
-    }
-    /* one resolved layer IS the shell, so its occupancy is reported
-       directly rather than divided back out */
-    var tss = caps.length === 1 ? thLayers[0]
-      : (geom.N_ss ? uss / geom.N_ss : 0.0);
-    var tb = thetaOfMu(mu, eps[2], en.omega_bulk, kt);
+    var tss = thetaOfMu(mu, eps[1], kt);
+    var uss = geom.N_ss * tss;
+    var tb = thetaOfMu(mu, eps[2], kt);
     var ub = geom.N_b * tb;
     var tot = us + uss + ub + uExt;
     var molTi = 1e6 / p.molar_mass_g_mol;
@@ -26246,21 +26686,7 @@ root.Solver = Solver;
              T_C: tC, VO_total_umol_g: voTotal,
              mu_V_eV: mu,
              theta: { surface: ts, subsurface: tss, bulk: tb },
-             layers: (function () {
-               var out = [], i;
-               for (i = 0; i < caps.length; i++) {
-                 out.push({ index: i + 1, N_umol_g: caps[i],
-                            eps_eV: en.eps_layers[i],
-                            omega_eV: en.omega_layers[i],
-                            theta: thLayers[i], umol_g: uLayers[i] });
-               }
-               return out;
-             }()),
-             energetics: { preset: en.preset,
-                           resolved_layers: en.resolved_layers,
-                           coverage_penalty: en.coverage_penalty,
-                           omega_surface: en.omega_surface,
-                           omega_bulk: en.omega_bulk },
+             energetics: { preset: en.preset, eps_eV: eps.slice() },
              surface_phase: { phase: phase, phi_reconstructed: phi },
              regime: regime,
              umol_g: { surface: us, subsurface: uss, bulk: ub },
@@ -26860,9 +27286,10 @@ root.Solver = Solver;
 });
 </script>
 <script type="text/plain" id="sm-worker-src">/* Worker shell for the defect stat-mech engine. The page assembles this
-   worker from a Blob whose source is statmech.js followed by this file, so
-   the StatMech global defined there is in scope; the dataset arrives in the
-   message, so the worker makes no requests of its own. */
+   worker from a Blob whose source is particle.js, then statmech.js, then
+   this file, so the StatMech global is in scope and so is the Particle
+   global its free energy comes from; the dataset arrives in the message,
+   so the worker makes no requests of its own. */
 
 'use strict';
 
@@ -27871,7 +28298,7 @@ self.onmessage = function (ev) {
   var $ = function (id) { return document.getElementById(id); };
   var el = {};
   ['smT', 'smVO', 'smGeoMode', 'smGeoVal', 'smGeoUnit', 'smSS', 'smDerived',
-   'smPreset', 'smEpsSS', 'smEpsB', 'smRes', 'smOmega',
+   'smPreset', 'smEpsSS', 'smEpsB',
    'smV1', 'smV2', 'smV3', 'smQuality',
    'smSeed', 'smRun', 'smStatus', 'smSummary', 'smKpis',
    'smTable', 'smSpacing', 'smNotes',
@@ -27983,24 +28410,19 @@ self.onmessage = function (ev) {
       along_row: [num(el.smV1, 0.40), num(el.smV2, 0.20), num(el.smV3, 0.05)],
       cross_row: DATA.surface_ordering.pair_eV.cross_row } };
   }
-  function currentRes() {
-    var v = Math.round(num(el.smRes, 1));
-    return Math.max(1, Math.min(3, v));
-  }
-  function currentOmega() { return el.smOmega.value === 'on' ? 'on' : 'off'; }
   function currentSS() {
     var v = Math.round(num(el.smSS, DATA.defaults.subsurface_layers));
     return Math.max(1, Math.min(4, v));
   }
   function currentGeom() {
-    var n = currentSS(), r = currentRes();
+    var n = currentSS();
     if (el.smGeoMode.value === 'bet') {
       return SM.geometry(DATA, { bet_m2_g: num(el.smGeoVal, 1.57),
-                                 ss_layers: n, resolved_layers: r });
+                                 ss_layers: n });
     }
     return SM.geometry(DATA, {
       d_um: num(el.smGeoVal, DATA.defaults.particle_diameter_um),
-      ss_layers: n, resolved_layers: r });
+      ss_layers: n });
   }
   function currentKin() {
     return { Ea_eV: { surface: num(el.smEaS, 0.45),
@@ -28026,7 +28448,10 @@ self.onmessage = function (ev) {
   function setStatus(t) { el.smStatus.textContent = t; }
 
   function buildWorker() {
-    var src = document.getElementById('sm-engine').textContent + '\n'
+    /* statmech.js borrows the free energy from particle.js, so the blob
+       has to carry it first - the worker has no page globals. */
+    var src = document.getElementById('px-engine').textContent + '\n'
+      + document.getElementById('sm-engine').textContent + '\n'
       + document.getElementById('sm-worker-src').textContent;
     var blob = new Blob([src], { type: 'application/javascript' });
     return new Worker(URL.createObjectURL(blob));
@@ -28230,8 +28655,7 @@ self.onmessage = function (ev) {
        feeds only the ordering exhibit, at the coverage of the surviving
        (1x1) patches once coexistence is reached */
     var fresh = !!iso && isoKey === isoSignature();
-    var out = SM.distribute(DATA, tC, vo, geom,
-                            { eps: eps, omega: currentOmega() });
+    var out = SM.distribute(DATA, tC, vo, geom, { eps: eps });
     out.geometry = geom;
     out.spacing = fresh ? SM.spacingSummary(iso,
       Math.min(out.theta.surface, DATA.surface_phases.theta_transition))
@@ -28281,16 +28705,12 @@ self.onmessage = function (ev) {
     var acc = SM.accessibility(DATA, out.umol_g, ctx.kin,
                                out.VO_total_umol_g);
     var b = out.phase_boundaries;
-    var slabSum = (geom.slabs_per_layer || [geom.ss_layers])
-      .reduce(function (a, v) { return a + v; }, 0);
+    var slabSum = geom.ss_layers;
     el.smDerived.textContent = 'x in TiO2-x = ' + out.x_TiO2mx.toFixed(4)
       + ' · Ti³⁺/Ti = ' + (out.Ti3_frac * 100).toFixed(2)
       + '% · area ' + geom.area_m2_g.toFixed(2)
       + ' m²/g · shell = bridging plane + ' + slabSum
       + ' × 0.325 nm oxygen layer' + (slabSum > 1 ? 's' : '')
-      + (geom.resolved_layers > 1 ? ', resolved separately' : '')
-      + (out.energetics && out.energetics.coverage_penalty === 'on'
-         ? ' · crowding Ω on' : '')
       + ' (N_s ' + geom.N_s.toFixed(2) + ' + N_ss '
       + geom.N_ss.toFixed(2) + ' μmol-O/g) · phase ladder at ' + out.T_C
       + ' °C: (1×2) onset '
@@ -28363,20 +28783,65 @@ self.onmessage = function (ev) {
         + ')"></span>' + c.label + '</td><td>' + th
         + '</td><td>' + f2(out.umol_g[c.key]) + '</td><td>'
         + pctf(out.fractions[c.key]) + '</td></tr>';
-      /* the resolved slabs sit under the class whose total they are, so
-         the aggregate stays the row that is read and the resolution is
-         visible without becoming a second table */
-      if (c.key === 'subsurface' && out.layers && out.layers.length > 1) {
-        out.layers.forEach(function (L) {
-          h += '<tr class="sub-row"><td>layer ' + L.index + ' · ε = '
-            + L.eps_eV.toFixed(2) + ' eV'
-            + (L.omega_eV ? ', Ω = ' + L.omega_eV.toFixed(2) + ' eV' : '')
-            + '</td><td>' + thf(L.theta) + '</td><td>' + f2(L.umol_g)
-            + '</td><td>'
-            + pctf(out.matched_umol_g ? L.umol_g / out.matched_umol_g : 0)
-            + '</td></tr>';
-        });
+    });
+    if (out.extended_defects_umol_g > 0) {
+      parts.push('extended defects ' + f2(out.extended_defects_umol_g)
+        + ' (' + pctf(out.fractions.extended) + ')');
+    }
+    el.smSummary.className = 'verdict ' + (bad ? 'red' : 'none');
+    var sp0 = out.surface_phase;
+    var phaseTxt = sp0.phase === '1x1' ? '(1×1) vacancy lattice gas'
+      : sp0.phase === '1x2' ? '(1×2) added-row Ti₂O₃, θ_eff = 0.5'
+      : '(1×1)+(1×2) coexistence, '
+        + (sp0.phi_reconstructed * 100).toFixed(0) + '% of area reconstructed';
+    el.smSummary.innerHTML = '<b>' + f2(out.VO_total_umol_g)
+      + ' μmol-O/g at ' + out.T_C
+      + ' °C (conditional equilibrium):</b> ' + parts.join(', ')
+      + ' μmol-O/g. ' + REGIME_LABEL[out.regime]
+      + '<span class="more">Surface phase: ' + phaseTxt
+      + ' · μ<sub>V</sub> = ' + out.mu_V_eV.toFixed(3) + ' eV'
+      + (out.extended_defects_umol_g > 0
+         ? ' · the excess is CS planes by the lever rule, an estimate' : '')
+      + '</span>';
+
+    /* Four, and no more: the three site classes and the potential that
+       makes them one solve. The surface phase, the extended-defect count
+       and the recoverable fraction all have a home of their own - the
+       summary line, the table, and the accessibility tab - and repeating
+       them here only makes the row long enough to be scrolled past. */
+    var k = '';
+    CLASSES.forEach(function (c) {
+      k += '<div class="kpi"><div class="k"><span class="swatch" style="'
+        + 'background:var(' + c.varname + ')"></span>' + c.label
+        + ' V<sub>O</sub></div><div class="v">' + f2(out.umol_g[c.key])
+        + '</div><div class="u">μmol-O/g · '
+        + pctf(out.fractions[c.key]) + ' of inventory</div></div>';
+    });
+    k += '<div class="kpi"><div class="k">μ<sub>V</sub> (vacancy)</div>'
+      + '<div class="v">' + out.mu_V_eV.toFixed(3) + '</div>'
+      + '<div class="u">eV'
+      + (out.regime === 'surface_coexistence'
+         || out.regime === 'cs_coexistence'
+         ? ', pinned at coexistence' : ', common to all classes')
+      + '</div></div>';
+    el.smKpis.innerHTML = k;
+
+    try {
+      mountFigure('figDistribution', 'vacancy-distribution',
+        FIG.distribution({ out: out }));
+    } catch (e) { figFail('figDistribution', e.message); }
+
+    var h = '<tr><th>Site class</th><th>θ occupancy</th>'
+      + '<th>μmol-O/g</th><th>share of inventory</th></tr>';
+    CLASSES.forEach(function (c) {
+      var th = thf(out.theta[c.key]);
+      if (c.key === 'surface' && sp0.phase !== '1x1') {
+        th += sp0.phase === '1x2' ? ' · (1×2)' : ' · mixed';
       }
+      h += '<tr><td><span class="swatch" style="background:var(' + c.varname
+        + ')"></span>' + c.label + '</td><td>' + th
+        + '</td><td>' + f2(out.umol_g[c.key]) + '</td><td>'
+        + pctf(out.fractions[c.key]) + '</td></tr>';
     });
     if (out.extended_defects_umol_g > 0) {
       h += '<tr><td>Extended defects (CS)</td><td>—</td><td>'
@@ -28704,9 +29169,6 @@ self.onmessage = function (ev) {
       scheduleRun();
     });
   });
-  [el.smRes, el.smOmega].forEach(function (n) {
-    n.addEventListener('change', solve);
-  });
   el.smT.addEventListener('input', scheduleEnv);
   [el.smVO, el.smGeoVal, el.smSS, el.smEaS, el.smEaSS, el.smEaB, el.smAS,
    el.smASS, el.smAB, el.smKinT, el.smExp, el.smPCO2].forEach(function (n) {
@@ -28804,7 +29266,7 @@ self.onmessage = function (ev) {
        the face must stay below its ceiling theta(face)     <= theta_max
 
    and theta(face) = E * theta(particle), where E is the surface
-   enrichment a layer-resolved partition supplies and the uniform model
+   enrichment a depth-weighted partition supplies and the uniform model
    silently sets to 1.
 
    This file mirrors the closed forms of solidgas/redox.py and nothing
@@ -29352,7 +29814,7 @@ self.onmessage = function (ev) {
      el[id] = $(id);
    });
 
-  var E_RESOLVED = 1844.0;   /* 0.9 um rutile at 600 C, layer-resolved */
+  var E_RESOLVED = 269.0;   /* 0.9 um rutile at 600 C, depth-weighted */
 
   /* -------------------------------------------------------- figures */
 
@@ -29502,7 +29964,7 @@ self.onmessage = function (ev) {
       + 'above it only a higher face ceiling does. The uniform particle '
       + 'is held to K ≤ ' + sig(R.usableWindow(1, q.theta_sol,
                                                q.theta_max).K_max, 3)
-      + ' and the layer-resolved one to K ≤ '
+      + ' and the depth-weighted one to K ≤ '
       + sig(R.usableWindow(E_RESOLVED, q.theta_sol,
                            q.theta_max).K_max, 3) + '.';
 
@@ -29526,7 +29988,7 @@ self.onmessage = function (ev) {
         theta_sol: q.theta_sol, theta_surface_max: q.theta_max,
         points: [{ E: 1.0, label: 'uniform',
                    K: R.usableWindow(1.0, q.theta_sol, q.theta_max).K_max },
-                 { E: E_RESOLVED, label: 'layer-resolved',
+                 { E: E_RESOLVED, label: 'depth-weighted',
                    K: R.usableWindow(E_RESOLVED, q.theta_sol,
                                      q.theta_max).K_max }],
         current: { K: q.K, E: q.E, usable: ok } });
@@ -29537,7 +29999,7 @@ self.onmessage = function (ev) {
     var res = R.usableWindow(E_RESOLVED, q.theta_sol, q.theta_max).K_max;
     el.rxPhaseNote.innerHTML = 'Reading the diagram vertically is the '
       + 'point. The uniform model is the bottom edge and answers K ≤ '
-      + sig(uni, 3) + '; the layer-resolved particle at E = '
+      + sig(uni, 3) + '; the depth-weighted particle at E = '
       + E_RESOLVED + ' answers K ≤ ' + sig(res, 3) + ', a factor of '
       + sig(res / uni, 3) + '. The turnover at a given K is identical in '
       + 'both — any strictly increasing average→face mapping only '
@@ -30179,535 +30641,6 @@ self.onmessage = function (ev) {
   });
   drawOptimality(TB.last());
 }());
-</script>
-<script id="px-engine">/* Vacancy distribution in one oxide particle, from a titrated inventory.
-
-   Line-for-line port of solidgas/particle/: same branches, same bracket
-   algebra, same layer stack summed in the same order, so the browser and
-   the Python engine agree to the last bits (verified by
-   tests/test_particle_port.py against the same fifty-digit reference).
-
-   The physics is in the Python module headers and in
-   docs/particle-model.md; the short version is that an oxygen vacancy
-   leaves two electrons behind, they localise as two Ti(3+) on a cation
-   sublattice half the size of the oxygen one, and counting that
-   sublattice is what caps reduction at Ti2O3 and turns the dilute
-   isotherm from p(O2)^(-1/2) into p(O2)^(-1/6). */
-
-(function (root, factory) {
-  'use strict';
-  var api = factory();
-  if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  root.Particle = api;
-})(typeof self !== 'undefined' ? self : this, function () {
-  'use strict';
-
-  var KB_EV = 8.617333262e-5;
-  var N_AVO = 6.02214076e23;
-
-  var POLARON_RATIO = 4.0;
-  var THETA_CAP = 1.0 / POLARON_RATIO;
-  var ITERS = 80;
-
-  /* --------------------------------------------------------- free energy */
-
-  function cap(ratio) { return 1.0 / (ratio === undefined ? POLARON_RATIO : ratio); }
-
-  function phi(theta, ratio) {
-    ratio = ratio === undefined ? POLARON_RATIO : ratio;
-    if (theta <= 0.0) return -Infinity;
-    if (theta >= 1.0 / ratio) return Infinity;
-    var p = ratio * theta;
-    return Math.log(theta / (1.0 - theta)) + 2.0 * Math.log(p / (1.0 - p));
-  }
-
-  function phiOxygenOnly(theta) {
-    if (theta <= 0.0) return -Infinity;
-    if (theta >= 1.0) return Infinity;
-    return Math.log(theta / (1.0 - theta));
-  }
-
-  function brackets(ratio) {
-    var half = 0.5 / ratio;
-    return { phiHalf: Math.log(half / (1.0 - half)),
-             logRatio2: 2.0 * Math.log(ratio),
-             slack: -Math.log(1.0 - half) - 2.0 * Math.log(0.5) };
-  }
-
-  function thetaOfPhi(x, compensated, ratio) {
-    compensated = compensated === undefined ? true : compensated;
-    ratio = ratio === undefined ? POLARON_RATIO : ratio;
-    if (!compensated) {
-      if (x > 700.0) return 1.0;
-      if (x < -700.0) return 0.0;
-      return 1.0 / (1.0 + Math.exp(-x));
-    }
-    var b = brackets(ratio), top = 1.0 / ratio, lo, hi, mid, i, t;
-
-    if (x <= b.phiHalf) {
-      hi = (x - b.logRatio2) / 3.0;
-      if (hi < -745.0) return 0.0;
-      lo = Math.max((x - b.logRatio2 - b.slack) / 3.0, -745.0);
-      for (i = 0; i < ITERS; i++) {
-        mid = 0.5 * (lo + hi);
-        if (phi(Math.exp(mid), ratio) < x) lo = mid; else hi = mid;
-      }
-      return Math.exp(0.5 * (lo + hi));
-    }
-
-    hi = Math.log(0.5 * top);
-    lo = hi - 1.0;
-    while (lo > -745.0 && phi(top - Math.exp(lo), ratio) < x) {
-      lo = hi - 2.0 * (hi - lo);
-    }
-    if (lo <= -745.0) {
-      if (phi(top - Math.exp(-745.0), ratio) < x) return top;
-      lo = -745.0;
-    }
-    for (i = 0; i < ITERS; i++) {
-      mid = 0.5 * (lo + hi);
-      t = top - Math.exp(mid);
-      if (t <= 0.0 || phi(t, ratio) > x) lo = mid; else hi = mid;
-    }
-    return top - Math.exp(0.5 * (lo + hi));
-  }
-
-  function muOfTheta(theta, eForm, kt, compensated, ratio) {
-    var f = (compensated === undefined || compensated)
-      ? phi(theta, ratio) : phiOxygenOnly(theta);
-    return eForm + kt * f;
-  }
-
-  function thetaOfMu(mu, eForm, kt, compensated, ratio) {
-    return thetaOfPhi((mu - eForm) / kt, compensated, ratio);
-  }
-
-  function diluteTheta(mu, eForm, kt, ratio) {
-    ratio = ratio === undefined ? POLARON_RATIO : ratio;
-    return Math.exp(((mu - eForm) / kt - 2.0 * Math.log(ratio)) / 3.0);
-  }
-
-  function freeEnergyPerSite(theta, eForm, kt, compensated, ratio) {
-    ratio = ratio === undefined ? POLARON_RATIO : ratio;
-    if (theta <= 0.0) return 0.0;
-    var ideal = theta * Math.log(theta) + (1.0 - theta) * Math.log(1.0 - theta);
-    var f = eForm * theta + kt * ideal;
-    if (compensated === false) return f;
-    var p = ratio * theta;
-    if (p >= 1.0) return Infinity;
-    var catTerm = p * Math.log(p) + (1.0 - p) * Math.log(1.0 - p);
-    return f + kt * catTerm * (2.0 / ratio);
-  }
-
-  /* ------------------------------------------------------------ material */
-
-  function segregation(p, preset) {
-    var ve = p.vacancy_energetics;
-    var key = preset || ve.default_preset;
-    var q = ve.presets[key];
-    var eS = q.surface_eV, eSs = q.subsurface_eV, eB = q.bulk_eV;
-    var d110 = p.lattice_constants_A.a / Math.SQRT2 / 10.0;
-    var de = eB - eS, rem = eB - eSs;
-    if (!(de > 0.0 && rem > 0.0 && rem < de)) {
-      throw new Error('the ' + key + ' triple does not decay monotonically '
-                      + 'towards the bulk, so E(z) = E_bulk - dE exp(-z/xi) '
-                      + 'cannot pass through all three');
-    }
-    var xi = -d110 / Math.log(rem / de);
-    return { preset: key, label: q.label || key,
-             e_surface_eV: eS, e_subsurface_eV: eSs, e_bulk_eV: eB,
-             dE_seg_eV: de, xi_nm: xi, d110_nm: d110,
-             xi_in_layers: xi / d110 };
-  }
-
-  function formationEnergy(zNm, seg) {
-    return seg.e_bulk_eV - seg.dE_seg_eV * Math.exp(-Math.max(0.0, zNm) / seg.xi_nm);
-  }
-
-  function densityGCm3(p) {
-    var a = p.lattice_constants_A.a, c = p.lattice_constants_A.c;
-    return 2.0 * p.molar_mass_g_mol / (N_AVO * a * a * c * 1e-24);
-  }
-
-  function bridgingDensityCm2(p) {
-    var a = p.lattice_constants_A.a, c = p.lattice_constants_A.c;
-    return 1e16 / (c * a * Math.SQRT2);
-  }
-
-  function particle(p, opts) {
-    opts = opts || {};
-    var areaCm2G;
-    if (opts.bet_m2_g != null) {
-      areaCm2G = opts.bet_m2_g * 1e4;
-    } else {
-      var dUm = opts.d_um != null ? opts.d_um : p.defaults.particle_diameter_um;
-      areaCm2G = 6.0 / (densityGCm3(p) * dUm * 1e-4);
-    }
-    var nO = 2.0 / p.molar_mass_g_mol * 1e6;
-    var nSurface = areaCm2G * bridgingDensityCm2(p) / N_AVO * 1e6;
-    var rNm = 3.0 / (densityGCm3(p) * areaCm2G) * 1e7;
-    var xShear = (p.saturation || {}).x_max_shear;
-    var ph = p.surface_phases || {};
-    return { area_m2_g: areaCm2G * 1e-4, radius_nm: rNm,
-             diameter_um: 2.0 * rNm * 1e-3,
-             N_surface_umol_g: nSurface,
-             N_interior_umol_g: nO - nSurface,
-             N_oxygen_umol_g: nO,
-             segregation: segregation(p, opts.preset),
-             x_max_shear: xShear == null ? null : xShear,
-             theta_solubility: xShear == null ? null : 0.5 * xShear,
-             surface_phases: {
-               theta_transition: ph.theta_transition,
-               theta_reconstructed_eff: ph.theta_reconstructed_eff,
-               transition_interval: ph.transition_interval } };
-  }
-
-  function thetaFromLoading(vo, part) { return vo / part.N_oxygen_umol_g; }
-  function loadingFromTheta(th, part) { return th * part.N_oxygen_umol_g; }
-  function ktEV(tC) { return KB_EV * (tC + 273.15); }
-
-  /* ------------------------------------------------------------- profile */
-
-  function layerGeometry(part) {
-    var d = part.segregation.d110_nm;
-    var rIn = part.radius_nm - 0.5 * d;
-    return { d: d, rIn: rIn, vol: rIn * rIn * rIn / 3.0 };
-  }
-
-  function interiorAverage(mu, kt, part, compensated, ratio, relTol) {
-    relTol = relTol === undefined ? 1e-15 : relTol;
-    var seg = part.segregation, g = layerGeometry(part);
-    var thBulk = thetaOfMu(mu, seg.e_bulk_eV, kt, compensated, ratio);
-    var excess = 0.0, k = 1, nMax = Math.floor(g.rIn / g.d), ro, ri, v, e, term;
-    while (k <= nMax) {
-      ro = g.rIn - (k - 1) * g.d;
-      ri = Math.max(0.0, g.rIn - k * g.d);
-      v = (ro * ro * ro - ri * ri * ri) / 3.0;
-      e = formationEnergy(k * g.d, seg);
-      term = v * (thetaOfMu(mu, e, kt, compensated, ratio) - thBulk);
-      excess += term;
-      if (Math.abs(term) <= relTol * Math.max(Math.abs(excess), 1e-300) && k > 4) break;
-      k++;
-    }
-    return thBulk + excess / g.vol;
-  }
-
-  function surfaceState(mu, kt, part, compensated, ratio, reconstruction) {
-    var seg = part.segregation, eS = seg.e_surface_eV;
-    var th11 = thetaOfMu(mu, eS, kt, compensated, ratio);
-    var ph = part.surface_phases || {};
-    if (reconstruction === false || ph.theta_transition == null
-        || ph.theta_reconstructed_eff == null) {
-      return { theta: th11, phase: '1x1', reconstructed_fraction: 0.0,
-               mu_transition_eV: null };
-    }
-    var muT = muOfTheta(ph.theta_transition, eS, kt, compensated, ratio);
-    if (mu < muT) {
-      return { theta: th11, phase: '1x1', reconstructed_fraction: 0.0,
-               mu_transition_eV: muT };
-    }
-    if (mu > muT) {
-      return { theta: ph.theta_reconstructed_eff, phase: '1x2',
-               reconstructed_fraction: 1.0, mu_transition_eV: muT };
-    }
-    return { theta: ph.theta_transition, phase: 'coexistence',
-             reconstructed_fraction: 0.0, mu_transition_eV: muT };
-  }
-
-  function inventory(mu, kt, part, compensated, ratio, reconstruction, surfFraction) {
-    var s = surfaceState(mu, kt, part, compensated, ratio, reconstruction);
-    var thS = surfFraction == null ? s.theta : surfFraction;
-    return part.N_surface_umol_g * thS
-      + part.N_interior_umol_g * interiorAverage(mu, kt, part, compensated, ratio);
-  }
-
-  function bracketMu(target, kt, part, compensated, ratio, reconstruction) {
-    var seg = part.segregation;
-    var th = Math.min(Math.max(target / part.N_oxygen_umol_g, 1e-300), 0.5 / ratio);
-    var guess = seg.e_bulk_eV + kt * (3.0 * Math.log(th) + 2.0 * Math.log(ratio));
-    var lo = guess - 1.0, hi = guess + 1.0, i;
-    for (i = 0; i < 60; i++) {
-      if (inventory(lo, kt, part, compensated, ratio, reconstruction) <= target) break;
-      lo -= (hi - lo);
-    }
-    for (i = 0; i < 60; i++) {
-      if (inventory(hi, kt, part, compensated, ratio, reconstruction) >= target) break;
-      hi += (hi - lo);
-    }
-    return [lo, hi];
-  }
-
-  function equilibrate(voUmolG, tC, part, opts) {
-    opts = opts || {};
-    var compensated = opts.compensated === undefined ? true : opts.compensated;
-    var ratio = opts.ratio === undefined ? POLARON_RATIO : opts.ratio;
-    var reconstruction = opts.reconstruction === undefined ? true : opts.reconstruction;
-    var shearLimit = opts.shear_limit === undefined ? true : opts.shear_limit;
-
-    var kt = ktEV(tC), seg = part.segregation;
-    var capTotal = part.N_oxygen_umol_g / ratio;
-    if (voUmolG > capTotal) {
-      throw new Error('a loading of ' + voUmolG + ' umol-O/g is past the cation '
-        + 'sublattice itself (' + capTotal.toFixed(1) + ' umol-O/g is theta = 1/'
-        + ratio + ' everywhere, which is Ti2O3, not reduced rutile)');
-    }
-
-    var muCs = null;
-    if (shearLimit && part.theta_solubility) {
-      muCs = muOfTheta(part.theta_solubility, seg.e_bulk_eV, kt, compensated, ratio);
-    }
-    var ph = part.surface_phases || {};
-    var thT = reconstruction ? ph.theta_transition : null;
-    var thR = reconstruction ? ph.theta_reconstructed_eff : null;
-    var muT = thT == null ? null
-      : muOfTheta(thT, seg.e_surface_eV, kt, compensated, ratio);
-
-    var mu = null, limitedBy = null, extended = 0.0, thS = null, frac = 0.0;
-
-    if (muT != null && (muCs == null || muT <= muCs)) {
-      var loInv = inventory(muT, kt, part, compensated, ratio, reconstruction, thT);
-      var hiInv = inventory(muT, kt, part, compensated, ratio, reconstruction, thR);
-      if (loInv <= voUmolG && voUmolG <= hiInv) {
-        mu = muT;
-        frac = hiInv > loInv ? (voUmolG - loInv) / (hiInv - loInv) : 0.0;
-        thS = thT + frac * (thR - thT);
-        limitedBy = 'surface reconstruction';
-      }
-    }
-
-    if (mu === null) {
-      var b = bracketMu(voUmolG, kt, part, compensated, ratio, reconstruction);
-      var lo = b[0], hi = b[1], mid;
-      for (var i = 0; i < 200; i++) {
-        mid = 0.5 * (lo + hi);
-        if (inventory(mid, kt, part, compensated, ratio, reconstruction) < voUmolG) {
-          lo = mid;
-        } else {
-          hi = mid;
-        }
-      }
-      mu = 0.5 * (lo + hi);
-    }
-
-    if (muCs != null && mu > muCs) {
-      mu = muCs; thS = null; limitedBy = 'crystallographic shear';
-      extended = voUmolG - inventory(mu, kt, part, compensated, ratio, reconstruction);
-    }
-
-    var surf = surfaceState(mu, kt, part, compensated, ratio, reconstruction);
-    if (thS != null) {
-      surf = { theta: thS, phase: 'coexistence', reconstructed_fraction: frac,
-               mu_transition_eV: surf.mu_transition_eV };
-    }
-    var thI = interiorAverage(mu, kt, part, compensated, ratio);
-    var heldS = part.N_surface_umol_g * surf.theta;
-    var heldI = part.N_interior_umol_g * thI;
-
-    return {
-      mu_eV: mu, kt_eV: kt, T_C: tC,
-      compensated: compensated, polaron_ratio: ratio,
-      loading_umol_g: voUmolG,
-      theta_particle: voUmolG / part.N_oxygen_umol_g,
-      surface: surf,
-      theta_interior_mean: thI,
-      theta_bulk_plateau: thetaOfMu(mu, seg.e_bulk_eV, kt, compensated, ratio),
-      theta_first_layer: thetaOfMu(mu, formationEnergy(seg.d110_nm, seg), kt,
-                                   compensated, ratio),
-      umol_surface: heldS, umol_interior: heldI,
-      umol_extended: extended,
-      held_umol_g: heldS + heldI,
-      limited_by: limitedBy,
-      mu_shear_eV: muCs, mu_transition_eV: muT,
-      point_defect_ceiling_umol_g: muCs == null ? null
-        : inventory(muCs, kt, part, compensated, ratio, reconstruction)
-    };
-  }
-
-  function depthProfile(res, part, n, zMaxNm) {
-    n = n || 160;
-    var seg = part.segregation, kt = res.kt_eV;
-    var zmax = zMaxNm != null ? zMaxNm
-      : Math.min(part.radius_nm, 40.0 * seg.xi_nm);
-    var out = [{ z_nm: 0.0, theta: res.surface.theta, pool: 'bridging row' }];
-    for (var i = 0; i < n; i++) {
-      var z = 0.5 * seg.d110_nm
-        + (zmax - 0.5 * seg.d110_nm) * Math.pow(i / (n - 1.0), 3);
-      out.push({ z_nm: z,
-                 theta: thetaOfMu(res.mu_eV, formationEnergy(z, seg), kt,
-                                  res.compensated, res.polaron_ratio),
-                 pool: 'interior' });
-    }
-    return out;
-  }
-
-  function shellSplit(res, part, depthsNm) {
-    depthsNm = depthsNm || [1.0, 2.0, 5.0, 10.0];
-    var seg = part.segregation, kt = res.kt_eV, mu = res.mu_eV;
-    var g = layerGeometry(part), total = res.held_umol_g, rows = [];
-    for (var j = 0; j < depthsNm.length; j++) {
-      var dep = depthsNm[j];
-      if (dep >= g.rIn) continue;
-      var acc = 0.0, k = 1, nMax = Math.floor(g.rIn / g.d);
-      while (k <= nMax) {
-        var zOut = (k - 1) * g.d;
-        if (zOut >= dep) break;
-        var ro = g.rIn - zOut;
-        var ri = Math.max(g.rIn - Math.min(k * g.d, dep), 0.0);
-        acc += (ro * ro * ro - ri * ri * ri) / 3.0
-          * thetaOfMu(mu, formationEnergy(k * g.d, seg), kt,
-                      res.compensated, res.polaron_ratio);
-        k++;
-      }
-      var umol = res.umol_surface + part.N_interior_umol_g * acc / g.vol;
-      rows.push({ depth_nm: dep,
-                  volume_fraction: 1.0 - Math.pow((g.rIn - dep) / g.rIn, 3),
-                  umol_g: umol,
-                  inventory_fraction: total ? umol / total : 0.0 });
-    }
-    return rows;
-  }
-
-  /* ----------------------------------------------------------- transport */
-
-  function diffusivity(tC, eM, nu0, aNm) {
-    return aNm * aNm * nu0 * Math.exp(-eM / (KB_EV * (tC + 273.15)));
-  }
-
-  function uptake(tau) {
-    if (tau <= 0.0) return 0.0;
-    var s = 0.0;
-    for (var n = 1; n <= 200; n++) {
-      var x = n * n * Math.PI * Math.PI * tau;
-      if (x > 700.0) break;
-      s += Math.exp(-x) / (n * n);
-    }
-    return Math.max(0.0, Math.min(1.0, 1.0 - 6.0 / (Math.PI * Math.PI) * s));
-  }
-
-  function tauForUptake(f) {
-    if (!(f > 0.0 && f < 1.0)) {
-      throw new Error('uptake fraction must be strictly between 0 and 1');
-    }
-    var lo = 1e-12, hi = 10.0, mid;
-    for (var i = 0; i < 200; i++) {
-      mid = Math.sqrt(lo * hi);
-      if (uptake(mid) < f) lo = mid; else hi = mid;
-    }
-    return Math.sqrt(lo * hi);
-  }
-
-  function timescales(tC, part, p, opts) {
-    opts = opts || {};
-    var kin = (p || {}).kinetics_cgmc || {};
-    var eM = opts.e_m_eV != null ? opts.e_m_eV : kin.E_m_bulk_eV;
-    var nu0 = opts.nu0_per_s != null ? opts.nu0_per_s : kin.nu0_per_s;
-    var aNm = opts.a_nm != null ? opts.a_nm : p.lattice_constants_A.c / 10.0;
-    var fractions = opts.fractions || [0.5, 0.9, 0.99];
-    var d = diffusivity(tC, eM, nu0, aNm);
-    var scale = part.radius_nm * part.radius_nm / d;
-    var times = {};
-    for (var i = 0; i < fractions.length; i++) {
-      times[fractions[i]] = tauForUptake(fractions[i]) * scale;
-    }
-    return { T_C: tC, E_m_eV: eM, nu0_per_s: nu0, a_nm: aNm,
-             radius_nm: part.radius_nm, D_nm2_per_s: d, D_cm2_per_s: d * 1e-14,
-             tau_unit_s: scale, times_s: times };
-  }
-
-  function barrierForTime(tC, part, tTargetS, nu0, aNm, fraction) {
-    fraction = fraction === undefined ? 0.99 : fraction;
-    var kt = KB_EV * (tC + 273.15);
-    var need = tauForUptake(fraction) * part.radius_nm * part.radius_nm / tTargetS;
-    return kt * Math.log(aNm * aNm * nu0 / need);
-  }
-
-  function verdict(tC, part, exposureS, p, opts) {
-    opts = opts || {};
-    var fraction = opts.fraction === undefined ? 0.99 : opts.fraction;
-    var ts = timescales(tC, part, p,
-                        { e_m_eV: opts.e_m_eV, nu0_per_s: opts.nu0_per_s,
-                          a_nm: opts.a_nm, fractions: [fraction] });
-    var tHom = ts.times_s[fraction];
-    var eBreak = barrierForTime(tC, part, exposureS, ts.nu0_per_s, ts.a_nm, fraction);
-    ts.fraction = fraction;
-    ts.exposure_s = exposureS;
-    ts.t_homogenise_s = tHom;
-    ts.ratio = exposureS ? tHom / exposureS : Infinity;
-    ts.equilibrium_reachable = tHom < exposureS;
-    ts.E_m_that_would_break_it_eV = eBreak;
-    ts.barrier_margin_eV = eBreak - ts.E_m_eV;
-    return ts;
-  }
-
-  /* --------------------------------------------------------- space charge */
-
-  var E_CHARGE = 1.602176634e-19;
-  var EPS0_F_PER_CM = 8.8541878128e-14;
-  var EPS_R_RUTILE = 100.0;
-
-  function oxygenDensityCm3(p) {
-    var a = p.lattice_constants_A.a, c = p.lattice_constants_A.c;
-    return 4.0 / (a * a * c * 1e-24);
-  }
-
-  function debyeLengthNm(thetaV, p, tC, epsR, ratio) {
-    epsR = epsR === undefined ? EPS_R_RUTILE : epsR;
-    ratio = ratio === undefined ? POLARON_RATIO : ratio;
-    var z2n = (4.0 * thetaV + 0.5 * ratio * thetaV) * oxygenDensityCm3(p);
-    if (z2n <= 0.0) return Infinity;
-    var ktJ = KB_EV * (tC + 273.15) * E_CHARGE;
-    return Math.sqrt(epsR * EPS0_F_PER_CM * ktJ / (E_CHARGE * E_CHARGE * z2n)) * 1e7;
-  }
-
-  function assess(res, part, p, epsR) {
-    epsR = epsR === undefined ? EPS_R_RUTILE : epsR;
-    var xi = part.segregation.xi_nm;
-    var lam = debyeLengthNm(res.theta_bulk_plateau, p, res.T_C, epsR,
-                            res.polaron_ratio);
-    var r = lam / xi, verdictText;
-    if (r < 0.2) {
-      verdictText = 'screening is much shorter than the segregation depth, '
-        + 'so charge follows chemistry and pointwise electroneutrality is safe';
-    } else if (r < 2.0) {
-      verdictText = 'screening and segregation happen over the same distance, '
-        + 'so they cannot be separated; the outer few nanometres of this '
-        + 'profile carry an error that this model does not quantify, and the '
-        + 'ceria study finds that error runs towards MORE surface enrichment';
-    } else {
-      verdictText = 'screening is longer than the segregation depth, so a '
-        + 'genuine space-charge layer extends past the chemically perturbed '
-        + 'shell and pointwise electroneutrality is not a safe assumption here';
-    }
-    return { eps_r: epsR, theta_bulk_plateau: res.theta_bulk_plateau,
-             debye_nm_at_bulk: lam,
-             debye_nm_at_first_layer: debyeLengthNm(
-               Math.max(res.theta_first_layer, 1e-30), p, res.T_C, epsR,
-               res.polaron_ratio),
-             xi_nm: xi, ratio_debye_over_xi: r,
-             radius_nm: part.radius_nm,
-             fraction_of_radius: lam / part.radius_nm,
-             verdict: verdictText };
-  }
-
-  return { KB_EV: KB_EV, N_AVO: N_AVO,
-           POLARON_RATIO: POLARON_RATIO, THETA_CAP: THETA_CAP,
-           cap: cap, phi: phi, phiOxygenOnly: phiOxygenOnly,
-           thetaOfPhi: thetaOfPhi, muOfTheta: muOfTheta,
-           thetaOfMu: thetaOfMu, diluteTheta: diluteTheta,
-           freeEnergyPerSite: freeEnergyPerSite,
-           segregation: segregation, formationEnergy: formationEnergy,
-           densityGCm3: densityGCm3, bridgingDensityCm2: bridgingDensityCm2,
-           particle: particle, thetaFromLoading: thetaFromLoading,
-           loadingFromTheta: loadingFromTheta, ktEV: ktEV,
-           interiorAverage: interiorAverage, surfaceState: surfaceState,
-           inventory: inventory, equilibrate: equilibrate,
-           depthProfile: depthProfile, shellSplit: shellSplit,
-           diffusivity: diffusivity, uptake: uptake,
-           tauForUptake: tauForUptake, timescales: timescales,
-           barrierForTime: barrierForTime, verdict: verdict,
-           debyeLengthNm: debyeLengthNm, assess: assess,
-           EPS_R_RUTILE: EPS_R_RUTILE };
-});
 </script>
 <script id="particle-figures">/* The two figures the particle engine exists to produce.
 

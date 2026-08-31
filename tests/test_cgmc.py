@@ -128,23 +128,74 @@ def test_effective_barrier_inversion_round_trips():
     assert r['recovered_fraction'] == pytest.approx(0.40, abs=0.02)
 
 
-def test_stochastic_mode_agrees_with_the_mean_when_valid():
-    """tau-leap on a non-stiff closed configuration: same split as the
-    deterministic mean, deterministic for a seed, and mass-exact."""
-    kw = dict(kin=NO_FILL,
-              cg={'E_m_bulk_eV': 1.9, 'n_cells': 8,
-                  'stochastic_column_counts': 50000})
+def test_stochastic_mode_agrees_with_the_mean_where_the_leap_is_valid():
+    """tau-leap against the deterministic mean, on both sides of validity.
+
+    Where the leap is valid the two agree cell for cell. Where it is not,
+    they do not, and the way to show the difference is sampling and not a
+    bug is to close it by adding columns.
+
+    Which configurations fall on which side moved when the compensating
+    polarons went into the free energy: the subsurface cell now starts
+    with 3.6 umol-O/g instead of 52, so a slow barrier that used to move
+    enough material to leap over now does not move a single discrete
+    unit in the time given."""
+    def cfg(em, cols):
+        return dict(kin=NO_FILL,
+                    cg={'E_m_bulk_eV': em, 'n_cells': 8,
+                        'stochastic_column_counts': cols})
+
+    # valid: fast enough that every cell exchanges many units
+    kw = cfg(1.0, 50000)
     det = C.run(C.build(P, **kw), 60.0)
     st = C.run(C.build(P, **kw), 60.0, mode='stoch', seed=902)
     assert st['completed']
     assert abs(st['mass_check']) < 1e-12
-    td = sum(det['final_eta'])
-    ts = sum(st['final_eta'])
-    for a, b in zip(det['final_eta'][:3], st['final_eta'][:3]):
-        assert b / ts == pytest.approx(a / td, abs=0.02)
+    td, ts = sum(det['final_eta']), sum(st['final_eta'])
+    for i, (a, b) in enumerate(zip(det['final_eta'], st['final_eta'])):
+        assert b / ts == pytest.approx(a / td, abs=0.01), i
     st2 = C.run(C.build(P, **kw), 60.0, mode='stoch', seed=902)
     assert st2['final_eta'] == st['final_eta']
 
+    # not valid: a slow barrier, where the mean creeps and the leap
+    # cannot. The gap has to close as the columns are refined, which is
+    # what says it is discreteness rather than a broken rate.
+    gaps = []
+    for cols in (50000, 5000000, 50000000):
+        k = cfg(1.9, cols)
+        d = C.run(C.build(P, **k), 60.0)
+        r = C.run(C.build(P, **k), 60.0, mode='stoch', seed=902)
+        gaps.append(abs(r['final_eta'][1] / sum(r['final_eta'])
+                        - d['final_eta'][1] / sum(d['final_eta'])))
+    assert gaps[0] > 0.05, gaps
+    assert all(y < x for x, y in zip(gaps, gaps[1:])), gaps
+    assert gaps[-1] < 0.5 * gaps[0], gaps
+
+
+def test_the_kinetic_layer_relaxes_to_a_measure_the_thermodynamics_no_longer_uses():
+    """An open item, pinned so it cannot be forgotten.
+
+    The exchange rates satisfy detailed balance against a product-binomial
+    measure on the oxygen sublattice with H = sum eps_k eta_k. That is the
+    equilibrium of a NEUTRAL vacancy. The thermodynamic model is no longer
+    that - it counts the cation sublattice too - so the long-time limit of
+    this layer and the equilibrium partition disagree, and the size of the
+    disagreement is the same cube that separates the two isotherms.
+
+    This test does not assert they agree. It asserts they do not, so that
+    the day someone reconciles them the gate fails and gets updated
+    rather than the inconsistency being rediscovered. The size of it is
+    visible in the test above: run the closed system to its long-time
+    limit and the subsurface cell settles near 0.54 of the inventory,
+    where the equilibrium partition puts 0.038."""
+    kt = S.KB_EV * 873.15
+    eps = S.energetics(P)['eps']
+    mu = S.distribute(P, 600.0, 95.0, S.geometry(P))['mu_V_eV']
+    neutral = S.fd(mu, eps[2], kt)
+    compensated = S.theta_of_mu(mu, eps[2], kt)
+    assert neutral != pytest.approx(compensated, rel=0.1)
+    note = P['kinetics_cgmc']['note']
+    assert 'detailed balance' in note
 
 def test_geometry_capacities_are_consistent_with_the_per_gram_model():
     sys0 = C.build(P)

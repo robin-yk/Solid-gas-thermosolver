@@ -17,7 +17,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var el = {};
   ['smT', 'smVO', 'smGeoMode', 'smGeoVal', 'smGeoUnit', 'smSS', 'smDerived',
-   'smPreset', 'smEpsSS', 'smEpsB', 'smRes', 'smOmega',
+   'smPreset', 'smEpsSS', 'smEpsB',
    'smV1', 'smV2', 'smV3', 'smQuality',
    'smSeed', 'smRun', 'smStatus', 'smSummary', 'smKpis',
    'smTable', 'smSpacing', 'smNotes',
@@ -129,24 +129,19 @@
       along_row: [num(el.smV1, 0.40), num(el.smV2, 0.20), num(el.smV3, 0.05)],
       cross_row: DATA.surface_ordering.pair_eV.cross_row } };
   }
-  function currentRes() {
-    var v = Math.round(num(el.smRes, 1));
-    return Math.max(1, Math.min(3, v));
-  }
-  function currentOmega() { return el.smOmega.value === 'on' ? 'on' : 'off'; }
   function currentSS() {
     var v = Math.round(num(el.smSS, DATA.defaults.subsurface_layers));
     return Math.max(1, Math.min(4, v));
   }
   function currentGeom() {
-    var n = currentSS(), r = currentRes();
+    var n = currentSS();
     if (el.smGeoMode.value === 'bet') {
       return SM.geometry(DATA, { bet_m2_g: num(el.smGeoVal, 1.57),
-                                 ss_layers: n, resolved_layers: r });
+                                 ss_layers: n });
     }
     return SM.geometry(DATA, {
       d_um: num(el.smGeoVal, DATA.defaults.particle_diameter_um),
-      ss_layers: n, resolved_layers: r });
+      ss_layers: n });
   }
   function currentKin() {
     return { Ea_eV: { surface: num(el.smEaS, 0.45),
@@ -172,7 +167,10 @@
   function setStatus(t) { el.smStatus.textContent = t; }
 
   function buildWorker() {
-    var src = document.getElementById('sm-engine').textContent + '\n'
+    /* statmech.js borrows the free energy from particle.js, so the blob
+       has to carry it first - the worker has no page globals. */
+    var src = document.getElementById('px-engine').textContent + '\n'
+      + document.getElementById('sm-engine').textContent + '\n'
       + document.getElementById('sm-worker-src').textContent;
     var blob = new Blob([src], { type: 'application/javascript' });
     return new Worker(URL.createObjectURL(blob));
@@ -376,8 +374,7 @@
        feeds only the ordering exhibit, at the coverage of the surviving
        (1x1) patches once coexistence is reached */
     var fresh = !!iso && isoKey === isoSignature();
-    var out = SM.distribute(DATA, tC, vo, geom,
-                            { eps: eps, omega: currentOmega() });
+    var out = SM.distribute(DATA, tC, vo, geom, { eps: eps });
     out.geometry = geom;
     out.spacing = fresh ? SM.spacingSummary(iso,
       Math.min(out.theta.surface, DATA.surface_phases.theta_transition))
@@ -427,16 +424,12 @@
     var acc = SM.accessibility(DATA, out.umol_g, ctx.kin,
                                out.VO_total_umol_g);
     var b = out.phase_boundaries;
-    var slabSum = (geom.slabs_per_layer || [geom.ss_layers])
-      .reduce(function (a, v) { return a + v; }, 0);
+    var slabSum = geom.ss_layers;
     el.smDerived.textContent = 'x in TiO2-x = ' + out.x_TiO2mx.toFixed(4)
       + ' · Ti³⁺/Ti = ' + (out.Ti3_frac * 100).toFixed(2)
       + '% · area ' + geom.area_m2_g.toFixed(2)
       + ' m²/g · shell = bridging plane + ' + slabSum
       + ' × 0.325 nm oxygen layer' + (slabSum > 1 ? 's' : '')
-      + (geom.resolved_layers > 1 ? ', resolved separately' : '')
-      + (out.energetics && out.energetics.coverage_penalty === 'on'
-         ? ' · crowding Ω on' : '')
       + ' (N_s ' + geom.N_s.toFixed(2) + ' + N_ss '
       + geom.N_ss.toFixed(2) + ' μmol-O/g) · phase ladder at ' + out.T_C
       + ' °C: (1×2) onset '
@@ -509,20 +502,65 @@
         + ')"></span>' + c.label + '</td><td>' + th
         + '</td><td>' + f2(out.umol_g[c.key]) + '</td><td>'
         + pctf(out.fractions[c.key]) + '</td></tr>';
-      /* the resolved slabs sit under the class whose total they are, so
-         the aggregate stays the row that is read and the resolution is
-         visible without becoming a second table */
-      if (c.key === 'subsurface' && out.layers && out.layers.length > 1) {
-        out.layers.forEach(function (L) {
-          h += '<tr class="sub-row"><td>layer ' + L.index + ' · ε = '
-            + L.eps_eV.toFixed(2) + ' eV'
-            + (L.omega_eV ? ', Ω = ' + L.omega_eV.toFixed(2) + ' eV' : '')
-            + '</td><td>' + thf(L.theta) + '</td><td>' + f2(L.umol_g)
-            + '</td><td>'
-            + pctf(out.matched_umol_g ? L.umol_g / out.matched_umol_g : 0)
-            + '</td></tr>';
-        });
+    });
+    if (out.extended_defects_umol_g > 0) {
+      parts.push('extended defects ' + f2(out.extended_defects_umol_g)
+        + ' (' + pctf(out.fractions.extended) + ')');
+    }
+    el.smSummary.className = 'verdict ' + (bad ? 'red' : 'none');
+    var sp0 = out.surface_phase;
+    var phaseTxt = sp0.phase === '1x1' ? '(1×1) vacancy lattice gas'
+      : sp0.phase === '1x2' ? '(1×2) added-row Ti₂O₃, θ_eff = 0.5'
+      : '(1×1)+(1×2) coexistence, '
+        + (sp0.phi_reconstructed * 100).toFixed(0) + '% of area reconstructed';
+    el.smSummary.innerHTML = '<b>' + f2(out.VO_total_umol_g)
+      + ' μmol-O/g at ' + out.T_C
+      + ' °C (conditional equilibrium):</b> ' + parts.join(', ')
+      + ' μmol-O/g. ' + REGIME_LABEL[out.regime]
+      + '<span class="more">Surface phase: ' + phaseTxt
+      + ' · μ<sub>V</sub> = ' + out.mu_V_eV.toFixed(3) + ' eV'
+      + (out.extended_defects_umol_g > 0
+         ? ' · the excess is CS planes by the lever rule, an estimate' : '')
+      + '</span>';
+
+    /* Four, and no more: the three site classes and the potential that
+       makes them one solve. The surface phase, the extended-defect count
+       and the recoverable fraction all have a home of their own - the
+       summary line, the table, and the accessibility tab - and repeating
+       them here only makes the row long enough to be scrolled past. */
+    var k = '';
+    CLASSES.forEach(function (c) {
+      k += '<div class="kpi"><div class="k"><span class="swatch" style="'
+        + 'background:var(' + c.varname + ')"></span>' + c.label
+        + ' V<sub>O</sub></div><div class="v">' + f2(out.umol_g[c.key])
+        + '</div><div class="u">μmol-O/g · '
+        + pctf(out.fractions[c.key]) + ' of inventory</div></div>';
+    });
+    k += '<div class="kpi"><div class="k">μ<sub>V</sub> (vacancy)</div>'
+      + '<div class="v">' + out.mu_V_eV.toFixed(3) + '</div>'
+      + '<div class="u">eV'
+      + (out.regime === 'surface_coexistence'
+         || out.regime === 'cs_coexistence'
+         ? ', pinned at coexistence' : ', common to all classes')
+      + '</div></div>';
+    el.smKpis.innerHTML = k;
+
+    try {
+      mountFigure('figDistribution', 'vacancy-distribution',
+        FIG.distribution({ out: out }));
+    } catch (e) { figFail('figDistribution', e.message); }
+
+    var h = '<tr><th>Site class</th><th>θ occupancy</th>'
+      + '<th>μmol-O/g</th><th>share of inventory</th></tr>';
+    CLASSES.forEach(function (c) {
+      var th = thf(out.theta[c.key]);
+      if (c.key === 'surface' && sp0.phase !== '1x1') {
+        th += sp0.phase === '1x2' ? ' · (1×2)' : ' · mixed';
       }
+      h += '<tr><td><span class="swatch" style="background:var(' + c.varname
+        + ')"></span>' + c.label + '</td><td>' + th
+        + '</td><td>' + f2(out.umol_g[c.key]) + '</td><td>'
+        + pctf(out.fractions[c.key]) + '</td></tr>';
     });
     if (out.extended_defects_umol_g > 0) {
       h += '<tr><td>Extended defects (CS)</td><td>—</td><td>'
@@ -849,9 +887,6 @@
       solve();
       scheduleRun();
     });
-  });
-  [el.smRes, el.smOmega].forEach(function (n) {
-    n.addEventListener('change', solve);
   });
   el.smT.addEventListener('input', scheduleEnv);
   [el.smVO, el.smGeoVal, el.smSS, el.smEaS, el.smEaSS, el.smEaB, el.smAS,

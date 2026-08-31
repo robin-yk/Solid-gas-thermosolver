@@ -28,7 +28,7 @@
      el[id] = $(id);
    });
 
-  var E_RESOLVED = 1844.0;   /* 0.9 um rutile at 600 C, layer-resolved */
+  var E_RESOLVED = 269.0;   /* 0.9 um rutile at 600 C, depth-weighted */
 
   /* -------------------------------------------------------- figures */
 
@@ -178,7 +178,7 @@
       + 'above it only a higher face ceiling does. The uniform particle '
       + 'is held to K ≤ ' + sig(R.usableWindow(1, q.theta_sol,
                                                q.theta_max).K_max, 3)
-      + ' and the layer-resolved one to K ≤ '
+      + ' and the depth-weighted one to K ≤ '
       + sig(R.usableWindow(E_RESOLVED, q.theta_sol,
                            q.theta_max).K_max, 3) + '.';
 
@@ -202,7 +202,7 @@
         theta_sol: q.theta_sol, theta_surface_max: q.theta_max,
         points: [{ E: 1.0, label: 'uniform',
                    K: R.usableWindow(1.0, q.theta_sol, q.theta_max).K_max },
-                 { E: E_RESOLVED, label: 'layer-resolved',
+                 { E: E_RESOLVED, label: 'depth-weighted',
                    K: R.usableWindow(E_RESOLVED, q.theta_sol,
                                      q.theta_max).K_max }],
         current: { K: q.K, E: q.E, usable: ok } });
@@ -213,7 +213,7 @@
     var res = R.usableWindow(E_RESOLVED, q.theta_sol, q.theta_max).K_max;
     el.rxPhaseNote.innerHTML = 'Reading the diagram vertically is the '
       + 'point. The uniform model is the bottom edge and answers K ≤ '
-      + sig(uni, 3) + '; the layer-resolved particle at E = '
+      + sig(uni, 3) + '; the depth-weighted particle at E = '
       + E_RESOLVED + ' answers K ≤ ' + sig(res, 3) + ', a factor of '
       + sig(res / uni, 3) + '. The turnover at a given K is identical in '
       + 'both — any strictly increasing average→face mapping only '

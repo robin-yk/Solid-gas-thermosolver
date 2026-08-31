@@ -74,8 +74,8 @@ R_POL = mpf(4)
 CAP = 1 / R_POL
 
 
-def mu_of_theta(theta, eps, omega, kt):
-    """mu = eps + omega*theta + kT[ln(th/(1-th)) + 2 ln(r*th/(1-r*th))].
+def mu_of_theta(theta, eps, kt):
+    """mu = eps + kT[ln(th/(1-th)) + 2 ln(r*th/(1-r*th))].
 
     Guarded at both ends so a bisection may probe them: outside (0, cap)
     the chemical potential is infinite, which is the right answer and the
@@ -85,11 +85,11 @@ def mu_of_theta(theta, eps, omega, kt):
     tp = R_POL * theta
     if tp >= 1:
         return mpf('inf')
-    return (eps + omega * theta
+    return (eps
             + kt * (mlog(theta / (1 - theta)) + 2 * mlog(tp / (1 - tp))))
 
 
-def theta_of_mu(mu, eps, omega, kt):
+def theta_of_mu(mu, eps, kt):
     """Inverse of mu_of_theta by bisection at working precision.
 
     Same two-variable split as the production code and for the same
@@ -100,35 +100,35 @@ def theta_of_mu(mu, eps, omega, kt):
     inverts to a genuine one-sided bound. Derived from this module's own
     formula; nothing is imported from the engine."""
     half = CAP / 2
-    if mu < mu_of_theta(half, eps, omega, kt):
+    if mu < mu_of_theta(half, eps, kt):
         #   dilute: mu -> eps + 3 kT u + 2 kT ln r; the dropped
         #   denominators only lower mu, so this u is an upper bound
         hi = min(mlog(half), (mu - eps - 2 * kt * mlog(R_POL)) / (3 * kt))
         lo = hi - 1
-        while mu_of_theta(mexp(lo), eps, omega, kt) > mu:
+        while mu_of_theta(mexp(lo), eps, kt) > mu:
             lo -= 8
             if lo < -1500:
                 return mexp(lo)
         for _ in range(250):
             mid = (lo + hi) / 2
-            if mu_of_theta(mexp(mid), eps, omega, kt) < mu:
+            if mu_of_theta(mexp(mid), eps, kt) < mu:
                 lo = mid
             else:
                 hi = mid
         return mexp((lo + hi) / 2)
     #   at the cap: 1 - r*theta = r*(cap - theta), so mu -> C - 2 kT v,
     #   and holding the other factors at their cap values only raises mu
-    c = (eps + omega * CAP
+    c = (eps
          + kt * (mlog(CAP / (1 - CAP)) + 2 * mlog(R_POL * CAP)))
     hi = min(mlog(half), (c - mu) / (2 * kt))
     lo = hi - 1
-    while mu_of_theta(CAP - mexp(lo), eps, omega, kt) < mu:
+    while mu_of_theta(CAP - mexp(lo), eps, kt) < mu:
         lo -= 8
         if lo < -400:
             return CAP - mexp(lo)
     for _ in range(250):
         mid = (lo + hi) / 2
-        if mu_of_theta(CAP - mexp(mid), eps, omega, kt) > mu:
+        if mu_of_theta(CAP - mexp(mid), eps, kt) > mu:
             lo = mid
         else:
             hi = mid
@@ -150,12 +150,12 @@ def boundaries(t_c, geom, preset):
     th_t = mpf(str(sp['theta_transition']))
     th_r = mpf(str(sp['theta_reconstructed_eff']))
     th_sol = mpf(str(P['saturation']['x_max_shear'])) / 2
-    mu_t = mu_of_theta(th_t, eps[0], mpf(0), kt)
-    mu_cs = mu_of_theta(th_sol, eps[2], mpf(0), kt)
-    deep_t = (geom['N_ss'] * theta_of_mu(mu_t, eps[1], mpf(0), kt)
-              + geom['N_b'] * theta_of_mu(mu_t, eps[2], mpf(0), kt))
-    deep_cs = (geom['N_ss'] * theta_of_mu(mu_cs, eps[1], mpf(0), kt)
-               + geom['N_b'] * theta_of_mu(mu_cs, eps[2], mpf(0), kt))
+    mu_t = mu_of_theta(th_t, eps[0], kt)
+    mu_cs = mu_of_theta(th_sol, eps[2], kt)
+    deep_t = (geom['N_ss'] * theta_of_mu(mu_t, eps[1], kt)
+              + geom['N_b'] * theta_of_mu(mu_t, eps[2], kt))
+    deep_cs = (geom['N_ss'] * theta_of_mu(mu_cs, eps[1], kt)
+               + geom['N_b'] * theta_of_mu(mu_cs, eps[2], kt))
     return {'mu_t': mu_t, 'mu_cs': mu_cs, 'th_t': th_t, 'th_r': th_r,
             'th_sol': th_sol, 'kt': kt, 'eps': eps,
             'vo_onset': geom['N_s'] * th_t + deep_t,
@@ -172,20 +172,20 @@ def match(t_c, vo, geom, preset):
     vo_mp = mpf(str(vo))
 
     def deep(mu):
-        return (geom['N_ss'] * theta_of_mu(mu, eps[1], mpf(0), kt)
-                + geom['N_b'] * theta_of_mu(mu, eps[2], mpf(0), kt))
+        return (geom['N_ss'] * theta_of_mu(mu, eps[1], kt)
+                + geom['N_b'] * theta_of_mu(mu, eps[2], kt))
     ext = mpf(0)
     if vo_mp <= b['vo_onset']:
         regime, phase = 'dilute', '1x1'
         lo, hi = mpf(-40), b['mu_t']
         for _ in range(240):
             mid = (lo + hi) / 2
-            if geom['N_s'] * theta_of_mu(mid, eps[0], mpf(0), kt) + deep(mid) < vo_mp:
+            if geom['N_s'] * theta_of_mu(mid, eps[0], kt) + deep(mid) < vo_mp:
                 lo = mid
             else:
                 hi = mid
         mu = (lo + hi) / 2
-        ts = theta_of_mu(mu, eps[0], mpf(0), kt)
+        ts = theta_of_mu(mu, eps[0], kt)
         us = geom['N_s'] * ts
         phi = mpf(0)
     elif vo_mp < b['vo_recon']:
@@ -213,8 +213,8 @@ def match(t_c, vo, geom, preset):
         ts = b['th_r']
         us = geom['N_s'] * b['th_r']
         phi = mpf(1)
-    tss = theta_of_mu(mu, eps[1], mpf(0), kt)
-    tb = theta_of_mu(mu, eps[2], mpf(0), kt)
+    tss = theta_of_mu(mu, eps[1], kt)
+    tb = theta_of_mu(mu, eps[2], kt)
     uss, ub = geom['N_ss'] * tss, geom['N_b'] * tb
     tot = us + uss + ub + ext
     x = vo_mp / (mpf('1e6') / mpf(str(P['molar_mass_g_mol'])))
@@ -253,132 +253,6 @@ def match(t_c, vo, geom, preset):
 
 
 # ------------------------------------------------ exact ideal ensemble
-
-def theta_of_mu_mp(mu, eps, omega, kt):
-    """The implicit occupancy at 50 digits, by an independent method.
-
-    The production engine bisects the residual; this one hands the same
-    equation to mpmath's root finder in the logit variable, so agreement
-    is two different algorithms landing on the same number rather than one
-    algorithm checked against itself. Bracketed by the sigmoid's own
-    bounds, as in the engine."""
-    if omega == 0:
-        return theta_of_mu(mu, eps, mpf(0), kt)
-    hi = (mu - eps) / kt
-    lo = hi - omega / kt
-    if lo > hi:
-        lo, hi = hi, lo
-
-    def g(z):
-        return eps + omega / (1 + mexp(-z)) + kt * z - mu
-    z = mp.findroot(g, (lo, hi), solver='bisect', tol=mpf('1e-90'),
-                    maxsteps=400)
-    return 1 / (1 + mexp(-z))
-
-
-def layer_eps(preset, n):
-    """eps_layers as a shape applied to the preset's own gap, as shipped."""
-    eps = eps_of(preset)
-    span = P['vacancy_energetics']['layer_profile']['span_fraction']
-    return [eps[1] + mpf(str(span[i])) * (eps[2] - eps[1]) for i in range(n)]
-
-
-def layer_omega(n, on):
-    om = P['vacancy_energetics']['coverage_penalty']['omega_eV']
-    if not on:
-        return mpf(0), [mpf(0)] * n, mpf(0)
-    return (mpf(str(om['surface'])),
-            [mpf(str(om['layer%d' % (i + 1)])) for i in range(n)],
-            mpf(str(om['bulk'])))
-
-
-def layer_geometry(d_um, n, ss_layers=1):
-    g = geometry(d_um=d_um, ss_layers=ss_layers)
-    a = mpf(str(P['lattice_constants_A']['a']))
-    c = mpf(str(P['lattice_constants_A']['c']))
-    sig_l = mpf('4e16') / (c * a * mp.sqrt(2))
-    area = g['area_m2_g'] * mpf('1e4')
-    slabs = [ss_layers] if n == 1 else [1] * n
-    caps = [area * sig_l * k / N_AVO * mpf('1e6') for k in slabs]
-    g = dict(g)
-    g['N_layers'] = caps
-    g['N_ss'] = sum(caps)
-    g['N_b'] = g['N_O_total'] - g['N_s'] - g['N_ss']
-    return g
-
-
-def layer_match(t_c, vo, n, on, preset='sx', d_um=0.90):
-    """The whole phase-aware construction with resolved layers and the
-    mean-field crowding term, re-derived at 50 digits."""
-    kt = KB_EV * (mpf(str(t_c)) + mpf('273.15'))
-    eps = eps_of(preset)
-    g = layer_geometry(d_um, n)
-    epsl = layer_eps(preset, n)
-    om_s, om_l, om_b = layer_omega(n, on)
-    sp = P['surface_phases']
-    th_t = mpf(str(sp['theta_transition']))
-    th_r = mpf(str(sp['theta_reconstructed_eff']))
-    th_sol = mpf(str(P['saturation']['x_max_shear'])) / 2
-    mu_t = eps[0] + om_s * th_t + kt * mlog(th_t / (1 - th_t))
-    mu_cs = eps[2] + om_b * th_sol + kt * mlog(th_sol / (1 - th_sol))
-
-    def deep(mu):
-        tot = mpf(0)
-        for i, cap in enumerate(g['N_layers']):
-            tot += cap * theta_of_mu_mp(mu, epsl[i], om_l[i], kt)
-        return tot + g['N_b'] * theta_of_mu_mp(mu, eps[2], om_b, kt)
-
-    def surf(mu):
-        return theta_of_mu_mp(mu, eps[0], om_s, kt)
-
-    vo_mp = mpf(str(vo))
-    vo_onset = g['N_s'] * th_t + deep(mu_t)
-    vo_recon = g['N_s'] * th_r + deep(mu_t)
-    vo_cs = g['N_s'] * th_r + deep(mu_cs)
-    u_ext = mpf(0)
-    if vo_mp <= vo_onset:
-        regime = 'dilute'
-        lo, hi = mpf(-3), mu_t
-        while g['N_s'] * surf(lo) + deep(lo) > vo_mp:
-            lo = 2 * lo - hi
-        mu = mp.findroot(lambda m: g['N_s'] * surf(m) + deep(m) - vo_mp,
-                         (lo, hi), solver='bisect', tol=mpf('1e-80'),
-                         maxsteps=500)
-        ts = surf(mu)
-    elif vo_mp < vo_recon:
-        regime = 'surface_coexistence'
-        mu = mu_t
-        ts = (vo_mp - deep(mu)) / g['N_s']
-    elif vo_mp <= vo_cs:
-        regime = 'reconstructed'
-        mu = mp.findroot(lambda m: deep(m) - (vo_mp - g['N_s'] * th_r),
-                         (mu_t, mu_cs), solver='bisect', tol=mpf('1e-80'),
-                         maxsteps=500)
-        ts = th_r
-    else:
-        regime = 'cs_coexistence'
-        mu = mu_cs
-        ts = th_r
-        u_ext = vo_mp - g['N_s'] * th_r - deep(mu)
-    thl = [theta_of_mu_mp(mu, epsl[i], om_l[i], kt)
-           for i in range(len(epsl))]
-    ul = [g['N_layers'][i] * thl[i] for i in range(len(thl))]
-    tb = theta_of_mu_mp(mu, eps[2], om_b, kt)
-    return {'T_C': t_c, 'VO_total_umol_g': vo, 'resolved_layers': n,
-            'coverage_penalty': 'on' if on else 'off', 'preset': preset,
-            'regime': regime, 'mu_V_eV': float(mu),
-            'N_layers': [float(v) for v in g['N_layers']],
-            'layer_theta': [float(v) for v in thl],
-            'layer_umol_g': [float(v) for v in ul],
-            'umol_g': {'surface': float(g['N_s'] * ts),
-                       'subsurface': float(sum(ul)),
-                       'bulk': float(g['N_b'] * tb)},
-            'extended_defects_umol_g': float(u_ext),
-            'boundaries': {'mu_t_eV': float(mu_t), 'mu_cs_eV': float(mu_cs),
-                           'VO_onset_umol_g': float(vo_onset),
-                           'VO_recon_complete_umol_g': float(vo_recon),
-                           'VO_cs_umol_g': float(vo_cs)}}
-
 
 def ideal_ensemble(m_by_class, eps, t_c, n_vac):
     """Coefficients of prod_c (1 + z w_c)^{M_c}: exact Z(N), <n_c>, mu."""
@@ -652,18 +526,13 @@ def main():
         'co2_flagship': co2_rows,
         'cgmc_linear': cgmc_linear(),
         'theta_of_mu': [
-            {'mu_eV': mu, 'eps_eV': e, 'omega_eV': w, 'T_C': t,
-             'theta': float(theta_of_mu_mp(
-                 mpf(str(mu)), mpf(str(e)), mpf(str(w)),
+            {'mu_eV': mu, 'eps_eV': e, 'T_C': t,
+             'theta': float(theta_of_mu(
+                 mpf(str(mu)), mpf(str(e)),
                  KB_EV * (mpf(str(t)) + mpf('273.15'))))}
             for t in (400, 600, 900)
-            for w in (0.0, 0.15, 0.6, 1.0)
             for e in (0.0, 0.59, 1.31)
             for mu in (-0.4, 0.0, 0.5, 0.85, 1.2)],
-        'layer_ladder': [layer_match(600, vo, n, on)
-                         for n in (1, 2, 3)
-                         for on in (False, True)
-                         for vo in (1.0, 2.5, 5.0, 95.0, 400.0)],
     }
     with (DATA / 'reference_statmech.json').open('w') as fh:
         json.dump(doc, fh, indent=1)

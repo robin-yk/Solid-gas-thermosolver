@@ -273,25 +273,51 @@ def test_the_rutile_surface_runs_far_above_the_particle_average(p, rutile_surfac
     """The enrichment factor, and its geometric ceiling.
 
     In the dilute limit every class sits on its own isotherm at one mu, so
-    the average is the surface diluted by the Boltzmann-weighted site count.
-    The factor is therefore bounded by N_O_total / N_s and approaches it as
-    the deeper classes freeze out."""
+    the average is the surface diluted by the Boltzmann-weighted site
+    count, and the factor is bounded by N_O_total / N_s. It would reach
+    that ceiling only if the deeper classes froze out entirely.
+
+    They do not, and that is what changed. A compensated vacancy has
+    three configurational logarithms, so the surface-to-bulk ratio is
+    exp(dE/3kT) = 333 rather than exp(dE/kT) = 3.7e7 - the cube root -
+    and against 1846 times as many bulk sites the deep classes carry most
+    of the inventory even in the dilute limit. The factor is 270, not the
+    1844 the neutral-vacancy form gave, and it sits well below the
+    ceiling instead of just under it."""
     geom = rutile_surface.geom
     ceiling = geom['N_O_total'] / geom['N_s']
     assert ceiling == pytest.approx(1847.0, abs=1.0)
     for t_bar in (1e-7, 1e-6, 1e-5):
         factor = rutile_surface(t_bar) / t_bar
-        assert 1800.0 < factor < ceiling, (t_bar, factor)
+        assert 250.0 < factor < 280.0, (t_bar, factor)
+        assert factor < 0.2 * ceiling, (t_bar, factor)
 
 
-def test_the_correction_moves_the_state_by_three_orders_not_the_rate(
+def test_the_correction_moves_the_state_by_two_orders_not_the_rate(
         p, rutile_surface):
-    """Both halves of the headline, on the real layer-resolved mapping."""
+    """Both halves of the headline, on the real depth-weighted mapping.
+
+    The rate is untouched exactly - that is the point, and it is exact
+    because the correction rescales theta and the two half-reactions
+    rescale with it. The state moves by the enrichment, which is 270 in
+    the dilute limit and falls below it as the surface starts to
+    saturate, so the check is a range with a direction rather than one
+    number."""
+    moved_by_dev = []
     for dev in (0.1, 0.3, 0.6, 1.0):
         c = R.surface_correction(p, rutile_surface, dev=dev)
         assert c['rate_ratio'] == pytest.approx(1.0, rel=1e-9), dev
         moved = c['uniform']['theta'] / c['corrected']['theta']
-        assert moved == pytest.approx(1844.0, rel=5e-3), (dev, moved)
+        assert 100.0 < moved < 275.0, (dev, moved)
+        moved_by_dev.append(moved)
+    # the strongly reducing end is where the surface is furthest up its
+    # isotherm and can supply the least extra enrichment; as the
+    # descriptor climbs the state thins out and the factor relaxes onto
+    # its dilute limit from below
+    assert all(y >= x * 0.999 for x, y in
+               zip(moved_by_dev, moved_by_dev[1:])), moved_by_dev
+    assert moved_by_dev[0] < 0.7 * moved_by_dev[-1]
+    assert moved_by_dev[-1] == pytest.approx(270.0, abs=3.0)
 
 
 def test_a_pinned_surface_removes_the_steady_state_on_half_the_axis(
@@ -376,11 +402,22 @@ def test_the_documented_claims_are_the_ones_the_code_makes():
     A document that drifts from the engine is worse than no document, so
     the numbers it quotes are computed rather than transcribed."""
     doc = (pathlib.Path(ROOT) / 'docs' / 'redox-steady-state.md').read_text()
-    assert '1844x above the particle average' in doc
+    assert '269x above the particle average' in doc
     assert 'N_O_total / N_s = 1847' in doc
     assert 'The steady rate does not move' in doc
     assert 'the steady state stops existing' in doc
     assert '0.68 eV spread' in doc
+
+    # the enrichment the document quotes, recomputed
+    d = json.load(open(os.path.join(DATA, 'rutile_dft.json')))
+    g = S.geometry(d, d_um=0.90, ss_layers=1)
+    n_o = g['N_O_total']
+    e = S.distribute(d, 600.0, 1e-6 * n_o, g)['theta']['surface'] / 1e-6
+    assert ('%.0fx above the particle average' % e) in doc
+    # and the margin the window conclusion now rests on
+    th_sol = d['saturation']['x_max_shear'] / 2.0
+    assert th_sol * e > 1.0
+    assert ('%.2f' % (th_sol * e)) in doc
     # and the model it describes is the one that ships
     p = R.load_params()
     a = p['half_reactions']['reduction']['bep_slope']
@@ -399,45 +436,49 @@ def test_the_defect_model_states_what_it_does_not_carry():
         assert claim in doc, claim
 
 
-# ------------------------------------- robustness to the layer machinery
+# ----------------------------------- robustness to the shell thickness
 
-@pytest.mark.parametrize('resolved,penalty', [
-    (1, 'off'), (2, 'off'), (3, 'off'), (1, 'on'), (2, 'on'), (3, 'on')])
-def test_the_redox_conclusions_survive_the_layer_model(p, resolved, penalty):
-    """The two least-constrained knobs in the defect model change nothing here.
+@pytest.mark.parametrize('ss_layers', [1, 2, 4])
+def test_the_redox_conclusions_survive_the_shell_thickness(p, ss_layers):
+    """The least-constrained knob left in the defect model changes nothing
+    here.
 
-    Layer resolution and the mean-field crowding term both act on the
-    classes below the bridging plane, and both matter a great deal at the
-    inventories the measurements sit at. The redox steady state does not
-    sit there: it sits at theta_bar of order 1e-5, deep in the dilute
-    regime, where the deeper classes are Boltzmann-suppressed by
-    exp(-0.59/kT) ~ 1/2500 and the crowding term omega*theta vanishes with
-    theta. So the enrichment factor is the geometric one, and the three
-    claims that rest on it do not depend on the parts of the defect model
-    that are assumed rather than measured."""
+    The declared thickness of the subsurface class acts below the bridging
+    plane and matters at the inventories the measurements sit at. The
+    redox steady state does not sit there: it sits at theta_bar of order
+    1e-5, deep in the dilute regime, where the deeper classes are
+    Boltzmann-suppressed. So the enrichment is set by the energies and the
+    site counts, not by how the shell is sliced, and the three claims that
+    rest on it do not move.
+
+    The enrichment itself moved once, and by a lot: 1844 to 270. That is
+    the compensating polarons entering the free energy, which turns the
+    dilute exponent from exp(dE/kT) into exp(dE/3kT). The claims below are
+    the ones that survive it, and they survive because they are about
+    where the crossing sits and not about how large the factor is."""
     d = json.load(open(os.path.join(DATA, 'rutile_dft.json')))
-    geom = S.geometry(d, d_um=0.90, ss_layers=1, resolved_layers=resolved)
+    geom = S.geometry(d, d_um=0.90, ss_layers=ss_layers)
     n_o = geom['N_O_total']
 
     def theta_surface(t_bar):
-        return S.distribute(d, 600.0, max(0.0, t_bar) * n_o, geom,
-                            omega=penalty)['theta']['surface']
+        return S.distribute(d, 600.0, max(0.0, t_bar) * n_o,
+                            geom)['theta']['surface']
 
     # the enrichment, and its geometric ceiling
     ceiling = n_o / geom['N_s']
     factor = theta_surface(1e-6) / 1e-6
-    assert factor == pytest.approx(1844.0, rel=5e-3), factor
+    # the shell thickness moves the factor by a tenth at most: it trades
+    # subsurface sites against bulk ones, and both are far below the row
+    assert 230.0 < factor < 275.0, factor
     assert factor < ceiling
 
-    # the rate is still untouched, and the state still moves by ~1844x
+    # the rate is still untouched, and the state still moves by the factor
     c = R.surface_correction(p, theta_surface, dev=0.3)
     assert c['rate_ratio'] == pytest.approx(1.0, rel=1e-9)
     moved = c['uniform']['theta'] / c['corrected']['theta']
-    assert moved == pytest.approx(1844.0, rel=5e-3), moved
+    assert moved == pytest.approx(factor, rel=0.05), moved
 
-    # and the runaway boundary is still the Sabatier descriptor, because
-    # omega_surface is pinned at zero so the ceiling that causes it cannot
-    # move
+    # and the runaway boundary is still the Sabatier descriptor
     opt = R.sabatier_optimum(p)['dev_eV']
     assert R.steady_state(p, dev=opt - 0.05,
                           theta_of_average=theta_surface)['runaway'] \
@@ -446,20 +487,26 @@ def test_the_redox_conclusions_survive_the_layer_model(p, resolved, penalty):
                           theta_of_average=theta_surface)['runaway'] is None
 
 
-def test_the_layer_model_does_move_the_measurement_regime(p):
-    """The sensitivity check above would be vacuous if the knobs were inert.
+def test_the_shell_thickness_does_move_the_measurement_regime(p):
+    """The sensitivity check above would be vacuous if the knob were inert.
 
-    At the inventory the experiments sit at they move the answer a lot;
-    the point of the test above is that the redox steady state is not at
-    that inventory."""
+    At the inventory the experiments sit at it moves the split a lot; the
+    point of the test above is that the redox steady state is not at that
+    inventory.
+
+    What no longer moves it is resolving the shell into separate layers
+    with a declared depth profile, and that mechanism has been removed:
+    with the compensation in the free energy it changed the bulk by two
+    percent, where before it changed it by thirty. The thickness of the
+    single shell still matters, because it moves sites rather than
+    energies."""
     d = json.load(open(os.path.join(DATA, 'rutile_dft.json')))
-    flat = S.distribute(d, 600.0, 95.0,
+    thin = S.distribute(d, 600.0, 95.0,
                         S.geometry(d, d_um=0.90, ss_layers=1))
-    deep = S.distribute(d, 600.0, 95.0,
-                        S.geometry(d, d_um=0.90, resolved_layers=3),
-                        omega='on')
-    assert deep['umol_g']['bulk'] / flat['umol_g']['bulk'] > 1.3
-    assert abs(deep['mu_V_eV'] - flat['mu_V_eV']) > 0.02
+    thick = S.distribute(d, 600.0, 95.0,
+                         S.geometry(d, d_um=0.90, ss_layers=4))
+    assert thin['umol_g']['bulk'] / thick['umol_g']['bulk'] > 1.1
+    assert abs(thick['mu_V_eV'] - thin['mu_V_eV']) > 0.02
 
 
 # --------------------------------------------- the assumption-free K axis

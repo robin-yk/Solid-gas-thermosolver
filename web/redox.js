@@ -21,7 +21,7 @@
        the face must stay below its ceiling theta(face)     <= theta_max
 
    and theta(face) = E * theta(particle), where E is the surface
-   enrichment a layer-resolved partition supplies and the uniform model
+   enrichment a depth-weighted partition supplies and the uniform model
    silently sets to 1.
 
    This file mirrors the closed forms of solidgas/redox.py and nothing

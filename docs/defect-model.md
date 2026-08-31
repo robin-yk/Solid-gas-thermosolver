@@ -18,12 +18,16 @@ The rutile (110) 1x1 cell (c x a*sqrt(2) = 19.22 A^2) carries one bridging oxyge
 
 | n_layers | shell depth | subsurface | theta_ss | bulk | mu_V (eV) | shell share |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 0.41 nm | 51.76 | 0.954 | 36.47 | 0.8188 | 61.6% |
-| 2 | 0.73 nm | 82.65 | 0.762 | 5.57 | 0.6776 | 94.1% |
-| 3 | 1.06 nm | 86.26 | 0.530 | 1.96 | 0.5991 | 97.9% |
-| 4 | 1.38 nm | 87.06 | 0.401 | 1.16 | 0.5599 | 98.8% |
+| 1 | 0.41 nm | 3.59 | 0.066 | 84.63 | 0.2372 | 10.9% |
+| 2 | 0.73 nm | 6.96 | 0.064 | 81.26 | 0.2284 | 14.5% |
+| 3 | 1.06 nm | 10.13 | 0.062 | 78.09 | 0.2198 | 17.8% |
+| 4 | 1.38 nm | 13.11 | 0.060 | 75.12 | 0.2115 | 20.9% |
 
-The surface class is fixed at the reconstructed line-phase deficiency (6.78 umol-O/g) throughout, so the ladder moves inventory between the subsurface shell and the bulk only. The reconstruction boundaries barely move (2.31 to 2.32 and 6.78 to 6.80 umol-O/g), but the CS ceiling does: it is a chemical-potential condition on the bulk, so a thicker cheap shell holds more inventory before the bulk reaches it (160 / 213 / 266 / 319 umol-O/g for one to four layers). Real formation energies relax smoothly towards the bulk value over the first few layers, so the physical answer lies between the first two rows: a reduced region of the order of 0.5 to 1 nm at 50 to 95% local depletion, with a correspondingly smaller bulk remainder than the default row reports. What the choice does not put at stake is the conclusion that the near-surface shell carries most of the inventory - that grows from 62% to 99% along the ladder. The full ladder is certified by the oracle (`shell_ladder` in `data/reference_statmech.json`) and is reproduced by the shell-thickness control in the workspace.
+The surface class is fixed at the reconstructed line-phase deficiency (6.78 umol-O/g) throughout, so the ladder moves inventory between the subsurface shell and the bulk only. The reconstruction boundaries move a little (32.75 to 36.81 and 37.23 to 41.28 umol-O/g), and the CS ceiling moves with them (110.8 / 114.6 / 118.5 / 122.4 umol-O/g for one to four layers), because it is a chemical-potential condition on the bulk and a thicker cheap shell holds more inventory before the bulk reaches it.
+
+The reading of this table reversed when the compensating polarons went into the free energy. It used to say that a single shell held 62% of the inventory and four shells held 99%; it now says 11% and 21%. The surface-to-bulk enrichment is the cube root of what the neutral-vacancy form gave - exp(dE/3kT) = 333 rather than exp(dE/kT) = 3.7e7 - and against 1846 times as many bulk sites that is not enough to win. **Most of the oxygen is in the bulk, at every loading.** The conclusion the old table supported, that the near-surface shell carries most of the inventory, was an artifact of a free energy that did not pay for the vacancy's electrons.
+
+What survives is that the shell is enriched: at 0.9 um the first oxygen layer runs twenty times the bulk plateau, and the outer nanometre holds twelve percent of the oxygen in seven tenths of a percent of the volume. That is the depth-resolved engine's statement rather than this one's, and it is drawn in [particle-model.md](particle-model.md).
 
 ## Site thermodynamics
 
@@ -41,29 +45,29 @@ Surface lateral ordering is a deliberately separate calculation: effective pair 
 
 The site energies, phase parameters, interaction terms, geometry constants, and model defaults are stored in `data/rutile_dft.json`.
 
-## Layer resolution and the crowding term
+## What was removed, and what replaced it
 
-Two degrees of freedom were added to the site thermodynamics above. Both ship switched off, so the partition the workspace reports is the one already certified; `resolved_layers` and `coverage_penalty` in `data/rutile_dft.json` turn them on.
+Two degrees of freedom used to sit here and both are gone.
 
-**Layer resolution.** The near-surface shell can be split into up to three classes, each one d110 oxygen slab. Their energies come from `layer_profile.span_fraction`, which is a *shape* rather than a table: `eps_i = eps_subsurface + span_i * (eps_bulk - eps_subsurface)`, so the first layer is the preset's own subsurface energy exactly and the profile carries over to a different functional without being re-tabulated. At one resolved layer the class is the declared shell and the legacy capacity is reproduced exactly.
+**Layer resolution.** The near-surface shell could be split into up to three classes, with their energies taken from a `span_fraction` between the subsurface and bulk values. That fraction was a declared shape, labelled *assumed* in the dataset, and it is superseded: `solidgas/particle/` derives the depth profile
 
-What this buys is a profile the one-class model cannot represent. At 600 C, 95 umol-O/g and 0.9 um the single class reports 95% occupancy for the whole shell; resolved into three it reports 92% / 28% / 3%, and mu_V rises from 0.599 to 0.779 eV because the one-class model had been charging all three slabs the cheap first-subsurface energy. The bulk remainder moves accordingly. The conclusion that the shell carries most of the inventory is unaffected; what changes is the depth over which it is spread.
-
-**The crowding term.** Each class may carry an effective mean-field penalty, so its free energy per site is `eps_i theta_i + (omega_i/2) theta_i^2 + kT s(theta_i)` and its chemical potential is
-
-```text
-mu = eps_i + omega_i theta_i + kT ln(theta_i/(1-theta_i))
+```
+E(z) = E_bulk - dE_seg exp(-z/xi),   xi = -d110 / ln[(E_b - E_ss)/(E_b - E_s)]
 ```
 
-which is implicit in theta and has no closed form. It is solved in the logit, where the sigmoid bounds the root between `(mu-eps-omega)/kT` and `(mu-eps)/kT` so no bracket has to be searched for, and `d(mu)/d(theta) = omega + kT/(theta(1-theta))` is strictly positive for `omega >= 0` so the root is unique. At `omega = 0` the bracket collapses to a point and the site-exclusion isotherm is returned directly rather than bisected to, which is what makes the legacy numbers reproduce bit for bit rather than to a tolerance.
+from the same three DFT energies, which fixes both parameters and leaves no shape to assume. It lands within a few hundredths of the fractions that were being declared, which is a check on both.
 
-`omega_i` is an *effective* quantity, `omega_i ~ sum_j z_ij J_ij`, and not a vacancy pair energy: the surface ordering pair table must not be summed into it, because coordination and pair counting would be double counted. It has no literature value and is carried as a sampling range, not a measurement. Only repulsive values are admitted — `omega < -4kT` makes `mu(theta)` non-monotone and splits a class into two phases, a construction this branch does not carry, so a negative value is refused rather than allowed to produce a silently wrong root.
+**The crowding term.** Each class could carry an effective mean-field penalty `omega_i`. It had no literature value, and its own provenance note said the magnitudes were chosen to bring the first subsurface layer out of near-saturation. That near-saturation was the symptom of a missing term, not of crowding: the free energy was written on the oxygen sublattice alone, so it had no cap and put the first subsurface layer at theta = 0.954. With the cation sublattice counted the same layer sits at 0.065 and there is nothing for `omega` to fix.
 
-**What was deliberately not touched.** `omega_surface` is pinned at zero in the dataset, so the (1x2) phase ladder cannot move and any change in a deeper class has one possible cause. The surface Monte Carlo is untouched for the same reason. The bulk interaction *does* enter the CS coexistence, `mu_cs = eps_bulk + omega_bulk theta_sol + kT ln(theta_sol/(1-theta_sol))`, because that boundary is a condition on the bulk class: leaving it out would put the ceiling at the non-interacting potential while the bulk sitting at it was interacting, and the two would disagree about what `x_sol` means.
+The evidence that both were standing in for the missing entropy rather than adding physics: with the compensation in place, resolving the shell into three layers moves the bulk inventory by 2%, where before it moved it by 30%.
 
-Both are switchable from the page, under *Layer energetics and interactions* in the defect workspace: `Resolved layers` 1-3 and `Crowding penalty` off/on. The default is 1 and off, which is the legacy partition exactly, and the resolved layers appear as their own rows under the subsurface total they sum to.
+Both blocks are removed from `data/rutile_dft.json`, which carries a `retired` note in their place, and both controls are gone from the workspace. What sits there now is the depth-resolved card described in [particle-model.md](particle-model.md).
 
-Certified by `theta_of_mu` and `layer_ladder` in `data/reference_statmech.json` — the mpmath oracle re-derives the implicit root with a different algorithm and the whole construction at every resolution, across all four phase branches — and by three-way parity against the browser engine in `tests/test_statmech_port.py`.
+## What this engine is still for
+
+The three-class partition is the coarse reading, and it is the one the site-resolved Monte Carlo, the CO2 accessibility model, the dielectric correlation and the coarse-grained KMC are all written against. Its free energy is not its own: `solidgas/statmech.py` re-exports `solidgas/particle/freeenergy.py`, so there is one compensated relation in the repository and the coarse partition cannot drift from the depth-resolved one. The two agree to about 1.5% at the shipped condition, the difference being that the depth-resolved engine gives the layers below the first their own energies instead of the bulk value.
+
+The shell thickness is still a declared choice, and still matters, because it moves *sites*: every slab in the shell is charged the first-subsurface energy, so making the shell thicker makes it cheaper than it should be. That is the reason more than one slab is coarse, and the reason the depth-resolved engine exists.
 
 ## Phase construction
 

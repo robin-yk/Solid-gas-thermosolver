@@ -238,11 +238,14 @@ def test_the_page_mounts_the_figures_it_builds():
         assert f'id="{fid}"' in html, fid
     defect = html.split('<div id="ws-defect"')[1].split('<div id="ws-redox"')[0]
     redox = html.split('<div id="ws-redox"')[1]
-    # the defect workspace: four square figures and one 7-inch cross-section
-    assert defect.count('class="pubfig"') == 4
+    # the defect workspace: four square figures from the class engine, two
+    # more from the depth-resolved card, and one 7-inch cross-section
+    assert defect.count('class="pubfig"') == 6
     assert defect.count('class="pubfig wide"') == 1
-    assert defect.count('data-fmt="svg"') == 5
-    assert defect.count('data-fmt="png"') == 5
+    assert defect.count('data-fmt="svg"') == 7
+    assert defect.count('data-fmt="png"') == 7
+    for fid in ('figDepth', 'figWhere'):
+        assert f'id="{fid}"' in defect, fid
     # the redox workspace: the crossing and the phase map
     for fid in ('figCrossing', 'figPhase'):
         assert f'id="{fid}"' in redox, fid

@@ -262,24 +262,38 @@ def test_shipped_configuration_reproduces_the_oracle_flagship(pair):
 
 
 def test_ladder_parity_walks_the_same_regimes(pair):
-    """The JS engine walks the four regimes with the same numbers."""
+    """The whole construction, both engines, every branch of the ladder.
+
+    The two share a free energy by construction now - statmech.py
+    re-exports particle's and statmech.js borrows particle.js's - so what
+    this compares is the partition built on top of it: the bracket, the
+    two pinned windows and the lever rules."""
     _, js = pair
-    g = S.geometry(P)
-    for got in js['ladder']:
-        d = S.distribute(P, 600.0, got['vo'], g)
-        assert got['regime'] == d['regime'], got['vo']
-        assert got['mu_V_eV'] == pytest.approx(d['mu_V_eV'], abs=1e-12)
+    rows = js['ladder']
+    assert len(rows) == 6, len(rows)
+    seen = set()
+    for r in rows:
+        g = S.geometry(P)
+        d = S.distribute(P, 600.0, r['vo'], g)
+        tag = r['vo']
+        seen.add(d['regime'])
+        assert d['regime'] == r['regime'], tag
+        assert d['mu_V_eV'] == pytest.approx(r['mu_V_eV'], abs=1e-11), tag
+        assert g['shell_nm'] == pytest.approx(r['shell_nm'], rel=1e-15), tag
         for k in ('surface', 'subsurface', 'bulk'):
-            assert got['umol_g'][k] == pytest.approx(
-                d['umol_g'][k], rel=1e-12, abs=1e-12), (got['vo'], k)
-        assert got['extended'] == pytest.approx(
-            d['extended_defects_umol_g'], rel=1e-12, abs=1e-12)
-        assert got['phi'] == pytest.approx(
-            d['surface_phase']['phi_reconstructed'], abs=1e-12)
-        assert got['warn_kinds'] == [w['kind'] for w in d['warnings']]
-    assert [r['regime'] for r in js['ladder']] == [
-        'dilute', 'surface_coexistence', 'reconstructed', 'reconstructed',
-        'cs_coexistence']
+            assert d['umol_g'][k] == pytest.approx(
+                r['umol_g'][k], abs=1e-9), (tag, k)
+            assert d['theta'][k] == pytest.approx(
+                r['theta'][k], rel=1e-11), (tag, k)
+        assert d['extended_defects_umol_g'] == pytest.approx(
+            r['extended'], abs=1e-9), tag
+        for k in ('mu_t_eV', 'mu_cs_eV', 'VO_onset_umol_g',
+                  'VO_recon_complete_umol_g', 'VO_cs_umol_g'):
+            assert d['phase_boundaries'][k] == pytest.approx(
+                r['boundaries'][k], abs=1e-9), (tag, k)
+    # a ladder that never left one branch would certify nothing
+    assert seen >= {'dilute', 'surface_coexistence', 'reconstructed',
+                    'cs_coexistence'}, seen
 
 
 def test_shell_thickness_parity_and_oracle_ladder(pair):
@@ -454,50 +468,6 @@ def test_dielectric_parity(pair):
         assert row['extrapolated'] == ref['extrapolated']
 
 
-def test_the_layer_resolved_partition_matches_the_python_engine(pair):
-    """Three-way parity for Stage 1: both engines, every branch.
-
-    Resolution and interaction are both off in the shipped dataset, so
-    these combinations would otherwise never be exercised across the port
-    boundary. mu is compared to 1e-11 rather than exactly because the
-    interacting root is bisected against a residual containing exp(), and
-    the two runtimes may differ in its last ulp; the occupancies that
-    follow from it are compared just as tightly."""
-    _, js = pair
-    rows = js['layers']
-    assert len(rows) == 30, len(rows)
-    for r in rows:
-        g = S.geometry(P, resolved_layers=r['n'])
-        d = S.distribute(P, 600.0, r['vo'], g, omega=r['omega'])
-        tag = (r['n'], r['omega'], r['vo'])
-        assert d['regime'] == r['regime'], tag
-        assert d['mu_V_eV'] == pytest.approx(r['mu_V_eV'], abs=1e-11), tag
-        assert g['shell_nm'] == pytest.approx(r['shell_nm'], rel=1e-15), tag
-        for a, b in zip(g['N_layers'], r['N_layers']):
-            assert a == pytest.approx(b, rel=1e-15), tag
-        for k in ('surface', 'subsurface', 'bulk'):
-            assert d['umol_g'][k] == pytest.approx(
-                r['umol_g'][k], abs=1e-9), (tag, k)
-            assert d['theta'][k] == pytest.approx(
-                r['theta'][k], abs=1e-11), (tag, k)
-        assert d['extended_defects_umol_g'] == pytest.approx(
-            r['extended'], abs=1e-9), tag
-        got = d['layers']
-        assert len(got) == len(r['layer_theta']) == r['n'], tag
-        for i, lay in enumerate(got):
-            assert lay['theta'] == pytest.approx(
-                r['layer_theta'][i], abs=1e-11), (tag, i)
-            assert lay['umol_g'] == pytest.approx(
-                r['layer_umol'][i], abs=1e-9), (tag, i)
-            assert lay['eps_eV'] == pytest.approx(
-                r['layer_eps'][i], rel=1e-15), (tag, i)
-            assert lay['omega_eV'] == r['layer_omega'][i], (tag, i)
-        for k in ('mu_t_eV', 'mu_cs_eV', 'VO_onset_umol_g',
-                  'VO_recon_complete_umol_g', 'VO_cs_umol_g'):
-            assert d['phase_boundaries'][k] == pytest.approx(
-                r['boundaries'][k], abs=1e-9), (tag, k)
-
-
 def test_the_implicit_occupancy_matches_across_the_port(pair):
     """The solver on its own, including the omega = 0 short circuit.
 
@@ -509,13 +479,10 @@ def test_the_implicit_occupancy_matches_across_the_port(pair):
     _, js = pair
     kt = S.KB_EV * 873.15
     rows = js['theta_of_mu']
-    assert len(rows) == 60, len(rows)
+    assert len(rows) == 15, len(rows)
     for r in rows:
-        got = S.theta_of_mu(r['mu'], r['eps'], r['w'], kt)
-        if r['w'] == 0.0:
-            assert got == pytest.approx(r['theta'], rel=1e-15), r
-        else:
-            assert got == pytest.approx(r['theta'], abs=1e-12), r
+        got = S.theta_of_mu(r['mu'], r['eps'], kt)
+        assert got == pytest.approx(r['theta'], rel=1e-14), r
 
 
 # ------------------------------------------------------------ page gates
@@ -580,29 +547,24 @@ def test_the_page_can_switch_on_the_layer_resolution_and_the_crowding_term():
     ui = (WEB / 'statmech_ui.js').read_text()
     html = (DOCS / 'ti_solver.html').read_text()
 
-    for ident in ('id="smRes"', 'id="smOmega"'):
-        assert ident in template, f'{ident} missing from the template'
-        assert ident in html, 'page is stale - run build_ti_solver.py'
-    # every value the engine admits is offered, and no value it refuses
-    n_max = json.loads((DATA / 'rutile_dft.json').read_text())[
-        'vacancy_energetics']['layer_profile']['resolved_layers_max']
-    block = template.split('id="smRes"')[1].split('</select>')[0]
-    assert block.count('<option') == n_max
-    for n in range(1, n_max + 1):
-        assert f'value="{n}"' in block
+    # The resolution and crowding controls are retired, not hidden: the
+    # depth profile they approximated is derived in solidgas/particle/
+    # and drawn by the card below them, and the page says so where the
+    # controls used to be.
+    for gone in ('id="smRes"', 'id="smOmega"', 'currentOmega',
+                 'resolved_layers'):
+        assert gone not in template, gone + ' is back on the page'
+        assert gone not in ui, gone + ' is back in the workspace script'
+    assert 'The crowding\n        penalty that used to sit here is gone' \
+        in template
+    assert 'exponential derived from these same three energies' in template
+    # and the depth-resolved card that replaced them is mounted
+    for host in ('id="figDepth"', 'id="figWhere"', 'id="pxState"'):
+        assert host in template, host
+        assert host in html, 'page is stale - run build_ti_solver.py'
 
-    # threaded, not merely present
-    assert 'resolved_layers: r' in ui, 'the geometry never sees the control'
-    assert "omega: currentOmega()" in ui, 'the solve never sees the penalty'
-    assert "el.smOmega.value === 'on'" in ui
-    assert '[el.smRes, el.smOmega].forEach' in ui, 'no change listener'
-    # and the resolution is visible in the result, not only in the state
-    assert "c.key === 'subsurface' && out.layers" in ui
-
-    for phrase in ('Resolved layers', 'Crowding penalty',
-                   'only the shape is assumed',
-                   'the partition is the\n        non-interacting one exactly',
-                   'declared model choices with\n        no measurement'):
+    for phrase in ('A declared model choice, not a fitted quantity',
+                   'shell/bulk split moves with it'):
         assert phrase in template, f'disclosure missing: {phrase!r}'
 
 

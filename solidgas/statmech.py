@@ -31,6 +31,9 @@ import json
 import math
 import os
 
+from .particle.freeenergy import (POLARON_RATIO, THETA_CAP, mu_of_theta,
+                                  theta_of_mu)
+
 KB_EV = 8.617333262e-5          # eV / K
 N_AVO = 6.02214076e23
 
@@ -100,20 +103,21 @@ def density_g_cm3(p):
     return 2.0 * p['molar_mass_g_mol'] / (N_AVO * vcell_cm3)
 
 
-def geometry(p, d_um=None, bet_m2_g=None, ss_layers=None,
-             resolved_layers=None):
+def geometry(p, d_um=None, bet_m2_g=None, ss_layers=None):
     """Real site counts in umol-O/g for a spherical particle or a BET area.
 
     ss_layers is the declared thickness of the subsurface class in d110
     oxygen slabs, so the near-surface shell holds 1 + 4*ss_layers O per
     (1x1) cell: the bridging row plus ss_layers full oxygen layers below
     the bridging plane. It is a model choice, not a fitted quantity, and
-    the shell/bulk split depends on it - see docs/defect-model.md."""
+    the shell/bulk split depends on it - see docs/defect-model.md.
+
+    Every slab in the shell is given the first-subsurface energy, which
+    is why the choice matters and why more than one slab is a coarse
+    thing to do: the second slab is 0.32 eV deeper than the first on the
+    sX triple. solidgas/particle/ resolves that instead of declaring it."""
     if ss_layers is None:
         ss_layers = p['defaults']['subsurface_layers']
-    if resolved_layers is None:
-        resolved_layers = p.get('defaults', {}).get('resolved_layers', 1)
-    resolved_layers = max(1, int(resolved_layers))
     if bet_m2_g is not None:
         area_cm2_g = bet_m2_g * 1e4
     else:
@@ -123,19 +127,12 @@ def geometry(p, d_um=None, bet_m2_g=None, ss_layers=None,
     sig_b, sig_l = site_densities(p)
     n_o = 2.0 / p['molar_mass_g_mol'] * 1e6
     n_s = area_cm2_g * sig_b / N_AVO * 1e6
-    # One resolved layer IS the declared shell, so the legacy capacity is
-    # reproduced exactly. Past one, resolution is the point and each
-    # resolved layer is a single d110 oxygen slab.
-    slabs = [ss_layers] if resolved_layers == 1 else [1] * resolved_layers
-    n_layers = [area_cm2_g * sig_l * k / N_AVO * 1e6 for k in slabs]
-    n_ss = sum(n_layers)
+    n_ss = area_cm2_g * sig_l * ss_layers / N_AVO * 1e6
     d110_nm = p['lattice_constants_A']['a'] / math.sqrt(2.0) / 10.0
     return {'area_m2_g': area_cm2_g * 1e-4, 'N_s': n_s, 'N_ss': n_ss,
             'N_b': n_o - n_s - n_ss, 'N_O_total': n_o,
             'ss_layers': ss_layers, 'layer_nm': d110_nm,
-            'resolved_layers': resolved_layers,
-            'slabs_per_layer': slabs, 'N_layers': n_layers,
-            'shell_nm': (1.0 + 4.0 * sum(slabs)) / 4.0 * d110_nm}
+            'shell_nm': (1.0 + 4.0 * ss_layers) / 4.0 * d110_nm}
 
 
 # ---------------------------------------------------------------- lattice
@@ -426,192 +423,35 @@ def fd(mu, eps_i, kt):
     return 1.0 / (1.0 + math.exp(x))
 
 
-# The charge-compensation stoichiometry, and the cap that follows from it.
-# Removing one lattice oxygen from rutile leaves two electrons behind, and
-# they localise as two Ti(3+). Rutile has two Ti per four O, so each vacancy
-# converts 2 / (1/2) = 4 times its own site fraction of the cation
-# sublattice: theta_Ti3 = POLARON_RATIO * theta_V. The cation sublattice
-# fills at theta_V = 1 / POLARON_RATIO = 0.25, which is TiO(1.5) - Ti2O3.
-# Nothing may take theta past it, and nothing has to be told not to: the
-# cation entropy diverges there on its own.
-POLARON_RATIO = 4.0
-THETA_CAP = 1.0 / POLARON_RATIO
+# ------------------------------------------------- the free energy
 
+# There is one compensated free energy in this repository and it lives in
+# solidgas/particle/freeenergy.py. It is re-exported here rather than
+# reimplemented so the three-class partition and the depth-resolved one
+# cannot drift: an oxygen vacancy leaves two electrons behind, they
+# localise as two Ti(3+) on a cation sublattice half the size of the
+# oxygen one, and the entropy of that sublattice is what caps reduction
+# at Ti2O3 and makes the dilute isotherm p(O2)^(-1/6).
+#
+# The mean-field crowding penalty that used to sit alongside them is
+# gone. It had no literature value, and its own provenance note said its
+# magnitudes were chosen to bring the first subsurface layer out of
+# near-saturation - which was the symptom of the missing cation entropy,
+# so it was standing in for the term that is now here.
 
-def mu_of_theta(theta, eps_i, omega_i, kt, compensation='polaron'):
-    """Chemical potential of a vacancy at occupancy theta.
+def energetics(p, preset=None):
+    """The three class energies of the active preset.
 
-    The free energy per oxygen site carries eps*theta, the mean-field
-    crowding term (omega/2)*theta^2, the configurational entropy of the
-    oxygen sublattice, AND the configurational entropy of the cation
-    sublattice the compensating polarons sit on:
-
-        mu = eps + omega*theta
-             + kT [ ln(theta/(1-theta)) + 2 ln(r*theta/(1 - r*theta)) ]
-
-    with r = POLARON_RATIO. The second bracket is not a correction. In the
-    dilute limit the two logs together give 3 kT ln(theta), so the
-    isotherm is theta ~ exp(mu/3kT) and the oxygen-pressure dependence is
-    p^(-1/6) - the standard result for a doubly ionised vacancy with
-    electronic compensation. Dropping it gives p^(-1/2), which is a
-    neutral vacancy, and an enrichment between two classes that is the
-    CUBE of the right one.
-
-    compensation='none' restores that neutral form. It is not the model;
-    it is there so the difference can be measured and the pre-compensation
-    numbers reproduced."""
-    if compensation == 'none':
-        return eps_i + omega_i * theta + kt * math.log(theta / (1.0 - theta))
-    if theta <= 0.0:
-        return float('-inf')
-    tp = POLARON_RATIO * theta
-    if tp >= 1.0:
-        return float('inf')
-    return (eps_i + omega_i * theta
-            + kt * (math.log(theta / (1.0 - theta))
-                    + 2.0 * math.log(tp / (1.0 - tp))))
-
-
-def theta_of_mu(mu, eps_i, omega_i, kt, compensation='polaron'):
-    """Occupancy of a class at a given chemical potential.
-
-    Inverts mu_of_theta, which is strictly increasing in theta for
-    omega >= 0 - each log is increasing and the crowding term is
-    non-decreasing - so the root is unique and bisection cannot miss it.
-
-    The compensated branch is solved in u = ln(theta) rather than in the
-    logit, because the domain is (0, 1/POLARON_RATIO) and the interesting
-    occupancies are five to thirty orders of magnitude below the cap: in u
-    the dilute limit is exactly linear, mu -> eps + 3kT u + 2kT ln r, so a
-    fixed bracket resolves theta to full relative precision at any depth,
-    while a logit bracket would spend all its bits near the cap. Both ends
-    of the bracket are analytic, so there is no search for one.
-
-    compensation='none' is the legacy neutral-vacancy relation, kept so
-    the pre-compensation partition can be reproduced exactly; at omega = 0
-    it returns the closed-form site-exclusion isotherm rather than
-    bisecting to it."""
-    if compensation == 'none':
-        if omega_i == 0.0:
-            return fd(mu, eps_i, kt)
-        hi = (mu - eps_i) / kt
-        lo = hi - omega_i / kt
-        if lo > hi:
-            lo, hi = hi, lo
-        for _ in range(200):
-            mid = 0.5 * (lo + hi)
-            if mid >= 0.0:
-                th = 1.0 / (1.0 + math.exp(-mid)) if mid < 700.0 else 1.0
-            else:
-                e = math.exp(mid) if mid > -700.0 else 0.0
-                th = e / (1.0 + e)
-            if eps_i + omega_i * th + kt * mid < mu:
-                lo = mid
-            else:
-                hi = mid
-        z = 0.5 * (lo + hi)
-        if z >= 0.0:
-            return 1.0 / (1.0 + math.exp(-z)) if z < 700.0 else 1.0
-        e = math.exp(z) if z > -700.0 else 0.0
-        return e / (1.0 + e)
-
-    # Compensated branch. mu diverges at both ends of (0, cap), so no
-    # single variable is well conditioned across the whole domain: below
-    # the halfway point every bit of theta is in ln(theta), above it every
-    # bit is in ln(cap - theta). Which half we are in is decided by one
-    # evaluation of mu, and each half then has an exactly linear limit and
-    # an analytic bracket, so both resolve to full relative precision.
-    half = 0.5 * THETA_CAP
-    if mu < mu_of_theta(half, eps_i, omega_i, kt):
-        #   dilute: mu -> eps + 3 kT u + 2 kT ln r, and dropping the two
-        #   (1 - .) denominators only lowers mu, so this u is an upper bound
-        u_hi = min(math.log(half),
-                   (mu - eps_i - 2.0 * kt * math.log(POLARON_RATIO))
-                   / (3.0 * kt))
-        lo, hi = -745.0, u_hi
-        if mu_of_theta(math.exp(lo), eps_i, omega_i, kt) > mu:
-            return math.exp(lo)                  # below double precision
-        for _ in range(200):
-            mid = 0.5 * (lo + hi)
-            if mu_of_theta(math.exp(mid), eps_i, omega_i, kt) < mu:
-                lo = mid
-            else:
-                hi = mid
-        return math.exp(0.5 * (lo + hi))
-    #   at the cap: 1 - r*theta = r*(cap - theta), so mu -> C - 2 kT v,
-    #   and keeping the other terms at their cap values only raises mu,
-    #   so this v is again an upper bound on the gap
-    c = (eps_i + omega_i * THETA_CAP
-         + kt * (math.log(THETA_CAP / (1.0 - THETA_CAP))
-                 + 2.0 * math.log(POLARON_RATIO * THETA_CAP)))
-    v_hi = min(math.log(half), (c - mu) / (2.0 * kt))
-    lo, hi = -745.0, v_hi
-    if mu_of_theta(THETA_CAP - math.exp(lo), eps_i, omega_i, kt) < mu:
-        return THETA_CAP - math.exp(lo)
-    for _ in range(200):
-        mid = 0.5 * (lo + hi)
-        if mu_of_theta(THETA_CAP - math.exp(mid), eps_i, omega_i, kt) > mu:
-            lo = mid
-        else:
-            hi = mid
-    return THETA_CAP - math.exp(0.5 * (lo + hi))
-
-
-def energetics(p, preset=None, resolved_layers=None, coverage_penalty=None):
-    """Class energies, and the interaction that goes with each of them.
-
-    eps stays the legacy triple (surface, subsurface, bulk) so every caller
-    that wants three classes is untouched. eps_layers resolves the near-
-    surface shell into resolved_layers classes using the SHAPE stored in
-    layer_profile.span_fraction, applied between the preset's subsurface
-    and bulk values rather than as absolute numbers - so the first layer is
-    the preset's own subsurface energy exactly, and the profile carries
-    over to a different functional without being re-tabulated.
-
-    omega_layers is the effective mean-field crowding penalty per class.
-    The surface entry is held at zero by the dataset so the surface phase
-    ladder is untouched and any change in a deeper layer is attributable to
-    the layer interaction alone."""
+    Surface, first subsurface and bulk, relative to the surface. The
+    depth profile between them is not this engine's business: resolving
+    the near-surface shell into more classes needs a shape, and the only
+    defensible shape is the exponential derived from these same three
+    numbers, which is what solidgas/particle/ does with them."""
     ve = p['vacancy_energetics']
     key = preset or ve['default_preset']
     q = ve['presets'][key]
-    eps = [q['surface_eV'], q['subsurface_eV'], q['bulk_eV']]
-
-    d = p.get('defaults', {})
-    if resolved_layers is None:
-        resolved_layers = d.get('resolved_layers', 1)
-    resolved_layers = max(1, int(resolved_layers))
-    prof = ve.get('layer_profile')
-    span = (prof or {}).get('span_fraction') or [0.0]
-    if resolved_layers > len(span):
-        raise ValueError('layer_profile resolves at most %d layers'
-                         % len(span))
-    eps_layers = [eps[1] + span[i] * (eps[2] - eps[1])
-                  for i in range(resolved_layers)]
-
-    if coverage_penalty is None:
-        coverage_penalty = d.get('coverage_penalty', 'off')
-    on = coverage_penalty not in (None, False, 'off')
-    om = (ve.get('coverage_penalty') or {}).get('omega_eV', {})
-    if on:
-        omega_s = om.get('surface', 0.0)
-        omega_layers = [om.get('layer%d' % (i + 1), 0.0)
-                        for i in range(resolved_layers)]
-        omega_b = om.get('bulk', 0.0)
-    else:
-        omega_s, omega_layers, omega_b = 0.0, [0.0] * resolved_layers, 0.0
-    for w in [omega_s] + omega_layers + [omega_b]:
-        if w < 0.0:
-            raise ValueError('only repulsive coverage penalties are '
-                             'admitted; omega < 0 can split a class into '
-                             'two phases, a construction this branch does '
-                             'not carry')
-    return {'preset': key, 'eps': eps,
-            'resolved_layers': resolved_layers,
-            'eps_layers': eps_layers,
-            'omega_surface': omega_s, 'omega_layers': omega_layers,
-            'omega_bulk': omega_b,
-            'coverage_penalty': 'on' if on else 'off'}
+    return {'preset': key,
+            'eps': [q['surface_eV'], q['subsurface_eV'], q['bulk_eV']]}
 
 
 def theta_s_interp(points, eps_s, kt):
@@ -665,65 +505,40 @@ def theta_s_interp(points, eps_s, kt):
     return f
 
 
-def _classes(p, geom, preset=None, eps=None, omega=None):
-    """The class table the deep sum runs over, from whatever was passed.
-
-    eps as a bare triple is the legacy call and still works: it names the
-    surface, one subsurface class and the bulk. omega defaults to the
-    dataset's declared state, which ships off."""
-    en = energetics(p, preset,
-                    resolved_layers=geom.get('resolved_layers', 1),
-                    coverage_penalty=omega)
+def _classes(p, geom, preset=None, eps=None):
+    """The class table the deep sum runs over, from whatever was passed."""
+    en = energetics(p, preset)
     if eps is not None:
-        en = dict(en)
-        en['eps'] = list(eps)
-        if len(en['eps_layers']) == 1:
-            en['eps_layers'] = [eps[1]]
-        else:
-            span = p['vacancy_energetics']['layer_profile']['span_fraction']
-            en['eps_layers'] = [eps[1] + span[i] * (eps[2] - eps[1])
-                                for i in range(len(en['eps_layers']))]
+        en = dict(en, eps=list(eps))
     return en
 
 
-def _deep(en, geom, mu, kt, compensation='polaron'):
-    """Inventory held below the bridging plane at a given mu.
-
-    At one resolved layer with no interaction this is the legacy
-    expression term for term, including the order of the additions."""
-    caps = geom.get('N_layers') or [geom['N_ss']]
-    total = 0.0
-    for i, cap in enumerate(caps):
-        total += cap * theta_of_mu(mu, en['eps_layers'][i],
-                                   en['omega_layers'][i], kt, compensation)
-    return total + geom['N_b'] * theta_of_mu(mu, en['eps'][2],
-                                             en['omega_bulk'], kt,
-                                             compensation)
+def _deep(en, geom, mu, kt):
+    """Inventory held below the bridging plane at a given mu."""
+    return (geom['N_ss'] * theta_of_mu(mu, en['eps'][1], kt)
+            + geom['N_b'] * theta_of_mu(mu, en['eps'][2], kt))
 
 
-def phase_boundaries(p, t_c, geom, preset=None, eps=None, omega=None,
-                     compensation='polaron'):
+def phase_boundaries(p, t_c, geom, preset=None, eps=None):
     """Closed-form mu and inventory boundaries of the phase construction.
 
     Three certified rungs at a given temperature and geometry: the (1x2)
     onset (surface leaves the (1x1) lattice gas), the completion of the
     added-row reconstruction, and the estimated CS-precipitation ceiling
     where the bulk point-defect solubility pins mu at rutile / CS-phase
-    coexistence. All are closed forms of the site-exclusion isotherm."""
+    coexistence. All are closed forms of the compensated isotherm."""
     kt = KB_EV * (t_c + 273.15)
-    en = _classes(p, geom, preset, eps, omega)
+    en = _classes(p, geom, preset, eps)
     eps = en['eps']
     sp = p['surface_phases']
     th_t = sp['theta_transition']
     th_r = sp['theta_reconstructed_eff']
     th_sol = p['saturation']['x_max_shear'] / 2.0
-    mu_t = mu_of_theta(th_t, eps[0], en['omega_surface'], kt, compensation)
-    # the CS coexistence is a condition on the BULK class, so the bulk
-    # interaction belongs in it: at the solubility the bulk sites are
-    # already crowded and mu is that much higher
-    mu_cs = mu_of_theta(th_sol, eps[2], en['omega_bulk'], kt, compensation)
-    deep_t = _deep(en, geom, mu_t, kt, compensation)
-    deep_cs = _deep(en, geom, mu_cs, kt, compensation)
+    mu_t = mu_of_theta(th_t, eps[0], kt)
+    # the CS coexistence is a condition on the BULK class
+    mu_cs = mu_of_theta(th_sol, eps[2], kt)
+    deep_t = _deep(en, geom, mu_t, kt)
+    deep_cs = _deep(en, geom, mu_cs, kt)
     return {'mu_t_eV': mu_t, 'mu_cs_eV': mu_cs,
             'theta_transition': th_t, 'theta_reconstructed_eff': th_r,
             'theta_sol': th_sol,
@@ -732,8 +547,7 @@ def phase_boundaries(p, t_c, geom, preset=None, eps=None, omega=None,
             'VO_cs_umol_g': geom['N_s'] * th_r + deep_cs}
 
 
-def distribute(p, t_c, vo_total, geom, preset=None, eps=None,
-               omega=None, compensation='polaron'):
+def distribute(p, t_c, vo_total, geom, preset=None, eps=None):
     """Split the total inventory over the real site counts at common mu,
     with the surface reconstruction and CS precipitation as PHASES.
 
@@ -756,20 +570,18 @@ def distribute(p, t_c, vo_total, geom, preset=None, eps=None,
                          precipitates as extended defects (lever rule),
                          reported as its own output class."""
     kt = KB_EV * (t_c + 273.15)
-    en = _classes(p, geom, preset, eps, omega)
+    en = _classes(p, geom, preset, eps)
     eps = en['eps']
-    b = phase_boundaries(p, t_c, geom, eps=eps, omega=omega,
-                         compensation=compensation)
+    b = phase_boundaries(p, t_c, geom, eps=eps)
     n_s = geom['N_s']
     th_t = b['theta_transition']
     th_r = b['theta_reconstructed_eff']
 
     def deep(mu):
-        return _deep(en, geom, mu, kt, compensation)
+        return _deep(en, geom, mu, kt)
 
     def surf(mu):
-        return theta_of_mu(mu, eps[0], en['omega_surface'], kt,
-                           compensation)
+        return theta_of_mu(mu, eps[0], kt)
 
     u_ext = 0.0
     if vo_total <= b['VO_onset_umol_g']:
@@ -814,17 +626,9 @@ def distribute(p, t_c, vo_total, geom, preset=None, eps=None,
         ts = th_r
         us = n_s * th_r
         phi = 1.0
-    caps = geom.get('N_layers') or [geom['N_ss']]
-    th_layers = [theta_of_mu(mu, en['eps_layers'][i], en['omega_layers'][i],
-                             kt, compensation) for i in range(len(caps))]
-    u_layers = [caps[i] * th_layers[i] for i in range(len(caps))]
-    uss = sum(u_layers)
-    # one resolved layer IS the shell, so its occupancy is reported
-    # directly rather than divided back out - the legacy number must not
-    # move by a rounding step
-    tss = th_layers[0] if len(caps) == 1 else (
-        uss / geom['N_ss'] if geom['N_ss'] else 0.0)
-    tb = theta_of_mu(mu, eps[2], en['omega_bulk'], kt, compensation)
+    tss = theta_of_mu(mu, eps[1], kt)
+    uss = geom['N_ss'] * tss
+    tb = theta_of_mu(mu, eps[2], kt)
     ub = geom['N_b'] * tb
     tot = us + uss + ub + u_ext
     mol_ti = 1e6 / p['molar_mass_g_mol']
@@ -882,16 +686,7 @@ def distribute(p, t_c, vo_total, geom, preset=None, eps=None,
             'T_C': t_c, 'VO_total_umol_g': vo_total,
             'mu_V_eV': mu,
             'theta': {'surface': ts, 'subsurface': tss, 'bulk': tb},
-            'layers': [{'index': i + 1, 'N_umol_g': caps[i],
-                        'eps_eV': en['eps_layers'][i],
-                        'omega_eV': en['omega_layers'][i],
-                        'theta': th_layers[i], 'umol_g': u_layers[i]}
-                       for i in range(len(caps))],
-            'energetics': {'preset': en['preset'],
-                           'resolved_layers': en['resolved_layers'],
-                           'coverage_penalty': en['coverage_penalty'],
-                           'omega_surface': en['omega_surface'],
-                           'omega_bulk': en['omega_bulk']},
+            'energetics': {'preset': en['preset'], 'eps_eV': list(eps)},
             'surface_phase': {'phase': phase, 'phi_reconstructed': phi},
             'regime': regime,
             'umol_g': {'surface': us, 'subsurface': uss, 'bulk': ub},
