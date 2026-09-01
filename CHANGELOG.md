@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added the reduction line to the equilibrium engine and workspace: the feed at which the host stops surviving, in closed form rather than by bisecting the minimisation, drawn against temperature with the panel's own feed marked. Free O2 is carried, which is worth nothing in an H2/CO2 feed and 5.8 kJ per mol O in a hydrogen-free one, and brings the total pressure in with it. Certified against the 80-digit oracle, against a bisection of the full solver, and mirrored bit for bit in the browser.
+- Added equilibrium CO2 conversion against temperature to the same workspace, out of the sweep that was already being run, with the temperatures where the solid itself is being eaten shaded.
+- Extended the typeset method sheet to (31)-(35) with the closed-form reduction line.
 - Built the particle engine on the ceria equilibrium construction (`solidgas/particle/`): compensated free energy, a depth profile whose decay length is derived from the DFT triple rather than assumed, an exact layer-stack sum, a Crank transport clock, and a Debye-against-segregation check. Certified against an independent 50-digit oracle and mirrored in the browser; wired into the defect workspace as a depth-resolved card.
 - Retired the layer-resolution and mean-field-crowding degrees of freedom from the three-class engine, its browser port, the dataset and the workspace controls. Both were standing in for the cation-sublattice entropy that is now in the free energy: with the compensation in place, resolving the shell into three layers moves the bulk inventory by 2 percent rather than 30.
 - Made `solidgas/statmech.py` re-export the compensated free energy instead of carrying its own, so there is one such relation in the repository and the coarse partition cannot drift from the depth-resolved one.

@@ -311,16 +311,36 @@ def test_the_page_carries_both_modules_and_neither_token_survives(html):
         needle = body.split('\n')[-4].strip()
         assert needle and needle in html, src
     assert 'ThermoFigures' in html
-    assert 'optimalityData' in html and 'marginData' in html
+    for name in ('optimalityData', 'marginData', 'conversionData',
+                 'boundaryData'):
+        assert name in html, name
 
 
-def test_the_equilibrium_workspace_mounts_two_figures(html):
+def test_the_equilibrium_workspace_mounts_four_figures(html):
     thermo = html.split('<div id="ws-thermo"')[1].split('<div id="ws-defect"')[0]
-    assert thermo.count('class="pubfig"') == 2, 'two figures, no more'
-    assert thermo.count('data-fmt="svg"') == 2
-    assert thermo.count('data-fmt="png"') == 2
-    for host in ('figOptimality', 'figMargin'):
+    assert thermo.count('class="pubfig"') == 4, 'four figures, no more'
+    assert thermo.count('data-fmt="svg"') == 4
+    assert thermo.count('data-fmt="png"') == 4
+    for host in ('figOptimality', 'figMargin', 'figBoundary',
+                 'figConversion'):
         assert 'id="%s"' % host in thermo, host
+
+
+def test_the_two_free_figures_draw_without_the_button(html):
+    """Cost decides what waits behind the sweep, and nothing else does.
+
+    The bar and the reduction line come off numbers already in hand - one
+    off the result on screen, one closed form - so they draw on load and
+    on every run. The margin curve and the conversion curve are the same
+    121 solves and share the one button.
+    """
+    ui = (ROOT / 'web' / 'thermo_ui.js').read_text()
+    assert 'drawOptimality(TB.last());' in ui
+    assert ui.count('drawBoundary()') >= 2, 'load and every solve'
+    body = ui.split('function drawSwept()')[1].split('function sweep()')[0]
+    assert "mountFigure('figMargin'" in body
+    assert "mountFigure('figConversion'" in body
+    assert "mountFigure('figBoundary'" not in body
 
 
 def test_the_sweep_is_behind_a_button_over_the_range_the_panel_admits(html):

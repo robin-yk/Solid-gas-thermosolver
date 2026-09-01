@@ -375,8 +375,9 @@ p.warn { color: var(--orange); }
       <section>
         <h3>How far from a different answer</h3>
         <p class="sub">The same question the KKT tab answers in numbers, asked
-        twice: across the phases that were excluded at this condition, and
-        across temperature at this charge. Both bars and curve carry the
+        three ways: across the phases that were excluded at this condition,
+        across the feed that would be needed to bring the first of them out,
+        and across temperature at this charge. Bars and margin curve carry the
         reduced cost <em>per formula unit</em> &mdash; the quantity the KKT test
         is stated on, so it is positive at every reported solution. The
         per&#8209;mol&#8209;O column stays on the KKT tab, next to the oxygen
@@ -390,6 +391,27 @@ p.warn { color: var(--orange); }
           </details>
           <figcaption>What every excluded phase would have to give up to appear.
           The shortest bar, in orange, is the phase that would come first.</figcaption>
+        </figure>
+        <p class="sub" style="margin-top:14px">A kilojoule is not something
+        anyone sets on a rig. The same margin, put in the units that are: how
+        much CO<sub>2</sub> the feed has to carry before the host stops giving
+        up oxygen. Any gas can be placed on that axis &mdash; a mixture of
+        H<sub>2</sub> and CO<sub>2</sub> lands at the fraction it was mixed at,
+        anything else at the H<sub>2</sub>/CO<sub>2</sub> mixture that would be
+        equally reducing. The line itself is closed form, so it costs nothing
+        and redraws with every run.</p>
+        <figure class="pubfig" id="figBoundary">
+          <div class="figbox" role="img" aria-label="Feed composition at which the host phase begins to reduce, against temperature, with the panel's own feed marked"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>Below the line the host gives way to the phase named in
+          the header; the shaded field above it is where the host survives. The
+          orange square is the feed on this panel, placed before the solid has
+          touched it &mdash; once a closed charge has equilibrated against a
+          reducible solid the gas is buffered onto this very line and no longer
+          says how reducing it started out.</figcaption>
         </figure>
         <p class="sub" style="margin-top:14px">
           <button type="button" class="mini" id="sweepBtn">Sweep temperature</button>
@@ -405,6 +427,22 @@ p.warn { color: var(--orange); }
           coexist, pale where one does. The curve touches zero at each edge of
           that band, which is the same crossing seen from above; the green ring
           is the temperature on the panel.</figcaption>
+        </figure>
+        <p class="sub" style="margin-top:14px">And what the gas itself did,
+        out of the same sweep. Conversion is counted against the feed, so
+        oxygen that left the gas is counted whether it went into CO or into
+        the solid: where the assemblage is no longer the host alone, the
+        shaded run says that part of the answer is the solid being eaten.</p>
+        <figure class="pubfig" id="figConversion">
+          <div class="figbox" role="img" aria-label="Equilibrium CO2 conversion against temperature at this charge"></div>
+          <details class="figdl"><summary>Download figure</summary>
+            <button type="button" data-fmt="svg">SVG</button>
+            <button type="button" data-fmt="png">PNG, 600 dpi</button>
+          </details>
+          <figcaption>How much of the fed CO<sub>2</sub> is gone at
+          equilibrium, at every temperature this charge admits. The green ring
+          is the temperature on the panel and reads the solve the workspace is
+          showing, not the nearest point of the grid.</figcaption>
         </figure>
       </section>
     </div>

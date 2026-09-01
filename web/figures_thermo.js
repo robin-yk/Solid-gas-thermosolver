@@ -289,7 +289,278 @@
     return f.done();
   }
 
+  /* --------------------------------------------- conversion over T */
+
+  /* How much of the CO2 is gone, at every temperature the panel admits.
+     The rows are the sweep the margin figure already ran, so this costs
+     nothing extra and cannot report a temperature the curve does not.
+
+     One thing the number hides and the band shows. Conversion is counted
+     against the feed, so oxygen that left the gas is counted whether it
+     went into CO or into the solid. Where the assemblage is no longer the
+     host alone, part of the answer is the solid being eaten, and the
+     shaded run says exactly where that starts. */
+  function conversionData(rows, currentT_C, host, exactPct) {
+    var pts = rows.map(function (r) {
+      return { T_C: r.T_C, conv_pct: r.conversion_CO2_pct,
+               winner: (r.active_condensed_phases || []).slice() };
+    }).filter(function (q) {
+      return q.conv_pct != null && isFinite(q.conv_pct);
+    });
+    var segs = [], last = null;
+    pts.forEach(function (q) {
+      var key = q.winner.join('+');
+      if (key !== last) {
+        if (segs.length) segs[segs.length - 1].to_C = q.T_C;
+        segs.push({ from_C: q.T_C, to_C: q.T_C, phases: q.winner.slice() });
+        last = key;
+      } else {
+        segs[segs.length - 1].to_C = q.T_C;
+      }
+    });
+    /* The curve is a grid; the panel is not. Reading the marker off the
+       nearest sample would put a number in the header the workspace never
+       reported - eleven degrees away is a fifth of a percent here - so the
+       caller passes the solve it already has and the grid is only drawn. */
+    var cur = null;
+    if (currentT_C != null && pts.length) {
+      cur = pts.reduce(function (a, b) {
+        return Math.abs(b.T_C - currentT_C) < Math.abs(a.T_C - currentT_C)
+          ? b : a;
+      });
+    }
+    var host2 = host || 'TiO2';
+    return {
+      T_lo: pts.length ? pts[0].T_C : 0,
+      T_hi: pts.length ? pts[pts.length - 1].T_C : 0,
+      rows: pts, segments: segs, host: host2,
+      any_reduction: segs.some(function (g) {
+        return g.phases.length !== 1 || g.phases[0] !== host2;
+      }),
+      current: cur && {
+        T_C: currentT_C,
+        conv_pct: exactPct != null && isFinite(exactPct) ? exactPct
+                                                         : cur.conv_pct,
+        winner: cur.winner.slice() }
+    };
+  }
+
+  function conversion(D) {
+    var d = D.conversion;
+    var f = K.square();
+    var p = { x0: f.pane.x0, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
+    var vals = d.rows.map(function (q) { return q.conv_pct; });
+    var vmax = vals.length ? Math.max.apply(null, vals) : 1;
+    var vmin = vals.length ? Math.min.apply(null, vals) : 0;
+    var top = Math.max(vmax * 1.08, 1e-9);
+    var bot = Math.min(vmin, 0);
+    var X = lin(d.T_lo, d.T_hi, p.x0, p.x1);
+    var Y = lin(bot, top, p.y1, p.y0);
+
+    /* the runs where something other than the host alone is standing */
+    d.segments.forEach(function (g) {
+      if (g.phases.length === 1 && g.phases[0] === d.host) return;
+      var x0 = X(g.from_C), x1 = X(g.to_C);
+      f.rect(x0, p.y0, x1 - x0, p.y1 - p.y0, tint(C.subsurface, 0.16));
+      if (x1 - x0 > 42) {
+        f.text((x0 + x1) / 2, p.y0 + 10, 'solid reducing',
+               { size: T.small, anchor: 'middle', fill: C.subsurface });
+      }
+    });
+    if (bot < 0) f.line(p.x0, Y(0), p.x1, Y(0), C.structure, LW.hair);
+
+    series(f, d.rows.map(function (q) { return [q.T_C, q.conv_pct]; }),
+           X, Y, C.surface, LW.curve);
+
+    frame(f, X, [p.y0, p.y1]);
+    axisX(f, X, p.y1, K.niceTicks(d.T_lo, d.T_hi, 4), 'temperature (°C)',
+          function (v) { return String(Math.round(v)); });
+    axisY(f, Y, p.x0, K.niceTicks(bot, top, 4),
+          'CO₂ converted (%)',
+          function (v) { return top < 4 ? v.toFixed(1) : String(Math.round(v)); });
+
+    var c = d.current;
+    if (c && c.conv_pct != null) {
+      var qx = X(Math.min(Math.max(c.T_C, d.T_lo), d.T_hi));
+      var qy = Y(Math.min(Math.max(c.conv_pct, bot), top));
+      f.line(qx, Y(bot), qx, qy, C.gas, LW.hair, '2 2');
+      f.dot(qx, qy, 4.2, C.paper, C.gas);
+      f.dot(qx, qy, 1.6, C.gas);
+      f.text(6, 14, c.conv_pct.toFixed(1) + '% of the CO₂ is gone at '
+             + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
+      f.text(6, 25, d.any_reduction
+             ? 'shaded: oxygen leaving the solid counts too'
+             : 'gas-phase shift only — the solid stays whole',
+             { size: T.small, fill: C.structure });
+    }
+    return f.done();
+  }
+
+  /* ------------------------------------------- where reduction starts */
+
+  /* The line the feed has to stay above. Below it the host gives way to
+     the phase named in the header; above it the host survives.
+
+     The y axis is a feed, not a potential, because a feed is what anyone
+     reading this can set on a mass-flow controller. Every gas can be put
+     on it: a mixture of H2 and CO2 lands at the fraction it was mixed at,
+     and anything else lands at the H2/CO2 mixture that would be equally
+     reducing. The marker is the panel's own feed before the solid touches
+     it, which is the quantity the question is about - once a closed charge
+     has equilibrated against a reducible solid the gas is buffered onto
+     this very line and no longer says how reducing it started out. */
+  function boundaryData(curve, feed, currentT_C, exactAt) {
+    var pts = (curve || []).filter(function (q) {
+      return q && q.y_CO2 > 0 && isFinite(q.y_CO2);
+    }).map(function (q) {
+      return { T_C: q.T_C, pct: q.y_CO2 * 100.0, phase: q.phase };
+    });
+    /* same rule as the conversion figure: the header quotes the closed
+       form at the panel's own temperature, not the nearest grid point -
+       on a curve this steep those differ by eight percent */
+    var at = null;
+    if (exactAt && exactAt.y_CO2 > 0 && isFinite(exactAt.y_CO2)) {
+      at = { T_C: currentT_C, pct: exactAt.y_CO2 * 100.0,
+             phase: exactAt.phase };
+    } else if (currentT_C != null && pts.length) {
+      at = pts.reduce(function (a, b) {
+        return Math.abs(b.T_C - currentT_C) < Math.abs(a.T_C - currentT_C)
+          ? b : a;
+      });
+    }
+    var fd = null;
+    if (feed && feed.y_CO2 > 0 && isFinite(feed.y_CO2)) {
+      fd = { T_C: feed.T_C, pct: feed.y_CO2 * 100.0,
+             literal: !!feed.literal,
+             ratio: at ? feed.y_CO2 * 100.0 / at.pct : null };
+    }
+    return {
+      T_lo: pts.length ? pts[0].T_C : 0,
+      T_hi: pts.length ? pts[pts.length - 1].T_C : 0,
+      rows: pts, host: (feed && feed.host) || 'TiO2',
+      at: at, feed: fd, why_no_feed: (feed && feed.why) || null
+    };
+  }
+
+  function boundary(D) {
+    var d = D.boundary;
+    var f = K.square();
+    var p = { x0: f.pane.x0 + 6, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
+    var vals = d.rows.map(function (q) { return q.pct; });
+    if (d.feed) vals = vals.concat([d.feed.pct]);
+    var lo = Math.pow(10, Math.floor(log10(Math.min.apply(null, vals))) - 0.3);
+    var hi = Math.pow(10, Math.ceil(log10(Math.max.apply(null, vals))) + 0.3);
+    var X = lin(d.T_lo, d.T_hi, p.x0, p.x1);
+    var Y = K.lg(lo, hi, p.y1, p.y0);
+
+    /* everything above the line is the host surviving; fill it so the
+       reader never has to work out which side is which */
+    var above = ['M', p.x0, p.y0].join(' ');
+    d.rows.forEach(function (q) { above += ' L ' + X(q.T_C) + ' ' + Y(q.pct); });
+    above += ' L ' + p.x1 + ' ' + p.y0 + ' Z';
+    f.path(above, 'none', 0, null, tint(C.surface, 0.13));
+
+    series(f, d.rows.map(function (q) { return [q.T_C, q.pct]; }),
+           X, Y, C.surface, LW.curve);
+
+    /* Where the marker is, and how far its stem runs, worked out before
+       anything is written so the words can get out of its way. */
+    var q = d.feed, qx = null, qy = null, stem = null;
+    if (q) {
+      qx = X(Math.min(Math.max(q.T_C, d.T_lo), d.T_hi));
+      qy = Y(Math.min(Math.max(q.pct, lo), hi));
+      if (d.at) {
+        var qb = Y(Math.min(Math.max(d.at.pct, lo), hi));
+        stem = [Math.min(qy, qb), Math.max(qy, qb)];
+      }
+    }
+
+    /* One word in each field. Anywhere along the line a horizontal word
+       set close to it gets crossed, because over its own width the line
+       climbs a decade or more. The right-hand edge is the one place that
+       cannot happen: the curve leaves the panel at a fixed height, and
+       the two words sit above and below that exit, each in its own
+       field, reading against the spine rather than against the slope.
+       A word is dropped if the marker's stem would run through it - the
+       header and the marker have already said which side the feed is
+       on, and a struck-through label says it worse. */
+    var last = d.rows[d.rows.length - 1];
+    if (last) {
+      var ye = Y(last.pct);
+      var edge = function (y, txt, col) {
+        var w = txt.length * 4.3 + 4;
+        var hitX = qx !== null && qx > p.x1 - 9 - w && qx < p.x1 - 1;
+        var hitY = stem && stem[0] < y + 3 && stem[1] > y - 7;
+        if (hitX && (hitY || (qy !== null && qy > y - 7 && qy < y + 3))) {
+          return;
+        }
+        f.text(p.x1 - 9, y, txt, { size: T.small, anchor: 'end', fill: col });
+      };
+      edge(Math.max(ye - 7, p.y0 + 9), chem(d.host) + ' survives', C.surface);
+      edge(Math.min(ye + 15, p.y1 - 5), 'reduction', C.structure);
+    }
+
+    frame(f, X, [p.y0, p.y1]);
+    axisX(f, X, p.y1, K.niceTicks(d.T_lo, d.T_hi, 4), 'temperature (°C)',
+          function (v) { return String(Math.round(v)); });
+    axisY(f, Y, p.x0, thinDecades(lo, hi, 6), 'CO₂ in the feed (mol%)',
+          K.expLabel);
+
+    if (q) {
+      if (stem) f.line(qx, stem[0], qx, stem[1], C.subsurface, LW.hair, '2 2');
+      f.rect(qx - 3, qy - 3, 6, 6, C.subsurface, C.paper, 0.8);
+      var right = qx > p.x0 + (p.x1 - p.x0) * 0.62;
+      f.text(qx + (right ? -7 : 7), qy + 3, 'this feed',
+             { size: T.small, anchor: right ? 'end' : 'start',
+               fill: C.subsurface });
+    }
+    if (d.at) {
+      f.text(6, 14, 'reduction to ' + chem(d.at.phase) + ' starts below '
+             + fmtPct(d.at.pct) + ' CO₂',
+             { size: T.body, weight: 'bold' });
+      f.text(6, 25, q
+        ? (q.ratio >= 1
+            ? 'the feed on the panel sits ' + fmtTimes(q.ratio)
+              + ' above that'
+            : 'the feed on the panel sits ' + fmtTimes(1 / q.ratio)
+              + ' below it, so the solid reduces')
+        : (d.why_no_feed || 'this feed sets no oxygen potential'),
+        { size: T.small, fill: q ? C.structure : C.subsurface });
+    }
+    return f.done();
+  }
+
+  function log10(v) { return Math.log(v) / Math.LN10; }
+
+  /* Decade ticks, thinned to every second or fifth one when the span is
+     tall enough that labelling all of them would collide. */
+  function thinDecades(lo, hi, want) {
+    var all = K.decades(lo, hi);
+    var step = 1;
+    while (Math.ceil(all.length / step) > want) step += 1;
+    return all.filter(function (v, i) {
+      return (all.length - 1 - i) % step === 0;
+    });
+  }
+
+  function fmtPct(v) {
+    if (v >= 1) return v.toFixed(1) + '%';
+    if (v >= 0.01) return v.toFixed(3) + '%';
+    return v.toPrecision(2) + '%';
+  }
+
+  function fmtTimes(r) {
+    if (r >= 1e4) return r.toPrecision(2).replace(/e\+?(-?\d+)/,
+      '×10^$1') + '×';
+    if (r >= 100) return String(Math.round(r)) + '×';
+    if (r >= 10) return r.toFixed(0) + '×';
+    return r.toFixed(1) + '×';
+  }
+
   return { optimality: optimality, margin: margin,
+           conversion: conversion, boundary: boundary,
            optimalityData: optimalityData, marginData: marginData,
-           FIGURES: { optimality: optimality, margin: margin } };
+           conversionData: conversionData, boundaryData: boundaryData,
+           FIGURES: { optimality: optimality, margin: margin,
+                      conversion: conversion, boundary: boundary } };
 });

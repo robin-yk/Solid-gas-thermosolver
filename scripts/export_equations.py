@@ -7,7 +7,7 @@ inlined SVGs cannot collide; the stat-mech fragment additionally prefixes
 its glyph pool because both fragments live in the same document.
 
 Outputs, inlined by build_ti_solver.py:
-    equations_method.html     (1)-(30), thermodynamic workspace Method tab
+    equations_method.html     (1)-(35), thermodynamic workspace Method tab
     equations_statmech.html   (S1)-(S12), defect workspace Model panel
 """
 

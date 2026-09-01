@@ -527,6 +527,26 @@
       opts.T_K = T_C + 273.15;
       return solver.solve(opts);
     },
+    host: function () { return $('solid0').value; },
+    /* The temperature at which the host on the panel starts to give way,
+       expressed as the H2/CO2 feed that would sit exactly on it. Closed
+       form - no solve - so the curve that uses it is free. */
+    boundaryAt: function (T_C) {
+      return solver.reductionBoundary(T_C + 273.15, $('solid0').value, null,
+                                      parseFloat($('P').value) || 1);
+    },
+    /* Where the panel's own feed lands on that same axis, before the solid
+       has touched it. The engine owns both the answer and the reasons it
+       can have none, so this only carries the panel's coordinates in. */
+    feedPoint: function (T_C) {
+      var f = feedFromInputs();
+      if (!(f.total > 0)) return null;
+      var pt = solver.feedOnBoundaryAxis(f.feed, T_C + 273.15,
+                                         parseFloat($('P').value) || 1);
+      pt.T_C = T_C;
+      pt.host = $('solid0').value;
+      return pt;
+    },
     isReduced: function () {
       var m = {};
       D.solids.forEach(function (s) { m[s] = D.ti3[s] > 0; });

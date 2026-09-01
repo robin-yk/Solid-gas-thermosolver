@@ -1,4 +1,4 @@
-"""The equation registry: the complete system the solver solves, (1)-(30).
+"""The equation registry: the complete system the solver solves, (1)-(35).
 
 Single source for both renderings - build_equations.py (PNG/PDF sheet) and
 export_equations.py (per-equation SVG fragment inlined into the page's
@@ -64,3 +64,15 @@ R.append(('eq', r'$\mathrm{Ti}^{3+}\% = 100\, \frac{\sum_j c_j\, m_j}{b_{\mathrm
 R.append(('eq', r'$\Delta O_{\mathrm{gas}} = \sum_i a_{i\mathrm{O}} ( n_i - n_{i,0} )\,,\qquad \Delta n_i = n_i - n_{i,0}\,,\qquad X_{\mathrm{CO_2}} = \frac{n_{\mathrm{CO_2},0} - n_{\mathrm{CO_2}}}{n_{\mathrm{CO_2},0}}$', '28'))
 R.append(('eq', r'$G_{\mathrm{rel}} = G(n,m) - G(n_0, n_{s,0})$', '29'))
 R.append(('eq', r'$\lambda_{\mathrm{O}} = \mathrm{oxygen\ potential\ (a\ Lagrange\ multiplier\ of\ the\ minimisation,\ not\ an\ input)}\,,\qquad p_{\mathrm{O_2}} = \exp\!\left[ \frac{2 \lambda_{\mathrm{O}} - \mu^{\circ}_{\mathrm{O_2}}}{RT} \right]$', '30'))
+
+R.append(('gap', 0.10))
+R.append(('head', '9 · The reduction line, without the minimisation'))
+R.append(('note', r'Titanium never enters the gas below about 2000 K, so the solid and the gas trade nothing but oxygen and one comparison settles whether the host survives. Everything below is closed form; the workspace draws it at 181 temperatures for the cost of one solve.'))
+R.append(('eq', r'$\mu^{\mathrm{crit}}_{j|h} \;=\; \frac{\nu\,\mu^{\circ}_h - \mu^{\circ}_j}{\nu\, o_h - o_j}\,,\qquad \nu \equiv \frac{t_j}{t_h}\,;\qquad j^{*} \;=\; \arg\max_{j}\ \mu^{\mathrm{crit}}_{j|h}$', '31'))
+R.append(('note', r'the gas side, from the two couples it can carry oxygen on and from free $\mathrm{O_2}$, with $\sigma(x) = (1 + e^{-x})^{-1}$ :'))
+R.append(('eq', r'$A = \mu^{\circ}_{\mathrm{CO_2}} - \mu^{\circ}_{\mathrm{CO}}\,,\qquad B = \mu^{\circ}_{\mathrm{H_2O}} - \mu^{\circ}_{\mathrm{H_2}}\,,\qquad u_C = \frac{\mu_{\mathrm{O}} - A}{RT}\,,\qquad u_H = \frac{\mu_{\mathrm{O}} - B}{RT}$', '32'))
+R.append(('eq', r'$\kappa \;=\; \frac{1}{P}\exp\!\left[ \frac{2\mu_{\mathrm{O}} - \mu^{\circ}_{\mathrm{O_2}}}{RT} \right]\,,\qquad w \;=\; \frac{\kappa}{1 - \kappa} \;=\; \frac{n_{\mathrm{O_2}}}{n_C + n_H/2 + n_I}$', '33'))
+R.append(('boxeq', r'$n_{\mathrm{O}} \;=\; n_C\left[\, 2 - \sigma(-u_C) \right] \;+\; \frac{n_H}{2}\,\sigma(u_H) \;+\; 2\left( n_C + \frac{n_H}{2} + n_I \right) w$', '34'))
+R.append(('note', r'monotone in $\mu_{\mathrm{O}}$, so it inverts. Setting $(n_C, n_H, n_O) = (y,\ 2(1-y),\ 2y)$ and solving for $y$ puts every gas on one axis - the $\mathrm{H_2/CO_2}$ mixture that would be equally reducing:'))
+R.append(('boxeq', r'$y^{*}(\mu_{\mathrm{O}}) \;=\; \frac{\sigma(u_H) + 2w}{\sigma(-u_C) + \sigma(u_H)}\,;\qquad y_{\mathrm{feed}} > y^{*}\!\left(\mu^{\mathrm{crit}}_{j^{*}|h}\right) \ \Longleftrightarrow\ \mathrm{host\ survives}$', '35'))
+R.append(('note', r'against a bisection of the full minimisation over feed composition - sixty solves a temperature - this lands within $2\times10^{-4}$ relative; against the same minimisation'"'"'s own $\lambda_{\mathrm{O}}$, within $10^{-10}\ \mathrm{kJ/mol\ O}$.'))

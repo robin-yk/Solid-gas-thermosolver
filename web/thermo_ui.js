@@ -1,14 +1,17 @@
-/* The two figures on the equilibrium workspace.
+/* The four figures on the equilibrium workspace.
 
-   Neither solves anything. The bar comes off the result already on
-   screen, and the curve asks window.ThermoBridge to re-run the charge on
-   the panel at each temperature - the same solver, the same inputs, one
-   argument changed - so a figure here cannot report a condition the
-   workspace was never set to.
+   None of them solves anything of its own. The bar and the reduction
+   line come off the result already on screen; the two curves ask
+   window.ThermoBridge to re-run the charge on the panel at each
+   temperature - the same solver, the same inputs, one argument changed -
+   so a figure here cannot report a condition the workspace was never
+   set to.
 
-   The sweep is behind a button because it is 121 solves, about half a
-   second, and the bar answers the question most visitors are asking. Once
-   it has been drawn it follows every later solve on its own. */
+   Two cost nothing and draw on every run: the bar, and the reduction
+   line, whose curve is closed form. Two need the temperature sweep and
+   sit behind its button, because that is 121 solves, about half a
+   second. Once the sweep has been run they follow every later solve on
+   their own. */
 
 (function () {
   'use strict';
@@ -20,6 +23,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var btn = $('sweepBtn'), note = $('sweepNote');
   if (!$('figOptimality') || !$('figMargin') || !btn) return;
+  var hasNew = $('figBoundary') && $('figConversion');
 
   var figState = {};
   function mountFigure(hostId, name, svg) {
@@ -64,6 +68,34 @@
     }
   }
 
+  /* ------------------------------------------ the line, drawn for free */
+
+  var BOUND_N = 181;
+
+  /* The same statement the margin curve makes, in the units of a
+     mass-flow controller instead of kilojoules: not "54.9 kJ from the
+     nearest phase" but "7918 times more CO2 than it would take". The
+     curve is two exponentials a point, so unlike the margin it does not
+     need the sweep behind it. */
+  function drawBoundary() {
+    var r = range(), lo = r[0], hi = r[1];
+    var curve = [], i, T_C, b;
+    for (i = 0; i < BOUND_N; i++) {
+      T_C = lo + (hi - lo) * i / (BOUND_N - 1);
+      b = TB.boundaryAt(T_C);
+      if (b) curve.push({ T_C: T_C, y_CO2: b.y_CO2, phase: b.phase });
+    }
+    if (!curve.length) {
+      figFail('figBoundary', 'nothing in the registry is more reduced than '
+              + TB.host());
+      return;
+    }
+    var here = TB.T_C();
+    mountFigure('figBoundary', 'equilibrium-boundary',
+                FIG.boundary({ boundary: FIG.boundaryData(
+                  curve, TB.feedPoint(here), here, TB.boundaryAt(here)) }));
+  }
+
   /* ------------------------------------------------------------ sweep */
 
   var SWEEP_N = 121;
@@ -78,7 +110,7 @@
     return [isFinite(lo) ? lo : 300, isFinite(hi) ? hi : 1650];
   }
 
-  function drawMargin() {
+  function drawSwept() {
     var r = range(), lo = r[0], hi = r[1];
     var rows = [], i, T_C;
     for (i = 0; i < SWEEP_N; i++) {
@@ -87,8 +119,19 @@
       if (!one) { figFail('figMargin', 'gas feed sums to zero'); return 0; }
       rows.push(one);
     }
+    var here = TB.T_C();
     mountFigure('figMargin', 'equilibrium-margin',
-                FIG.margin({ margin: FIG.marginData(rows, TB.T_C()) }));
+                FIG.margin({ margin: FIG.marginData(rows, here) }));
+    if (hasNew) {
+      /* the marker quotes the solve the workspace is showing, not the
+         nearest point of the grid - eleven degrees apart is a fifth of a
+         percent of conversion, and the header would not match the panel */
+      var cur = TB.last();
+      mountFigure('figConversion', 'equilibrium-conversion',
+                  FIG.conversion({ conversion: FIG.conversionData(
+                    rows, here, TB.host(),
+                    cur && cur.conversion_CO2_pct) }));
+    }
     return rows.length;
   }
 
@@ -101,7 +144,7 @@
       var t0 = (window.performance || Date).now();
       var n = 0;
       try {
-        n = drawMargin();
+        n = drawSwept();
       } catch (e) {
         figFail('figMargin', 'figure failed: ' + e.message);
       }
@@ -120,7 +163,15 @@
   btn.addEventListener('click', sweep);
   TB.onSolve(function (R) {
     drawOptimality(R);
-    if (swept) { try { drawMargin(); } catch (e) { swept = false; } }
+    if (hasNew) {
+      try { drawBoundary(); }
+      catch (e) { figFail('figBoundary', 'figure failed: ' + e.message); }
+    }
+    if (swept) { try { drawSwept(); } catch (e) { swept = false; } }
   });
   drawOptimality(TB.last());
+  if (hasNew) {
+    try { drawBoundary(); }
+    catch (e) { figFail('figBoundary', 'figure failed: ' + e.message); }
+  }
 }());
