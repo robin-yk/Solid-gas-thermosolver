@@ -18,15 +18,14 @@ The printed Ti7O13 formation enthalpy in the source assessment duplicates the Ti
 
 ## Carbon scope
 
-The legacy gas registry includes CH4 but does not include graphite. Carbon therefore has no condensed sink in that calculation. CH4 results remain in regression data and must not be quoted as complete carbon equilibrium.
+The active-set registry carries CO2, H2, CO, H2O, N2 and O2, and no condensed carbon. The oxygen-potential route in `solidgas/potential.py` additionally carries CH4, which matters below about 800 C; since there is no graphite sink either way, a methane-bearing result is not a complete carbon equilibrium and is not quoted.
 
 ## Files
 
-- `solidgas/shomate.py`: NIST-JANAF gas and legacy condensed-phase coefficients
+- `solidgas/shomate.py`: NIST-JANAF gas and condensed-phase coefficients
+- `solidgas/species.py`: species, phases, Ti(3+) counts and the element matrix
 - `solidgas/waldner.py`: Ti-O assessment and integrated solid chemical potentials
-- `data/thermo_data.json`: browser export for the legacy dashboard
 - `data/activeset_data.json`: browser export for the production solver
-- `data/oxide_data.json`: browser export for the legacy oxide tool
 - `data/rutile_dft.json`: defect-model inputs and provenance
 
 The JSON exports are generated from the Python package. Tests reject stale exports.

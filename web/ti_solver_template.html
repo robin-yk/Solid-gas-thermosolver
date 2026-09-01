@@ -357,7 +357,6 @@ p.warn { color: var(--orange); }
       <button class="tab" data-page="p-val" type="button">Validation</button>
       <button class="tab" data-page="p-coef" type="button">Coefficients</button>
       <button class="tab" data-page="p-src" type="button">Solver source</button>
-      <button class="tab" data-page="p-legacy" type="button">Legacy</button>
     </div>
 
     <div class="panel pad page active" id="p-res">
@@ -533,26 +532,6 @@ p.warn { color: var(--orange); }
       <h2>Solver source</h2>
       <p class="sub">The functions below are printed from the running page.</p>
       <pre id="rawSrc"></pre>
-    </div>
-
-    <div class="panel pad page" id="p-legacy">
-      <h2>Legacy tools</h2>
-      <p class="sub">Earlier pages from this repository, kept for provenance. They run the
-      retired engine and their numbers are superseded by this page.</p>
-      <p><a href="tiox.html">TiO<sub>x</sub> oxygen-potential dashboard</a>: critical
-      oxygen potentials swept across temperature with the phase boundaries drawn. Its margin
-      equals the reduced cost per mole of oxygen reported on this page (the dual of the same
-      minimisation).</p>
-      <p><a href="oxide_tool.html">First-generation Gibbs solver</a>: the
-      log-coordinate minimiser replaced by this page.</p>
-      <div class="note"><b>Why these pages are retired.</b> The earlier engine represented
-      absent phases at a logarithmic floor (~10<sup>&minus;17</sup>&ndash;10<sup>&minus;26</sup>
-      percent) rather than at zero, which cannot be distinguished by magnitude from a genuine
-      trace amount (under sealed N<sub>2</sub>, ~10<sup>&minus;36</sup> percent is the
-      equilibrium result). The engine on this page holds absent phases at exactly zero,
-      reports a KKT reduced cost instead, and is pinned to an 80-digit reference by the
-      repository test suite. Trace values on the legacy pages are solver residue, not phases;
-      their CH<sub>4</sub>-feed results assume no carbon deposition and are conditional.</div>
     </div>
 
   </section>

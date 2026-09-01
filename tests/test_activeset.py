@@ -220,46 +220,25 @@ def test_gas_charge_temperature_is_an_input():
     assert cold['method'] == 'gibbs_min'
 
 
-def test_legacy_solvers_are_not_imported_by_production():
-    """Isolation, enforced: the legacy minimisers stay for regression but the
-    production module must not touch them."""
-    src = (ROOT / 'solidgas' / 'activeset.py').read_text()
-    tree = ast.parse(src)
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom):
-            assert node.module not in ('gibbs', 'equilibrium'), node.module
-            for alias in node.names:
-                assert alias.name not in ('minimise', 'solve', 'GibbsSystem')
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                assert 'gibbs' not in alias.name
-                assert 'equilibrium' not in alias.name
+def test_the_legacy_minimisers_are_gone_and_stay_gone():
+    """One minimiser in the repository, not three.
 
-
-def test_legacy_minimiser_agrees_where_doubles_can_see():
-    """The old reaction-extent SLSQP as a control group, on a mid-range point
-    with no underflow anywhere: same gas, same (absent) reduction."""
-    import numpy as np
-    from solidgas.gibbs import GibbsSystem
-    from solidgas.equilibrium import ACTIVE_TI_PHASES, moles_of_gas
-
-    T = 1173.15
-    ng = moles_of_gas(1.0, 25.0, T)
-    n_metal = 0.100 / (A.ATOMIC_WEIGHT['Ti'] + 2 * A.ATOMIC_WEIGHT['O'])
-    S = GibbsSystem(['CO2', 'H2', 'CO', 'H2O', 'O2'], ACTIVE_TI_PHASES,
-                    ['CO2', 'H2', 'H2O', 'TiO2'])
-    b = S.b_from(CO2=ng / 2, H2=ng / 2, TiO2=n_metal)
-    seeds = []
-    for frac in (0.2, 0.5, 0.8):
-        v = np.full(len(S.free), 1e-48)
-        for j, i in enumerate(S.free):
-            if S.is_gas[i]:
-                v[j] = ng * frac * 0.5
-        seeds.append(v)
-    old = S.minimise(b, T, seeds, 1.0)
-    assert old is not None
-    y_old = S.gas_fractions(old['n'])
-
-    new = A.solve({'CO2': 1, 'H2': 1}, T)
-    for g in ('CO2', 'H2', 'CO', 'H2O'):
-        assert y_old[g] == pytest.approx(new['gas_fractions'][g], rel=2e-5), g
+    The reaction-extent SLSQP solver and the species-space one it grew from
+    could not write an absent phase as an exact zero, which is the whole
+    reason the active set exists. They were removed; this refuses to let a
+    second answer to the same question back in.
+    """
+    pkg = ROOT / 'solidgas'
+    for gone in ('gibbs.py', 'equilibrium.py'):
+        assert not (pkg / gone).exists(), gone
+    dead = {'gibbs', 'equilibrium'}
+    for src in sorted(pkg.glob('*.py')):
+        for node in ast.walk(ast.parse(src.read_text())):
+            if isinstance(node, ast.ImportFrom):
+                mods = [node.module or '']
+            elif isinstance(node, ast.Import):
+                mods = [a.name for a in node.names]
+            else:
+                continue
+            for m in mods:
+                assert not (dead & set(m.split('.'))), (src.name, m)

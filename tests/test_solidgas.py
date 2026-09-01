@@ -8,9 +8,8 @@ import pytest
 
 from solidgas import (SHOMATE, VALID_RANGE, R_KJ, mu0, enthalpy, entropy,
                       heat_capacity, Kp, SPECIES, ELEM, ELEMENTS, SOLIDS,
-                      FORMULAS, TI_PHASES, ACTIVE_TI_PHASES, gas_idx, solve,
-                      residual, ti3_percent, phase_split, mean_valence,
-                      phase_seeds, moles_of_gas, G_total)
+                      FORMULAS, TI_PHASES, ACTIVE_TI_PHASES,
+                      ti3_percent, phase_split, mean_valence)
 
 RWGS = {'CO2': -1, 'H2': -1, 'CO': 1, 'H2O': 1}
 
@@ -225,8 +224,8 @@ def test_element_matrix_matches_formulas():
         assert tuple(ELEM[i].astype(int)) == expected[s]
 
 
-def test_every_active_phase_has_data_and_a_seed():
-    """Every active phase needs stoichiometry, a seed, and at least one source.
+def test_every_active_phase_has_data_and_a_source():
+    """Every active phase needs stoichiometry and at least one source.
 
     Not every one is in NIST - the shallow Magneli members exist only in the
     Waldner assessment, which is why they were brought in.
@@ -235,13 +234,6 @@ def test_every_active_phase_has_data_and_a_seed():
     for p in ACTIVE_TI_PHASES:
         assert p in FORMULAS and p in TI_PHASES
         assert p in SHOMATE or p in waldner.WALDNER, p
-    assert len(phase_seeds(1.0)) == 1 + 2 * (len(ACTIVE_TI_PHASES) - 1)
-
-
-def test_phase_seeds_conserve_titanium():
-    for sv in phase_seeds(1.0):
-        total = sum(v * TI_PHASES[p][0] for v, p in zip(sv, ACTIVE_TI_PHASES))
-        assert total == pytest.approx(1.0, abs=1e-9)
 
 
 def test_ti3_percent_endpoints():
@@ -271,77 +263,3 @@ def test_phase_split_sums_to_all_titanium():
     n[SPECIES.index('Ti4O7')] = 0.1     # 0.4 mol Ti
     n[SPECIES.index('Ti3O5')] = 0.2 / 3  # 0.2 mol Ti
     assert sum(phase_split(n, 1.0).values()) == pytest.approx(100.0)
-
-
-# ------------------------------------------------------------------- the solver
-
-@pytest.fixture(scope='module')
-def rwgs_solution():
-    T = 1073.15
-    n0_TiO2 = 0.100 / 79.87
-    n0 = moles_of_gas(1.0, 25.0, T) / 2
-    b = np.array([n0, 2 * n0, 2 * n0 + 2 * n0_TiO2, n0_TiO2])
-    inits = [np.array([n0 * a, n0 * b_, n0 * c, n0 * d, n0 * 1e-6] + list(sv))
-             for a, b_, c, d in [(0.5, 0.5, 0.01, 0.01), (0.1, 0.1, 0.4, 0.4)]
-             for sv in phase_seeds(n0_TiO2)]
-    n = solve(b, T, inits)
-    assert n is not None
-    return T, n, b, n0_TiO2
-
-
-def test_solution_closes_element_balance(rwgs_solution):
-    """Absolute closure, against a titanium basis of 1.25e-3 mol."""
-    _T, n, b, _ = rwgs_solution
-    assert residual(n, b) < 1e-9
-
-
-def test_solution_reproduces_rwgs_equilibrium_constant(rwgs_solution):
-    """The strongest check: the converged gas must satisfy Q == Kp."""
-    T, n, _b, _ = rwgs_solution
-    ng = sum(n[i] for i in gas_idx)
-    y = {s: n[SPECIES.index(s)] / ng for s in ('CO2', 'H2', 'CO', 'H2O')}
-    Q = (y['CO'] * y['H2O']) / (y['CO2'] * y['H2'])
-    # SLSQP settles to about a tenth of a percent on the quotient with nine
-    # species; the seven-species problem used to reach 1e-4. That is solver
-    # convergence, not physics - the mole fractions themselves are stable.
-    assert Q == pytest.approx(Kp(RWGS, T), rel=5e-3)
-
-
-def test_rwgs_feed_does_not_reduce_titania(rwgs_solution):
-    """A 1:1 CO2/H2 feed leaves rutile untouched."""
-    _T, n, _b, n_Ti = rwgs_solution
-    # the residue is the 1e-30 lower bound working its way up, not reduction
-    assert ti3_percent(n, n_Ti) < 1e-3
-
-
-def test_solution_is_a_minimum(rwgs_solution):
-    """Perturbing along a balance-preserving direction must not lower G."""
-    T, n, b, _ = rwgs_solution
-    G0 = G_total(n, T)
-    # CO2 + H2 -> CO + H2O conserves every element
-    d = np.zeros(len(SPECIES))
-    for s, nu in RWGS.items():
-        d[SPECIES.index(s)] = nu
-    for eps in (1e-7, -1e-7):
-        trial = n + eps * d
-        if (trial > 0).all():
-            assert residual(trial, b) < 1e-9
-            assert G_total(trial, T) >= G0 - 1e-12
-
-
-def test_methane_opens_the_magneli_branch():
-    """Pure CH4 at 900 C reduces a large fraction of the Ti, unlike RWGS."""
-    T = 1173.15
-    n0_TiO2 = 0.100 / 79.87
-    n0g = moles_of_gas(1.0, 25.0, T)
-    b = np.array([n0g, 4 * n0g, 2 * n0_TiO2, n0_TiO2])
-    inits = [np.array([n0g * gf * 0.3, n0g * gf, n0g * gf, n0g * gf * 0.1,
-                       n0g * (1 - gf)] + list(sv))
-             for gf in (0.05, 0.4, 0.9) for sv in phase_seeds(n0_TiO2)]
-    n = solve(b, T, inits)
-    assert n is not None
-    assert residual(n, b) < 1e-8
-    assert ti3_percent(n, n0_TiO2) > 20.0
-    # it stops at Ti4O7: the deeper phases never turn up
-    split = phase_split(n, n0_TiO2)
-    assert split['Ti3O5'] < 0.01 and split['Ti2O3'] < 0.01

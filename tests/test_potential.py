@@ -9,9 +9,9 @@ import numpy as np
 import pytest
 
 from solidgas import (ACTIVE_TI_PHASES, FORMULAS, Kp, R_KJ, mu0, moles_of_gas,
-                      mu_O_critical, mu_O_from_gas, phase_ladder, solve,
-                      phase_seeds, stable_phase, gas_equilibrium, survey,
-                      gas_idx, SPECIES, ti3_percent, ti_phases)
+                      mu_O_critical, mu_O_from_gas, phase_ladder,
+                      stable_phase, gas_equilibrium, survey, ti_phases)
+from solidgas import activeset as A
 from solidgas.potential import _ratio
 
 RWGS = {'CO2': -1, 'H2': -1, 'CO': 1, 'H2O': 1}
@@ -111,32 +111,31 @@ def test_rejects_a_step_that_is_not_a_reduction():
 
 @pytest.mark.parametrize('T_C', [600, 900, 1200, 1500])
 def test_potential_route_matches_the_full_minimisation(T_C):
-    """The decomposition must reproduce what the 9-species solve returns.
+    """The decomposition must reproduce what the production solver returns.
 
-    Under an RWGS charge no phase forms, so the gas equilibrates alone and the
-    two routes have to land on the same mole fractions.
+    Both routes are run on the same four gases.  The potential route's own
+    registry also carries CH4, which the active-set registry does not, and
+    below about 800 C that difference is worth several mole percent - so the
+    comparison names its species instead of inheriting them.  Once they are
+    solving the same problem the two agree to eight decimals, not four.
     """
     T = T_C + 273.15
-    b_gas, n0 = rwgs_gas_basis(T)
-    n0_TiO2 = 0.100 / 79.87
+    b_gas, _n0 = rwgs_gas_basis(T)
+    four = ['CO2', 'H2', 'CO', 'H2O']
 
-    fast = survey(b_gas, T)
+    n = gas_equilibrium(b_gas, T, species=four)
+    tot = sum(n.values())
+    y = {k: v / tot for k, v in n.items()}
+    full = A.solve({'CO2': 1, 'H2': 1}, T)
 
-    b_full = np.array([n0, 2 * n0, 2 * n0 + 2 * n0_TiO2, n0_TiO2])
-    inits = [np.array([n0 * a, n0 * b_, n0 * c, n0 * d, n0 * 1e-6] + list(sv))
-             for a, b_, c, d in [(0.5, 0.5, 0.01, 0.01), (0.1, 0.1, 0.4, 0.4)]
-             for sv in phase_seeds(n0_TiO2)]
-    n = solve(b_full, T, inits)
-    assert n is not None
-    ng = sum(n[i] for i in gas_idx)
-
-    for s in ('CO2', 'H2', 'CO', 'H2O'):
-        slow = n[SPECIES.index(s)] / ng
-        assert fast['y'][s] == pytest.approx(slow, abs=2e-4), s
+    for s in four:
+        assert y[s] == pytest.approx(full['gas_fractions'][s], abs=1e-7), s
 
     # and both agree that nothing reduces
-    assert fast['phase'] == 'TiO2'
-    assert ti3_percent(n, n0_TiO2) < 1e-3
+    mu_O, _spread = mu_O_from_gas(y, T)
+    assert stable_phase(mu_O, T, ACTIVE_TI_PHASES)[0] == 'TiO2'
+    assert full['active_condensed_phases'] == ['TiO2']
+    assert full['reduced_pct'] < 1e-3
 
 
 def test_rwgs_leaves_rutile_across_the_whole_sweep():

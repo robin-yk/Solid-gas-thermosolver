@@ -22,7 +22,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 from .shomate import mu0, R_KJ, R_ATM
-from .equilibrium import ACTIVE_TI_PHASES, FORMULAS, GASES
+from .species import ACTIVE_TI_PHASES, FORMULAS, GASES
 from . import waldner
 
 # Which dataset supplies the titanium-bearing condensed phases. NIST-JANAF has

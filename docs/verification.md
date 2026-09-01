@@ -52,6 +52,6 @@ Generated reference files should be updated only by their commands:
 python3 scripts/oracle_tio.py
 python3 scripts/oracle_statmech.py
 python3 scripts/export_activeset.py
-python3 scripts/export_thermo.py
-python3 scripts/export_oxide.py
+python3 scripts/oracle_particle.py
+python3 scripts/export_plates.py
 ```

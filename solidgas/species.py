@@ -1,15 +1,16 @@
-"""Constrained Gibbs-energy minimisation for the C-H-O-Ti system.
+"""Species, phases, and the element matrix for the C-H-O-Ti system.
 
-The unknown is the mole vector `n` over SPECIES. Total Gibbs energy is
-minimised subject to elemental balance, with gases treated as ideal and
-mixing, and the condensed phases as pure (unit activity, no mixing term).
+The one place the system's vocabulary is written down: which gases exist,
+which titanium and cerium condensed phases the registry carries, how many
+Ti(3+) each Magneli member holds, and the element-count matrix that every
+balance closes against. No solver lives here - `activeset.py` reads these
+tables and `potential.py` reads them too, and neither may disagree with
+the other about what a phase is made of.
 """
 
 import numpy as np
-from scipy.optimize import minimize
 
-from .shomate import mu0, R_KJ, R_ATM  # noqa: F401  (R_ATM re-exported for scripts)
-from . import waldner
+from .shomate import R_ATM
 
 GASES = ['CO2', 'H2', 'CO', 'H2O', 'CH4']
 
@@ -86,78 +87,9 @@ gas_idx = [i for i, s in enumerate(SPECIES) if s not in SOLIDS]
 sol_idx = [i for i, s in enumerate(SPECIES) if s in SOLIDS]
 
 
-def solid_mu(name, T, source='waldner'):
-    """Chemical potential of a condensed phase, from the chosen assessment.
-
-    Gases always come from NIST; only the titanium-bearing solids have a
-    choice, and the two sources must not be mixed inside one calculation.
-    """
-    if source == 'waldner' and name in waldner.WALDNER:
-        return waldner.mu0(name, T)
-    return mu0(name, T)
-
-
-def G_total(n, T, P_tot=1.0, source='waldner'):
-    """Total Gibbs energy in kJ for a mole vector `n` at temperature T (K)."""
-    ng = sum(n[i] for i in gas_idx)
-    if ng <= 0:
-        return 1e10
-    return (sum(n[i] * (mu0(SPECIES[i], T) + R_KJ * T * np.log(n[i] / ng * P_tot))
-                for i in gas_idx if n[i] > 1e-30)
-            + sum(n[i] * solid_mu(SPECIES[i], T, source) for i in sol_idx))
-
-
-def solve(b, T, inits, P_tot=1.0, tol=1e-8, source='waldner'):
-    """Minimise G subject to ELEM.T @ n == b.
-
-    `inits` is a list of starting mole vectors; SLSQP is run from each and the
-    lowest feasible optimum wins. Multiple starts matter here because the
-    solid reduction branch and the all-gas branch are separate local minima.
-    Returns the mole vector, or None if no start converged feasibly.
-    """
-    cons = [{'type': 'eq', 'fun': lambda n, j=j: ELEM[:, j].dot(n) - b[j]}
-            for j in range(ELEM.shape[1])]
-    bnds = [(1e-30, None)] * len(SPECIES)
-    best, bestG = None, 1e10
-    for n_init in inits:
-        try:
-            s = minimize(lambda n: G_total(n, T, P_tot, source), n_init, method='SLSQP',
-                         bounds=bnds, constraints=cons,
-                         options={'ftol': 1e-13, 'maxiter': 1000, 'disp': False})
-            if s.fun < bestG and residual(s.x, b) < tol:
-                bestG, best = s.fun, s
-        except Exception:
-            pass
-    return np.maximum(best.x, 0) if best is not None else None
-
-
-def phase_seeds(n_Ti_total, extents=(0.3, 0.9)):
-    """Solid-phase starting vectors, one family per titanium phase.
-
-    The reduced phases sit in separate basins of the Gibbs surface, so a sweep
-    seeded only near rutile will never discover them. This walks each phase
-    from lightly to nearly fully converted.
-    """
-    out = []
-    for i, p in enumerate(ACTIVE_TI_PHASES):
-        for fr in ((0.0,) if p == 'TiO2' else extents):
-            v = np.zeros(len(ACTIVE_TI_PHASES))
-            v[i] = n_Ti_total * fr / TI_PHASES[p][0]
-            v[0] += n_Ti_total * (1 - fr)
-            out.append(np.maximum(v, 1e-30))
-    return out
-
-
-def residual(n, b):
-    """Largest absolute elemental-balance violation."""
-    return max(abs(ELEM[:, j].dot(n) - b[j]) for j in range(ELEM.shape[1]))
-
-
-def gas_fractions(n, as_percent=True):
-    """Gas-phase mole fractions, indexed like SPECIES (solids come back as 0)."""
-    ng = sum(n[i] for i in gas_idx)
-    scale = 100.0 if as_percent else 1.0
-    return [n[i] / ng * scale if i in gas_idx else 0.0 for i in range(len(SPECIES))]
+def moles_of_gas(P_tot, V_cm3, T):
+    """Ideal-gas moles filling V_cm3 at P_tot atm and T kelvin."""
+    return P_tot * V_cm3 / (R_ATM * T)
 
 
 def ti3_percent(n, n_Ti_total):
@@ -182,8 +114,3 @@ def mean_valence(n, n_Ti_total):
         return float('nan')
     ti3 = sum(n[SPECIES.index(p)] * TI_PHASES[p][1] for p in ACTIVE_TI_PHASES)
     return 4.0 - ti3 / n_Ti_total
-
-
-def moles_of_gas(P_tot, V_cm3, T):
-    """Ideal-gas moles filling V_cm3 at P_tot atm and T kelvin."""
-    return P_tot * V_cm3 / (R_ATM * T)

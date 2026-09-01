@@ -17,8 +17,9 @@ This is the solver the page runs. The rules it exists to enforce:
     unreacted feed. G_rel below double resolution is flagged, not printed as
     if it were a measurement.
 
-The algorithm is the element-potential form of the same convex program the
-legacy minimisers attacked head-on. For a candidate active set A:
+The algorithm is the element-potential form of the convex program, solved
+through its optimality conditions rather than head-on. For a candidate
+active set A:
 
     gases          ln y_i = sum_e a_ie theta_e - mu0_i/RT - ln P
     active solids  t_j lambda_Ti + o_j lambda_O = mu0_j
@@ -37,8 +38,9 @@ enumeration cannot pick a plausible-but-wrong basin. Degeneracies (a reduced
 cost at zero within tolerance) are reported as boundaries, not resolved by
 fiat.
 
-The legacy solvers (`gibbs.GibbsSystem.minimise`, `equilibrium.solve`) are
-kept for regression only and are not imported here.
+This is the only minimiser in the repository. The reaction-extent and
+species-space SLSQP solvers it replaced wrote absent phases as a 1e-30
+floor rather than as zero, and were removed.
 """
 
 import math

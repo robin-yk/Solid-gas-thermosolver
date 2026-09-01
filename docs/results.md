@@ -36,4 +36,4 @@ The nearest implemented phase is Ti10O19. Higher-`n` Magneli members narrow the 
 
 ## Sources
 
-Production values are stored in `data/reference_results_high_precision.json`, and the table above is checked against it by the test suite. Legacy regression values are stored in `data/results.json`; that run carries the incomplete CH4 case and reports an oxygen-potential ladder margin rather than a KKT reduced cost, so its numbers are not interchangeable with the table above and are not quoted.
+Production values are stored in `data/reference_results_high_precision.json`, and the table above is checked against it by the test suite.

@@ -3,8 +3,8 @@
 This is the independent reference the production active-set solver is tested
 against. It is not a port of the production code and it must never become one:
 
-  * it does NOT import the production GibbsSystem class, the legacy
-    minimisers, or any solver code from `solidgas` - only the raw
+  * it does NOT import the production solver or any other solver code
+    from `solidgas` - only the raw
     thermodynamic coefficient tables (SHOMATE, WALDNER), which both sides
     are required to share;
   * every arithmetic step runs in mpmath at 80 significant digits, so a

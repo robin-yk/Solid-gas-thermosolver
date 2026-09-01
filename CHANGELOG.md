@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Removed the legacy solvers and the two browser pages that ran them. The reaction-extent SLSQP minimiser, the species-space one it grew from, the first-generation oxide tool and the oxygen-potential dashboard are gone, with their build scripts, browser sources, frozen data and tests: 28 files and 8,600 lines. What survived of `equilibrium.py` is the species, phase and element tables it carried, now `solidgas/species.py`, which the active-set and oxygen-potential routes both read. One minimiser remains in the repository and a gate refuses a second.
+- Repointed the oxygen-potential cross-check at the production solver and named its species, which exposed a registry difference the retired engine had been hiding: the potential route carries CH4 and the active set does not, worth nine mole percent at 500 C. On the same four gases the two routes agree to 1e-8 rather than the 2e-4 the old comparison allowed.
 - Added the reduction line to the equilibrium engine and workspace: the feed at which the host stops surviving, in closed form rather than by bisecting the minimisation, drawn against temperature with the panel's own feed marked. Free O2 is carried, which is worth nothing in an H2/CO2 feed and 5.8 kJ per mol O in a hydrogen-free one, and brings the total pressure in with it. Certified against the 80-digit oracle, against a bisection of the full solver, and mirrored bit for bit in the browser.
 - Added equilibrium CO2 conversion against temperature to the same workspace, out of the sweep that was already being run, with the temperatures where the solid itself is being eaten shaded.
 - Extended the typeset method sheet to (31)-(35) with the closed-form reduction line.
