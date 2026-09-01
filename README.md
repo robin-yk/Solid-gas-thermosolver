@@ -1,80 +1,80 @@
-# Solid-gas thermosolver
+# Solid–gas thermosolver
 
-## What this repository answers
+Two calculations used in the accompanying manuscript: gas–solid equilibrium for
+the C–H–O–N / Ti–O system, and a geometric comparison between the measured
+oxygen-removal inventory and the oxygen capacity of the rutile surface. It does
+not assign the below-surface inventory among subsurface point defects, bulk
+defects, or extended defects.
 
-This repository calculates whether a reacting gas can reduce rutile TiO2 at equilibrium. It also distributes a measured oxygen-vacancy inventory among surface, first-subsurface, and bulk rutile sites.
+The interactive version is at
+[robin-yk.github.io/Solid-gas-thermosolver](https://robin-yk.github.io/Solid-gas-thermosolver/).
 
-[Open the browser solver](https://robin-yk.github.io/Solid-gas-thermosolver/)
+## What it computes
 
-## Main results
+### Gas–solid equilibrium
 
-An equilibrated CO2/H2 = 1:1 feed does not reduce rutile from 500 to 1500 °C. The nearest reduced phase remains 70.40 to 27.30 kJ mol-O⁻¹ above stability over this range.
+Given a gas charge and a temperature, Gibbs-energy minimisation returns the
+stable Ti–O phase assemblage, the equilibrium gas composition, the CO2
+conversion, and the margin to the nearest reduced phase. Condensed phases are
+carried as an active set, so a phase that is not stable has exactly zero moles
+rather than a numerical floor, and its distance from stability is reported as a
+KKT reduced cost instead. The feed at which rutile stops surviving comes out in
+closed form.
 
-| Gas charge | Equilibrium result |
-| --- | --- |
-| CO2/H2 = 1:1 | Rutile remains stable from 500 to 1500 °C |
-| Pure H2 | Reaches the TiO2/Ti10O19 boundary |
-| Sealed N2 | Produces only trace reduction at the highest temperatures |
+Gas data are NIST-JANAF; the titanium oxides through Ti2O3 are the Waldner and
+Eriksson CALPHAD assessment.
 
-Detailed tables and stability margins are in [docs/results.md](docs/results.md).
+### Vacancy inventory against surface capacity
 
-## Three workspaces
+A titration measures one number, the total oxygen removed. It does not say where
+that oxygen came from. From the rutile lattice constants and the exposed area,
+this returns how much oxygen the (110) bridging row could hold, and therefore a
+**bound**: the largest share of the measured inventory that could be surface
+oxygen, and the smallest share that must lie below it.
 
-### Gas-solid equilibrium
+For a 0.9 µm particle the bridging row holds 13.6 µmol-O g⁻¹ in total and
+6.8 µmol-O g⁻¹ once reconstructed. A measured removal of 95 µmol-O g⁻¹ is
+therefore at most 7.1 % surface oxygen and at least 92.9 % below it.
 
-Active-set Gibbs minimization determines the stable gas composition and Ti-O phase assemblage at fixed temperature, pressure, volume, and elemental inventory. Condensed-phase stability is evaluated from KKT reduced costs. The model is a closed, finite-inventory equilibrium calculation.
+No defect formation energy enters this calculation. Literature DFT does indicate
+a strong depth dependence of vacancy stability; those values are tabulated in
+`data/literature_dft.json` and are deliberately not used to assign a depth
+distribution, because no measurement in this work resolves depth.
 
-The workspace at `ti_solver.html#thermo` draws that stability twice: one bar per excluded phase at the condition on the panel, and the smallest of those bars swept across temperature with the winning assemblage as a band underneath, which is where the Magnéli ladder becomes visible. Both use the reduced cost per formula unit — the basis the KKT test is stated on, and the only one that stays positive once the host, feed and temperature are all free to move.
-
-### Defect statistical mechanics
-
-Given a measured oxygen-deficiency inventory, a canonical lattice model computes its conditional-equilibrium partition among rutile (110) surface, first-subsurface, and bulk sites, using particle geometry, site energetics, and site exclusion. The (1x2) surface reconstruction and the shear-plane solubility ceiling enter as competing phases (lever rule at pinned chemical potential), so nothing is clipped and the phase boundaries are certified numbers. A coarse-grained KMC layer adds reoxidation transport. It reports thermodynamic tendency, not a diffusion profile or reduction kinetics.
-
-`solidgas/particle/` answers the same question with the site classes replaced by a depth coordinate: the formation energy relaxes towards the bulk value over a decay length derived from the DFT triple rather than an assumed profile shape, and the interior is summed as the layer stack it physically is. It also carries the two checks the class model could not state — whether the equilibrium is reachable inside the exposure (Crank sphere diffusion; 0.54 ms against 300 s at 600 C, with the barrier that would close that gap reported alongside), and whether local electroneutrality is allowed (the Debye length and the segregation depth come out the same size here, so it is on the edge). Its first-class output is the point-defect ceiling: 112 umol-O/g at 600 C for a 0.9 um particle, which the shipped loading is already 85 percent of. See [docs/particle-model.md](docs/particle-model.md).
-
-### Steady-state redox
-
-A reductant that needs lattice oxygen and an oxidant that needs vacancies, written against one common vacancy fraction: one falls and one rises, so they cross once and the crossing is the steady state. Both barriers move with the same descriptor in opposite directions, so sweeping it gives a volcano whose peak has a closed form, and a family of solutions is available before any material is fitted. Feeding the depth-weighted partition in as the average-to-surface mapping leaves the steady rate untouched, moves the steady degree of reduction by two orders of magnitude, and removes the steady state entirely on the reducible half of the axis.
-
-The model runs in the browser at `ti_solver.html#redox`, alongside a two-reservoir cycle model that takes measured per-cycle integrals and returns the recovered fraction, how much of each residual locked, and the prediction for the experiment that separates the two: two samples at the same total V_O reached by different paths.
-
-See [docs/equilibrium-method.md](docs/equilibrium-method.md), [docs/defect-model.md](docs/defect-model.md), [docs/particle-model.md](docs/particle-model.md) and [docs/redox-steady-state.md](docs/redox-steady-state.md) for the full formulations.
-
-## Run locally
+## Reproducing the manuscript numbers
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install -r requirements.txt
-
-python3 scripts/export_equations.py
-python3 scripts/build_ti_solver.py
-python3 scripts/build_portal.py
-python3 scripts/export_plates.py       # freeze the manuscript figure data
-python3 scripts/build_plates.py        # docs/figures.html proof sheet
+python3 scripts/reproduce_paper.py    # -> paper_outputs/*.csv and site_data.json
+python3 scripts/build_site.py         # -> docs/index.html
 python3 -m pytest tests/ -q
-python3 -m http.server 8000 --directory docs
 ```
 
-The Python package is in `solidgas/`. Browser sources are in `web/`, generated site files in `docs/`, build and oracle commands in `scripts/`, and committed inputs and reference outputs in `data/`.
-
-Manuscript figures are drawn to print size from frozen solver output: `scripts/export_plates.py` extracts every value the plates carry into `data/figure_data.json` and stamps it with the commit, and `scripts/build_plates.py` renders the proof sheet at [docs/figures.html](docs/figures.html). Captions are written with slots rather than numbers, so a caption cannot drift from the model, and the test suite fails while the extract is stale.
+`paper_outputs/` is committed, and a gate fails if regenerating it changes a
+byte.
 
 ## Verification
 
-Production results are checked against an independent 80-digit thermodynamic oracle and two 50-digit statistical-mechanical oracles, one per engine; the particle oracle shares no code with the engine and reaches the same numbers by a different substitution and plain bisection. The test suite also enforces Python-to-JavaScript parity, elemental balance, active-set KKT conditions, deterministic Monte Carlo trajectories, embedded-page freshness, and self-contained browser builds.
+Two independent implementations must agree before a number is quoted: the Python
+package, and an mpmath oracle at 80 significant digits in `scripts/oracle_tio.py`
+that shares only the raw coefficient tables and never imports the solver. The
+browser does not compute anything — it displays the JSON the package wrote — so
+there is no third implementation to keep in step.
 
-Numerical methods and measured error bounds are documented in [docs/verification.md](docs/verification.md).
+`scripts/check_page.py` loads the built page in a real browser and holds every
+number it displays against a fresh calculation.
 
-## Limitations
+## Layout
 
-- Equilibrium calculations contain no kinetic or transport information.
-- The rutile TiO2-x solution phase is not implemented.
-- CH4 calculations exclude graphite and should not be quoted.
-- CO2-refill kinetic parameters are placeholders.
-- The unreconstructed rutile (110) surface Hamiltonian is extrapolative beyond reconstruction onset.
-- The three-class engine gives every slab in the subsurface shell the first-subsurface energy, so its declared thickness (one oxygen layer by default) moves the shell/bulk split. The particle engine removes that choice by resolving depth from the DFT triple; the two coexist and agree to about 1.5 percent at the shipped condition.
-- Both defect engines assume local electroneutrality. At the shipped loading the Debye length and the segregation depth are the same size, so the outermost few nanometres carry an error neither engine quantifies, running towards more surface enrichment.
-- DFT energies are for rutile (110) and the particle is treated as a sphere; facets are not weighted.
+```
+solidgas/       activeset · vacancy_inventory · species · shomate · waldner
+analysis/       dielectric_correlation — an empirical regression, not thermodynamics
+scripts/        reproduce_paper · build_site · oracle_tio · check_page
+data/           thermodynamic tables, rutile geometry, tabulated literature DFT
+paper_outputs/  every computed number in the manuscript, as committed CSV
+web/            the display layer: a drawing kit, two figure modules, one page
+docs/           the built page and the method notes
+```
 
-Data scope and planned extensions are tracked in [docs/thermodynamic-data.md](docs/thermodynamic-data.md) and [docs/roadmap.md](docs/roadmap.md).
+See [docs/equilibrium-method.md](docs/equilibrium-method.md),
+[docs/surface-capacity.md](docs/surface-capacity.md) and
+[docs/verification.md](docs/verification.md).

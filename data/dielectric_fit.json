@@ -1,0 +1,21 @@
+{
+  "form": "power_law",
+  "log10_intercept": -3.07028,
+  "log10_intercept_err": 0.695,
+  "exponent": 1.22355,
+  "exponent_err": 0.2302,
+  "eps_prime": null,
+  "fit_stats": {
+    "pearson_r": 0.96637,
+    "r_squared": 0.93388,
+    "adj_r_squared": 0.90082,
+    "residual_ss": 0.18029,
+    "n_points": 4
+  },
+  "fit_range_umol_g": [
+    95,
+    5000
+  ],
+  "note": "Empirical dielectric loss factor of this work: linear regression of log10(eps'') on log10(VO_total), i.e. eps'' = 10^a * VO^b with a = -3.07028 +/- 0.695 and b = 1.22355 +/- 0.2302 (OriginLab, no weighting, N = 4, Pearson r 0.96637, R^2 0.93388, adj. R^2 0.90082, RSS 0.18029). Fitted over roughly 95-5000 umol-O/g; below that range the value is an extrapolation and the card marks it. Set eps_prime to display tan delta.",
+  "provenance": "Measured in this work (Kwak et al.): dielectric loss factor vs total oxygen-vacancy content from H2O-integration titration of reduced rutile."
+}

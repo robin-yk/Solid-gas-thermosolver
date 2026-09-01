@@ -1,7 +1,7 @@
 /* The figure kit: one drawing style, two products.
 
    Everything quantitative in this repository is drawn through here - the
-   manuscript plates at Nature column widths and the workspace figures at
+   workspace figures on the page, at
    a square 3.5 in. The coordinate system is typographic points in both,
    so a stroke width written here is the stroke width that reaches the
    page, and the browser preview and the print export share one geometry.

@@ -1,0 +1,3346 @@
+{
+ "dielectric": {
+  "eps_prime": null,
+  "exponent": 1.22355,
+  "exponent_err": 0.2302,
+  "fit_range_umol_g": [
+   95,
+   5000
+  ],
+  "fit_stats": {
+   "adj_r_squared": 0.90082,
+   "n_points": 4,
+   "pearson_r": 0.96637,
+   "r_squared": 0.93388,
+   "residual_ss": 0.18029
+  },
+  "form": "power_law",
+  "log10_intercept": -3.07028,
+  "log10_intercept_err": 0.695,
+  "note": "Empirical dielectric loss factor of this work: linear regression of log10(eps'') on log10(VO_total), i.e. eps'' = 10^a * VO^b with a = -3.07028 +/- 0.695 and b = 1.22355 +/- 0.2302 (OriginLab, no weighting, N = 4, Pearson r 0.96637, R^2 0.93388, adj. R^2 0.90082, RSS 0.18029). Fitted over roughly 95-5000 umol-O/g; below that range the value is an extrapolation and the card marks it. Set eps_prime to display tan delta.",
+  "provenance": "Measured in this work (Kwak et al.): dielectric loss factor vs total oxygen-vacancy content from H2O-integration titration of reduced rutile."
+ },
+ "equilibrium": {
+  "T_C": [
+   400.0,
+   425.0,
+   450.0,
+   475.0,
+   500.0,
+   525.0,
+   550.0,
+   575.0,
+   600.0,
+   625.0,
+   650.0,
+   675.0,
+   700.0,
+   725.0,
+   750.0,
+   775.0,
+   800.0,
+   825.0,
+   850.0,
+   875.0,
+   900.0,
+   925.0,
+   950.0,
+   975.0,
+   1000.0,
+   1025.0,
+   1050.0,
+   1075.0,
+   1100.0,
+   1125.0,
+   1150.0,
+   1175.0,
+   1200.0,
+   1225.0,
+   1250.0,
+   1275.0,
+   1300.0,
+   1325.0,
+   1350.0,
+   1375.0,
+   1400.0,
+   1425.0,
+   1450.0,
+   1475.0,
+   1500.0
+  ],
+  "X_CO2_pct": [
+   22.237122766950808,
+   24.411021794066258,
+   26.54505875279703,
+   28.626006639138218,
+   30.6438217810107,
+   32.59126308957938,
+   34.46348483624009,
+   36.2576361072564,
+   37.972487875364166,
+   39.60809922536067,
+   41.165527515940425,
+   42.64658273381303,
+   44.053623502840765,
+   45.38939068331436,
+   46.66152745977749,
+   47.86388327780185,
+   49.00432894471645,
+   50.08603576035869,
+   51.11213206768453,
+   52.08566881972515,
+   53.009595154208675,
+   53.88674184862552,
+   54.719810912782364,
+   55.511369905339656,
+   56.26384983826358,
+   56.9795457635324,
+   57.66061932565055,
+   58.309102717512495,
+   58.92690360147843,
+   59.515810657226794,
+   60.07749949747054,
+   60.61353875554587,
+   61.125396198716395,
+   61.6144447598148,
+   62.081968410388,
+   62.52916782200981,
+   62.95716578061465,
+   63.36701233265811,
+   63.75968965250396,
+   64.13611662844546,
+   64.49715317099522,
+   64.84360425152093,
+   65.17622368305037,
+   65.49571765790482,
+   65.80274805930787
+  ],
+  "boundary": [
+   {
+    "T_C": 400,
+    "phase": "Ti10O19",
+    "y_CO2": 5.107147948469721e-07
+   },
+   {
+    "T_C": 425,
+    "phase": "Ti10O19",
+    "y_CO2": 1.0847144238696607e-06
+   },
+   {
+    "T_C": 450,
+    "phase": "Ti10O19",
+    "y_CO2": 2.186429448335578e-06
+   },
+   {
+    "T_C": 475,
+    "phase": "Ti10O19",
+    "y_CO2": 4.204926797381407e-06
+   },
+   {
+    "T_C": 500,
+    "phase": "Ti10O19",
+    "y_CO2": 7.751788931273421e-06
+   },
+   {
+    "T_C": 525,
+    "phase": "Ti10O19",
+    "y_CO2": 1.3753987253704713e-05
+   },
+   {
+    "T_C": 550,
+    "phase": "Ti10O19",
+    "y_CO2": 2.3571369556544802e-05
+   },
+   {
+    "T_C": 575,
+    "phase": "Ti10O19",
+    "y_CO2": 3.914103983119934e-05
+   },
+   {
+    "T_C": 600,
+    "phase": "Ti10O19",
+    "y_CO2": 6.315021604016979e-05
+   },
+   {
+    "T_C": 625,
+    "phase": "Ti10O19",
+    "y_CO2": 9.923834055901855e-05
+   },
+   {
+    "T_C": 650,
+    "phase": "Ti10O19",
+    "y_CO2": 0.0001522283165604995
+   },
+   {
+    "T_C": 675,
+    "phase": "Ti10O19",
+    "y_CO2": 0.00022838576645389103
+   },
+   {
+    "T_C": 700,
+    "phase": "Ti10O19",
+    "y_CO2": 0.0003357041533041929
+   },
+   {
+    "T_C": 725,
+    "phase": "Ti10O19",
+    "y_CO2": 0.0004842124516654012
+   },
+   {
+    "T_C": 750,
+    "phase": "Ti10O19",
+    "y_CO2": 0.0006863147831652589
+   },
+   {
+    "T_C": 775,
+    "phase": "Ti10O19",
+    "y_CO2": 0.00095707663896693
+   },
+   {
+    "T_C": 800,
+    "phase": "Ti10O19",
+    "y_CO2": 0.0013146372468848116
+   },
+   {
+    "T_C": 825,
+    "phase": "Ti10O19",
+    "y_CO2": 0.0017805013112864553
+   },
+   {
+    "T_C": 850,
+    "phase": "Ti10O19",
+    "y_CO2": 0.002379866617640158
+   },
+   {
+    "T_C": 875,
+    "phase": "Ti10O19",
+    "y_CO2": 0.0031419081025377002
+   },
+   {
+    "T_C": 900,
+    "phase": "Ti10O19",
+    "y_CO2": 0.004100010315794104
+   },
+   {
+    "T_C": 925,
+    "phase": "Ti10O19",
+    "y_CO2": 0.005291926556490202
+   },
+   {
+    "T_C": 950,
+    "phase": "Ti10O19",
+    "y_CO2": 0.006759839465391451
+   },
+   {
+    "T_C": 975,
+    "phase": "Ti10O19",
+    "y_CO2": 0.00855029460012242
+   },
+   {
+    "T_C": 1000,
+    "phase": "Ti10O19",
+    "y_CO2": 0.010713975961874513
+   },
+   {
+    "T_C": 1025,
+    "phase": "Ti10O19",
+    "y_CO2": 0.013305291191309227
+   },
+   {
+    "T_C": 1050,
+    "phase": "Ti10O19",
+    "y_CO2": 0.016381734958095487
+   },
+   {
+    "T_C": 1075,
+    "phase": "Ti10O19",
+    "y_CO2": 0.020003002787696608
+   },
+   {
+    "T_C": 1100,
+    "phase": "Ti10O19",
+    "y_CO2": 0.02422983507392853
+   },
+   {
+    "T_C": 1125,
+    "phase": "Ti10O19",
+    "y_CO2": 0.029122583073053203
+   },
+   {
+    "T_C": 1150,
+    "phase": "Ti10O19",
+    "y_CO2": 0.034739505715769343
+   },
+   {
+    "T_C": 1175,
+    "phase": "Ti10O19",
+    "y_CO2": 0.041134828018871535
+   },
+   {
+    "T_C": 1200,
+    "phase": "Ti10O19",
+    "y_CO2": 0.04835661786673634
+   },
+   {
+    "T_C": 1225,
+    "phase": "Ti10O19",
+    "y_CO2": 0.05644456613289567
+   },
+   {
+    "T_C": 1250,
+    "phase": "Ti10O19",
+    "y_CO2": 0.06542778265272153
+   },
+   {
+    "T_C": 1275,
+    "phase": "Ti10O19",
+    "y_CO2": 0.07532274366769345
+   },
+   {
+    "T_C": 1300,
+    "phase": "Ti10O19",
+    "y_CO2": 0.0861315407507387
+   },
+   {
+    "T_C": 1325,
+    "phase": "Ti10O19",
+    "y_CO2": 0.09784058275824298
+   },
+   {
+    "T_C": 1350,
+    "phase": "Ti10O19",
+    "y_CO2": 0.11041988792471925
+   },
+   {
+    "T_C": 1375,
+    "phase": "Ti10O19",
+    "y_CO2": 0.12382307161442632
+   },
+   {
+    "T_C": 1400,
+    "phase": "Ti10O19",
+    "y_CO2": 0.13798808788325162
+   },
+   {
+    "T_C": 1425,
+    "phase": "Ti10O19",
+    "y_CO2": 0.15283872413718327
+   },
+   {
+    "T_C": 1450,
+    "phase": "Ti10O19",
+    "y_CO2": 0.16828678454375995
+   },
+   {
+    "T_C": 1475,
+    "phase": "Ti10O19",
+    "y_CO2": 0.18423483765538284
+   },
+   {
+    "T_C": 1500,
+    "phase": "Ti10O19",
+    "y_CO2": 0.20057935513229533
+   }
+  ],
+  "critical_y_CO2_mol_pct": [
+   5.107147948469721e-05,
+   0.00010847144238696606,
+   0.00021864294483355779,
+   0.0004204926797381407,
+   0.0007751788931273421,
+   0.0013753987253704713,
+   0.00235713695565448,
+   0.003914103983119934,
+   0.006315021604016979,
+   0.009923834055901855,
+   0.015222831656049948,
+   0.022838576645389103,
+   0.03357041533041929,
+   0.04842124516654012,
+   0.0686314783165259,
+   0.095707663896693,
+   0.13146372468848116,
+   0.17805013112864554,
+   0.2379866617640158,
+   0.31419081025377005,
+   0.41000103157941037,
+   0.5291926556490202,
+   0.6759839465391451,
+   0.855029460012242,
+   1.0713975961874513,
+   1.3305291191309228,
+   1.6381734958095486,
+   2.000300278769661,
+   2.422983507392853,
+   2.9122583073053203,
+   3.4739505715769345,
+   4.113482801887153,
+   4.835661786673634,
+   5.644456613289567,
+   6.542778265272153,
+   7.532274366769346,
+   8.61315407507387,
+   9.784058275824298,
+   11.041988792471926,
+   12.382307161442633,
+   13.798808788325163,
+   15.283872413718328,
+   16.828678454375996,
+   18.423483765538286,
+   20.057935513229534
+  ],
+  "margin_kJ_per_mol_O": [
+   74.07792405543114,
+   73.16262389417989,
+   72.24406691894546,
+   71.3217789510727,
+   70.39531639384404,
+   69.4642652270295,
+   68.52823980572794,
+   67.5868815305239,
+   66.63985744179627,
+   65.68685877859843,
+   64.72759953288005,
+   63.761815021609436,
+   62.78926049317943,
+   61.80970977949164,
+   60.824367885003085,
+   59.83025819666,
+   58.828591413996946,
+   57.81919628866035,
+   56.801915866357376,
+   55.77660639365968,
+   54.74313632851408,
+   53.70138544276506,
+   52.65124400672721,
+   51.592612046921204,
+   50.52539866938878,
+   49.44952144184026,
+   48.36490582875558,
+   47.27148467418283,
+   46.1691977275741,
+   45.057991208697786,
+   43.93781740776649,
+   42.80863431765647,
+   41.6704052952573,
+   40.523098749214114,
+   39.366687851800634,
+   38.201150272645464,
+   37.02646793223266,
+   35.84262677334391,
+   34.64961654837407,
+   33.44743062072757,
+   32.23606577797182,
+   31.015522054460234,
+   29.785802560417324,
+   28.546913313793993,
+   27.29886307009383
+  ],
+  "nearest_reduced_phase": [
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19",
+   "Ti10O19"
+  ],
+  "quoted": {
+   "1000": 56.26384983826358,
+   "1100": 58.92690360147843,
+   "1300": 62.95716578061465,
+   "1500": 65.80274805930787,
+   "500": 30.6438217810107,
+   "600": 37.972487875364166,
+   "700": 44.053623502840765,
+   "800": 49.00432894471645,
+   "900": 53.009595154208675
+  },
+  "rows": [
+   {
+    "T_C": 400.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 22.237122766950808,
+    "gas_fractions": {
+     "CO": 0.02223712276695103,
+     "CO2": 0.07776287723304913,
+     "H2": 0.07776287723304884,
+     "H2O": 0.02223712276695103,
+     "N2": 0.8,
+     "O2": 1.9423176086047057e-34
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 74.07792405543114,
+      "per_mol_O_kJ": 74.07792405543114
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 91.32345283946393,
+      "per_mol_O_kJ": 91.32345283946393
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 87.44321566963595,
+      "per_mol_O_kJ": 87.44321566963595
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 79.92379466719854,
+      "per_mol_O_kJ": 79.92379466719854
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 78.19052764926573,
+      "per_mol_O_kJ": 78.19052764926573
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 76.6480663889065,
+      "per_mol_O_kJ": 76.6480663889065
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 74.96769546761334,
+      "per_mol_O_kJ": 74.96769546761334
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 425.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 24.411021794066258,
+    "gas_fractions": {
+     "CO": 0.024411021794065586,
+     "CO2": 0.07558897820593373,
+     "H2": 0.07558897820593427,
+     "H2O": 0.024411021794065586,
+     "N2": 0.8000000000000008,
+     "O2": 5.732225183684333e-33
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 73.16262389417989,
+      "per_mol_O_kJ": 73.16262389417989
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 90.87404985162982,
+      "per_mol_O_kJ": 90.87404985162982
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 86.54510338192995,
+      "per_mol_O_kJ": 86.54510338192995
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 79.19262763269535,
+      "per_mol_O_kJ": 79.19262763269535
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 77.38174913553712,
+      "per_mol_O_kJ": 77.38174913553712
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 75.8121111170999,
+      "per_mol_O_kJ": 75.8121111170999
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 74.08802145850132,
+      "per_mol_O_kJ": 74.08802145850132
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 450.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 26.54505875279703,
+    "gas_fractions": {
+     "CO": 0.026545058752796415,
+     "CO2": 0.07345494124720298,
+     "H2": 0.07345494124720349,
+     "H2O": 0.026545058752796415,
+     "N2": 0.8000000000000007,
+     "O2": 1.3398473674559984e-31
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 72.24406691894546,
+      "per_mol_O_kJ": 72.24406691894546
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 90.41636513433923,
+      "per_mol_O_kJ": 90.41636513433923
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 85.65512191740413,
+      "per_mol_O_kJ": 85.65512191740413
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 78.45820378228291,
+      "per_mol_O_kJ": 78.45820378228291
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 76.56971380609048,
+      "per_mol_O_kJ": 76.56971380609048
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 74.97289902949842,
+      "per_mol_O_kJ": 74.97289902949842
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 73.20509063371446,
+      "per_mol_O_kJ": 73.20509063371446
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 475.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 28.626006639138218,
+    "gas_fractions": {
+     "CO": 0.028626006639137412,
+     "CO2": 0.07137399336086181,
+     "H2": 0.07137399336086256,
+     "H2O": 0.028626006639137412,
+     "N2": 0.8000000000000008,
+     "O2": 2.5394150737462372e-30
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 71.3217789510727,
+      "per_mol_O_kJ": 71.3217789510727
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 89.95038345596481,
+      "per_mol_O_kJ": 89.95038345596481
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 84.77256062091806,
+      "per_mol_O_kJ": 84.77256062091806
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 77.72004893750477,
+      "per_mol_O_kJ": 77.72004893750477
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 75.75394748244389,
+      "per_mol_O_kJ": 75.75394748244389
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 74.12995594763379,
+      "per_mol_O_kJ": 74.12995594763379
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 72.31842881476132,
+      "per_mol_O_kJ": 72.31842881476132
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 500.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 30.6438217810107,
+    "gas_fractions": {
+     "CO": 0.030643821781010768,
+     "CO2": 0.06935617821898929,
+     "H2": 0.06935617821898904,
+     "H2O": 0.030643821781010768,
+     "N2": 0.8000000000000002,
+     "O2": 3.9820932258244573e-29
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 70.39531639384404,
+      "per_mol_O_kJ": 70.39531639384404
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 89.47610392409513,
+      "per_mol_O_kJ": 89.47610392409513
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 83.8966885795171,
+      "per_mol_O_kJ": 83.8966885795171
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 76.97771950181368,
+      "per_mol_O_kJ": 76.97771950181368
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 74.93400656802714,
+      "per_mol_O_kJ": 74.93400656802714
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 73.28283827494351,
+      "per_mol_O_kJ": 73.28283827494351
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 71.42759240507348,
+      "per_mol_O_kJ": 71.42759240507348
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 525.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 32.59126308957938,
+    "gas_fractions": {
+     "CO": 0.0325912630895796,
+     "CO2": 0.06740873691042054,
+     "H2": 0.0674087369104203,
+     "H2O": 0.0325912630895796,
+     "N2": 0.7999999999999999,
+     "O2": 5.258875165151878e-28
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 69.4642652270295,
+      "per_mol_O_kJ": 69.4642652270295
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 88.99353702364431,
+      "per_mol_O_kJ": 88.99353702364431
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 83.02676465143281,
+      "per_mol_O_kJ": 83.02676465143281
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 76.23080145512768,
+      "per_mol_O_kJ": 76.23080145512768
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 74.10947704274122,
+      "per_mol_O_kJ": 74.10947704274122
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 72.4311319913354,
+      "per_mol_O_kJ": 72.4311319913354
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 70.53216738454375,
+      "per_mol_O_kJ": 70.53216738454375
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 550.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 34.46348483624009,
+    "gas_fractions": {
+     "CO": 0.03446348483624341,
+     "CO2": 0.0655365151637595,
+     "H2": 0.065536515163756,
+     "H2O": 0.03446348483624537,
+     "N2": 0.7999999999999957,
+     "O2": 5.940851967538893e-27
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 68.52823980572794,
+      "per_mol_O_kJ": 68.52823980572794
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 88.50270230513297,
+      "per_mol_O_kJ": 88.50270230513297
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 82.16204512908939,
+      "per_mol_O_kJ": 82.16204512908939
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 75.47890915267044,
+      "per_mol_O_kJ": 75.47890915267044
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 73.27997326179502,
+      "per_mol_O_kJ": 73.27997326179502
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 71.57445145202382,
+      "per_mol_O_kJ": 71.57445145202382
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 69.63176810837831,
+      "per_mol_O_kJ": 69.63176810837831
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 575.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 36.2576361072564,
+    "gas_fractions": {
+     "CO": 0.03625763610725643,
+     "CO2": 0.06374236389274357,
+     "H2": 0.06374236389274357,
+     "H2O": 0.03625763610725643,
+     "N2": 0.7999999999999999,
+     "O2": 5.820409206225537e-26
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 67.5868815305239,
+      "per_mol_O_kJ": 67.5868815305239
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 88.00362655788695,
+      "per_mol_O_kJ": 88.00362655788695
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 81.30178956203804,
+      "per_mol_O_kJ": 81.30178956203804
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 74.72168399515067,
+      "per_mol_O_kJ": 74.72168399515067
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 72.44513662588543,
+      "per_mol_O_kJ": 72.44513662588543
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 70.71243805771064,
+      "per_mol_O_kJ": 70.71243805771064
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 68.72603597726993,
+      "per_mol_O_kJ": 68.72603597726993
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 600.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 37.972487875364166,
+    "gas_fractions": {
+     "CO": 0.03797248787536356,
+     "CO2": 0.062027512124635815,
+     "H2": 0.06202751212463625,
+     "H2O": 0.03797248787536356,
+     "N2": 0.8000000000000008,
+     "O2": 5.006097273968135e-25
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 66.63985744179627,
+      "per_mol_O_kJ": 66.63985744179627
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 87.49634234873236,
+      "per_mol_O_kJ": 87.49634234873236
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 80.44526514497466,
+      "per_mol_O_kJ": 80.44526514497466
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 73.95879302304093,
+      "per_mol_O_kJ": 73.95879302304093
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 71.60463417547226,
+      "per_mol_O_kJ": 71.60463417547226
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 69.84475884885978,
+      "per_mol_O_kJ": 69.84475884885978
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 67.81463803167935,
+      "per_mol_O_kJ": 67.81463803167935
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 625.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 39.60809922536067,
+    "gas_fractions": {
+     "CO": 0.03960809922536117,
+     "CO2": 0.060391900774639205,
+     "H2": 0.06039190077463876,
+     "H2O": 0.03960809922536173,
+     "N2": 0.7999999999999992,
+     "O2": 3.821118168560528e-24
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 65.68685877859843,
+      "per_mol_O_kJ": 65.68685877859843
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 86.98088683896708,
+      "per_mol_O_kJ": 86.98088683896708
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 79.59174998433286,
+      "per_mol_O_kJ": 79.59174998433286
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 73.189927475486,
+      "per_mol_O_kJ": 73.189927475486
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 70.75815714969258,
+      "per_mol_O_kJ": 70.75815714969258
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 68.97110506461331,
+      "per_mol_O_kJ": 68.97110506461331
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 66.89726551073909,
+      "per_mol_O_kJ": 66.89726551073909
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 650.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 41.165527515940425,
+    "gas_fractions": {
+     "CO": 0.04116552751594084,
+     "CO2": 0.05883447248405952,
+     "H2": 0.05883447248405911,
+     "H2O": 0.04116552751594084,
+     "N2": 0.7999999999999997,
+     "O2": 2.6135049057859184e-23
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 64.72759953288005,
+      "per_mol_O_kJ": 64.72759953288005
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 86.4573008153659,
+      "per_mol_O_kJ": 86.4573008153659
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 78.74053548717825,
+      "per_mol_O_kJ": 78.74053548717825
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 72.4148013445174,
+      "per_mol_O_kJ": 72.4148013445174
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 69.90541954056744,
+      "per_mol_O_kJ": 69.90541954056744
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 68.09119069699318,
+      "per_mol_O_kJ": 68.09119069699318
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 65.97363240646882,
+      "per_mol_O_kJ": 65.97363240646882
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 675.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 42.64658273381303,
+    "gas_fractions": {
+     "CO": 0.04264658273381345,
+     "CO2": 0.05735341726618691,
+     "H2": 0.0573534172661865,
+     "H2O": 0.04264658273381345,
+     "N2": 0.7999999999999996,
+     "O2": 1.6156703698808796e-22
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 63.761815021609436,
+      "per_mol_O_kJ": 63.761815021609436
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 85.92562788741475,
+      "per_mol_O_kJ": 85.92562788741475
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 77.89092806256963,
+      "per_mol_O_kJ": 77.89092806256963
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 71.63314994717621,
+      "per_mol_O_kJ": 71.63314994717621
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 69.046156665132,
+      "per_mol_O_kJ": 69.046156665132
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 67.20475106303911,
+      "per_mol_O_kJ": 67.20475106303911
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 65.04347403589964,
+      "per_mol_O_kJ": 65.04347403589964
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 700.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 44.053623502840765,
+    "gas_fractions": {
+     "CO": 0.04405362350283999,
+     "CO2": 0.05594637649715925,
+     "H2": 0.05594637649715985,
+     "H2O": 0.04405362350283967,
+     "N2": 0.8000000000000013,
+     "O2": 9.098063469409776e-22
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 62.78926049317943,
+      "per_mol_O_kJ": 62.78926049317943
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 85.38591381490801,
+      "per_mol_O_kJ": 85.38591381490801
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 77.04225028437781,
+      "per_mol_O_kJ": 77.04225028437781
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 70.84472853191482,
+      "per_mol_O_kJ": 70.84472853191482
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 68.18012377183277,
+      "per_mol_O_kJ": 68.18012377183277
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 66.31154141119714,
+      "per_mol_O_kJ": 66.31154141119714
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 64.10654564747892,
+      "per_mol_O_kJ": 64.10654564747892
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 725.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 45.38939068331436,
+    "gas_fractions": {
+     "CO": 0.04538939068331519,
+     "CO2": 0.054610609316685516,
+     "H2": 0.0546106093166857,
+     "H2O": 0.045389390683314546,
+     "N2": 0.799999999999999,
+     "O2": 4.699432607796743e-21
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 61.80970977949164,
+      "per_mol_O_kJ": 61.80970977949164
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 84.83820593878386,
+      "per_mol_O_kJ": 84.83820593878386
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 76.19384163262839,
+      "per_mol_O_kJ": 76.19384163262839
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 70.04931093069672,
+      "per_mol_O_kJ": 70.04931093069672
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 67.30709469262501,
+      "per_mol_O_kJ": 67.30709469262501
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 65.41133557343028,
+      "per_mol_O_kJ": 65.41133557343028
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 63.16262107316379,
+      "per_mol_O_kJ": 63.16262107316379
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 750.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 46.66152745977749,
+    "gas_fractions": {
+     "CO": 0.046661527459778064,
+     "CO2": 0.05333847254022242,
+     "H2": 0.05333847254022185,
+     "H2O": 0.046661527459778064,
+     "N2": 0.7999999999999997,
+     "O2": 2.2414258977503398e-20
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 60.824367885003085,
+      "per_mol_O_kJ": 60.824367885003085
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 84.28396657809549,
+      "per_mol_O_kJ": 84.28396657809549
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 75.34647278927218,
+      "per_mol_O_kJ": 75.34647278927218
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 69.24810214802528,
+      "per_mol_O_kJ": 69.24810214802528
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 66.42827443201031,
+      "per_mol_O_kJ": 66.42827443201031
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 64.50533855423828,
+      "per_mol_O_kJ": 64.50533855423828
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 62.21290531745126,
+      "per_mol_O_kJ": 62.21290531745126
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 775.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 47.86388327780185,
+    "gas_fractions": {
+     "CO": 0.04786388327780159,
+     "CO2": 0.05213611672219814,
+     "H2": 0.05213611672219851,
+     "H2O": 0.04786388327780159,
+     "N2": 0.8,
+     "O2": 9.921457422405973e-20
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 59.83025819666,
+      "per_mol_O_kJ": 59.83025819666
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 83.72046105644745,
+      "per_mol_O_kJ": 83.72046105644745
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 74.49673424053822,
+      "per_mol_O_kJ": 74.49673424053822
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 68.43812557089768,
+      "per_mol_O_kJ": 68.43812557089768
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 65.54068637698128,
+      "per_mol_O_kJ": 65.54068637698128
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 63.59057374061513,
+      "per_mol_O_kJ": 63.59057374061513
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 61.25442176733213,
+      "per_mol_O_kJ": 61.25442176733213
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 800.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 49.00432894471645,
+    "gas_fractions": {
+     "CO": 0.049004328944716895,
+     "CO2": 0.05099567105528351,
+     "H2": 0.050995671055282965,
+     "H2O": 0.049004328944716895,
+     "N2": 0.7999999999999998,
+     "O2": 4.098180837521033e-19
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 58.828591413996946,
+      "per_mol_O_kJ": 58.828591413996946
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 83.14912744223352,
+      "per_mol_O_kJ": 83.14912744223352
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 73.64540634032028,
+      "per_mol_O_kJ": 73.64540634032028
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 67.62059189889305,
+      "per_mol_O_kJ": 67.62059189889305
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 64.64554122711161,
+      "per_mol_O_kJ": 64.64554122711161
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 62.668251832137685,
+      "per_mol_O_kJ": 62.668251832137685
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 60.288381122382816,
+      "per_mol_O_kJ": 60.288381122382816
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 825.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 50.08603576035869,
+    "gas_fractions": {
+     "CO": 0.05008603576035859,
+     "CO2": 0.04991396423964127,
+     "H2": 0.04991396423964145,
+     "H2O": 0.05008603576035859,
+     "N2": 0.8,
+     "O2": 1.5871343889391547e-18
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 57.81919628866035,
+      "per_mol_O_kJ": 57.81919628866035
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 82.57000808143619,
+      "per_mol_O_kJ": 82.57000808143619
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 72.79189096877894,
+      "per_mol_O_kJ": 72.79189096877894
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 66.79532988369147,
+      "per_mol_O_kJ": 66.79532988369147
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 63.74266773408044,
+      "per_mol_O_kJ": 63.74266773408044
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 61.738201580484656,
+      "per_mol_O_kJ": 61.738201580484656
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 59.31461213427974,
+      "per_mol_O_kJ": 59.31461213427974
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 850.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 51.11213206768453,
+    "gas_fractions": {
+     "CO": 0.051112132067684266,
+     "CO2": 0.04888786793231547,
+     "H2": 0.04888786793231564,
+     "H2O": 0.051112132067684266,
+     "N2": 0.8000000000000004,
+     "O2": 5.787678781784111e-18
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 56.801915866357376,
+      "per_mol_O_kJ": 56.801915866357376
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 81.98314660867618,
+      "per_mol_O_kJ": 81.98314660867618
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 71.93560851586608,
+      "per_mol_O_kJ": 71.93560851586608
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 65.9621825710392,
+      "per_mol_O_kJ": 65.9621825710392
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 62.83190894362724,
+      "per_mol_O_kJ": 62.83190894362724
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 60.80026603139913,
+      "per_mol_O_kJ": 60.80026603139913
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 58.33295784875827,
+      "per_mol_O_kJ": 58.33295784875827
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 875.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 52.08566881972515,
+    "gas_fractions": {
+     "CO": 0.05208566881972544,
+     "CO2": 0.0479143311802748,
+     "H2": 0.047914331180274966,
+     "H2O": 0.052085668819725255,
+     "N2": 0.7999999999999995,
+     "O2": 1.9950920956484844e-17
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 55.77660639365968,
+      "per_mol_O_kJ": 55.77660639365968
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 81.38858759409175,
+      "per_mol_O_kJ": 81.38858759409175
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 71.07599738225213,
+      "per_mol_O_kJ": 71.07599738225213
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 65.12100620753972,
+      "per_mol_O_kJ": 65.12100620753972
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 61.913121102356854,
+      "per_mol_O_kJ": 61.913121102356854
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 59.85430143148278,
+      "per_mol_O_kJ": 59.85430143148278
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 57.34327451242643,
+      "per_mol_O_kJ": 57.34327451242643
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 900.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 53.009595154208675,
+    "gas_fractions": {
+     "CO": 0.05300959515420884,
+     "CO2": 0.04699040484579132,
+     "H2": 0.04699040484579132,
+     "H2O": 0.05300959515420847,
+     "N2": 0.8,
+     "O2": 6.524460411024684e-17
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 54.74313632851408,
+      "per_mol_O_kJ": 54.74313632851408
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 80.786376261849,
+      "per_mol_O_kJ": 80.786376261849
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 70.21251346130111,
+      "per_mol_O_kJ": 70.21251346130111
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 64.27166925116262,
+      "per_mol_O_kJ": 64.27166925116262
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 60.98617266823612,
+      "per_mol_O_kJ": 60.98617266823612
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 58.900176238707445,
+      "per_mol_O_kJ": 58.900176238707445
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 56.34543058325198,
+      "per_mol_O_kJ": 56.34543058325198
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 925.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 53.88674184862552,
+    "gas_fractions": {
+     "CO": 0.05388674184862578,
+     "CO2": 0.04611325815137443,
+     "H2": 0.04611325815137459,
+     "H2O": 0.05388674184862521,
+     "N2": 0.7999999999999998,
+     "O2": 2.0308382915403495e-16
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 53.70138544276506,
+      "per_mol_O_kJ": 53.70138544276506
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 80.17655826697955,
+      "per_mol_O_kJ": 80.17655826697955
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 69.34462961090139,
+      "per_mol_O_kJ": 69.34462961090139
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 63.41405147378828,
+      "per_mol_O_kJ": 63.41405147378828
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 60.050943413139066,
+      "per_mol_O_kJ": 60.050943413139066
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 57.9377702249476,
+      "per_mol_O_kJ": 57.9377702249476
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 55.339305833105755,
+      "per_mol_O_kJ": 55.339305833105755
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 950.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 54.719810912782364,
+    "gas_fractions": {
+     "CO": 0.05471981091278207,
+     "CO2": 0.045280189087217565,
+     "H2": 0.045280189087218856,
+     "H2O": 0.0547198109127811,
+     "N2": 0.7999999999999998,
+     "O2": 6.034829138132528e-16
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 52.65124400672721,
+      "per_mol_O_kJ": 52.65124400672721
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 79.55917951978233,
+      "per_mol_O_kJ": 79.55917951978233
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 68.47183512207403,
+      "per_mol_O_kJ": 68.47183512207403
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 62.54804314575131,
+      "per_mol_O_kJ": 62.54804314575131
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 59.10732360740303,
+      "per_mol_O_kJ": 59.10732360740303
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 56.966973660538315,
+      "per_mol_O_kJ": 56.966973660538315
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 54.32479053232419,
+      "per_mol_O_kJ": 54.32479053232419
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 975.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 55.511369905339656,
+    "gas_fractions": {
+     "CO": 0.0555113699053393,
+     "CO2": 0.04448863009466026,
+     "H2": 0.04448863009466421,
+     "H2O": 0.05551136990533594,
+     "N2": 0.7999999999999986,
+     "O2": 1.7167961944289958e-15
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 51.592612046921204,
+      "per_mol_O_kJ": 51.592612046921204
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 78.93428604906603,
+      "per_mol_O_kJ": 78.93428604906603
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 67.59363518966074,
+      "per_mol_O_kJ": 67.59363518966074
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 61.673544293594205,
+      "per_mol_O_kJ": 61.673544293594205
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 58.15521327756642,
+      "per_mol_O_kJ": 58.15521327756642
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 55.98768657202072,
+      "per_mol_O_kJ": 55.98768657202072
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 53.30178470744613,
+      "per_mol_O_kJ": 53.30178470744613
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1000.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 56.26384983826358,
+    "gas_fractions": {
+     "CO": 0.056263849838263484,
+     "CO2": 0.043736150161736244,
+     "H2": 0.04373615016174556,
+     "H2O": 0.05626384983825409,
+     "N2": 0.799999999999996,
+     "O2": 4.687567593969819e-15
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 50.52539866938878,
+      "per_mol_O_kJ": 50.52539866938878
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 78.30192389714284,
+      "per_mol_O_kJ": 78.30192389714284
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 66.70955038921215,
+      "per_mol_O_kJ": 66.70955038921215
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 60.79046402337917,
+      "per_mol_O_kJ": 60.79046402337917
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 57.194521529688245,
+      "per_mol_O_kJ": 57.194521529688245
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 54.999818065459294,
+      "per_mol_O_kJ": 54.999818065459294
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 52.27019746453698,
+      "per_mol_O_kJ": 52.27019746453698
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1025.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 56.9795457635324,
+    "gas_fractions": {
+     "CO": 0.05697954576353204,
+     "CO2": 0.043020454236467054,
+     "H2": 0.043020454236491354,
+     "H2O": 0.05697954576350755,
+     "N2": 0.7999999999999897,
+     "O2": 1.231337268689539e-14
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 49.44952144184026,
+      "per_mol_O_kJ": 49.44952144184026
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 77.66213904078677,
+      "per_mol_O_kJ": 77.66213904078677
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 65.81911616317734,
+      "per_mol_O_kJ": 65.81911616317734
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 59.898719902840185,
+      "per_mol_O_kJ": 59.898719902840185
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 56.22516593150658,
+      "per_mol_O_kJ": 56.22516593150658
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 54.00328570858164,
+      "per_mol_O_kJ": 54.00328570858164
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 51.22994637132342,
+      "per_mol_O_kJ": 51.22994637132342
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1050.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 57.66061932565055,
+    "gas_fractions": {
+     "CO": 0.057660619325648206,
+     "CO2": 0.04233938067434818,
+     "H2": 0.042339380674410745,
+     "H2O": 0.057660619325585936,
+     "N2": 0.7999999999999757,
+     "O2": 3.118570698282504e-14
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 48.36490582875558,
+      "per_mol_O_kJ": 48.36490582875558
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 77.01497733343354,
+      "per_mol_O_kJ": 77.01497733343354
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 64.92188231871432,
+      "per_mol_O_kJ": 64.92188231871432
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 58.998237396475815,
+      "per_mol_O_kJ": 58.998237396475815
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 55.24707194751363,
+      "per_mol_O_kJ": 55.24707194751363
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 52.99801496588907,
+      "per_mol_O_kJ": 52.99801496588907
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 50.18095689229904,
+      "per_mol_O_kJ": 50.18095689229904
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1075.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 58.309102717512495,
+    "gas_fractions": {
+     "CO": 0.05830910271751084,
+     "CO2": 0.04169089728248412,
+     "H2": 0.041690897282638306,
+     "H2O": 0.05830910271735547,
+     "N2": 0.7999999999999349,
+     "O2": 7.630650639649212e-14
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 47.27148467418283,
+      "per_mol_O_kJ": 47.27148467418283
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 76.36048446474013,
+      "per_mol_O_kJ": 76.36048446474013
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 64.01741253880027,
+      "per_mol_O_kJ": 64.01741253880027
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 58.08894934833825,
+      "per_mol_O_kJ": 58.08894934833825
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 54.260172421762945,
+      "per_mol_O_kJ": 54.260172421762945
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 51.983938681432846,
+      "per_mol_O_kJ": 51.983938681432846
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 49.123161871525554,
+      "per_mol_O_kJ": 49.123161871525554
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1100.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 58.92690360147843,
+    "gas_fractions": {
+     "CO": 0.05892690360146748,
+     "CO2": 0.04107309639851415,
+     "H2": 0.041073096398875894,
+     "H2O": 0.05892690360110615,
+     "N2": 0.7999999999998556,
+     "O2": 1.8072138501036087e-13
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 46.1691977275741,
+      "per_mol_O_kJ": 46.1691977275741
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 75.69870593431324,
+      "per_mol_O_kJ": 75.69870593431324
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 63.10528390782133,
+      "per_mol_O_kJ": 63.10528390782133
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 57.17079550791141,
+      "per_mol_O_kJ": 57.17079550791141
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 53.264407103737085,
+      "per_mol_O_kJ": 53.264407103737085
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 50.96099660469372,
+      "per_mol_O_kJ": 50.96099660469372
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 48.05650105847599,
+      "per_mol_O_kJ": 48.05650105847599
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1125.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 59.515810657226794,
+    "gas_fractions": {
+     "CO": 0.059515810657203794,
+     "CO2": 0.04048418934275617,
+     "H2": 0.040484189343584054,
+     "H2O": 0.05951581065637684,
+     "N2": 0.7999999999996641,
+     "O2": 4.1500762177605014e-13
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 45.057991208697786,
+      "per_mol_O_kJ": 45.057991208697786
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 75.02968703699923,
+      "per_mol_O_kJ": 75.02968703699923
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 62.18508645244788,
+      "per_mol_O_kJ": 62.18508645244788
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 56.24372209496687,
+      "per_mol_O_kJ": 56.24372209496687
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 52.25972221320444,
+      "per_mol_O_kJ": 52.25972221320444
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 49.92913495544599,
+      "per_mol_O_kJ": 49.92913495544599
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 46.980920672926004,
+      "per_mol_O_kJ": 46.980920672926004
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1150.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 60.07749949747054,
+    "gas_fractions": {
+     "CO": 0.060077499497414616,
+     "CO2": 0.039922500502492554,
+     "H2": 0.03992250050434391,
+     "H2O": 0.060077499495563465,
+     "N2": 0.7999999999992599,
+     "O2": 9.25560357726281e-13
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 43.93781740776649,
+      "per_mol_O_kJ": 43.93781740776649
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 74.35347285755006,
+      "per_mol_O_kJ": 74.35347285755006
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 61.256422698216966,
+      "per_mol_O_kJ": 61.256422698216966
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 55.30768139973134,
+      "per_mol_O_kJ": 55.30768139973134
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 51.24607004039444,
+      "per_mol_O_kJ": 51.24607004039444
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 48.88830602391454,
+      "per_mol_O_kJ": 48.88830602391454
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 45.89637300509821,
+      "per_mol_O_kJ": 45.89637300509821
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1175.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 60.61353875554587,
+    "gas_fractions": {
+     "CO": 0.06061353875542408,
+     "CO2": 0.03938646124437499,
+     "H2": 0.03938646124839053,
+     "H2O": 0.0606135387514088,
+     "N2": 0.799999999998394,
+     "O2": 2.00775522197186e-12
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 42.80863431765647,
+      "per_mol_O_kJ": 42.80863431765647
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 73.67010827289346,
+      "per_mol_O_kJ": 73.67010827289346
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 60.31890724208938,
+      "per_mol_O_kJ": 60.31890724208938
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 54.36263141510108,
+      "per_mol_O_kJ": 54.36263141510108
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 50.22340857819927,
+      "per_mol_O_kJ": 50.22340857819927
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 47.83846780299382,
+      "per_mol_O_kJ": 47.83846780299382
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 44.80281604788797,
+      "per_mol_O_kJ": 44.80281604788797
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1200.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 61.125396198716395,
+    "gas_fractions": {
+     "CO": 0.061125396198457006,
+     "CO2": 0.03887460380111866,
+     "H2": 0.038874603809603045,
+     "H2O": 0.06112539618997274,
+     "N2": 0.7999999999966063,
+     "O2": 4.242140342464721e-12
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 41.6704052952573,
+      "per_mol_O_kJ": 41.6704052952573
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 72.97963796049748,
+      "per_mol_O_kJ": 72.97963796049748
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 59.372166340935564,
+      "per_mol_O_kJ": 59.372166340935564
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 53.40853549796475,
+      "per_mol_O_kJ": 53.40853549796475
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 49.191701183510304,
+      "per_mol_O_kJ": 49.191701183510304
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 46.77958364957658,
+      "per_mol_O_kJ": 46.77958364957658
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 43.70021315818576,
+      "per_mol_O_kJ": 43.70021315818576
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1225.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 61.6144447598148,
+    "gas_fractions": {
+     "CO": 0.061614444759276306,
+     "CO2": 0.03838555523984963,
+     "H2": 0.038385555257333046,
+     "H2O": 0.06161444474179311,
+     "N2": 0.7999999999930062,
+     "O2": 8.741739137211472e-12
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 40.523098749214114,
+      "per_mol_O_kJ": 40.523098749214114
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 72.28210641158444,
+      "per_mol_O_kJ": 72.28210641158444
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 58.41583751583016,
+      "per_mol_O_kJ": 58.41583751583016
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 52.44536205698705,
+      "per_mol_O_kJ": 52.44536205698705
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 48.1509162649877,
+      "per_mol_O_kJ": 48.1509162649877
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 45.7116219723207,
+      "per_mol_O_kJ": 45.7116219723207
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 42.58853274465491,
+      "per_mol_O_kJ": 42.58853274465491
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1250.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 62.081968410388,
+    "gas_fractions": {
+     "CO": 0.0620819684092965,
+     "CO2": 0.03791803158894502,
+     "H2": 0.03791803162412612,
+     "H2O": 0.062081968374114845,
+     "N2": 0.7999999999859267,
+     "O2": 1.7590662843999565e-11
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 39.366687851800634,
+      "per_mol_O_kJ": 39.366687851800634
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 71.57755794814375,
+      "per_mol_O_kJ": 71.57755794814375
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 57.44956917186005,
+      "per_mol_O_kJ": 57.44956917186005
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 51.4730842644517,
+      "per_mol_O_kJ": 51.4730842644517
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 47.10102699491654,
+      "per_mol_O_kJ": 47.10102699491654
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 44.63455594351444,
+      "per_mol_O_kJ": 44.63455594351444
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 41.4677479795746,
+      "per_mol_O_kJ": 41.4677479795746
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1275.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 62.52916782200981,
+    "gas_fractions": {
+     "CO": 0.06252916781984548,
+     "CO2": 0.03747083217669361,
+     "H2": 0.03747083224590353,
+     "H2O": 0.06252916775063608,
+     "N2": 0.7999999999723165,
+     "O2": 3.4604840217461974e-11
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 38.201150272645464,
+      "per_mol_O_kJ": 38.201150272645464
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 70.86603674280559,
+      "per_mol_O_kJ": 70.86603674280559
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 56.47302023301518,
+      "per_mol_O_kJ": 56.47302023301518
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 50.49167978999003,
+      "per_mol_O_kJ": 50.49167978999003
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 46.04201104292679,
+      "per_mol_O_kJ": 46.04201104292679
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 43.54836323278596,
+      "per_mol_O_kJ": 43.54836323278596
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 40.337836532580695,
+      "per_mol_O_kJ": 40.337836532580695
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1300.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 62.95716578061465,
+    "gas_fractions": {
+     "CO": 0.06295716577642024,
+     "CO2": 0.037042834216917384,
+     "H2": 0.037042834350164734,
+     "H2O": 0.06295716564317269,
+     "N2": 0.7999999999467012,
+     "O2": 6.662372975416354e-11
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 37.02646793223266,
+      "per_mol_O_kJ": 37.02646793223266
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 70.14758684074229,
+      "per_mol_O_kJ": 70.14758684074229
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 55.485859791647044,
+      "per_mol_O_kJ": 55.485859791647044
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 49.50113055410111,
+      "per_mol_O_kJ": 49.50113055410111
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 44.97385032951843,
+      "per_mol_O_kJ": 44.97385032951843
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 42.453025760633864,
+      "per_mol_O_kJ": 42.453025760633864
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 39.198780324167274,
+      "per_mol_O_kJ": 39.198780324167274
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1325.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 63.36701233265811,
+    "gas_fractions": {
+     "CO": 0.06336701232469767,
+     "CO2": 0.036632987662738294,
+     "H2": 0.036632987914055254,
+     "H2O": 0.06336701207338272,
+     "N2": 0.7999999998994661,
+     "O2": 1.2565985559180821e-10
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 35.84262677334391,
+      "per_mol_O_kJ": 35.84262677334391
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 69.42225218280237,
+      "per_mol_O_kJ": 69.42225218280237
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 54.4877667718074,
+      "per_mol_O_kJ": 54.4877667718074
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 48.50142249956889,
+      "per_mol_O_kJ": 48.50142249956889
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 43.89653079747586,
+      "per_mol_O_kJ": 43.89653079747586
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 41.34852946984438,
+      "per_mol_O_kJ": 41.34852946984438
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 38.05056529711965,
+      "per_mol_O_kJ": 38.05056529711965
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1350.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 63.75968965250396,
+    "gas_fractions": {
+     "CO": 0.0637596896376857,
+     "CO2": 0.036240310339073496,
+     "H2": 0.036240310803889265,
+     "H2O": 0.06375968917287,
+     "N2": 0.7999999998140735,
+     "O2": 2.3240790794781282e-10
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 34.64961654837407,
+      "per_mol_O_kJ": 34.64961654837407
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 68.69007662902072,
+      "per_mol_O_kJ": 68.69007662902072
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 53.47842960563139,
+      "per_mol_O_kJ": 53.47842960563139
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 47.492545378807336,
+      "per_mol_O_kJ": 47.492545378807336
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 42.81004219920578,
+      "per_mol_O_kJ": 42.81004219920578
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 40.23486411282829,
+      "per_mol_O_kJ": 40.23486411282829
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 36.89318120384905,
+      "per_mol_O_kJ": 36.89318120384905
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1375.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 64.13611662844546,
+    "gas_fractions": {
+     "CO": 0.06413611660138849,
+     "CO2": 0.03586388335642466,
+     "H2": 0.035863884200164085,
+     "H2O": 0.064136115757649,
+     "N2": 0.799999999662504,
+     "O2": 4.2186972412559717e-10
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 33.44743062072757,
+      "per_mol_O_kJ": 33.44743062072757
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 67.95110398157647,
+      "per_mol_O_kJ": 67.95110398157647
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 52.45754592173671,
+      "per_mol_O_kJ": 52.45754592173671
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 46.474492555214965,
+      "per_mol_O_kJ": 46.474492555214965
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 41.71437789811762,
+      "per_mol_O_kJ": 41.71437789811762
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 39.112023052989116,
+      "per_mol_O_kJ": 39.112023052989116
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 35.72662140776265,
+      "per_mol_O_kJ": 35.72662140776265
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1400.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 64.49715317099522,
+    "gas_fractions": {
+     "CO": 0.06449715312247957,
+     "CO2": 0.03550284680229896,
+     "H2": 0.03550284830673009,
+     "H2O": 0.06449715161804839,
+     "N2": 0.7999999993982273,
+     "O2": 7.522155973343529e-10
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 32.23606577797182,
+      "per_mol_O_kJ": 32.23606577797182
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 67.20537800597958,
+      "per_mol_O_kJ": 67.20537800597958
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 51.42482224422679,
+      "per_mol_O_kJ": 51.42482224422679
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 45.44726081637009,
+      "per_mol_O_kJ": 45.44726081637009
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 40.60953468177922,
+      "per_mol_O_kJ": 40.60953468177922
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 37.98000307789971,
+      "per_mol_O_kJ": 37.98000307789971
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 34.550882696425106,
+      "per_mol_O_kJ": 34.550882696425106
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1425.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 64.84360425152093,
+    "gas_fractions": {
+     "CO": 0.06484360416602877,
+     "CO2": 0.035156395702124504,
+     "H2": 0.03515639833915739,
+     "H2O": 0.06484360152899363,
+     "N2": 0.799999998945181,
+     "O2": 1.3185146022755526e-09
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 31.015522054460234,
+      "per_mol_O_kJ": 31.015522054460234
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 66.452942448969,
+      "per_mol_O_kJ": 66.452942448969
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 50.379973700549044,
+      "per_mol_O_kJ": 50.379973700549044
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 44.410850196632964,
+      "per_mol_O_kJ": 44.410850196632964
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 39.4955125845554,
+      "per_mol_O_kJ": 39.4955125845554
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 36.83880422191851,
+      "per_mol_O_kJ": 36.83880422191851
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 33.3659651042035,
+      "per_mol_O_kJ": 33.3659651042035
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1450.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 65.17622368305037,
+    "gas_fractions": {
+     "CO": 0.06517622353486083,
+     "CO2": 0.03482377623777165,
+     "H2": 0.03482378078512332,
+     "H2O": 0.06517621898750896,
+     "N2": 0.7999999981810593,
+     "O2": 2.2736758853777524e-09
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 29.785802560417324,
+      "per_mol_O_kJ": 29.785802560417324
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 65.69384105100107,
+      "per_mol_O_kJ": 65.69384105100107
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 49.32272373580008,
+      "per_mol_O_kJ": 49.32272373580008
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 43.365263806237635,
+      "per_mol_O_kJ": 43.365263806237635
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 38.372314716677465,
+      "per_mol_O_kJ": 38.372314716677465
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 35.68842959528547,
+      "per_mol_O_kJ": 35.68842959528547
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 32.171871741331415,
+      "per_mol_O_kJ": 32.171871741331415
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1475.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 65.49571765790482,
+    "gas_fractions": {
+     "CO": 0.06549571740510285,
+     "CO2": 0.03450428220891138,
+     "H2": 0.03450428992873507,
+     "H2O": 0.06549570968527607,
+     "N2": 0.7999999969120644,
+     "O2": 3.859910174326679e-09
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 28.546913313793993,
+      "per_mol_O_kJ": 28.546913313793993
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 64.92811755038701,
+      "per_mol_O_kJ": 64.92811755038701
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 48.252803830199355,
+      "per_mol_O_kJ": 48.252803830199355
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 42.31050766313456,
+      "per_mol_O_kJ": 42.31050766313456
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 37.23994709609906,
+      "per_mol_O_kJ": 37.23994709609906
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 34.5288852159465,
+      "per_mol_O_kJ": 34.5288852159465
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 30.96860862575886,
+      "per_mol_O_kJ": 30.96860862575886
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   },
+   {
+    "T_C": 1500.0,
+    "active_condensed_phases": [
+     "TiO2"
+    ],
+    "conversion_CO2_pct": 65.80274805930787,
+    "gas_fractions": {
+     "CO": 0.06580274763453013,
+     "CO2": 0.034197251719937906,
+     "H2": 0.03419726463058005,
+     "H2O": 0.06580273472388792,
+     "N2": 0.7999999948357428,
+     "O2": 6.455321080793901e-09
+    },
+    "inactive_phase_reduced_costs": {
+     "Ti10O19": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 27.29886307009383,
+      "per_mol_O_kJ": 27.29886307009383
+     },
+     "Ti2O3": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 64.15581567506001,
+      "per_mol_O_kJ": 64.15581567506001
+     },
+     "Ti3O5": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 47.16995321538843,
+      "per_mol_O_kJ": 47.16995321538843
+     },
+     "Ti4O7": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 41.246590522832776,
+      "per_mol_O_kJ": 41.246590522832776
+     },
+     "Ti5O9": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 36.098418478325584,
+      "per_mol_O_kJ": 36.098418478325584
+     },
+     "Ti6O11": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 33.36017983941201,
+      "per_mol_O_kJ": 33.36017983941201
+     },
+     "Ti8O15": {
+      "oxygen_removed_per_extent": 1.0,
+      "per_formula_kJ": 29.75618451299124,
+      "per_mol_O_kJ": 29.75618451299124
+     }
+    },
+    "solver_tolerance": {
+     "degeneracy_kJ_per_mol_O": 1e-06,
+     "kkt_kJ": 1e-09,
+     "newton_scaled_residual": 1e-13
+    }
+   }
+  ],
+  "stable_phases": [
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2",
+   "TiO2"
+  ]
+ },
+ "feed": {
+  "label": "CO2/H2/He = 10/10/80",
+  "sccm": {
+   "CO2": 10,
+   "H2": 10,
+   "N2": 80
+  }
+ },
+ "generated_by": "scripts/reproduce_paper.py",
+ "scope": "This repository computes gas-solid equilibrium and a geometric surface-capacity bound. It does not assign the below-surface inventory among subsurface point defects, bulk defects or extended defects.",
+ "surface": {
+  "by_diameter": {
+   "0.9": {
+    "area_m2_g": 1.5692563848378798,
+    "bridging_capacity_umol_O_g": 13.55702643902137,
+    "reconstruction_deficiency_umol_O_g": 6.778513219510685
+   },
+   "1.6": {
+    "area_m2_g": 0.8827067164713074,
+    "bridging_capacity_umol_O_g": 7.625827371949523,
+    "reconstruction_deficiency_umol_O_g": 3.8129136859747614
+   }
+  },
+  "geometry": {
+   "bridging_areal_cm2": 520261203278537.25,
+   "cell_area_A2": 19.221114196067017,
+   "density_g_cm3": 4.248296665273981,
+   "reconstruction_ML": 0.5
+  },
+  "inventories": [
+   30.0,
+   40.0,
+   60.0,
+   95.0,
+   130.0,
+   150.0,
+   190.0,
+   220.0
+  ],
+  "rows": [
+   {
+    "Ti3_fraction_pct": 0.47919599999999996,
+    "area_m2_g": 1.5692563848378798,
+    "below_surface_fraction_min_pct": 77.40495593496438,
+    "bridging_capacity_umol_O_g": 13.55702643902137,
+    "diameter_um": 0.9,
+    "inventory_over_capacity": 2.2128746399468984,
+    "measured_umol_O_g": 30.0,
+    "reconstruction_deficiency_umol_O_g": 6.778513219510685,
+    "surface_fraction_max_pct": 22.59504406503562,
+    "x_in_TiO2mx": 0.00239598
+   },
+   {
+    "Ti3_fraction_pct": 0.6389279999999999,
+    "area_m2_g": 1.5692563848378798,
+    "below_surface_fraction_min_pct": 83.0537169512233,
+    "bridging_capacity_umol_O_g": 13.55702643902137,
+    "diameter_um": 0.9,
+    "inventory_over_capacity": 2.950499519929198,
+    "measured_umol_O_g": 40.0,
+    "reconstruction_deficiency_umol_O_g": 6.778513219510685,
+    "surface_fraction_max_pct": 16.946283048776714,
+    "x_in_TiO2mx": 0.00319464
+   },
+   {
+    "Ti3_fraction_pct": 0.9583919999999999,
+    "area_m2_g": 1.5692563848378798,
+    "below_surface_fraction_min_pct": 88.70247796748218,
+    "bridging_capacity_umol_O_g": 13.55702643902137,
+    "diameter_um": 0.9,
+    "inventory_over_capacity": 4.425749279893797,
+    "measured_umol_O_g": 60.0,
+    "reconstruction_deficiency_umol_O_g": 6.778513219510685,
+    "surface_fraction_max_pct": 11.29752203251781,
+    "x_in_TiO2mx": 0.00479196
+   },
+   {
+    "Ti3_fraction_pct": 1.5174539999999999,
+    "area_m2_g": 1.5692563848378798,
+    "below_surface_fraction_min_pct": 92.86472292683085,
+    "bridging_capacity_umol_O_g": 13.55702643902137,
+    "diameter_um": 0.9,
+    "inventory_over_capacity": 7.007436359831845,
+    "measured_umol_O_g": 95.0,
+    "reconstruction_deficiency_umol_O_g": 6.778513219510685,
+    "surface_fraction_max_pct": 7.135277073169142,
+    "x_in_TiO2mx": 0.007587269999999999
+   },
+   {
+    "Ti3_fraction_pct": 2.076516,
+    "area_m2_g": 1.5692563848378798,
+    "below_surface_fraction_min_pct": 94.78575906191486,
+    "bridging_capacity_umol_O_g": 13.55702643902137,
+    "diameter_um": 0.9,
+    "inventory_over_capacity": 9.589123439769894,
+    "measured_umol_O_g": 130.0,
+    "reconstruction_deficiency_umol_O_g": 6.778513219510685,
+    "surface_fraction_max_pct": 5.214240938085143,
+    "x_in_TiO2mx": 0.010382579999999999
+   },
+   {
+    "Ti3_fraction_pct": 2.3959799999999998,
+    "area_m2_g": 1.5692563848378798,
+    "below_surface_fraction_min_pct": 95.48099118699288,
+    "bridging_capacity_umol_O_g": 13.55702643902137,
+    "diameter_um": 0.9,
+    "inventory_over_capacity": 11.064373199734492,
+    "measured_umol_O_g": 150.0,
+    "reconstruction_deficiency_umol_O_g": 6.778513219510685,
+    "surface_fraction_max_pct": 4.519008813007123,
+    "x_in_TiO2mx": 0.0119799
+   },
+   {
+    "Ti3_fraction_pct": 3.0349079999999997,
+    "area_m2_g": 1.5692563848378798,
+    "below_surface_fraction_min_pct": 96.43236146341543,
+    "bridging_capacity_umol_O_g": 13.55702643902137,
+    "diameter_um": 0.9,
+    "inventory_over_capacity": 14.01487271966369,
+    "measured_umol_O_g": 190.0,
+    "reconstruction_deficiency_umol_O_g": 6.778513219510685,
+    "surface_fraction_max_pct": 3.567638536584571,
+    "x_in_TiO2mx": 0.015174539999999999
+   },
+   {
+    "Ti3_fraction_pct": 3.5141039999999997,
+    "area_m2_g": 1.5692563848378798,
+    "below_surface_fraction_min_pct": 96.91885762749514,
+    "bridging_capacity_umol_O_g": 13.55702643902137,
+    "diameter_um": 0.9,
+    "inventory_over_capacity": 16.22774735961059,
+    "measured_umol_O_g": 220.0,
+    "reconstruction_deficiency_umol_O_g": 6.778513219510685,
+    "surface_fraction_max_pct": 3.081142372504857,
+    "x_in_TiO2mx": 0.01757052
+   },
+   {
+    "Ti3_fraction_pct": 0.47919599999999996,
+    "area_m2_g": 0.8827067164713074,
+    "below_surface_fraction_min_pct": 87.29028771341746,
+    "bridging_capacity_umol_O_g": 7.625827371949523,
+    "diameter_um": 1.6,
+    "inventory_over_capacity": 3.9339993599055965,
+    "measured_umol_O_g": 30.0,
+    "reconstruction_deficiency_umol_O_g": 3.8129136859747614,
+    "surface_fraction_max_pct": 12.709712286582539,
+    "x_in_TiO2mx": 0.00239598
+   },
+   {
+    "Ti3_fraction_pct": 0.6389279999999999,
+    "area_m2_g": 0.8827067164713074,
+    "below_surface_fraction_min_pct": 90.46771578506309,
+    "bridging_capacity_umol_O_g": 7.625827371949523,
+    "diameter_um": 1.6,
+    "inventory_over_capacity": 5.245332479874128,
+    "measured_umol_O_g": 40.0,
+    "reconstruction_deficiency_umol_O_g": 3.8129136859747614,
+    "surface_fraction_max_pct": 9.532284214936904,
+    "x_in_TiO2mx": 0.00319464
+   },
+   {
+    "Ti3_fraction_pct": 0.9583919999999999,
+    "area_m2_g": 0.8827067164713074,
+    "below_surface_fraction_min_pct": 93.64514385670873,
+    "bridging_capacity_umol_O_g": 7.625827371949523,
+    "diameter_um": 1.6,
+    "inventory_over_capacity": 7.867998719811193,
+    "measured_umol_O_g": 60.0,
+    "reconstruction_deficiency_umol_O_g": 3.8129136859747614,
+    "surface_fraction_max_pct": 6.354856143291269,
+    "x_in_TiO2mx": 0.00479196
+   },
+   {
+    "Ti3_fraction_pct": 1.5174539999999999,
+    "area_m2_g": 0.8827067164713074,
+    "below_surface_fraction_min_pct": 95.98640664634236,
+    "bridging_capacity_umol_O_g": 7.625827371949523,
+    "diameter_um": 1.6,
+    "inventory_over_capacity": 12.457664639701056,
+    "measured_umol_O_g": 95.0,
+    "reconstruction_deficiency_umol_O_g": 3.8129136859747614,
+    "surface_fraction_max_pct": 4.013593353657644,
+    "x_in_TiO2mx": 0.007587269999999999
+   },
+   {
+    "Ti3_fraction_pct": 2.076516,
+    "area_m2_g": 0.8827067164713074,
+    "below_surface_fraction_min_pct": 97.06698947232711,
+    "bridging_capacity_umol_O_g": 7.625827371949523,
+    "diameter_um": 1.6,
+    "inventory_over_capacity": 17.047330559590918,
+    "measured_umol_O_g": 130.0,
+    "reconstruction_deficiency_umol_O_g": 3.8129136859747614,
+    "surface_fraction_max_pct": 2.9330105276728933,
+    "x_in_TiO2mx": 0.010382579999999999
+   },
+   {
+    "Ti3_fraction_pct": 2.3959799999999998,
+    "area_m2_g": 0.8827067164713074,
+    "below_surface_fraction_min_pct": 97.45805754268349,
+    "bridging_capacity_umol_O_g": 7.625827371949523,
+    "diameter_um": 1.6,
+    "inventory_over_capacity": 19.669996799527983,
+    "measured_umol_O_g": 150.0,
+    "reconstruction_deficiency_umol_O_g": 3.8129136859747614,
+    "surface_fraction_max_pct": 2.541942457316508,
+    "x_in_TiO2mx": 0.0119799
+   },
+   {
+    "Ti3_fraction_pct": 3.0349079999999997,
+    "area_m2_g": 0.8827067164713074,
+    "below_surface_fraction_min_pct": 97.99320332317117,
+    "bridging_capacity_umol_O_g": 7.625827371949523,
+    "diameter_um": 1.6,
+    "inventory_over_capacity": 24.915329279402112,
+    "measured_umol_O_g": 190.0,
+    "reconstruction_deficiency_umol_O_g": 3.8129136859747614,
+    "surface_fraction_max_pct": 2.006796676828822,
+    "x_in_TiO2mx": 0.015174539999999999
+   },
+   {
+    "Ti3_fraction_pct": 3.5141039999999997,
+    "area_m2_g": 0.8827067164713074,
+    "below_surface_fraction_min_pct": 98.266857415466,
+    "bridging_capacity_umol_O_g": 7.625827371949523,
+    "diameter_um": 1.6,
+    "inventory_over_capacity": 28.849328639307707,
+    "measured_umol_O_g": 220.0,
+    "reconstruction_deficiency_umol_O_g": 3.8129136859747614,
+    "surface_fraction_max_pct": 1.7331425845339823,
+    "x_in_TiO2mx": 0.01757052
+   }
+  ]
+ }
+}

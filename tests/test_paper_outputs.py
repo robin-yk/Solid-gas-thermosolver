@@ -1,0 +1,147 @@
+"""The published numbers and the package must not drift apart.
+
+Everything the manuscript quotes is produced by one script, so the gates
+are: the script is deterministic, its output is committed and current,
+the page shows exactly that output, and the values in it are what a fresh
+solve returns rather than a stale copy.
+"""
+
+import csv
+import json
+import pathlib
+import subprocess
+import sys
+
+import pytest
+
+from solidgas import activeset as A
+from solidgas import vacancy_inventory as V
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+OUT = ROOT / 'paper_outputs'
+PAGE = ROOT / 'docs' / 'index.html'
+FEED = {'CO2': 10, 'H2': 10, 'N2': 80}
+
+
+def _rows(name):
+    with (OUT / name).open() as fh:
+        return list(csv.DictReader(fh))
+
+
+@pytest.fixture(scope='module')
+def site():
+    with (OUT / 'site_data.json').open() as fh:
+        return json.load(fh)
+
+
+# ------------------------------------------------------------- it is current
+
+def test_regenerating_reproduces_the_committed_outputs():
+    """Byte for byte. A stale table is the failure mode worth a gate."""
+    before = {p.name: p.read_bytes() for p in sorted(OUT.iterdir())}
+    r = subprocess.run([sys.executable, 'scripts/reproduce_paper.py'],
+                       cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    after = {p.name: p.read_bytes() for p in sorted(OUT.iterdir())}
+    assert set(before) == set(after)
+    stale = [k for k in before if before[k] != after[k]]
+    assert not stale, ('run scripts/reproduce_paper.py and commit: %s' % stale)
+
+
+def test_every_output_the_manuscript_needs_is_there():
+    have = {p.name for p in OUT.iterdir()}
+    assert {'equilibrium_conversion.csv', 'phase_stability.csv',
+            'vacancy_surface_bound.csv', 'dielectric_correlation.csv',
+            'site_data.json'} <= have
+
+
+# ------------------------------------------------------- it is what it says
+
+def test_the_conversion_table_is_a_fresh_solve():
+    for row in _rows('equilibrium_conversion.csv')[::7]:
+        T_C = float(row['T_C'])
+        r = A.solve(FEED, T_C + 273.15)
+        assert float(row['X_CO2_pct']) == pytest.approx(
+            r['conversion_CO2_pct'], rel=1e-9), T_C
+        assert row['stable_phases'] == '+'.join(r['active_condensed_phases'])
+
+
+def test_the_manuscript_conversion_at_600C_is_the_number_in_the_paper():
+    """The paper quotes an equilibrium limit of about 38 percent."""
+    r = A.solve(FEED, 873.15)
+    assert r['conversion_CO2_pct'] == pytest.approx(38.0, abs=0.1)
+
+
+def test_the_phase_stability_table_is_a_fresh_closed_form():
+    for row in _rows('phase_stability.csv')[::7]:
+        b = A.reduction_boundary(float(row['T_C']) + 273.15)
+        assert float(row['critical_y_CO2_mol_pct']) == pytest.approx(
+            b['y_CO2'] * 100.0, rel=1e-9)
+
+
+def test_rutile_survives_the_whole_reported_range():
+    for row in _rows('equilibrium_conversion.csv'):
+        assert row['stable_phases'] == 'TiO2', row['T_C']
+        assert float(row['margin_kJ_per_mol_O']) > 0
+
+
+def test_the_surface_table_is_a_fresh_geometry(): 
+    g = V.load()
+    for row in _rows('vacancy_surface_bound.csv'):
+        b = V.surface_fraction_bound(g, float(row['measured_umol_O_g']),
+                                     d_um=float(row['diameter_um']))
+        assert float(row['surface_fraction_max_pct']) == pytest.approx(
+            b['surface_fraction_max'] * 100.0, rel=1e-9)
+        assert float(row['below_surface_fraction_min_pct']) == pytest.approx(
+            b['below_surface_fraction_min'] * 100.0, rel=1e-9)
+
+
+def test_the_dielectric_row_is_carried_not_recomputed():
+    """It is the manuscript's own fit; the repository must not re-derive it
+    from a file it does not have."""
+    row = _rows('dielectric_correlation.csv')[0]
+    assert 'not recomputed' in row['source']
+    assert int(row['n_points']) == 4
+
+
+# ------------------------------------------------------------- the page
+
+def test_the_page_shows_exactly_what_the_script_produced(site):
+    html = PAGE.read_text()
+    assert json.dumps(site, separators=(',', ':')) in html, \
+        'the page is stale - run scripts/build_site.py'
+
+
+def test_the_page_makes_no_external_request():
+    html = PAGE.read_text()
+    assert '<script src=' not in html
+    assert '<link ' not in html
+    assert 'href="http' not in html.replace('href="https://github.com', '')
+
+
+def test_the_page_carries_no_solver():
+    """Two implementations of one calculation is how they drift. The page
+    displays; the package computes, and nothing under web/ may solve."""
+    assert not (ROOT / 'web' / 'activeset.js').exists()
+    inlined = sorted(p.name for p in (ROOT / 'web').iterdir()
+                     if p.suffix == '.js')
+    assert inlined == ['figkit.js', 'figures_surface.js',
+                       'figures_thermo.js', 'site_ui.js'], inlined
+    for js in inlined:
+        src = (ROOT / 'web' / js).read_text()
+        for gone in ('mu0', 'SHOMATE', 'WALDNER', 'newtonStep', 'lambda_Ti'):
+            assert gone not in src, (js, gone)
+
+
+def test_the_page_states_what_it_does_not_claim():
+    html = PAGE.read_text()
+    assert 'not assigned here' in html
+    assert 'extended defects' in html
+
+
+def test_the_site_data_and_the_tables_agree(site):
+    csv_rows = _rows('equilibrium_conversion.csv')
+    assert len(site['equilibrium']['rows']) == len(csv_rows)
+    for a, b in zip(site['equilibrium']['rows'], csv_rows):
+        assert a['T_C'] == pytest.approx(float(b['T_C']))
+        assert a['conversion_CO2_pct'] == pytest.approx(float(b['X_CO2_pct']))

@@ -14,17 +14,15 @@ The committed reference is `data/reference_results_high_precision.json`. It cove
 
 Trace solid amounts down to about 1e-41 mol are compared in logarithmic form.
 
-## Defect oracle
+## The surface-capacity bound
 
-`scripts/oracle_statmech.py` runs at 50 digits and shares only `data/rutile_dft.json` with production. It certifies:
-
-- analytic three-class site-exclusion matching, phase-aware, with the closed-form boundary ladder
-- the declared-shell-thickness ladder (one to four oxygen layers), which fixes the shell/bulk split in the three-class engine
-- exact finite-lattice canonical ensembles from generating polynomials
-- exact enumeration of small interacting lattices
-- the chemical potential estimated by Widom insertion
-
-The committed reference is `data/reference_statmech.json`. Same-seed Python and JavaScript Monte Carlo trajectories are compared as integer states. Class occupancies and histograms must match exactly; the vacancy chemical potential uses a 1e-9 tolerance.
+There is no oracle here because there is no solver here. The bound is arithmetic
+on the rutile lattice constants and the exposed area, and the gates in
+`tests/test_surface_capacity.py` check the arithmetic against tabulated rutile
+(the unit cell must reproduce 4.25 g/cm3 and a 19.22 square-angstrom (110) cell),
+check the inequality itself (the two fractions are complements, the bound falls
+as more oxygen comes out, the reconstructed bound is half the full-row one), and
+check that no defect formation energy has been wired in.
 
 ## Release gates
 
@@ -32,7 +30,6 @@ The test suite checks:
 
 - elemental balance and KKT feasibility
 - phase assemblage and inactive-phase stability
-- Python-to-JavaScript parity
 - high-precision oracle agreement
 - deterministic Monte Carlo trajectories
 - data export freshness
@@ -50,8 +47,6 @@ Generated reference files should be updated only by their commands:
 
 ```bash
 python3 scripts/oracle_tio.py
-python3 scripts/oracle_statmech.py
-python3 scripts/export_activeset.py
-python3 scripts/oracle_particle.py
-python3 scripts/export_plates.py
+python3 scripts/reproduce_paper.py
+python3 scripts/build_site.py
 ```

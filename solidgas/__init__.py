@@ -1,19 +1,26 @@
-"""Solid-gas equilibrium thermodynamics for the C-H-O-Ti system.
+"""Two calculations for the reduced-rutile manuscript.
 
-Active-set Gibbs-energy minimisation over a CO2/H2/CO/H2O/N2/O2 gas in
-contact with rutile TiO2 and the Magneli ladder down to Ti2O3, on
-NIST-JANAF gas data and the Waldner-Eriksson condensed-phase assessment.
+`activeset` answers what a gas charge does at equilibrium: the stable
+Ti-O phase assemblage, the gas composition, the CO2 conversion and the
+margin to the nearest reduced phase, by Gibbs-energy minimisation with
+the condensed phases carried as an active set so an absent phase is
+exactly zero rather than a numerical floor.
+
+`vacancy_inventory` answers what a titration can support on its own:
+how the measured oxygen removal compares with the oxygen the rutile
+(110) surface could hold, from lattice geometry alone. It returns a
+bound, not a partition. Where the below-surface oxygen sits - subsurface
+point defects, bulk defects, extended defects - is not assigned here,
+because no measurement in this work distinguishes them.
+
+`species`, `shomate` and `waldner` are the data layer both read.
 """
 
 from .shomate import (SHOMATE, VALID_RANGE, R_KJ, R_ATM, mu0, enthalpy, entropy,
                       heat_capacity, Kp)
 from . import waldner
-from .potential import (
-    mu_O_from_gas, mu_O_critical, phase_ladder, stable_phase,
-    first_phase_margin, ti_phases, solid_mu0, gas_equilibrium, survey,
-    mu_O_to_pO2, pO2_to_mu_O, inert_atmosphere,
-    SOURCES, DEFAULT_SOURCE,
-)
+from . import activeset
+from . import vacancy_inventory
 from .species import (
     GASES, TI_PHASES, CE_PHASES, METAL_PHASES, ACTIVE_TI_PHASES, FORMULAS,
     SPECIES, ELEMENTS, ELEM, SOLIDS, gas_idx, sol_idx, moles_of_gas,
@@ -26,8 +33,5 @@ __all__ = [
     'GASES', 'TI_PHASES', 'CE_PHASES', 'METAL_PHASES', 'ACTIVE_TI_PHASES',
     'FORMULAS', 'SPECIES', 'ELEMENTS', 'ELEM', 'SOLIDS', 'gas_idx', 'sol_idx',
     'moles_of_gas', 'ti3_percent', 'phase_split', 'mean_valence',
-    'waldner', 'mu_O_from_gas', 'mu_O_critical', 'phase_ladder',
-    'stable_phase', 'first_phase_margin', 'ti_phases', 'solid_mu0',
-    'gas_equilibrium', 'survey', 'SOURCES', 'DEFAULT_SOURCE',
-    'mu_O_to_pO2', 'pO2_to_mu_O', 'inert_atmosphere',
+    'waldner', 'activeset', 'vacancy_inventory',
 ]

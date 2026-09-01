@@ -1,0 +1,8 @@
+{
+  "reference": "Li, Guo and Robertson, J. Phys. Chem. C 119 (2015) 12991 (screened-exchange and GGA vacancy formation energies in rutile TiO2)",
+  "quantity": "oxygen vacancy formation energy, relative to the (110) surface bridging site",
+  "surface_relative_eV": 0.0,
+  "first_subsurface_relative_eV": 0.59,
+  "bulk_relative_eV": 1.31,
+  "use": "Tabulated for context only. These values are NOT used to assign the measured oxygen-removal inventory among surface, subsurface and bulk sites: no measurement in this work resolves depth, and a partition computed from them would be a model output presented as a measurement."
+}

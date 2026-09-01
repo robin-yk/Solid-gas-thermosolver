@@ -5,10 +5,10 @@ import pytest
 
 from solidgas import waldner as W
 from solidgas import shomate as N
-from solidgas import (first_phase_margin, mu_O_critical, moles_of_gas, survey,
-                      ti_phases)
+from solidgas import activeset as A
 
 MAGNELI = ['Ti4O7', 'Ti5O9', 'Ti6O11', 'Ti7O13', 'Ti8O15', 'Ti9O17', 'Ti10O19']
+REGISTRY = [m for m in MAGNELI if m in A.STOICH]
 WORKING = (773.15, 1273.15, 1773.15)
 
 
@@ -110,37 +110,38 @@ def test_entropy_rises_and_heat_capacity_stays_positive(name):
 def test_shallow_magneli_phases_form_more_easily_than_ti4o7():
     """The whole reason for bringing this dataset in."""
     for T in WORKING:
-        crits = [mu_O_critical(m, 'TiO2', T, 'waldner') for m in MAGNELI]
+        crits = [A.critical_potential(m, 'TiO2', T) for m in REGISTRY]
         assert all(b > a for a, b in zip(crits, crits[1:])), crits
 
 
 def test_rwgs_survives_the_full_series():
-    """The headline result, now measured against the easiest phase there is."""
+    """The headline result, measured against the easiest phase in the set."""
     for T_C in np.linspace(500, 1500, 21):
-        T = T_C + 273.15
-        n0 = moles_of_gas(1.0, 25.0, T) / 2
-        r = survey(np.array([n0, 2 * n0, 2 * n0]), T)
-        assert r['first_margin'] > 0, (T_C, r['first_phase'], r['first_margin'])
+        r = A.solve({'CO2': 1, 'H2': 1}, T_C + 273.15)
+        assert r['active_condensed_phases'] == ['TiO2'], (T_C, r['active_condensed_phases'])
+        costs = {k: v['per_formula_kJ']
+                 for k, v in r['inactive_phase_reduced_costs'].items()}
+        assert min(costs.values()) > 0, (T_C, costs)
 
 
 def test_the_easiest_phase_is_the_highest_n_member():
+    """Among the phases carried, the shallowest reduction is the cheapest."""
     for T in WORKING:
-        n0 = moles_of_gas(1.0, 25.0, T) / 2
-        r = survey(np.array([n0, 2 * n0, 2 * n0]), T)
-        assert r['first_phase'] == 'Ti20O39'
+        r = A.solve({'CO2': 1, 'H2': 1}, T)
+        costs = {k: v['per_formula_kJ']
+                 for k, v in r['inactive_phase_reduced_costs'].items()}
+        assert min(costs, key=costs.get) == 'Ti10O19', (T, costs)
 
 
 def test_sources_disagree_enough_to_matter():
     """If these ever came out equal, mixing them would be harmless and the
     single-source rule could be dropped. They do not."""
     T = 1773.15
-    w = mu_O_critical('Ti4O7', 'TiO2', T, 'waldner')
-    n = mu_O_critical('Ti4O7', 'TiO2', T, 'nist')
+    w = W.mu0('Ti4O7', T) - 4 * W.mu0('TiO2', T)
+    n = N.mu0('Ti4O7', T) - 4 * N.mu0('TiO2', T)
     assert abs(w - n) > 10.0
 
 
-def test_ti_phase_listing_is_ordered_by_oxygen_content():
-    for src in ('waldner', 'nist'):
-        ph = ti_phases(src)
-        r = [W._stoich(p)[1] / W._stoich(p)[0] for p in ph]
-        assert r == sorted(r, reverse=True)
+def test_the_phase_registry_is_ordered_by_oxygen_content():
+    r = [A.STOICH[p][1] / A.STOICH[p][0] for p in A.SOLIDS]
+    assert r == sorted(r, reverse=True)

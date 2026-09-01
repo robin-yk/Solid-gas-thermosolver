@@ -1,0 +1,2 @@
+form,log10_intercept,log10_intercept_err,exponent,exponent_err,r_squared,n_points,fit_range_umol_g,source
+power_law,-3.07028,0.695,1.22355,0.2302,0.93388,4,95-5000,fit published with the manuscript; not recomputed here

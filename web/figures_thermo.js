@@ -6,7 +6,7 @@
    margin      how far that answer is from a different one across
                temperature, with the assemblage ladder underneath it.
 
-   Both are the live counterparts of manuscript plates e2 and e1a, drawn
+   Both draw from the record the Python package produced, and are drawn
    on the same kit at the workspace's square size. Neither evaluates a
    free energy: solidgas/activeset.py and its port do that, and the two
    data builders below only reshape what the solver already returned, so
@@ -134,7 +134,7 @@
     /* The left margin holds a formula, not a number, so it is wider than
        the kit's default and there is no y axis to carry a label. Bars
        fill the box top to bottom, so the condition goes in a header band
-       above the frame the way the plates carry theirs. */
+       above the frame. */
     var p = { x0: 62, y0: 34, x1: 222, y1: 210 };
     var n = d.costs.length;
     if (!n) {

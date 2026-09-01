@@ -20,41 +20,68 @@
 
 ## What this repo is
 
-Ti–O 고체–기체 열역학 솔버. 세 개의 워크스페이스(equilibrium / defect / redox)와
-그 뒤의 파이썬 엔진, 그리고 브라우저에서 도는 자바스크립트 미러.
+Ti–O 고체–기체 열역학. 논문에 실제로 쓰이는 **계산 두 개**와, 그걸 보여주는
+웹페이지 하나.
 
-### The engine's physics base
+### 1. Gas–solid equilibrium (`solidgas/activeset.py`)
 
-**세리아 정식화가 베이스다.** 연속 반경 프로파일 + 양이온 부격자 엔트로피 +
-감쇠길이 ξ. TiO₂ 물리는 그 위에 얹는다. 반대가 아니다.
+주어진 기체 charge에서 평형 전환율, 안정한 Ti–O 상, 가장 가까운 환원상까지의
+여유를 준다. 응축상은 active set 으로 들고 가므로 **없는 상은 정확히 0** 이고,
+얼마나 멀리 있는지는 KKT reduced cost 로 따로 보고한다. 루타일이 살아남지
+못하는 feed 는 닫힌형으로 나온다.
 
-- 산소 공공 하나 = Ti³⁺ 폴라론 둘. 루타일은 Ti:O = 1:2 이므로 θ(Ti³⁺) = 4·θ(V).
-- 양이온 부격자가 θ = 0.25 에서 차고, 그게 Ti₂O₃ 다. **캡을 씌우는 게 아니라
-  엔트로피가 거기서 발산한다.**
-- 희박 극한에서 로그 두 개가 3kT·ln θ 를 주고, 이건 p(O₂)^(−1/6). 이중이온화
-  공공 + 전자 보상의 표준 결과. 보상을 빼면 p^(−1/2) 가 나오는데 그건 중성 공공이다.
-- 형성에너지는 깊이에 따라 E(z) = E_bulk − ΔE_seg·exp(−z/ξ). ξ 는 **가정이 아니라
-  DFT 삼중값(표면/첫 아래층/벌크)에서 유도된다.** sX 는 ξ = 0.543 nm, GGA 는 0.725 nm.
+### 2. Surface-capacity bound (`solidgas/vacancy_inventory.py`)
 
-세리아에 없고 루타일에만 있는 것: **결정학적 전단(Magnéli) 상.** 점결함이
-x ≈ 0.008 을 넘으면 CS 면으로 떨어져 나간다. 이건 세리아 베이스에 우리가 더하는 부분.
+적정은 숫자 **하나**만 준다 — 빠진 산소 총량. 어디서 빠졌는지는 안 알려준다.
+루타일 격자상수와 노출 면적만으로 (110) bridging 줄이 담을 수 있는 양을
+계산하고, 거기서 **부등식**을 낸다: 측정값 중 최대 몇 %가 표면일 수 있는가,
+따라서 최소 몇 %가 아래에 있어야 하는가.
+
+- 0.9 µm 입자: bridging 줄 전체 13.6, 재배열 시 6.8 µmol-O g⁻¹
+- 측정 95 µmol-O g⁻¹ → 표면은 **최대 7.1 %**, 아래가 **최소 92.9 %**
+- (1×2) 0.5 ML 결손이 **유일한** 문헌 구조 입력. DFT 에너지는 안 들어간다.
+
+**표면 아래를 subsurface / bulk / extended defect 로 나누지 않는다.** 깊이를
+분해하는 측정이 이 연구에 없다. 나눴던 코드(3-class stat mech, 몬테카를로,
+반경 프로파일, 수송, CS 용해도)는 전부 제거했다 — 위 부등식을 그대로 재현하면서
+측정이 확인할 수 없는 가정만 얹고 있었다.
 
 ## Rules
 
 - 작업 브랜치: `claude/python-thermodynamics-engine-lk1v2g`. 다른 데 푸시 금지.
 - 배포 방식: 브랜치 푸시 → main fast-forward. 게이트가 빨간 채로 main 을 올리지 않는다.
-- `redesign/landing-workspaces` 는 손대지 않는다.
 - 테스트는 0 skipped / 0 xfailed. skip 으로 넘기지 않는다.
 - PR 은 명시적으로 요청받았을 때만 만든다.
 - 레포에 들어가는 어떤 글에도 모델 이름을 쓰지 않는다 (커밋 메시지, 코드 주석, 문서).
 - 파일 작업은 가능하면 bash (cat/sed/grep/heredoc) 로.
+- **브라우저에서 물리를 다시 구현하지 않는다.** 페이지는 파이썬이 쓴 JSON 을
+  표시만 한다. 같은 계산의 두 번째 구현을 만들지 말 것.
+- 논문이 쓰지 않고 논문 데이터로 맞출 수도 없는 모델은 레포에 두지 않는다.
 
 ## Verification standard
 
-숫자를 주장하려면 **독립 구현 세 개가 일치**해야 한다.
+숫자를 주장하려면 **독립 구현 두 개가 일치**해야 한다.
 
 1. 파이썬 엔진 (`solidgas/`)
-2. mpmath 50자리 오라클 (`scripts/oracle_*.py` → `data/reference_*.json`)
-3. 브라우저 자바스크립트 (`web/`)
+2. mpmath 80자리 오라클 (`scripts/oracle_tio.py` → `data/reference_*.json`)
 
 오라클은 엔진을 호출하지 않는다. 안 그러면 검증이 아니라 복사다.
+
+세 번째 다리였던 브라우저 미러는 없앴다. 그건 **포팅**을 검증했지 물리를 검증한
+적이 없고, 이제 브라우저에 검증할 구현이 없다.
+
+표면 용량 쪽은 오라클이 없다 — 솔버가 없기 때문이다. 대신 게이트가 산술을
+검증한다: 단위격자가 루타일 밀도 4.25 g/cm³ 와 19.22 Å² (110) 셀을 재현하는지,
+부등식이 부등식인지, 그리고 **DFT 에너지가 흘러들어오지 않았는지**.
+
+## Reproducing
+
+```bash
+python3 scripts/reproduce_paper.py    # paper_outputs/*.csv + site_data.json
+python3 scripts/build_site.py         # docs/index.html
+python3 -m pytest tests/ -q
+PW_DIR=<dir with node_modules/playwright> python3 scripts/check_page.py
+```
+
+`paper_outputs/` 는 커밋되어 있고, 재생성 시 한 바이트라도 달라지면 게이트가
+떨어진다.

@@ -1,0 +1,155 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solid–gas thermosolver</title>
+<meta name="description" content="Gas-solid equilibrium for the C-H-O-N / Ti-O system, and a geometric comparison between a measured oxygen-removal inventory and the oxygen capacity of the rutile (110) surface.">
+<style>
+/*CSS*/
+</style>
+<body>
+<header class="app-header">
+  <div class="app-head-inner">
+    <div class="workspace-head active" id="head-equilibrium">
+      <p class="eyebrow">Ti–O thermodynamics · Vlachos Group</p>
+      <h1>Gas–solid equilibrium</h1>
+      <p>What a reacting gas does to rutile at equilibrium: the stable phase assemblage, the gas composition, and how far the feed is from reducing the solid.</p>
+    </div>
+    <div class="workspace-head" id="head-surface">
+      <p class="eyebrow">Rutile surface geometry · Vlachos Group</p>
+      <h1>Vacancy inventory versus surface capacity</h1>
+      <p>How the measured oxygen removal compares with the oxygen the rutile (110) surface could hold. A bound from lattice geometry, not a partition.</p>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wstabs" id="wstabs">
+  <button class="wstab active" data-ws="ws-equilibrium" type="button">Gas&ndash;solid equilibrium</button>
+  <button class="wstab" data-ws="ws-surface" type="button">Inventory vs surface capacity</button>
+</div>
+
+<!-- ========================================== equilibrium -->
+<div id="ws-equilibrium">
+<section class="panel pad">
+  <div class="dfx-controls">
+    <div class="field">
+      <label for="eqT">Temperature</label>
+      <select id="eqT"></select>
+    </div>
+    <p class="sub">Feed is the reaction feed of the manuscript,
+      CO<sub>2</sub>/H<sub>2</sub>/He = 10/10/80, at 1 atm over rutile.
+      Every value below was computed by <code>scripts/reproduce_paper.py</code>
+      and inlined here; nothing is solved in the browser.</p>
+  </div>
+  <div class="kpis" id="eqKpis"></div>
+</section>
+
+<section class="panel pad">
+  <h2>Equilibrium CO<sub>2</sub> conversion</h2>
+  <p class="sub">The ceiling any catalyst is measured against. Temperatures where
+    the solid itself would be consumed are shaded.</p>
+  <div class="chartwrap"><div id="figConversion"></div></div>
+  <figcaption class="sub">Equilibrium conversion of a 1:1 CO<sub>2</sub>/H<sub>2</sub>
+    feed diluted in helium, by Gibbs-energy minimisation over the gas and the
+    Ti–O phase ladder.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>Margin to the nearest reduced phase</h2>
+  <p class="sub">How much the Gibbs energy would have to fall before a reduced
+    titanium oxide appeared. Positive everywhere means rutile survives.</p>
+  <div class="chartwrap"><div id="figMargin"></div></div>
+  <figcaption class="sub">Reduced cost of the cheapest excluded phase, per formula
+    unit, across the temperature range of the experiments.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>The feed that stops holding rutile</h2>
+  <p class="sub">Below this CO<sub>2</sub> fraction the gas is reducing enough to
+    take the solid apart. It is a closed form, not a search.</p>
+  <div class="chartwrap"><div id="figBoundary"></div></div>
+  <figcaption class="sub">Critical CO<sub>2</sub> mole fraction against temperature,
+    with the first phase to appear named on the curve.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>Equilibrium gas composition</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Species</th><th class="k2">mol %</th></tr></thead>
+    <tbody id="eqGas"></tbody>
+  </table></div>
+</section>
+</div>
+
+<!-- ========================================== surface -->
+<div id="ws-surface" style="display:none">
+<section class="panel pad">
+  <div class="dfx-controls">
+    <div class="field">
+      <label for="sfD">Particle diameter</label>
+      <select id="sfD">
+        <option value="0.9" selected>0.9 µm</option>
+        <option value="1.6">1.6 µm</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="sfV">Oxygen removed</label>
+      <select id="sfV"></select>
+    </div>
+    <p class="sub">The capacity comes from the rutile lattice constants and the
+      exposed area, and nothing else. The (1×2) added-row deficiency of half a
+      bridging monolayer is the only structural literature value used.</p>
+  </div>
+  <div class="kpis" id="sfKpis"></div>
+</section>
+
+<section class="panel pad">
+  <h2>Measured removal against surface capacity</h2>
+  <p class="sub">The filled band is every oxygen the reconstructed surface could
+    give up. The rest of each bar is oxygen that has to have come from below it.</p>
+  <div class="chartwrap"><div id="figCapacity"></div></div>
+  <figcaption class="sub">Titrated oxygen removal for the reduction series, split
+    at the surface ceiling. The dashed line is the whole bridging row, which no
+    measurement has been reported to strip.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>The bound</h2>
+  <p class="sub">The largest share of the measured inventory that could be surface
+    oxygen. Its complement is the smallest share that must lie below the surface.</p>
+  <div class="chartwrap"><div id="figBound"></div></div>
+  <figcaption class="sub">Upper bound on the surface-associated fraction against
+    oxygen removed, for the reconstructed surface and for a fully stripped
+    bridging row.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>Derived composition</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Quantity</th><th class="k2">Value</th></tr></thead>
+    <tbody id="sfDerived"></tbody>
+  </table></div>
+</section>
+
+<section class="panel pad">
+  <div class="note"><b>What this does not say.</b> The oxygen that is not on the
+    surface is not assigned here among subsurface point defects, bulk point
+    defects and extended defects. No measurement in this work resolves depth, and
+    a partition computed from literature vacancy formation energies would be a
+    model output presented as a measurement. Literature DFT does indicate a strong
+    depth dependence of vacancy stability; those values are tabulated in
+    <code>data/literature_dft.json</code> and are not used here.</div>
+</section>
+</div>
+</main>
+
+<footer>
+  <p>Computed by the Python package in this repository and displayed here.
+    Regenerate with <code>python3 scripts/reproduce_paper.py</code>.
+    <a href="https://github.com/robin-yk/Solid-gas-thermosolver">Source</a>.</p>
+</footer>
+
+<script>window.SITE_DATA = /*DATA*/;</script>
+<script>/*FIGKIT*/</script>
+<script>/*THERMO*/</script>
+<script>/*SURFACE*/</script>
+<script>/*UI*/</script>

@@ -1,33 +1,1759 @@
-<!doctype html>
-<html lang="en">
-<head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ti–O Thermodynamics</title>
-<meta name="description" content="Three browser-based tools for Ti–O gas–solid equilibrium, oxygen-vacancy distributions and steady-state redox.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solid–gas thermosolver</title>
+<meta name="description" content="Gas-solid equilibrium for the C-H-O-N / Ti-O system, and a geometric comparison between a measured oxygen-removal inventory and the oxygen capacity of the rutile (110) surface.">
 <style>
-:root{--blue:#087bd8;--navy:#12334d;--ink:#1c2b36;--muted:#657482;--line:#dce6ee;--ground:#fff;--soft:#f5f8fb;--green:#16844b;--rust:#c2570d;color-scheme:light}
-*{box-sizing:border-box}html,body{min-height:100%}body{margin:0;overflow:hidden;background:var(--ground);color:var(--ink);font:16px/1.5 Helvetica,Arial,sans-serif}a{color:inherit}
-.masthead{display:flex;height:58px;align-items:center;justify-content:space-between;gap:24px;padding:0 clamp(22px,5vw,72px);border-bottom:1px solid var(--line)}.wordmark{color:var(--blue);font-size:12px;font-weight:700;letter-spacing:.11em;text-transform:uppercase}.masthead a{color:var(--muted);font-size:13px;text-decoration:none}
-main{display:grid;height:calc(100svh - 58px);max-width:1280px;grid-template-rows:auto minmax(0,1fr) auto;gap:clamp(13px,2vh,21px);margin:0 auto;padding:clamp(22px,3.2vh,38px) clamp(22px,5vw,72px) 14px;overflow:hidden}.intro{display:grid;max-width:none;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);grid-template-rows:auto auto;column-gap:clamp(36px,6vw,84px);align-items:end}.eyebrow{grid-column:1;margin:0 0 7px;color:var(--blue);font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase}h1{grid-column:1;margin:0;color:var(--navy);font-size:clamp(44px,5.2vw,64px);line-height:.94;letter-spacing:-.055em}.lede{grid-column:2;grid-row:1/3;max-width:470px;margin:0 0 2px;color:var(--muted);font-size:clamp(16px,1.7vw,19px);line-height:1.4}
-.tools{display:grid;min-height:0;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.tool{position:relative;display:flex;min-height:0;flex-direction:column;overflow:hidden;padding:clamp(18px,2.5vh,28px);border:1px solid var(--line);border-radius:18px;background:var(--soft);text-decoration:none;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}.tool:hover,.tool:focus-visible{transform:translateY(-5px);border-color:#a9cce9;box-shadow:0 18px 36px #12334d16;outline:none}.tool.defect:hover,.tool.defect:focus-visible{border-color:#b8d9c6}.tool.redox:hover,.tool.redox:focus-visible{border-color:#e6c3a4}.tool-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.index{color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.1em}.kind{display:flex;align-items:center;gap:7px;color:var(--navy);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.dot{width:8px;height:8px;border-radius:50%;background:var(--blue)}.defect .dot{background:var(--green)}.redox .dot{background:var(--rust)}
-.diagram{position:relative;display:grid;min-height:0;flex:0 0 clamp(92px,16vh,146px);place-items:center;overflow:hidden;margin:2px -2px}.phase-lines{width:80%;height:100%;overflow:visible}.phase-lines path{fill:none;stroke:var(--blue);stroke-linecap:round;stroke-width:2.3}.phase-lines path:nth-child(2){stroke:#66b4ed;stroke-width:1.5}.phase-lines path:nth-child(3){stroke:#a4d7f7;stroke-width:1.5}.phase-lines circle{fill:var(--blue)}.cross-lines{width:78%;height:100%;overflow:visible}.cross-lines path{fill:none;stroke-linecap:round;stroke-width:2.6}.cross-lines .fall{stroke:var(--rust)}.cross-lines .rise{stroke:#e0a071;stroke-dasharray:9 5}.cross-lines .guide{stroke:#cdd8e1;stroke-width:1.3}.cross-lines circle{fill:var(--rust)}.lattice{display:grid;width:min(80%,420px);grid-template-columns:repeat(9,1fr);gap:clamp(5px,1vh,9px);transform:skewY(-8deg)}.lattice span{aspect-ratio:1;border:1.5px solid #a8bbc9;border-radius:50%;background:#fff}.lattice span:nth-child(3n+1){border-color:#93c8aa;background:#e9f6ee}.lattice span:nth-child(4n){border-color:var(--green);background:var(--green)}
-.tool h2{max-width:450px;margin:2px 0 6px;color:var(--navy);font-size:clamp(27px,2.7vw,38px);line-height:1;letter-spacing:-.045em}.tool p{max-width:465px;margin:0;color:var(--muted);font-size:clamp(13px,1.25vw,15px);line-height:1.36}.open{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:9px;color:var(--blue);font-size:13px;font-weight:700}.defect .open{color:var(--green)}.redox .open{color:var(--rust)}.arrow{font-size:21px;line-height:1;transition:transform .22s ease}.tool:hover .arrow{transform:translateX(5px)}.footer{display:flex;justify-content:space-between;gap:18px;margin:0;padding-top:9px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}.footer p{margin:0}.footer a{color:var(--blue)}
-@media (min-width:721px) and (max-height:700px){main{gap:11px;padding-top:17px}.eyebrow{margin-bottom:4px}h1{font-size:42px}.lede{font-size:15px}.diagram{flex-basis:82px}.tool h2{font-size:26px}.tool p{font-size:12px}.footer{display:none}}
-@media (max-width:720px){body{overflow:auto}.masthead{height:54px}.wordmark{font-size:10px}main{display:block;height:auto;min-height:calc(100svh - 54px);overflow:visible;padding-top:34px}.intro{display:block}.eyebrow{margin-bottom:9px}h1{font-size:46px}.lede{margin:17px 0 30px;font-size:17px}.tools{grid-template-columns:1fr}.tool{min-height:360px;margin-bottom:16px}.diagram{flex-basis:126px}.footer{display:block;margin-top:22px;padding:14px 0}.footer p{margin:0 0 7px}}
-</style>
-</head>
-<body>
-<header class="masthead"><div class="wordmark">Vlachos Group · Thermodynamics</div><a href="https://github.com/robin-yk/Solid-gas-thermosolver">Source ↗</a></header>
-<main>
-  <section class="intro"><p class="eyebrow">Three computational workspaces</p><h1>Ti–O<br>Thermodynamics</h1><p class="lede">Three workspaces calculate gas–solid phase equilibrium, oxygen-vacancy distributions in rutile TiO<sub>2</sub>, and the steady state of a carrier under simultaneous reduction and oxidation.</p></section>
-  <section class="tools" aria-label="Computational workspaces">
-    <a class="tool" href="ti_solver.html#thermo"><div class="tool-top"><span class="index">01 / 03</span><span class="kind"><i class="dot"></i>equilibrium</span></div><div class="diagram" aria-hidden="true"><svg class="phase-lines" viewBox="0 0 400 150"><path d="M14 128C92 116 97 44 181 71S281 132 386 23"/><path d="M15 104C94 93 104 22 194 51s109 53 192-10"/><path d="M13 138C101 128 110 70 201 98s108 37 185-29"/><circle cx="181" cy="71" r="5"/><circle cx="286" cy="129" r="5"/></svg></div><h2>Gas–solid<br>equilibrium</h2><p>Calculates the equilibrium phase assemblage and gas composition for a specified Ti–O–gas inventory.</p><div class="open"><span>Open workspace</span><span class="arrow">→</span></div></a>
-    <a class="tool defect" href="ti_solver.html#defect"><div class="tool-top"><span class="index">02 / 03</span><span class="kind"><i class="dot"></i>defect states</span></div><div class="diagram" aria-hidden="true"><div class="lattice"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><h2>Defect-state<br>distribution</h2><p>Calculates the equilibrium distribution of a measured oxygen-vacancy inventory across rutile sites.</p><div class="open"><span>Open workspace</span><span class="arrow">→</span></div></a>
+:root{--blue:#087bd8;--navy:#12334d;--ink:#1c2b36;--muted:#657482;--line:#dbe5ed;
+      --bg:#ffffff;--panel:#ffffff;--orange:#d66b13;--green:#16844b;--red:#c0392b;
+      --code:#f4f7fa;--soft:#f6f9fb;--shadow:0 12px 32px #12334d0b;color-scheme:light;
+      /* The three site-class hues are the figure kit's roles, so a KPI
+         swatch and the bar it labels are the same colour. */
+      --cSurf:#0072B2;--cSub:#D55E00;--cBulk:#6A51A3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Helvetica,Arial,sans-serif}
+.app-header{background:var(--panel);border-bottom:1px solid var(--line);padding:22px clamp(22px,5vw,72px) 34px}
+.app-head-inner{max-width:1480px;margin:auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:30px}
+.back,.model-link{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.07em;text-decoration:none;text-transform:uppercase}
+.model-link{width:auto;border:0;background:transparent;padding:0;cursor:pointer}
+.back:hover,.model-link:hover{color:var(--blue)}
+.workspace-head{display:none}.workspace-head.active{display:block}
+.eyebrow{margin:0 0 9px;color:var(--blue);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
+h1{margin:0;color:var(--navy);font-size:clamp(38px,4.3vw,58px);line-height:1.02;letter-spacing:-.045em}
+.workspace-head>p:last-child{max-width:760px;margin:15px 0 0;color:var(--muted);font-size:18px;line-height:1.45}
+main{max-width:1480px;margin:auto;padding:30px clamp(18px,3vw,36px) 80px}
+h2{margin:0 0 7px;color:var(--navy);font-size:clamp(25px,2vw,32px);line-height:1.15;letter-spacing:-.025em}
+h3{margin:20px 0 8px;color:var(--navy);font-size:18px;line-height:1.25}
+.sub{margin:0 0 20px;color:var(--muted);font-size:14px;line-height:1.5}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:none;margin-bottom:22px}
+.pad{padding:26px}
+.grid{display:grid;grid-template-columns:380px minmax(0,1fr);gap:26px;align-items:start}
+.thermo-grid>aside{position:sticky;top:20px}
+label,.flabel{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+input,select,button{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid #ccd9e3;border-radius:9px;padding:11px 12px;width:100%}
+input:focus,select:focus,button:focus-visible{outline:3px solid #087bd826;outline-offset:1px;border-color:var(--blue)}
+input[type=range]{padding:0;border:0;background:transparent}
+.field{margin-bottom:18px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.gasgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.gasgrid .g{display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;align-items:center}
+.gasgrid .g span{font-size:12px;font-weight:700;color:var(--navy)}
+.readout{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}
+button.act{background:var(--blue);color:#fff;border-color:var(--blue);font-size:15px;font-weight:700;cursor:pointer;padding:13px 15px}
+button.act:hover{background:#056fc5}button.mini{width:auto;padding:8px 12px;font-size:12px;cursor:pointer}
+.minirow{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+#cyIn input{max-width:150px;margin-left:auto;text-align:right;padding:8px 10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:22px}
+.kpi{min-height:132px;background:var(--soft);border:1px solid var(--line);border-radius:15px;padding:20px}
+/* No text-transform: these labels carry formulae, and uppercasing turns
+   mu into Mu and Ti into TI. */
+.kpi .k{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.kpi .v{font-size:clamp(27px,2.4vw,38px);font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;margin:9px 0 4px;line-height:1}
+.kpi .u{font-size:12px;color:var(--muted)}
+.kpi.good .v{color:var(--green)} .kpi.warn .v{color:var(--orange)}
+.verdict{border-radius:15px;border:1px solid var(--line);padding:20px 22px;margin-bottom:18px;font-size:16px;background:var(--panel)}
+.verdict.red{border-left:5px solid var(--orange)}
+.verdict.none{border-left:5px solid var(--green)}
+.verdict b{color:var(--navy)}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line);margin:4px 0 0}
+.tab{width:auto;border:1px solid transparent;border-bottom:0;border-radius:9px 9px 0 0;background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;padding:11px 15px}
+.tab.active{background:var(--panel);border-color:var(--line);color:var(--navy)}
+.page{display:none} .page.active{display:block}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:10px 11px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11px;letter-spacing:.04em;color:var(--muted);font-weight:700}
+.tablewrap{overflow-x:auto;max-width:100%}
+tr.sub-row td{color:var(--muted);font-size:12px;border-bottom-style:dotted}
+tr.sub-row td:first-child{padding-left:30px}
+.eq{background:var(--code);border-left:3px solid var(--blue);border-radius:0 6px 6px 0;
+    padding:11px 14px;margin:11px 0;font-family:"Courier New",monospace;font-size:13px;
+    line-height:1.7;overflow-x:auto}
+.note{background:var(--code);border-left:3px solid var(--orange);border-radius:0 6px 6px 0;
+      padding:11px 14px;margin:11px 0;font-size:13px}
+.note.calm{border-left-color:var(--blue)}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:12px}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:13px;
+    overflow-x:auto;font-size:11px;line-height:1.45;max-height:460px}
+ul{margin:8px 0;padding-left:20px} li{margin:5px 0;font-size:14px}
+.ok{color:var(--green);font-weight:700} .bad{color:var(--red);font-weight:700}
+footer{color:var(--muted);font-size:12px;padding:22px 0 0;border-top:1px solid var(--line);margin-top:24px}
+a{color:var(--blue)}
+.eqrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+       padding:7px 0;overflow-x:auto;color:var(--ink)}
+.eqrow svg{flex:0 1 auto;display:block}
+.eqno{color:var(--muted);font-size:11px;flex:0 0 auto}
+.eqnote{color:var(--muted);padding:3px 0;overflow-x:auto}
+.eqnote svg{display:block}
+.eqbox{background:var(--code);border-left:3px solid var(--blue);
+       border-radius:0 6px 6px 0;padding:6px 14px;margin:8px 0}
+.wstabs{display:flex;gap:10px;flex-wrap:wrap;margin:0 auto 26px;max-width:1180px;padding:22px clamp(22px,5vw,72px) 0}
+.wstab{width:auto;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer;
+       border-radius:8px;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
+.wstab.active{color:#fff;background:var(--blue);border-color:var(--blue)}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.smchart{width:100%;height:auto;display:block;max-width:640px}
+.chartwrap{position:relative;max-width:820px}
+.chartwrap svg{max-width:100%}
+.smtip{position:absolute;background:var(--panel);border:1px solid var(--line);
+       border-radius:6px;padding:6px 10px;font-size:12px;pointer-events:none;
+       box-shadow:var(--shadow);white-space:nowrap;display:none;z-index:3;
+       font-variant-numeric:tabular-nums}
+.legrow{display:flex;flex-wrap:wrap;gap:14px;margin-top:6px;font-size:12px;color:var(--muted)}
+.legrow .swatch{margin-right:5px}
+.k2{display:inline-block;min-width:116px;color:var(--muted);font-size:11px;
+    font-weight:700;letter-spacing:.04em;text-transform:uppercase;vertical-align:top}
+.model-notes{margin:0 0 22px;border:1px solid var(--line);border-radius:12px;background:var(--soft);overflow:hidden}
+.model-notes summary{cursor:pointer;padding:13px 17px;color:var(--navy);font-size:13px;font-weight:700;letter-spacing:.02em;list-style:none}
+.model-notes summary::-webkit-details-marker{display:none}.model-notes summary:after{content:'+';float:right;color:var(--blue);font-size:18px;line-height:1}.model-notes[open] summary:after{content:'−'}
+.model-notes .note{margin:0;border:0;border-top:1px solid var(--line);border-radius:0;background:#fff;padding:18px 20px}
+.technical-model{padding:0}.technical-model>summary{cursor:pointer;padding:22px 26px;color:var(--navy);font-size:18px;font-weight:700;list-style:none}.technical-model>summary::-webkit-details-marker{display:none}.technical-model>summary:after{content:'+';float:right;color:var(--blue);font-size:23px;line-height:1}.technical-model[open]>summary{border-bottom:1px solid var(--line)}.technical-model[open]>summary:after{content:'−'}.technical-model-body{padding:4px 26px 26px}
+.result-loading{display:grid;min-height:260px;place-items:center;color:var(--muted);font-size:14px;background:linear-gradient(110deg,#f6f9fb 20%,#fff 40%,#f6f9fb 60%);background-size:240% 100%;animation:pulse 1.6s linear infinite;border-radius:10px}
+@keyframes pulse{to{background-position:-240% 0}}
+@media (max-width:980px){.grid{grid-template-columns:1fr}.thermo-grid>aside{position:static}.app-header{padding-left:22px;padding-right:22px}.pad{padding:22px}}
+@media (max-width:620px){h1{font-size:38px}.workspace-head>p:last-child{font-size:16px}.pair,.trio{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{min-height:112px;padding:16px}.panel{border-radius:13px}}
 
-    <a class="tool redox" href="ti_solver.html#redox"><div class="tool-top"><span class="index">03 / 03</span><span class="kind"><i class="dot"></i>redox steady state</span></div><div class="diagram" aria-hidden="true"><svg class="cross-lines" viewBox="0 0 400 150"><path class="guide" d="M200 150V75"/><path class="guide" d="M20 75h180"/><path class="fall" d="M20 20 380 130"/><path class="rise" d="M20 130 380 20"/><circle cx="200" cy="75" r="6"/></svg></div><h2>Steady-state<br>redox</h2><p>Solves the crossing of the two half-reaction rates, and says whether a carrier can be run there.</p><div class="open"><span>Open workspace</span><span class="arrow">→</span></div></a>
-  </section>
-  <footer class="footer"><p>Browser-based Ti–O thermodynamic tools.</p><p><a href="ti_solver.html#thermo">Gas–solid equilibrium</a> · <a href="ti_solver.html#defect">Defect-state distribution</a> · <a href="ti_solver.html#redox">Steady-state redox</a></p></footer>
+/* ---- Defect workspace shell -----------------------------------------
+   One measured column of controls beside one column of results, sized to
+   the figures rather than to the viewport: a published figure is 3.5 in
+   wide and the results column holds one at its preview size with room for
+   a table beside nothing. Everything that is not one of the six controls
+   a reader actually turns lives in a closed accordion, so the page opens
+   at the size of the question rather than the size of the model. */
+.dfx { max-width: 1300px; margin: 0 auto; }
+.dfx-grid { display: grid; grid-template-columns: 330px minmax(0, 914px);
+  gap: 56px; align-items: start; }
+.dfx-controls { position: sticky; top: 20px; }
+.dfx-results > section { margin-bottom: 64px; }
+.dfx-results > section:last-child { margin-bottom: 0; }
+.dfx-results h2 { margin: 0 0 6px; font-size: 21px; letter-spacing: -.015em; }
+
+/* Controls. The six primaries carry no chrome of their own; the rest is
+   folded away and says how many settings it holds so nothing looks lost. */
+.dfx-primary { margin-bottom: 26px; }
+.dfx-status { font-size: 13px; line-height: 1.55; color: var(--muted);
+  border-left: 2px solid var(--line); padding: 2px 0 2px 11px;
+  margin: 0 0 22px; }
+.dfx-status b { color: var(--navy); font-weight: 700; }
+.dfx-status.warn { border-left-color: var(--orange); }
+.dfx-status.bad { border-left-color: var(--red); }
+.dfx-status .more { display: block; margin-top: 5px; }
+.dfx-status button { width: auto; border: 0; background: none; padding: 0;
+  font-size: 12px; color: var(--blue); cursor: pointer; text-decoration: underline; }
+.dfx-fold { border-top: 1px solid var(--line); }
+.dfx-fold:last-of-type { border-bottom: 1px solid var(--line); }
+.dfx-fold > summary { cursor: pointer; list-style: none; padding: 13px 0;
+  font-size: 13px; font-weight: 700; color: var(--navy);
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.dfx-fold > summary::-webkit-details-marker { display: none; }
+.dfx-fold > summary span { font-weight: 400; font-size: 11px;
+  color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.dfx-fold > summary::after { content: '+'; color: var(--blue);
+  font-size: 17px; line-height: 1; }
+.dfx-fold[open] > summary::after { content: '\2212'; }
+.dfx-fold-body { padding: 2px 0 20px; }
+
+/* The verdict line keeps its accent and loses its box, for the same
+   reason: it is a sentence about the solve, not an object beside it. */
+#smSummary.verdict, #rxSummary.verdict, #cySummary.verdict {
+  border: 0; border-left: 2px solid var(--line);
+  border-radius: 0; background: none; padding: 2px 0 2px 11px;
+  margin: 0 0 26px; font-size: 14px; line-height: 1.6; }
+#smSummary.verdict.red, #rxSummary.verdict.red, #cySummary.verdict.red { border-left-color: var(--orange); }
+#smSummary.verdict.none, #rxSummary.verdict.none, #cySummary.verdict.none { border-left-color: var(--green); }
+#smSummary .more, #rxSummary .more, #cySummary .more { display: block; margin-top: 4px; font-size: 12.5px;
+  color: var(--muted); }
+
+/* Results. No card borders: the figure is the object, and a box around a
+   box reads as two objects. */
+.dfx-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line);
+  margin: 0 0 26px; }
+.dfx-tabs button { width: auto; border: 0; border-bottom: 2px solid transparent;
+  border-radius: 0; background: none; color: var(--muted); cursor: pointer;
+  font-size: 14px; font-weight: 700; padding: 10px 2px; margin-right: 24px; }
+.dfx-tabs button[aria-selected="true"] { color: var(--navy);
+  border-bottom-color: var(--blue); }
+.dfx-panel[hidden] { display: none; }
+
+/* At most four, and short enough that the row never becomes the page. */
+.dfx-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 26px; margin: 0 0 26px; }
+.dfx-kpis .kpi { min-height: 94px; background: none; border: 0;
+  border-radius: 0; padding: 0; }
+.dfx-kpis .kpi .v { font-size: 30px; margin: 7px 0 3px; }
+
+@media (max-width: 980px) {
+  .dfx-grid { grid-template-columns: 1fr; gap: 34px; }
+  .dfx-controls { position: static; }
+  .dfx-results > section { margin-bottom: 48px; }
+  .dfx-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+}
+@media (max-width: 620px) {
+  .dfx-kpis { gap: 16px; }
+  .dfx-kpis .kpi { min-height: 78px; }
+  .dfx-kpis .kpi .v { font-size: 25px; }
+  .dfx-tabs button { margin-right: 16px; font-size: 13px; }
+}
+
+.pubfig.wide .figbox svg { max-width: 914px; }
+.pubfig.wide figcaption, .pubfig.wide .figdl { max-width: 914px; }
+
+/* A published figure on the page. The SVG is the file that downloads, so
+   it is never restyled here - only scaled, and the square aspect is the
+   SVG's own. */
+.pubfig { margin: 0 0 4px; padding: 0; }
+.pubfig .figbox svg { display: block; width: 100%; max-width: 520px;
+  height: auto; }
+.pubfig figcaption { max-width: 520px; margin-top: 8px; font-size: 12.5px;
+  line-height: 1.5; color: var(--muted); }
+.figdl { max-width: 520px; margin-top: 6px; font-size: 12px; }
+/* two square figures that answer one question between them */
+.figpair { display: grid; gap: 20px; grid-template-columns: 1fr;
+  margin: 12px 0 4px; }
+@media (min-width: 1120px) { .figpair { grid-template-columns: 1fr 1fr; } }
+/* the reading tables the particle card puts under each figure */
+table.kv { border-collapse: collapse; width: 100%; max-width: 560px;
+  font-size: 13px; margin: 6px 0 2px; }
+table.kv th { text-align: left; font-weight: 400; color: var(--muted);
+  padding: 4px 12px 4px 0; white-space: nowrap; vertical-align: top; }
+table.kv td { padding: 4px 0; font-variant-numeric: tabular-nums; }
+table.kv tr + tr th, table.kv tr + tr td {
+  border-top: 1px solid var(--line); }
+.kv .dim { color: var(--muted); font-size: 12px; }
+p.warn { color: var(--orange); }
+.figdl > summary { cursor: pointer; color: var(--muted); list-style: none;
+  display: inline-block; padding: 2px 0; }
+.figdl > summary::-webkit-details-marker { display: none; }
+.figdl > summary::after { content: ' \25BE'; }
+.figdl[open] > summary::after { content: ' \25B4'; }
+.figdl button { margin: 6px 8px 0 0; }
+
+</style>
+<body>
+<header class="app-header">
+  <div class="app-head-inner">
+    <div class="workspace-head active" id="head-equilibrium">
+      <p class="eyebrow">Ti–O thermodynamics · Vlachos Group</p>
+      <h1>Gas–solid equilibrium</h1>
+      <p>What a reacting gas does to rutile at equilibrium: the stable phase assemblage, the gas composition, and how far the feed is from reducing the solid.</p>
+    </div>
+    <div class="workspace-head" id="head-surface">
+      <p class="eyebrow">Rutile surface geometry · Vlachos Group</p>
+      <h1>Vacancy inventory versus surface capacity</h1>
+      <p>How the measured oxygen removal compares with the oxygen the rutile (110) surface could hold. A bound from lattice geometry, not a partition.</p>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wstabs" id="wstabs">
+  <button class="wstab active" data-ws="ws-equilibrium" type="button">Gas&ndash;solid equilibrium</button>
+  <button class="wstab" data-ws="ws-surface" type="button">Inventory vs surface capacity</button>
+</div>
+
+<!-- ========================================== equilibrium -->
+<div id="ws-equilibrium">
+<section class="panel pad">
+  <div class="dfx-controls">
+    <div class="field">
+      <label for="eqT">Temperature</label>
+      <select id="eqT"></select>
+    </div>
+    <p class="sub">Feed is the reaction feed of the manuscript,
+      CO<sub>2</sub>/H<sub>2</sub>/He = 10/10/80, at 1 atm over rutile.
+      Every value below was computed by <code>scripts/reproduce_paper.py</code>
+      and inlined here; nothing is solved in the browser.</p>
+  </div>
+  <div class="kpis" id="eqKpis"></div>
+</section>
+
+<section class="panel pad">
+  <h2>Equilibrium CO<sub>2</sub> conversion</h2>
+  <p class="sub">The ceiling any catalyst is measured against. Temperatures where
+    the solid itself would be consumed are shaded.</p>
+  <div class="chartwrap"><div id="figConversion"></div></div>
+  <figcaption class="sub">Equilibrium conversion of a 1:1 CO<sub>2</sub>/H<sub>2</sub>
+    feed diluted in helium, by Gibbs-energy minimisation over the gas and the
+    Ti–O phase ladder.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>Margin to the nearest reduced phase</h2>
+  <p class="sub">How much the Gibbs energy would have to fall before a reduced
+    titanium oxide appeared. Positive everywhere means rutile survives.</p>
+  <div class="chartwrap"><div id="figMargin"></div></div>
+  <figcaption class="sub">Reduced cost of the cheapest excluded phase, per formula
+    unit, across the temperature range of the experiments.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>The feed that stops holding rutile</h2>
+  <p class="sub">Below this CO<sub>2</sub> fraction the gas is reducing enough to
+    take the solid apart. It is a closed form, not a search.</p>
+  <div class="chartwrap"><div id="figBoundary"></div></div>
+  <figcaption class="sub">Critical CO<sub>2</sub> mole fraction against temperature,
+    with the first phase to appear named on the curve.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>Equilibrium gas composition</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Species</th><th class="k2">mol %</th></tr></thead>
+    <tbody id="eqGas"></tbody>
+  </table></div>
+</section>
+</div>
+
+<!-- ========================================== surface -->
+<div id="ws-surface" style="display:none">
+<section class="panel pad">
+  <div class="dfx-controls">
+    <div class="field">
+      <label for="sfD">Particle diameter</label>
+      <select id="sfD">
+        <option value="0.9" selected>0.9 µm</option>
+        <option value="1.6">1.6 µm</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="sfV">Oxygen removed</label>
+      <select id="sfV"></select>
+    </div>
+    <p class="sub">The capacity comes from the rutile lattice constants and the
+      exposed area, and nothing else. The (1×2) added-row deficiency of half a
+      bridging monolayer is the only structural literature value used.</p>
+  </div>
+  <div class="kpis" id="sfKpis"></div>
+</section>
+
+<section class="panel pad">
+  <h2>Measured removal against surface capacity</h2>
+  <p class="sub">The filled band is every oxygen the reconstructed surface could
+    give up. The rest of each bar is oxygen that has to have come from below it.</p>
+  <div class="chartwrap"><div id="figCapacity"></div></div>
+  <figcaption class="sub">Titrated oxygen removal for the reduction series, split
+    at the surface ceiling. The dashed line is the whole bridging row, which no
+    measurement has been reported to strip.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>The bound</h2>
+  <p class="sub">The largest share of the measured inventory that could be surface
+    oxygen. Its complement is the smallest share that must lie below the surface.</p>
+  <div class="chartwrap"><div id="figBound"></div></div>
+  <figcaption class="sub">Upper bound on the surface-associated fraction against
+    oxygen removed, for the reconstructed surface and for a fully stripped
+    bridging row.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>Derived composition</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Quantity</th><th class="k2">Value</th></tr></thead>
+    <tbody id="sfDerived"></tbody>
+  </table></div>
+</section>
+
+<section class="panel pad">
+  <div class="note"><b>What this does not say.</b> The oxygen that is not on the
+    surface is not assigned here among subsurface point defects, bulk point
+    defects and extended defects. No measurement in this work resolves depth, and
+    a partition computed from literature vacancy formation energies would be a
+    model output presented as a measurement. Literature DFT does indicate a strong
+    depth dependence of vacancy stability; those values are tabulated in
+    <code>data/literature_dft.json</code> and are not used here.</div>
+</section>
+</div>
 </main>
-</body>
-</html>
+
+<footer>
+  <p>Computed by the Python package in this repository and displayed here.
+    Regenerate with <code>python3 scripts/reproduce_paper.py</code>.
+    <a href="https://github.com/robin-yk/Solid-gas-thermosolver">Source</a>.</p>
+</footer>
+
+<script>window.SITE_DATA = {"dielectric":{"eps_prime":null,"exponent":1.22355,"exponent_err":0.2302,"fit_range_umol_g":[95,5000],"fit_stats":{"adj_r_squared":0.90082,"n_points":4,"pearson_r":0.96637,"r_squared":0.93388,"residual_ss":0.18029},"form":"power_law","log10_intercept":-3.07028,"log10_intercept_err":0.695,"note":"Empirical dielectric loss factor of this work: linear regression of log10(eps'') on log10(VO_total), i.e. eps'' = 10^a * VO^b with a = -3.07028 +/- 0.695 and b = 1.22355 +/- 0.2302 (OriginLab, no weighting, N = 4, Pearson r 0.96637, R^2 0.93388, adj. R^2 0.90082, RSS 0.18029). Fitted over roughly 95-5000 umol-O/g; below that range the value is an extrapolation and the card marks it. Set eps_prime to display tan delta.","provenance":"Measured in this work (Kwak et al.): dielectric loss factor vs total oxygen-vacancy content from H2O-integration titration of reduced rutile."},"equilibrium":{"T_C":[400.0,425.0,450.0,475.0,500.0,525.0,550.0,575.0,600.0,625.0,650.0,675.0,700.0,725.0,750.0,775.0,800.0,825.0,850.0,875.0,900.0,925.0,950.0,975.0,1000.0,1025.0,1050.0,1075.0,1100.0,1125.0,1150.0,1175.0,1200.0,1225.0,1250.0,1275.0,1300.0,1325.0,1350.0,1375.0,1400.0,1425.0,1450.0,1475.0,1500.0],"X_CO2_pct":[22.237122766950808,24.411021794066258,26.54505875279703,28.626006639138218,30.6438217810107,32.59126308957938,34.46348483624009,36.2576361072564,37.972487875364166,39.60809922536067,41.165527515940425,42.64658273381303,44.053623502840765,45.38939068331436,46.66152745977749,47.86388327780185,49.00432894471645,50.08603576035869,51.11213206768453,52.08566881972515,53.009595154208675,53.88674184862552,54.719810912782364,55.511369905339656,56.26384983826358,56.9795457635324,57.66061932565055,58.309102717512495,58.92690360147843,59.515810657226794,60.07749949747054,60.61353875554587,61.125396198716395,61.6144447598148,62.081968410388,62.52916782200981,62.95716578061465,63.36701233265811,63.75968965250396,64.13611662844546,64.49715317099522,64.84360425152093,65.17622368305037,65.49571765790482,65.80274805930787],"boundary":[{"T_C":400,"phase":"Ti10O19","y_CO2":5.107147948469721e-07},{"T_C":425,"phase":"Ti10O19","y_CO2":1.0847144238696607e-06},{"T_C":450,"phase":"Ti10O19","y_CO2":2.186429448335578e-06},{"T_C":475,"phase":"Ti10O19","y_CO2":4.204926797381407e-06},{"T_C":500,"phase":"Ti10O19","y_CO2":7.751788931273421e-06},{"T_C":525,"phase":"Ti10O19","y_CO2":1.3753987253704713e-05},{"T_C":550,"phase":"Ti10O19","y_CO2":2.3571369556544802e-05},{"T_C":575,"phase":"Ti10O19","y_CO2":3.914103983119934e-05},{"T_C":600,"phase":"Ti10O19","y_CO2":6.315021604016979e-05},{"T_C":625,"phase":"Ti10O19","y_CO2":9.923834055901855e-05},{"T_C":650,"phase":"Ti10O19","y_CO2":0.0001522283165604995},{"T_C":675,"phase":"Ti10O19","y_CO2":0.00022838576645389103},{"T_C":700,"phase":"Ti10O19","y_CO2":0.0003357041533041929},{"T_C":725,"phase":"Ti10O19","y_CO2":0.0004842124516654012},{"T_C":750,"phase":"Ti10O19","y_CO2":0.0006863147831652589},{"T_C":775,"phase":"Ti10O19","y_CO2":0.00095707663896693},{"T_C":800,"phase":"Ti10O19","y_CO2":0.0013146372468848116},{"T_C":825,"phase":"Ti10O19","y_CO2":0.0017805013112864553},{"T_C":850,"phase":"Ti10O19","y_CO2":0.002379866617640158},{"T_C":875,"phase":"Ti10O19","y_CO2":0.0031419081025377002},{"T_C":900,"phase":"Ti10O19","y_CO2":0.004100010315794104},{"T_C":925,"phase":"Ti10O19","y_CO2":0.005291926556490202},{"T_C":950,"phase":"Ti10O19","y_CO2":0.006759839465391451},{"T_C":975,"phase":"Ti10O19","y_CO2":0.00855029460012242},{"T_C":1000,"phase":"Ti10O19","y_CO2":0.010713975961874513},{"T_C":1025,"phase":"Ti10O19","y_CO2":0.013305291191309227},{"T_C":1050,"phase":"Ti10O19","y_CO2":0.016381734958095487},{"T_C":1075,"phase":"Ti10O19","y_CO2":0.020003002787696608},{"T_C":1100,"phase":"Ti10O19","y_CO2":0.02422983507392853},{"T_C":1125,"phase":"Ti10O19","y_CO2":0.029122583073053203},{"T_C":1150,"phase":"Ti10O19","y_CO2":0.034739505715769343},{"T_C":1175,"phase":"Ti10O19","y_CO2":0.041134828018871535},{"T_C":1200,"phase":"Ti10O19","y_CO2":0.04835661786673634},{"T_C":1225,"phase":"Ti10O19","y_CO2":0.05644456613289567},{"T_C":1250,"phase":"Ti10O19","y_CO2":0.06542778265272153},{"T_C":1275,"phase":"Ti10O19","y_CO2":0.07532274366769345},{"T_C":1300,"phase":"Ti10O19","y_CO2":0.0861315407507387},{"T_C":1325,"phase":"Ti10O19","y_CO2":0.09784058275824298},{"T_C":1350,"phase":"Ti10O19","y_CO2":0.11041988792471925},{"T_C":1375,"phase":"Ti10O19","y_CO2":0.12382307161442632},{"T_C":1400,"phase":"Ti10O19","y_CO2":0.13798808788325162},{"T_C":1425,"phase":"Ti10O19","y_CO2":0.15283872413718327},{"T_C":1450,"phase":"Ti10O19","y_CO2":0.16828678454375995},{"T_C":1475,"phase":"Ti10O19","y_CO2":0.18423483765538284},{"T_C":1500,"phase":"Ti10O19","y_CO2":0.20057935513229533}],"critical_y_CO2_mol_pct":[5.107147948469721e-05,0.00010847144238696606,0.00021864294483355779,0.0004204926797381407,0.0007751788931273421,0.0013753987253704713,0.00235713695565448,0.003914103983119934,0.006315021604016979,0.009923834055901855,0.015222831656049948,0.022838576645389103,0.03357041533041929,0.04842124516654012,0.0686314783165259,0.095707663896693,0.13146372468848116,0.17805013112864554,0.2379866617640158,0.31419081025377005,0.41000103157941037,0.5291926556490202,0.6759839465391451,0.855029460012242,1.0713975961874513,1.3305291191309228,1.6381734958095486,2.000300278769661,2.422983507392853,2.9122583073053203,3.4739505715769345,4.113482801887153,4.835661786673634,5.644456613289567,6.542778265272153,7.532274366769346,8.61315407507387,9.784058275824298,11.041988792471926,12.382307161442633,13.798808788325163,15.283872413718328,16.828678454375996,18.423483765538286,20.057935513229534],"margin_kJ_per_mol_O":[74.07792405543114,73.16262389417989,72.24406691894546,71.3217789510727,70.39531639384404,69.4642652270295,68.52823980572794,67.5868815305239,66.63985744179627,65.68685877859843,64.72759953288005,63.761815021609436,62.78926049317943,61.80970977949164,60.824367885003085,59.83025819666,58.828591413996946,57.81919628866035,56.801915866357376,55.77660639365968,54.74313632851408,53.70138544276506,52.65124400672721,51.592612046921204,50.52539866938878,49.44952144184026,48.36490582875558,47.27148467418283,46.1691977275741,45.057991208697786,43.93781740776649,42.80863431765647,41.6704052952573,40.523098749214114,39.366687851800634,38.201150272645464,37.02646793223266,35.84262677334391,34.64961654837407,33.44743062072757,32.23606577797182,31.015522054460234,29.785802560417324,28.546913313793993,27.29886307009383],"nearest_reduced_phase":["Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19","Ti10O19"],"quoted":{"1000":56.26384983826358,"1100":58.92690360147843,"1300":62.95716578061465,"1500":65.80274805930787,"500":30.6438217810107,"600":37.972487875364166,"700":44.053623502840765,"800":49.00432894471645,"900":53.009595154208675},"rows":[{"T_C":400.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":22.237122766950808,"gas_fractions":{"CO":0.02223712276695103,"CO2":0.07776287723304913,"H2":0.07776287723304884,"H2O":0.02223712276695103,"N2":0.8,"O2":1.9423176086047057e-34},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":74.07792405543114,"per_mol_O_kJ":74.07792405543114},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":91.32345283946393,"per_mol_O_kJ":91.32345283946393},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":87.44321566963595,"per_mol_O_kJ":87.44321566963595},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":79.92379466719854,"per_mol_O_kJ":79.92379466719854},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":78.19052764926573,"per_mol_O_kJ":78.19052764926573},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":76.6480663889065,"per_mol_O_kJ":76.6480663889065},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":74.96769546761334,"per_mol_O_kJ":74.96769546761334}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":425.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":24.411021794066258,"gas_fractions":{"CO":0.024411021794065586,"CO2":0.07558897820593373,"H2":0.07558897820593427,"H2O":0.024411021794065586,"N2":0.8000000000000008,"O2":5.732225183684333e-33},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":73.16262389417989,"per_mol_O_kJ":73.16262389417989},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":90.87404985162982,"per_mol_O_kJ":90.87404985162982},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":86.54510338192995,"per_mol_O_kJ":86.54510338192995},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":79.19262763269535,"per_mol_O_kJ":79.19262763269535},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":77.38174913553712,"per_mol_O_kJ":77.38174913553712},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":75.8121111170999,"per_mol_O_kJ":75.8121111170999},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":74.08802145850132,"per_mol_O_kJ":74.08802145850132}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":450.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":26.54505875279703,"gas_fractions":{"CO":0.026545058752796415,"CO2":0.07345494124720298,"H2":0.07345494124720349,"H2O":0.026545058752796415,"N2":0.8000000000000007,"O2":1.3398473674559984e-31},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":72.24406691894546,"per_mol_O_kJ":72.24406691894546},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":90.41636513433923,"per_mol_O_kJ":90.41636513433923},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":85.65512191740413,"per_mol_O_kJ":85.65512191740413},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":78.45820378228291,"per_mol_O_kJ":78.45820378228291},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":76.56971380609048,"per_mol_O_kJ":76.56971380609048},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":74.97289902949842,"per_mol_O_kJ":74.97289902949842},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":73.20509063371446,"per_mol_O_kJ":73.20509063371446}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":475.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":28.626006639138218,"gas_fractions":{"CO":0.028626006639137412,"CO2":0.07137399336086181,"H2":0.07137399336086256,"H2O":0.028626006639137412,"N2":0.8000000000000008,"O2":2.5394150737462372e-30},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":71.3217789510727,"per_mol_O_kJ":71.3217789510727},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":89.95038345596481,"per_mol_O_kJ":89.95038345596481},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":84.77256062091806,"per_mol_O_kJ":84.77256062091806},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":77.72004893750477,"per_mol_O_kJ":77.72004893750477},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":75.75394748244389,"per_mol_O_kJ":75.75394748244389},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":74.12995594763379,"per_mol_O_kJ":74.12995594763379},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":72.31842881476132,"per_mol_O_kJ":72.31842881476132}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":500.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":30.6438217810107,"gas_fractions":{"CO":0.030643821781010768,"CO2":0.06935617821898929,"H2":0.06935617821898904,"H2O":0.030643821781010768,"N2":0.8000000000000002,"O2":3.9820932258244573e-29},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":70.39531639384404,"per_mol_O_kJ":70.39531639384404},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":89.47610392409513,"per_mol_O_kJ":89.47610392409513},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":83.8966885795171,"per_mol_O_kJ":83.8966885795171},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":76.97771950181368,"per_mol_O_kJ":76.97771950181368},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":74.93400656802714,"per_mol_O_kJ":74.93400656802714},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":73.28283827494351,"per_mol_O_kJ":73.28283827494351},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":71.42759240507348,"per_mol_O_kJ":71.42759240507348}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":525.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":32.59126308957938,"gas_fractions":{"CO":0.0325912630895796,"CO2":0.06740873691042054,"H2":0.0674087369104203,"H2O":0.0325912630895796,"N2":0.7999999999999999,"O2":5.258875165151878e-28},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":69.4642652270295,"per_mol_O_kJ":69.4642652270295},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":88.99353702364431,"per_mol_O_kJ":88.99353702364431},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":83.02676465143281,"per_mol_O_kJ":83.02676465143281},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":76.23080145512768,"per_mol_O_kJ":76.23080145512768},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":74.10947704274122,"per_mol_O_kJ":74.10947704274122},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":72.4311319913354,"per_mol_O_kJ":72.4311319913354},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":70.53216738454375,"per_mol_O_kJ":70.53216738454375}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":550.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":34.46348483624009,"gas_fractions":{"CO":0.03446348483624341,"CO2":0.0655365151637595,"H2":0.065536515163756,"H2O":0.03446348483624537,"N2":0.7999999999999957,"O2":5.940851967538893e-27},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":68.52823980572794,"per_mol_O_kJ":68.52823980572794},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":88.50270230513297,"per_mol_O_kJ":88.50270230513297},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":82.16204512908939,"per_mol_O_kJ":82.16204512908939},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":75.47890915267044,"per_mol_O_kJ":75.47890915267044},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":73.27997326179502,"per_mol_O_kJ":73.27997326179502},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":71.57445145202382,"per_mol_O_kJ":71.57445145202382},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":69.63176810837831,"per_mol_O_kJ":69.63176810837831}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":575.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":36.2576361072564,"gas_fractions":{"CO":0.03625763610725643,"CO2":0.06374236389274357,"H2":0.06374236389274357,"H2O":0.03625763610725643,"N2":0.7999999999999999,"O2":5.820409206225537e-26},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":67.5868815305239,"per_mol_O_kJ":67.5868815305239},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":88.00362655788695,"per_mol_O_kJ":88.00362655788695},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":81.30178956203804,"per_mol_O_kJ":81.30178956203804},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":74.72168399515067,"per_mol_O_kJ":74.72168399515067},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":72.44513662588543,"per_mol_O_kJ":72.44513662588543},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":70.71243805771064,"per_mol_O_kJ":70.71243805771064},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":68.72603597726993,"per_mol_O_kJ":68.72603597726993}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":600.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":37.972487875364166,"gas_fractions":{"CO":0.03797248787536356,"CO2":0.062027512124635815,"H2":0.06202751212463625,"H2O":0.03797248787536356,"N2":0.8000000000000008,"O2":5.006097273968135e-25},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":66.63985744179627,"per_mol_O_kJ":66.63985744179627},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":87.49634234873236,"per_mol_O_kJ":87.49634234873236},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":80.44526514497466,"per_mol_O_kJ":80.44526514497466},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":73.95879302304093,"per_mol_O_kJ":73.95879302304093},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":71.60463417547226,"per_mol_O_kJ":71.60463417547226},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":69.84475884885978,"per_mol_O_kJ":69.84475884885978},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":67.81463803167935,"per_mol_O_kJ":67.81463803167935}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":625.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":39.60809922536067,"gas_fractions":{"CO":0.03960809922536117,"CO2":0.060391900774639205,"H2":0.06039190077463876,"H2O":0.03960809922536173,"N2":0.7999999999999992,"O2":3.821118168560528e-24},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":65.68685877859843,"per_mol_O_kJ":65.68685877859843},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":86.98088683896708,"per_mol_O_kJ":86.98088683896708},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":79.59174998433286,"per_mol_O_kJ":79.59174998433286},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":73.189927475486,"per_mol_O_kJ":73.189927475486},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":70.75815714969258,"per_mol_O_kJ":70.75815714969258},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":68.97110506461331,"per_mol_O_kJ":68.97110506461331},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":66.89726551073909,"per_mol_O_kJ":66.89726551073909}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":650.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":41.165527515940425,"gas_fractions":{"CO":0.04116552751594084,"CO2":0.05883447248405952,"H2":0.05883447248405911,"H2O":0.04116552751594084,"N2":0.7999999999999997,"O2":2.6135049057859184e-23},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":64.72759953288005,"per_mol_O_kJ":64.72759953288005},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":86.4573008153659,"per_mol_O_kJ":86.4573008153659},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":78.74053548717825,"per_mol_O_kJ":78.74053548717825},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":72.4148013445174,"per_mol_O_kJ":72.4148013445174},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":69.90541954056744,"per_mol_O_kJ":69.90541954056744},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":68.09119069699318,"per_mol_O_kJ":68.09119069699318},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":65.97363240646882,"per_mol_O_kJ":65.97363240646882}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":675.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":42.64658273381303,"gas_fractions":{"CO":0.04264658273381345,"CO2":0.05735341726618691,"H2":0.0573534172661865,"H2O":0.04264658273381345,"N2":0.7999999999999996,"O2":1.6156703698808796e-22},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":63.761815021609436,"per_mol_O_kJ":63.761815021609436},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":85.92562788741475,"per_mol_O_kJ":85.92562788741475},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":77.89092806256963,"per_mol_O_kJ":77.89092806256963},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":71.63314994717621,"per_mol_O_kJ":71.63314994717621},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":69.046156665132,"per_mol_O_kJ":69.046156665132},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":67.20475106303911,"per_mol_O_kJ":67.20475106303911},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":65.04347403589964,"per_mol_O_kJ":65.04347403589964}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":700.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":44.053623502840765,"gas_fractions":{"CO":0.04405362350283999,"CO2":0.05594637649715925,"H2":0.05594637649715985,"H2O":0.04405362350283967,"N2":0.8000000000000013,"O2":9.098063469409776e-22},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":62.78926049317943,"per_mol_O_kJ":62.78926049317943},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":85.38591381490801,"per_mol_O_kJ":85.38591381490801},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":77.04225028437781,"per_mol_O_kJ":77.04225028437781},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":70.84472853191482,"per_mol_O_kJ":70.84472853191482},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":68.18012377183277,"per_mol_O_kJ":68.18012377183277},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":66.31154141119714,"per_mol_O_kJ":66.31154141119714},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":64.10654564747892,"per_mol_O_kJ":64.10654564747892}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":725.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":45.38939068331436,"gas_fractions":{"CO":0.04538939068331519,"CO2":0.054610609316685516,"H2":0.0546106093166857,"H2O":0.045389390683314546,"N2":0.799999999999999,"O2":4.699432607796743e-21},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":61.80970977949164,"per_mol_O_kJ":61.80970977949164},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":84.83820593878386,"per_mol_O_kJ":84.83820593878386},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":76.19384163262839,"per_mol_O_kJ":76.19384163262839},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":70.04931093069672,"per_mol_O_kJ":70.04931093069672},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":67.30709469262501,"per_mol_O_kJ":67.30709469262501},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":65.41133557343028,"per_mol_O_kJ":65.41133557343028},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":63.16262107316379,"per_mol_O_kJ":63.16262107316379}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":750.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":46.66152745977749,"gas_fractions":{"CO":0.046661527459778064,"CO2":0.05333847254022242,"H2":0.05333847254022185,"H2O":0.046661527459778064,"N2":0.7999999999999997,"O2":2.2414258977503398e-20},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":60.824367885003085,"per_mol_O_kJ":60.824367885003085},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":84.28396657809549,"per_mol_O_kJ":84.28396657809549},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":75.34647278927218,"per_mol_O_kJ":75.34647278927218},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":69.24810214802528,"per_mol_O_kJ":69.24810214802528},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":66.42827443201031,"per_mol_O_kJ":66.42827443201031},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":64.50533855423828,"per_mol_O_kJ":64.50533855423828},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":62.21290531745126,"per_mol_O_kJ":62.21290531745126}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":775.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":47.86388327780185,"gas_fractions":{"CO":0.04786388327780159,"CO2":0.05213611672219814,"H2":0.05213611672219851,"H2O":0.04786388327780159,"N2":0.8,"O2":9.921457422405973e-20},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":59.83025819666,"per_mol_O_kJ":59.83025819666},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":83.72046105644745,"per_mol_O_kJ":83.72046105644745},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":74.49673424053822,"per_mol_O_kJ":74.49673424053822},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":68.43812557089768,"per_mol_O_kJ":68.43812557089768},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":65.54068637698128,"per_mol_O_kJ":65.54068637698128},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":63.59057374061513,"per_mol_O_kJ":63.59057374061513},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":61.25442176733213,"per_mol_O_kJ":61.25442176733213}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":800.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":49.00432894471645,"gas_fractions":{"CO":0.049004328944716895,"CO2":0.05099567105528351,"H2":0.050995671055282965,"H2O":0.049004328944716895,"N2":0.7999999999999998,"O2":4.098180837521033e-19},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":58.828591413996946,"per_mol_O_kJ":58.828591413996946},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":83.14912744223352,"per_mol_O_kJ":83.14912744223352},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":73.64540634032028,"per_mol_O_kJ":73.64540634032028},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":67.62059189889305,"per_mol_O_kJ":67.62059189889305},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":64.64554122711161,"per_mol_O_kJ":64.64554122711161},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":62.668251832137685,"per_mol_O_kJ":62.668251832137685},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":60.288381122382816,"per_mol_O_kJ":60.288381122382816}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":825.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":50.08603576035869,"gas_fractions":{"CO":0.05008603576035859,"CO2":0.04991396423964127,"H2":0.04991396423964145,"H2O":0.05008603576035859,"N2":0.8,"O2":1.5871343889391547e-18},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":57.81919628866035,"per_mol_O_kJ":57.81919628866035},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":82.57000808143619,"per_mol_O_kJ":82.57000808143619},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":72.79189096877894,"per_mol_O_kJ":72.79189096877894},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":66.79532988369147,"per_mol_O_kJ":66.79532988369147},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":63.74266773408044,"per_mol_O_kJ":63.74266773408044},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":61.738201580484656,"per_mol_O_kJ":61.738201580484656},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":59.31461213427974,"per_mol_O_kJ":59.31461213427974}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":850.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":51.11213206768453,"gas_fractions":{"CO":0.051112132067684266,"CO2":0.04888786793231547,"H2":0.04888786793231564,"H2O":0.051112132067684266,"N2":0.8000000000000004,"O2":5.787678781784111e-18},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":56.801915866357376,"per_mol_O_kJ":56.801915866357376},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":81.98314660867618,"per_mol_O_kJ":81.98314660867618},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":71.93560851586608,"per_mol_O_kJ":71.93560851586608},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":65.9621825710392,"per_mol_O_kJ":65.9621825710392},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":62.83190894362724,"per_mol_O_kJ":62.83190894362724},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":60.80026603139913,"per_mol_O_kJ":60.80026603139913},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":58.33295784875827,"per_mol_O_kJ":58.33295784875827}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":875.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":52.08566881972515,"gas_fractions":{"CO":0.05208566881972544,"CO2":0.0479143311802748,"H2":0.047914331180274966,"H2O":0.052085668819725255,"N2":0.7999999999999995,"O2":1.9950920956484844e-17},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":55.77660639365968,"per_mol_O_kJ":55.77660639365968},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":81.38858759409175,"per_mol_O_kJ":81.38858759409175},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":71.07599738225213,"per_mol_O_kJ":71.07599738225213},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":65.12100620753972,"per_mol_O_kJ":65.12100620753972},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":61.913121102356854,"per_mol_O_kJ":61.913121102356854},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":59.85430143148278,"per_mol_O_kJ":59.85430143148278},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":57.34327451242643,"per_mol_O_kJ":57.34327451242643}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":900.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":53.009595154208675,"gas_fractions":{"CO":0.05300959515420884,"CO2":0.04699040484579132,"H2":0.04699040484579132,"H2O":0.05300959515420847,"N2":0.8,"O2":6.524460411024684e-17},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":54.74313632851408,"per_mol_O_kJ":54.74313632851408},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":80.786376261849,"per_mol_O_kJ":80.786376261849},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":70.21251346130111,"per_mol_O_kJ":70.21251346130111},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":64.27166925116262,"per_mol_O_kJ":64.27166925116262},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":60.98617266823612,"per_mol_O_kJ":60.98617266823612},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":58.900176238707445,"per_mol_O_kJ":58.900176238707445},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":56.34543058325198,"per_mol_O_kJ":56.34543058325198}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":925.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":53.88674184862552,"gas_fractions":{"CO":0.05388674184862578,"CO2":0.04611325815137443,"H2":0.04611325815137459,"H2O":0.05388674184862521,"N2":0.7999999999999998,"O2":2.0308382915403495e-16},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":53.70138544276506,"per_mol_O_kJ":53.70138544276506},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":80.17655826697955,"per_mol_O_kJ":80.17655826697955},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":69.34462961090139,"per_mol_O_kJ":69.34462961090139},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":63.41405147378828,"per_mol_O_kJ":63.41405147378828},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":60.050943413139066,"per_mol_O_kJ":60.050943413139066},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":57.9377702249476,"per_mol_O_kJ":57.9377702249476},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":55.339305833105755,"per_mol_O_kJ":55.339305833105755}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":950.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":54.719810912782364,"gas_fractions":{"CO":0.05471981091278207,"CO2":0.045280189087217565,"H2":0.045280189087218856,"H2O":0.0547198109127811,"N2":0.7999999999999998,"O2":6.034829138132528e-16},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":52.65124400672721,"per_mol_O_kJ":52.65124400672721},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":79.55917951978233,"per_mol_O_kJ":79.55917951978233},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":68.47183512207403,"per_mol_O_kJ":68.47183512207403},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":62.54804314575131,"per_mol_O_kJ":62.54804314575131},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":59.10732360740303,"per_mol_O_kJ":59.10732360740303},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":56.966973660538315,"per_mol_O_kJ":56.966973660538315},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":54.32479053232419,"per_mol_O_kJ":54.32479053232419}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":975.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":55.511369905339656,"gas_fractions":{"CO":0.0555113699053393,"CO2":0.04448863009466026,"H2":0.04448863009466421,"H2O":0.05551136990533594,"N2":0.7999999999999986,"O2":1.7167961944289958e-15},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":51.592612046921204,"per_mol_O_kJ":51.592612046921204},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":78.93428604906603,"per_mol_O_kJ":78.93428604906603},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":67.59363518966074,"per_mol_O_kJ":67.59363518966074},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":61.673544293594205,"per_mol_O_kJ":61.673544293594205},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":58.15521327756642,"per_mol_O_kJ":58.15521327756642},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":55.98768657202072,"per_mol_O_kJ":55.98768657202072},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":53.30178470744613,"per_mol_O_kJ":53.30178470744613}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1000.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":56.26384983826358,"gas_fractions":{"CO":0.056263849838263484,"CO2":0.043736150161736244,"H2":0.04373615016174556,"H2O":0.05626384983825409,"N2":0.799999999999996,"O2":4.687567593969819e-15},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":50.52539866938878,"per_mol_O_kJ":50.52539866938878},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":78.30192389714284,"per_mol_O_kJ":78.30192389714284},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":66.70955038921215,"per_mol_O_kJ":66.70955038921215},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":60.79046402337917,"per_mol_O_kJ":60.79046402337917},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":57.194521529688245,"per_mol_O_kJ":57.194521529688245},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":54.999818065459294,"per_mol_O_kJ":54.999818065459294},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":52.27019746453698,"per_mol_O_kJ":52.27019746453698}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1025.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":56.9795457635324,"gas_fractions":{"CO":0.05697954576353204,"CO2":0.043020454236467054,"H2":0.043020454236491354,"H2O":0.05697954576350755,"N2":0.7999999999999897,"O2":1.231337268689539e-14},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":49.44952144184026,"per_mol_O_kJ":49.44952144184026},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":77.66213904078677,"per_mol_O_kJ":77.66213904078677},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":65.81911616317734,"per_mol_O_kJ":65.81911616317734},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":59.898719902840185,"per_mol_O_kJ":59.898719902840185},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":56.22516593150658,"per_mol_O_kJ":56.22516593150658},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":54.00328570858164,"per_mol_O_kJ":54.00328570858164},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":51.22994637132342,"per_mol_O_kJ":51.22994637132342}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1050.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":57.66061932565055,"gas_fractions":{"CO":0.057660619325648206,"CO2":0.04233938067434818,"H2":0.042339380674410745,"H2O":0.057660619325585936,"N2":0.7999999999999757,"O2":3.118570698282504e-14},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":48.36490582875558,"per_mol_O_kJ":48.36490582875558},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":77.01497733343354,"per_mol_O_kJ":77.01497733343354},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":64.92188231871432,"per_mol_O_kJ":64.92188231871432},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":58.998237396475815,"per_mol_O_kJ":58.998237396475815},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":55.24707194751363,"per_mol_O_kJ":55.24707194751363},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":52.99801496588907,"per_mol_O_kJ":52.99801496588907},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":50.18095689229904,"per_mol_O_kJ":50.18095689229904}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1075.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":58.309102717512495,"gas_fractions":{"CO":0.05830910271751084,"CO2":0.04169089728248412,"H2":0.041690897282638306,"H2O":0.05830910271735547,"N2":0.7999999999999349,"O2":7.630650639649212e-14},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":47.27148467418283,"per_mol_O_kJ":47.27148467418283},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":76.36048446474013,"per_mol_O_kJ":76.36048446474013},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":64.01741253880027,"per_mol_O_kJ":64.01741253880027},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":58.08894934833825,"per_mol_O_kJ":58.08894934833825},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":54.260172421762945,"per_mol_O_kJ":54.260172421762945},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":51.983938681432846,"per_mol_O_kJ":51.983938681432846},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":49.123161871525554,"per_mol_O_kJ":49.123161871525554}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1100.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":58.92690360147843,"gas_fractions":{"CO":0.05892690360146748,"CO2":0.04107309639851415,"H2":0.041073096398875894,"H2O":0.05892690360110615,"N2":0.7999999999998556,"O2":1.8072138501036087e-13},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":46.1691977275741,"per_mol_O_kJ":46.1691977275741},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":75.69870593431324,"per_mol_O_kJ":75.69870593431324},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":63.10528390782133,"per_mol_O_kJ":63.10528390782133},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":57.17079550791141,"per_mol_O_kJ":57.17079550791141},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":53.264407103737085,"per_mol_O_kJ":53.264407103737085},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":50.96099660469372,"per_mol_O_kJ":50.96099660469372},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":48.05650105847599,"per_mol_O_kJ":48.05650105847599}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1125.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":59.515810657226794,"gas_fractions":{"CO":0.059515810657203794,"CO2":0.04048418934275617,"H2":0.040484189343584054,"H2O":0.05951581065637684,"N2":0.7999999999996641,"O2":4.1500762177605014e-13},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":45.057991208697786,"per_mol_O_kJ":45.057991208697786},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":75.02968703699923,"per_mol_O_kJ":75.02968703699923},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":62.18508645244788,"per_mol_O_kJ":62.18508645244788},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":56.24372209496687,"per_mol_O_kJ":56.24372209496687},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":52.25972221320444,"per_mol_O_kJ":52.25972221320444},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":49.92913495544599,"per_mol_O_kJ":49.92913495544599},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":46.980920672926004,"per_mol_O_kJ":46.980920672926004}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1150.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":60.07749949747054,"gas_fractions":{"CO":0.060077499497414616,"CO2":0.039922500502492554,"H2":0.03992250050434391,"H2O":0.060077499495563465,"N2":0.7999999999992599,"O2":9.25560357726281e-13},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":43.93781740776649,"per_mol_O_kJ":43.93781740776649},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":74.35347285755006,"per_mol_O_kJ":74.35347285755006},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":61.256422698216966,"per_mol_O_kJ":61.256422698216966},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":55.30768139973134,"per_mol_O_kJ":55.30768139973134},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":51.24607004039444,"per_mol_O_kJ":51.24607004039444},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":48.88830602391454,"per_mol_O_kJ":48.88830602391454},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":45.89637300509821,"per_mol_O_kJ":45.89637300509821}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1175.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":60.61353875554587,"gas_fractions":{"CO":0.06061353875542408,"CO2":0.03938646124437499,"H2":0.03938646124839053,"H2O":0.0606135387514088,"N2":0.799999999998394,"O2":2.00775522197186e-12},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":42.80863431765647,"per_mol_O_kJ":42.80863431765647},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":73.67010827289346,"per_mol_O_kJ":73.67010827289346},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":60.31890724208938,"per_mol_O_kJ":60.31890724208938},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":54.36263141510108,"per_mol_O_kJ":54.36263141510108},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":50.22340857819927,"per_mol_O_kJ":50.22340857819927},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":47.83846780299382,"per_mol_O_kJ":47.83846780299382},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":44.80281604788797,"per_mol_O_kJ":44.80281604788797}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1200.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":61.125396198716395,"gas_fractions":{"CO":0.061125396198457006,"CO2":0.03887460380111866,"H2":0.038874603809603045,"H2O":0.06112539618997274,"N2":0.7999999999966063,"O2":4.242140342464721e-12},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":41.6704052952573,"per_mol_O_kJ":41.6704052952573},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":72.97963796049748,"per_mol_O_kJ":72.97963796049748},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":59.372166340935564,"per_mol_O_kJ":59.372166340935564},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":53.40853549796475,"per_mol_O_kJ":53.40853549796475},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":49.191701183510304,"per_mol_O_kJ":49.191701183510304},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":46.77958364957658,"per_mol_O_kJ":46.77958364957658},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":43.70021315818576,"per_mol_O_kJ":43.70021315818576}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1225.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":61.6144447598148,"gas_fractions":{"CO":0.061614444759276306,"CO2":0.03838555523984963,"H2":0.038385555257333046,"H2O":0.06161444474179311,"N2":0.7999999999930062,"O2":8.741739137211472e-12},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":40.523098749214114,"per_mol_O_kJ":40.523098749214114},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":72.28210641158444,"per_mol_O_kJ":72.28210641158444},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":58.41583751583016,"per_mol_O_kJ":58.41583751583016},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":52.44536205698705,"per_mol_O_kJ":52.44536205698705},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":48.1509162649877,"per_mol_O_kJ":48.1509162649877},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":45.7116219723207,"per_mol_O_kJ":45.7116219723207},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":42.58853274465491,"per_mol_O_kJ":42.58853274465491}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1250.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":62.081968410388,"gas_fractions":{"CO":0.0620819684092965,"CO2":0.03791803158894502,"H2":0.03791803162412612,"H2O":0.062081968374114845,"N2":0.7999999999859267,"O2":1.7590662843999565e-11},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":39.366687851800634,"per_mol_O_kJ":39.366687851800634},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":71.57755794814375,"per_mol_O_kJ":71.57755794814375},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":57.44956917186005,"per_mol_O_kJ":57.44956917186005},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":51.4730842644517,"per_mol_O_kJ":51.4730842644517},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":47.10102699491654,"per_mol_O_kJ":47.10102699491654},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":44.63455594351444,"per_mol_O_kJ":44.63455594351444},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":41.4677479795746,"per_mol_O_kJ":41.4677479795746}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1275.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":62.52916782200981,"gas_fractions":{"CO":0.06252916781984548,"CO2":0.03747083217669361,"H2":0.03747083224590353,"H2O":0.06252916775063608,"N2":0.7999999999723165,"O2":3.4604840217461974e-11},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":38.201150272645464,"per_mol_O_kJ":38.201150272645464},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":70.86603674280559,"per_mol_O_kJ":70.86603674280559},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":56.47302023301518,"per_mol_O_kJ":56.47302023301518},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":50.49167978999003,"per_mol_O_kJ":50.49167978999003},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":46.04201104292679,"per_mol_O_kJ":46.04201104292679},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":43.54836323278596,"per_mol_O_kJ":43.54836323278596},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":40.337836532580695,"per_mol_O_kJ":40.337836532580695}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1300.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":62.95716578061465,"gas_fractions":{"CO":0.06295716577642024,"CO2":0.037042834216917384,"H2":0.037042834350164734,"H2O":0.06295716564317269,"N2":0.7999999999467012,"O2":6.662372975416354e-11},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":37.02646793223266,"per_mol_O_kJ":37.02646793223266},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":70.14758684074229,"per_mol_O_kJ":70.14758684074229},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":55.485859791647044,"per_mol_O_kJ":55.485859791647044},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":49.50113055410111,"per_mol_O_kJ":49.50113055410111},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":44.97385032951843,"per_mol_O_kJ":44.97385032951843},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":42.453025760633864,"per_mol_O_kJ":42.453025760633864},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":39.198780324167274,"per_mol_O_kJ":39.198780324167274}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1325.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":63.36701233265811,"gas_fractions":{"CO":0.06336701232469767,"CO2":0.036632987662738294,"H2":0.036632987914055254,"H2O":0.06336701207338272,"N2":0.7999999998994661,"O2":1.2565985559180821e-10},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":35.84262677334391,"per_mol_O_kJ":35.84262677334391},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":69.42225218280237,"per_mol_O_kJ":69.42225218280237},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":54.4877667718074,"per_mol_O_kJ":54.4877667718074},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":48.50142249956889,"per_mol_O_kJ":48.50142249956889},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":43.89653079747586,"per_mol_O_kJ":43.89653079747586},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":41.34852946984438,"per_mol_O_kJ":41.34852946984438},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":38.05056529711965,"per_mol_O_kJ":38.05056529711965}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1350.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":63.75968965250396,"gas_fractions":{"CO":0.0637596896376857,"CO2":0.036240310339073496,"H2":0.036240310803889265,"H2O":0.06375968917287,"N2":0.7999999998140735,"O2":2.3240790794781282e-10},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":34.64961654837407,"per_mol_O_kJ":34.64961654837407},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":68.69007662902072,"per_mol_O_kJ":68.69007662902072},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":53.47842960563139,"per_mol_O_kJ":53.47842960563139},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":47.492545378807336,"per_mol_O_kJ":47.492545378807336},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":42.81004219920578,"per_mol_O_kJ":42.81004219920578},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":40.23486411282829,"per_mol_O_kJ":40.23486411282829},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":36.89318120384905,"per_mol_O_kJ":36.89318120384905}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1375.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":64.13611662844546,"gas_fractions":{"CO":0.06413611660138849,"CO2":0.03586388335642466,"H2":0.035863884200164085,"H2O":0.064136115757649,"N2":0.799999999662504,"O2":4.2186972412559717e-10},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":33.44743062072757,"per_mol_O_kJ":33.44743062072757},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":67.95110398157647,"per_mol_O_kJ":67.95110398157647},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":52.45754592173671,"per_mol_O_kJ":52.45754592173671},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":46.474492555214965,"per_mol_O_kJ":46.474492555214965},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":41.71437789811762,"per_mol_O_kJ":41.71437789811762},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":39.112023052989116,"per_mol_O_kJ":39.112023052989116},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":35.72662140776265,"per_mol_O_kJ":35.72662140776265}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1400.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":64.49715317099522,"gas_fractions":{"CO":0.06449715312247957,"CO2":0.03550284680229896,"H2":0.03550284830673009,"H2O":0.06449715161804839,"N2":0.7999999993982273,"O2":7.522155973343529e-10},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":32.23606577797182,"per_mol_O_kJ":32.23606577797182},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":67.20537800597958,"per_mol_O_kJ":67.20537800597958},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":51.42482224422679,"per_mol_O_kJ":51.42482224422679},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":45.44726081637009,"per_mol_O_kJ":45.44726081637009},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":40.60953468177922,"per_mol_O_kJ":40.60953468177922},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":37.98000307789971,"per_mol_O_kJ":37.98000307789971},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":34.550882696425106,"per_mol_O_kJ":34.550882696425106}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1425.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":64.84360425152093,"gas_fractions":{"CO":0.06484360416602877,"CO2":0.035156395702124504,"H2":0.03515639833915739,"H2O":0.06484360152899363,"N2":0.799999998945181,"O2":1.3185146022755526e-09},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":31.015522054460234,"per_mol_O_kJ":31.015522054460234},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":66.452942448969,"per_mol_O_kJ":66.452942448969},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":50.379973700549044,"per_mol_O_kJ":50.379973700549044},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":44.410850196632964,"per_mol_O_kJ":44.410850196632964},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":39.4955125845554,"per_mol_O_kJ":39.4955125845554},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":36.83880422191851,"per_mol_O_kJ":36.83880422191851},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":33.3659651042035,"per_mol_O_kJ":33.3659651042035}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1450.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":65.17622368305037,"gas_fractions":{"CO":0.06517622353486083,"CO2":0.03482377623777165,"H2":0.03482378078512332,"H2O":0.06517621898750896,"N2":0.7999999981810593,"O2":2.2736758853777524e-09},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":29.785802560417324,"per_mol_O_kJ":29.785802560417324},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":65.69384105100107,"per_mol_O_kJ":65.69384105100107},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":49.32272373580008,"per_mol_O_kJ":49.32272373580008},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":43.365263806237635,"per_mol_O_kJ":43.365263806237635},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":38.372314716677465,"per_mol_O_kJ":38.372314716677465},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":35.68842959528547,"per_mol_O_kJ":35.68842959528547},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":32.171871741331415,"per_mol_O_kJ":32.171871741331415}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1475.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":65.49571765790482,"gas_fractions":{"CO":0.06549571740510285,"CO2":0.03450428220891138,"H2":0.03450428992873507,"H2O":0.06549570968527607,"N2":0.7999999969120644,"O2":3.859910174326679e-09},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":28.546913313793993,"per_mol_O_kJ":28.546913313793993},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":64.92811755038701,"per_mol_O_kJ":64.92811755038701},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":48.252803830199355,"per_mol_O_kJ":48.252803830199355},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":42.31050766313456,"per_mol_O_kJ":42.31050766313456},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":37.23994709609906,"per_mol_O_kJ":37.23994709609906},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":34.5288852159465,"per_mol_O_kJ":34.5288852159465},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":30.96860862575886,"per_mol_O_kJ":30.96860862575886}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}},{"T_C":1500.0,"active_condensed_phases":["TiO2"],"conversion_CO2_pct":65.80274805930787,"gas_fractions":{"CO":0.06580274763453013,"CO2":0.034197251719937906,"H2":0.03419726463058005,"H2O":0.06580273472388792,"N2":0.7999999948357428,"O2":6.455321080793901e-09},"inactive_phase_reduced_costs":{"Ti10O19":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":27.29886307009383,"per_mol_O_kJ":27.29886307009383},"Ti2O3":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":64.15581567506001,"per_mol_O_kJ":64.15581567506001},"Ti3O5":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":47.16995321538843,"per_mol_O_kJ":47.16995321538843},"Ti4O7":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":41.246590522832776,"per_mol_O_kJ":41.246590522832776},"Ti5O9":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":36.098418478325584,"per_mol_O_kJ":36.098418478325584},"Ti6O11":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":33.36017983941201,"per_mol_O_kJ":33.36017983941201},"Ti8O15":{"oxygen_removed_per_extent":1.0,"per_formula_kJ":29.75618451299124,"per_mol_O_kJ":29.75618451299124}},"solver_tolerance":{"degeneracy_kJ_per_mol_O":1e-06,"kkt_kJ":1e-09,"newton_scaled_residual":1e-13}}],"stable_phases":["TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2","TiO2"]},"feed":{"label":"CO2/H2/He = 10/10/80","sccm":{"CO2":10,"H2":10,"N2":80}},"generated_by":"scripts/reproduce_paper.py","scope":"This repository computes gas-solid equilibrium and a geometric surface-capacity bound. It does not assign the below-surface inventory among subsurface point defects, bulk defects or extended defects.","surface":{"by_diameter":{"0.9":{"area_m2_g":1.5692563848378798,"bridging_capacity_umol_O_g":13.55702643902137,"reconstruction_deficiency_umol_O_g":6.778513219510685},"1.6":{"area_m2_g":0.8827067164713074,"bridging_capacity_umol_O_g":7.625827371949523,"reconstruction_deficiency_umol_O_g":3.8129136859747614}},"geometry":{"bridging_areal_cm2":520261203278537.25,"cell_area_A2":19.221114196067017,"density_g_cm3":4.248296665273981,"reconstruction_ML":0.5},"inventories":[30.0,40.0,60.0,95.0,130.0,150.0,190.0,220.0],"rows":[{"Ti3_fraction_pct":0.47919599999999996,"area_m2_g":1.5692563848378798,"below_surface_fraction_min_pct":77.40495593496438,"bridging_capacity_umol_O_g":13.55702643902137,"diameter_um":0.9,"inventory_over_capacity":2.2128746399468984,"measured_umol_O_g":30.0,"reconstruction_deficiency_umol_O_g":6.778513219510685,"surface_fraction_max_pct":22.59504406503562,"x_in_TiO2mx":0.00239598},{"Ti3_fraction_pct":0.6389279999999999,"area_m2_g":1.5692563848378798,"below_surface_fraction_min_pct":83.0537169512233,"bridging_capacity_umol_O_g":13.55702643902137,"diameter_um":0.9,"inventory_over_capacity":2.950499519929198,"measured_umol_O_g":40.0,"reconstruction_deficiency_umol_O_g":6.778513219510685,"surface_fraction_max_pct":16.946283048776714,"x_in_TiO2mx":0.00319464},{"Ti3_fraction_pct":0.9583919999999999,"area_m2_g":1.5692563848378798,"below_surface_fraction_min_pct":88.70247796748218,"bridging_capacity_umol_O_g":13.55702643902137,"diameter_um":0.9,"inventory_over_capacity":4.425749279893797,"measured_umol_O_g":60.0,"reconstruction_deficiency_umol_O_g":6.778513219510685,"surface_fraction_max_pct":11.29752203251781,"x_in_TiO2mx":0.00479196},{"Ti3_fraction_pct":1.5174539999999999,"area_m2_g":1.5692563848378798,"below_surface_fraction_min_pct":92.86472292683085,"bridging_capacity_umol_O_g":13.55702643902137,"diameter_um":0.9,"inventory_over_capacity":7.007436359831845,"measured_umol_O_g":95.0,"reconstruction_deficiency_umol_O_g":6.778513219510685,"surface_fraction_max_pct":7.135277073169142,"x_in_TiO2mx":0.007587269999999999},{"Ti3_fraction_pct":2.076516,"area_m2_g":1.5692563848378798,"below_surface_fraction_min_pct":94.78575906191486,"bridging_capacity_umol_O_g":13.55702643902137,"diameter_um":0.9,"inventory_over_capacity":9.589123439769894,"measured_umol_O_g":130.0,"reconstruction_deficiency_umol_O_g":6.778513219510685,"surface_fraction_max_pct":5.214240938085143,"x_in_TiO2mx":0.010382579999999999},{"Ti3_fraction_pct":2.3959799999999998,"area_m2_g":1.5692563848378798,"below_surface_fraction_min_pct":95.48099118699288,"bridging_capacity_umol_O_g":13.55702643902137,"diameter_um":0.9,"inventory_over_capacity":11.064373199734492,"measured_umol_O_g":150.0,"reconstruction_deficiency_umol_O_g":6.778513219510685,"surface_fraction_max_pct":4.519008813007123,"x_in_TiO2mx":0.0119799},{"Ti3_fraction_pct":3.0349079999999997,"area_m2_g":1.5692563848378798,"below_surface_fraction_min_pct":96.43236146341543,"bridging_capacity_umol_O_g":13.55702643902137,"diameter_um":0.9,"inventory_over_capacity":14.01487271966369,"measured_umol_O_g":190.0,"reconstruction_deficiency_umol_O_g":6.778513219510685,"surface_fraction_max_pct":3.567638536584571,"x_in_TiO2mx":0.015174539999999999},{"Ti3_fraction_pct":3.5141039999999997,"area_m2_g":1.5692563848378798,"below_surface_fraction_min_pct":96.91885762749514,"bridging_capacity_umol_O_g":13.55702643902137,"diameter_um":0.9,"inventory_over_capacity":16.22774735961059,"measured_umol_O_g":220.0,"reconstruction_deficiency_umol_O_g":6.778513219510685,"surface_fraction_max_pct":3.081142372504857,"x_in_TiO2mx":0.01757052},{"Ti3_fraction_pct":0.47919599999999996,"area_m2_g":0.8827067164713074,"below_surface_fraction_min_pct":87.29028771341746,"bridging_capacity_umol_O_g":7.625827371949523,"diameter_um":1.6,"inventory_over_capacity":3.9339993599055965,"measured_umol_O_g":30.0,"reconstruction_deficiency_umol_O_g":3.8129136859747614,"surface_fraction_max_pct":12.709712286582539,"x_in_TiO2mx":0.00239598},{"Ti3_fraction_pct":0.6389279999999999,"area_m2_g":0.8827067164713074,"below_surface_fraction_min_pct":90.46771578506309,"bridging_capacity_umol_O_g":7.625827371949523,"diameter_um":1.6,"inventory_over_capacity":5.245332479874128,"measured_umol_O_g":40.0,"reconstruction_deficiency_umol_O_g":3.8129136859747614,"surface_fraction_max_pct":9.532284214936904,"x_in_TiO2mx":0.00319464},{"Ti3_fraction_pct":0.9583919999999999,"area_m2_g":0.8827067164713074,"below_surface_fraction_min_pct":93.64514385670873,"bridging_capacity_umol_O_g":7.625827371949523,"diameter_um":1.6,"inventory_over_capacity":7.867998719811193,"measured_umol_O_g":60.0,"reconstruction_deficiency_umol_O_g":3.8129136859747614,"surface_fraction_max_pct":6.354856143291269,"x_in_TiO2mx":0.00479196},{"Ti3_fraction_pct":1.5174539999999999,"area_m2_g":0.8827067164713074,"below_surface_fraction_min_pct":95.98640664634236,"bridging_capacity_umol_O_g":7.625827371949523,"diameter_um":1.6,"inventory_over_capacity":12.457664639701056,"measured_umol_O_g":95.0,"reconstruction_deficiency_umol_O_g":3.8129136859747614,"surface_fraction_max_pct":4.013593353657644,"x_in_TiO2mx":0.007587269999999999},{"Ti3_fraction_pct":2.076516,"area_m2_g":0.8827067164713074,"below_surface_fraction_min_pct":97.06698947232711,"bridging_capacity_umol_O_g":7.625827371949523,"diameter_um":1.6,"inventory_over_capacity":17.047330559590918,"measured_umol_O_g":130.0,"reconstruction_deficiency_umol_O_g":3.8129136859747614,"surface_fraction_max_pct":2.9330105276728933,"x_in_TiO2mx":0.010382579999999999},{"Ti3_fraction_pct":2.3959799999999998,"area_m2_g":0.8827067164713074,"below_surface_fraction_min_pct":97.45805754268349,"bridging_capacity_umol_O_g":7.625827371949523,"diameter_um":1.6,"inventory_over_capacity":19.669996799527983,"measured_umol_O_g":150.0,"reconstruction_deficiency_umol_O_g":3.8129136859747614,"surface_fraction_max_pct":2.541942457316508,"x_in_TiO2mx":0.0119799},{"Ti3_fraction_pct":3.0349079999999997,"area_m2_g":0.8827067164713074,"below_surface_fraction_min_pct":97.99320332317117,"bridging_capacity_umol_O_g":7.625827371949523,"diameter_um":1.6,"inventory_over_capacity":24.915329279402112,"measured_umol_O_g":190.0,"reconstruction_deficiency_umol_O_g":3.8129136859747614,"surface_fraction_max_pct":2.006796676828822,"x_in_TiO2mx":0.015174539999999999},{"Ti3_fraction_pct":3.5141039999999997,"area_m2_g":0.8827067164713074,"below_surface_fraction_min_pct":98.266857415466,"bridging_capacity_umol_O_g":7.625827371949523,"diameter_um":1.6,"inventory_over_capacity":28.849328639307707,"measured_umol_O_g":220.0,"reconstruction_deficiency_umol_O_g":3.8129136859747614,"surface_fraction_max_pct":1.7331425845339823,"x_in_TiO2mx":0.01757052}]}};</script>
+<script>/* The figure kit: one drawing style, two products.
+
+   Everything quantitative in this repository is drawn through here - the
+   workspace figures on the page, at
+   a square 3.5 in. The coordinate system is typographic points in both,
+   so a stroke width written here is the stroke width that reaches the
+   page, and the browser preview and the print export share one geometry.
+
+   House style, in one place and nowhere else: a closed rectangular axis
+   box on all four sides, ticks pointing inward, tick labels on the bottom
+   and left only, no grid, white ground, one stroke weight for data and
+   another for spines, ticks and guides. Colour carries physical role and
+   nothing else.
+
+   Runs unchanged under node, which is how the gates measure type size and
+   width without a browser. */
+
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.FigKit = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var PT_PER_MM = 72 / 25.4;
+  var WIDTH_MM = { single: 89, onehalf: 120, double: 183 };
+  var MAX_H_MM = 247;
+  var FONT = 'Arial, Helvetica, sans-serif';
+  /* Two type scales, both in points at print size. A plate is a column
+     of a printed page and sits at the journal floor; a workspace figure
+     is a 3.5 in square read on its own and carries the larger set the
+     specification asks for. Offsets below are derived from these, so a
+     figure never needs a hand-placed label. */
+  var TYPE = { panel: 8, body: 7, tick: 6.5, small: 5.5 };
+  var FIGTYPE = { panel: 9, body: 9, tick: 8, small: 8 };
+  /* Print style, in points - the plate coordinate system is points, so
+     these are the numbers that reach the page. Spines and ticks carry one
+     weight, data curves another, guides a third; nothing sets a stroke
+     width by hand. */
+  var LW = { axis: 0.9, curve: 2.2, guide: 0.8, hair: 0.6 };
+  var TICK = { major: 4, minor: 2 };
+  var MARK = 2.5;                 /* radius, so a 5 pt marker */
+  /* One hue per physical role. Extended defects are the one neutral
+     role, so structure - axes, boundaries, anything held fixed - is a
+     lighter grey than they are and never competes with them. */
+  var C = {
+    surface: '#0072B2', subsurface: '#D55E00', bulk: '#6A51A3',
+    extended: '#777777', gas: '#009E73', structure: '#AAAAAA',
+    ink: '#000000', paper: '#FFFFFF'
+  };
+  /* a flat 14% tint of a role hue, for fills under a line of the same role */
+  function tint(hex, f) {
+    f = f == null ? 0.14 : f;
+    var n = parseInt(hex.slice(1), 16);
+    var r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    var m = function (v) { return Math.round(255 - (255 - v) * f); };
+    return '#' + [m(r), m(g), m(b)].map(function (v) {
+      return ('0' + v.toString(16)).slice(-2);
+    }).join('');
+  }
+
+  /* ------------------------------------------------------------ build */
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+  function n2(v) { return (Math.round(v * 100) / 100).toString(); }
+  var SUB = '\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087'
+    + '\u2088\u2089';
+  /* Ti10O19 -> Ti(10 subscript)O(19 subscript); digits that do not follow an
+     element letter, as in a 1:1 feed ratio, are left alone */
+  function chem(s) {
+    return String(s).replace(/([A-Za-z])(\d+)/g, function (_, a, d) {
+      return a + d.replace(/\d/g, function (c) { return SUB[Number(c)]; });
+    });
+  }
+  function attrs(o) {
+    var s = '';
+    for (var k in o) {
+      if (o[k] == null || o[k] === '') continue;
+      s += ' ' + k + '="' + (typeof o[k] === 'number' ? n2(o[k]) : o[k]) + '"';
+    }
+    return s;
+  }
+
+  /* A figure in points. The SVG declares its print size in real units -
+     millimetres for a plate, inches for a workspace figure - and the
+     viewBox is the same number in points, so one user unit is one point
+     and nothing rescales between the screen and the page. */
+  function figure(W, H, o) {
+    o = o || {};
+    var parts = [];
+    var api = {
+      kind: o.kind || 'figure',
+      W: W, H: H,
+      raw: function (s) { parts.push(s); return api; },
+      el: function (name, o, inner) {
+        parts.push('<' + name + attrs(o)
+          + (inner == null ? '/>' : '>' + inner + '</' + name + '>'));
+        return api;
+      },
+      line: function (x1, y1, x2, y2, col, w, dash) {
+        return api.el('line', { x1: x1, y1: y1, x2: x2, y2: y2,
+          stroke: col || C.ink, 'stroke-width': w || 0.6,
+          'stroke-dasharray': dash });
+      },
+      rect: function (x, y, w, h, fill, stroke, sw) {
+        return api.el('rect', { x: x, y: y, width: Math.max(0, w),
+          height: Math.max(0, h), fill: fill || 'none',
+          stroke: stroke, 'stroke-width': sw || (stroke ? 0.6 : null) });
+      },
+      path: function (d, col, w, dash, fill, cls) {
+        return api.el('path', { 'class': cls, d: d, fill: fill || 'none',
+          stroke: col || C.ink, 'stroke-width': w || LW.curve,
+          'stroke-dasharray': dash, 'stroke-linejoin': 'round' });
+      },
+      dot: function (x, y, r, fill, stroke) {
+        return api.el('circle', { cx: x, cy: y, r: r, fill: fill || C.ink,
+          stroke: stroke, 'stroke-width': stroke ? 0.6 : null });
+      },
+      text: function (x, y, s, o) {
+        o = o || {};
+        var size = o.size || TYPE.body;
+        if (size < 5) throw new Error('type below the 5 pt floor: ' + size);
+        return api.el('text', { x: x, y: y, 'font-family': FONT,
+          'font-size': size, 'font-weight': o.weight,
+          'text-anchor': o.anchor, fill: o.fill || C.ink,
+          transform: o.rotate == null ? null
+            : 'rotate(' + o.rotate + ' ' + n2(x) + ' ' + n2(y) + ')'
+        }, esc(s));
+      },
+      panel: function (x, y, ch) {
+        return api.text(x, y, ch, { size: TYPE.panel, weight: 'bold' });
+      },
+      done: function () {
+        return '<svg xmlns="http://www.w3.org/2000/svg" '
+          + 'width="' + o.widthAttr + '" height="' + o.heightAttr + '" '
+          + 'viewBox="0 0 ' + n2(api.W) + ' ' + n2(api.H) + '" '
+          + (o.dataAttrs ? o.dataAttrs + ' ' : '')
+          + 'data-kind="' + api.kind + '">'
+          + '<rect x="0" y="0" width="' + n2(api.W) + '" height="'
+          + n2(api.H) + '" fill="' + C.paper + '"/>'
+          + parts.join('') + '</svg>';
+      }
+    };
+    return api;
+  }
+
+  /* The manuscript plate: a Nature column width in millimetres. */
+  function plate(widthKey, heightMm) {
+    var wmm = WIDTH_MM[widthKey];
+    if (!wmm) throw new Error('unknown plate width: ' + widthKey);
+    if (heightMm > MAX_H_MM) throw new Error('plate taller than the page');
+    var api = figure(wmm * PT_PER_MM, heightMm * PT_PER_MM, {
+      widthAttr: wmm + 'mm', heightAttr: heightMm + 'mm',
+      dataAttrs: 'data-width-mm="' + wmm + '" data-height-mm="'
+        + heightMm + '"',
+      kind: 'plate'
+    });
+    api.widthKey = widthKey;
+    api.wmm = wmm;
+    api.hmm = heightMm;
+    return api;
+  }
+
+  /* ----------------------------------------------------------- scales */
+
+  function lin(d0, d1, r0, r1) {
+    var f = function (v) { return r0 + (v - d0) / (d1 - d0) * (r1 - r0); };
+    f.d0 = d0; f.d1 = d1; f.r0 = r0; f.r1 = r1;
+    f.clamp = function (v) { return f(Math.max(d0, Math.min(d1, v))); };
+    return f;
+  }
+  function log10(v) { return Math.log(v) / Math.LN10; }
+  function lg(d0, d1, r0, r1) {
+    var l0 = log10(d0), l1 = log10(d1);
+    var f = function (v) {
+      return r0 + (log10(Math.max(v, d0 * 1e-12)) - l0) / (l1 - l0)
+        * (r1 - r0);
+    };
+    f.d0 = d0; f.d1 = d1; f.r0 = r0; f.r1 = r1;
+    f.clamp = function (v) { return f(Math.max(d0, Math.min(d1, v))); };
+    return f;
+  }
+  function niceTicks(d0, d1, want) {
+    var span = d1 - d0, raw = span / (want || 4);
+    var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var step = [1, 2, 2.5, 5, 10].map(function (m) { return m * mag; })
+      .filter(function (v) { return v >= raw; })[0] || 10 * mag;
+    var out = [], v = Math.ceil(d0 / step) * step;
+    for (; v <= d1 + 1e-9; v += step) {
+      out.push(Math.round(v / step) * step);
+    }
+    return out;
+  }
+  function decades(d0, d1) {
+    var out = [];
+    for (var e = Math.ceil(log10(d0)); e <= Math.floor(log10(d1)); e++) {
+      out.push(Math.pow(10, e));
+    }
+    return out;
+  }
+  function expLabel(v) {
+    var e = Math.round(log10(v));
+    if (e >= 0 && e <= 3) return String(Math.round(v));
+    return '10' + String(e).replace(/-/g, '−')
+      .split('').map(function (ch) {
+        return '⁰¹²³⁴⁵⁶⁷⁸⁹'
+          [Number(ch)] || (ch === '−' ? '⁻' : ch);
+      }).join('');
+  }
+
+  /* ------------------------------------------------------------- axes */
+
+  /* Full rectangular axis box: four spines, no grid. Call it after the
+     panel fills and before the axes, so nothing paints over a spine. The
+     box is stashed on the plate so axisX and axisY mirror their ticks onto
+     the opposite spine without being told where it is. Either argument may
+     be a scale or an explicit [lo, hi] pixel pair. */
+  function frame(p, X, Y) {
+    var xr = X.r0 == null ? X : [X.r0, X.r1];
+    var yr = Y.r0 == null ? Y : [Y.r0, Y.r1];
+    var x0 = Math.min(xr[0], xr[1]), x1 = Math.max(xr[0], xr[1]);
+    var y0 = Math.min(yr[0], yr[1]), y1 = Math.max(yr[0], yr[1]);
+    p._box = { x0: x0, y0: y0, x1: x1, y1: y1 };
+    p.rect(x0, y0, x1 - x0, y1 - y0, 'none', C.ink, LW.axis);
+    return p;
+  }
+
+  /* Minor ticks at the pixel midpoint of each major interval: the
+     arithmetic midpoint on a linear axis, the geometric one on a log
+     axis, which is where a minor tick belongs on either. */
+  function minorsOf(px, lo, hi) {
+    var s = px.slice().sort(function (a, b) { return a - b; });
+    var out = [];
+    for (var i = 1; i < s.length; i++) {
+      var m = 0.5 * (s[i - 1] + s[i]);
+      if (m > lo + 0.5 && m < hi - 0.5) out.push(m);
+    }
+    return out;
+  }
+
+  /* A tick outside the scale's own domain is drawn off the axis, which
+     is always a bug rather than an intention. */
+  function inDomain(sc, t) {
+    if (sc.d0 == null) return true;
+    var lo = Math.min(sc.d0, sc.d1), hi = Math.max(sc.d0, sc.d1);
+    var pad = 1e-9 * (Math.abs(hi) + Math.abs(lo) + 1);
+    return t >= lo - pad && t <= hi + pad;
+  }
+
+  function axisX(p, sc, y, ticks, label, fmt) {
+    var T = p.type || TYPE;
+    var bx = p._box;
+    ticks = ticks.filter(function (t) { return inDomain(sc, t); });
+    var top = bx ? bx.y0 : null;
+    if (!bx) p.line(sc.r0, y, sc.r1, y, C.ink, LW.axis);
+    var px = [];
+    ticks.forEach(function (t) {
+      var x = sc(t);
+      px.push(x);
+      p.line(x, y, x, y - TICK.major, C.ink, LW.axis);
+      if (top != null) p.line(x, top, x, top + TICK.major, C.ink, LW.axis);
+      p.text(x, y + T.tick + 3, fmt ? fmt(t) : String(t),
+        { size: T.tick, anchor: 'middle' });
+    });
+    minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1)
+      .forEach(function (x) {
+        p.line(x, y, x, y - TICK.minor, C.ink, LW.axis);
+        if (top != null) {
+          p.line(x, top, x, top + TICK.minor, C.ink, LW.axis);
+        }
+      });
+    if (label) {
+      p.text((sc.r0 + sc.r1) / 2, y + T.tick + T.body + 7.5, label,
+        { size: T.body, anchor: 'middle' });
+    }
+    return p;
+  }
+  function axisY(p, sc, x, ticks, label, fmt) {
+    var T = p.type || TYPE;
+    var bx = p._box;
+    ticks = ticks.filter(function (t) { return inDomain(sc, t); });
+    var right = bx ? bx.x1 : null;
+    if (!bx) p.line(x, sc.r0, x, sc.r1, C.ink, LW.axis);
+    var px = [];
+    ticks.forEach(function (t) {
+      var y = sc(t);
+      px.push(y);
+      p.line(x, y, x + TICK.major, y, C.ink, LW.axis);
+      if (right != null) {
+        p.line(right - TICK.major, y, right, y, C.ink, LW.axis);
+      }
+      p.text(x - 4, y + T.tick / 2 - 0.95, fmt ? fmt(t) : String(t),
+        { size: T.tick, anchor: 'end' });
+    });
+    minorsOf(px, bx ? bx.y0 : sc.r1, bx ? bx.y1 : sc.r0)
+      .forEach(function (y) {
+        p.line(x, y, x + TICK.minor, y, C.ink, LW.axis);
+        if (right != null) {
+          p.line(right - TICK.minor, y, right, y, C.ink, LW.axis);
+        }
+      });
+    if (label) {
+      p.text(x - (2 * T.tick + T.body + 6), (sc.r0 + sc.r1) / 2, label,
+        { size: T.body, anchor: 'middle', rotate: -90 });
+    }
+    return p;
+  }
+  function series(p, pts, xs, ys, col, w, dash) {
+    var d = '', started = false;
+    pts.forEach(function (q) {
+      if (q[1] == null || !isFinite(q[1])) { started = false; return; }
+      d += (started ? 'L' : 'M') + n2(xs(q[0])) + ',' + n2(ys(q[1]));
+      started = true;
+    });
+    if (d) p.path(d, col, w || LW.curve, dash, null, 'curve');
+    return p;
+  }
+  function legend(p, x, y, items, gap) {
+    var T = p.type || TYPE;
+    gap = gap || T.small + 4;
+    items.forEach(function (it, i) {
+      var yy = y + i * gap;
+      if (it.dash) {
+        p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.0, it.dash);
+      } else if (it.swatch) {
+        p.rect(x, yy - 5.2, 7, 6, it.col);
+      } else {
+        p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.4);
+      }
+      p.text(x + 12, yy, it.text, { size: T.small });
+    });
+    return p;
+  }
+
+  /* --------------------------------------------------------- products */
+
+  /* The workspace figure: exactly 3.5 in square, one user unit to the
+     point, so the same drawing code serves the preview and the 600 dpi
+     export without a change of coordinates. */
+  var SQUARE_IN = 3.5;
+  var SQUARE_PT = SQUARE_IN * 72;              /* 252 */
+
+  function square(o) {
+    o = o || {};
+    var wIn = o.wide ? 2 * SQUARE_IN : SQUARE_IN;
+    var f = figure(wIn * 72, SQUARE_PT, {
+      widthAttr: wIn + 'in', heightAttr: SQUARE_IN + 'in',
+      kind: o.wide ? 'wide' : 'square'
+    });
+    f.type = FIGTYPE;
+    /* the plotting panel is square and the margins are what is left */
+    f.pane = { x0: 44, y0: 10, x1: 44 + 200, y1: 210 };
+    return f;
+  }
+
+  /* ---------------------------------------------------------- export */
+
+  /* A 600 dpi raster of a square figure is 2100 px on a side. The browser
+     draws the SVG into a canvas at that size; toBlob gives a PNG with no
+     resolution chunk, so pngWithDPI splices a pHYs in - 600 dpi is 23622
+     pixels per metre - and the file then opens at print size rather than
+     at 2100 px of nothing. */
+  var DPI = 600;
+  var PX_PER_M = Math.round(DPI / 0.0254);     /* 23622 */
+
+  var CRC = (function () {
+    var t = [], c, n, k;
+    for (n = 0; n < 256; n++) {
+      c = n;
+      for (k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return function (bytes, from, to) {
+      var c2 = 0xFFFFFFFF;
+      for (var i = from; i < to; i++) {
+        c2 = t[(c2 ^ bytes[i]) & 255] ^ (c2 >>> 8);
+      }
+      return (c2 ^ 0xFFFFFFFF) >>> 0;
+    };
+  }());
+
+  function u32(v) {
+    return [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
+  }
+
+  /* Insert a pHYs chunk straight after IHDR. Anything else in the file is
+     copied through untouched, so this cannot disturb the image data. */
+  function pngWithDPI(buf, pxPerM) {
+    var b = new Uint8Array(buf);
+    var at = 8 + 4 + 4 + 25 - 12 + 12;         /* signature + full IHDR */
+    at = 8 + (8 + 13 + 4);
+    var body = [0, 0, 0, 9, 0x70, 0x48, 0x59, 0x73]
+      .concat(u32(pxPerM)).concat(u32(pxPerM)).concat([1]);
+    var chunk = new Uint8Array(body.length + 4);
+    chunk.set(body, 0);
+    chunk.set(u32(CRC(chunk, 4, body.length)), body.length);
+    var out = new Uint8Array(b.length + chunk.length);
+    out.set(b.subarray(0, at), 0);
+    out.set(chunk, at);
+    out.set(b.subarray(at), at + chunk.length);
+    return out;
+  }
+
+  /* Rasterise an SVG string at a fixed pixel size. Browser only. */
+  function toPNG(svg, pxW, pxH) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      img.onload = function () {
+        var cv = document.createElement('canvas');
+        cv.width = pxW;
+        cv.height = pxH;
+        var cx = cv.getContext('2d');
+        cx.fillStyle = C.paper;
+        cx.fillRect(0, 0, pxW, pxH);
+        cx.drawImage(img, 0, 0, pxW, pxH);
+        cv.toBlob(function (blob) {
+          if (!blob) { reject(new Error('canvas produced no PNG')); return; }
+          blob.arrayBuffer().then(function (ab) {
+            resolve(new Blob([pngWithDPI(ab, PX_PER_M)],
+              { type: 'image/png' }));
+          }).catch(reject);
+        }, 'image/png');
+      };
+      img.onerror = function () { reject(new Error('SVG did not rasterise')); };
+      img.src = url;
+    });
+  }
+
+  /* Pixel size of a figure at 600 dpi, from the inches it declares. */
+  function pxAt600(svg) {
+    var w = /width="([\d.]+)in"/.exec(svg);
+    var h = /height="([\d.]+)in"/.exec(svg);
+    if (!w || !h) throw new Error('figure does not declare its print size');
+    return [Math.round(parseFloat(w[1]) * DPI),
+            Math.round(parseFloat(h[1]) * DPI)];
+  }
+
+  function saveBlob(blob, name) {
+    var a = document.createElement('a');
+    var url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  function downloadSVG(svg, name) {
+    saveBlob(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }),
+      name + '.svg');
+  }
+
+  function downloadPNG(svg, name) {
+    var px = pxAt600(svg);
+    return toPNG(svg, px[0], px[1]).then(function (blob) {
+      saveBlob(blob, name + '.png');
+    });
+  }
+
+  return {
+    PT_PER_MM: PT_PER_MM, WIDTH_MM: WIDTH_MM, MAX_H_MM: MAX_H_MM,
+    FONT: FONT, TYPE: TYPE, FIGTYPE: FIGTYPE, LW: LW, TICK: TICK,
+    MARK: MARK, C: C,
+    DPI: DPI, PX_PER_M: PX_PER_M, SQUARE_IN: SQUARE_IN, SQUARE_PT: SQUARE_PT,
+    tint: tint, esc: esc, n2: n2, chem: chem, expLabel: expLabel,
+    figure: figure, plate: plate, square: square,
+    lin: lin, lg: lg, niceTicks: niceTicks, decades: decades,
+    frame: frame, axisX: axisX, axisY: axisY, series: series,
+    inDomain: inDomain,
+    legend: legend, minorsOf: minorsOf,
+    toPNG: toPNG, pxAt600: pxAt600, pngWithDPI: pngWithDPI,
+    downloadSVG: downloadSVG, downloadPNG: downloadPNG, saveBlob: saveBlob
+  };
+});
+</script>
+<script>/* The two figures the equilibrium workspace exists to produce.
+
+   optimality  why this assemblage and not one of the others, at the
+               condition on the panel: one bar per excluded phase, the
+               KKT reduced cost it would have to give up to appear.
+   margin      how far that answer is from a different one across
+               temperature, with the assemblage ladder underneath it.
+
+   Both draw from the record the Python package produced, and are drawn
+   on the same kit at the workspace's square size. Neither evaluates a
+   free energy: solidgas/activeset.py and its port do that, and the two
+   data builders below only reshape what the solver already returned, so
+   a figure cannot disagree with the engine it never calls.
+
+   One deliberate difference from the plate. e2 plots the reduced cost
+   per mol of oxygen, which is the comparable quantity at the single
+   frozen condition it reports. Per mol O divides by the oxygen
+   deficiency relative to the host, def_j = rho_host*t_j - o_j, and that
+   denominator changes sign as soon as a candidate is less deficient
+   than the host - over the conditions this page can be set to, 41% of
+   reduced costs come back negative for that reason alone. The KKT test
+   is stated per formula unit, where r_j > 0 means the phase is absent,
+   and that is what a live figure has to draw. The per-mol-O column is
+   still in the table on the KKT tab, next to the deficiency it is
+   divided by. */
+
+(function (root, factory) {
+  'use strict';
+  var kit = (typeof module !== 'undefined' && module.exports)
+    ? require('./figkit.js') : root.FigKit;
+  if (!kit) throw new Error('figures_thermo.js needs figkit.js');
+  var api = factory(kit);
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.ThermoFigures = api;
+})(typeof self !== 'undefined' ? self : this, function (K) {
+  'use strict';
+
+  var C = K.C, LW = K.LW, T = K.FIGTYPE;
+  var lin = K.lin, frame = K.frame, axisX = K.axisX, axisY = K.axisY;
+  var series = K.series, tint = K.tint, chem = K.chem;
+
+  /* the phase that would appear first is the one worth a second colour;
+     everything else is the same blue e2 draws every excluded phase in */
+  var FAR = C.surface, NEAR = C.subsurface;
+
+  /* --------------------------------------------------------- payloads */
+
+  /* Reshape one solver result into the bar figure's payload. Phases whose
+     reduced cost is not finite are dropped and counted: an oxygen-free
+     gas leaves the oxygen potential unbounded below, so the formation
+     direction has no cost to report and a bar would be a lie about it. */
+  function optimalityData(R) {
+    var rc = R.inactive_phase_reduced_costs || {};
+    var tol = (R.solver_tolerance || {}).degeneracy_kJ_per_mol_O || 0;
+    var costs = [], unbounded = [];
+    Object.keys(rc).forEach(function (ph) {
+      var pf = rc[ph].per_formula_kJ;
+      if (pf === null || !isFinite(pf)) { unbounded.push(ph); return; }
+      /* null per mol O means the candidate and the host differ by no
+         oxygen at all, so there is no deficiency to divide by - not that
+         the phase is sitting on a boundary. Math.abs(null) is 0, so this
+         has to be tested before the tolerance, not after. */
+      var po = rc[ph].per_mol_O_kJ;
+      costs.push({ phase: ph, r_kJ: pf, r_per_mol_O_kJ: po,
+                   degenerate: po !== null && isFinite(po)
+                     && Math.abs(po) < tol });
+    });
+    costs.sort(function (a, b) { return a.r_kJ - b.r_kJ; });
+    var cand = R.candidates || [];
+    return {
+      T_C: R.T_C,
+      winner: (R.active_condensed_phases || []).slice(),
+      costs: costs,
+      unbounded: unbounded,
+      candidates: {
+        total: cand.length,
+        feasible: cand.filter(function (c) { return c.feasible; }).length,
+        optimal: cand.filter(function (c) {
+          return c.feasible && c.kkt_ok; }).length
+      }
+    };
+  }
+
+  /* Reshape a temperature sweep. Each row carries the smallest reduced
+     cost at that temperature and the phase holding it; the segments are
+     the runs of one assemblage, and their edges are where the margin
+     goes to zero - the curve's own dips are the same crossings, resolved
+     only as far as the grid. */
+  function marginData(rows, currentT_C) {
+    var pts = rows.map(function (r) {
+      var rc = r.inactive_phase_reduced_costs || {};
+      var best = null, who = null;
+      Object.keys(rc).forEach(function (ph) {
+        var pf = rc[ph].per_formula_kJ;
+        if (pf === null || !isFinite(pf)) return;
+        if (best === null || pf < best) { best = pf; who = ph; }
+      });
+      return { T_C: r.T_C, margin_kJ: best, nearest: who,
+               winner: (r.active_condensed_phases || []).slice() };
+    });
+    var segs = [], last = null;
+    pts.forEach(function (q) {
+      var key = q.winner.join('+');
+      if (key !== last) {
+        if (segs.length) segs[segs.length - 1].to_C = q.T_C;
+        segs.push({ from_C: q.T_C, to_C: q.T_C, phases: q.winner.slice() });
+        last = key;
+      } else {
+        segs[segs.length - 1].to_C = q.T_C;
+      }
+    });
+    /* the point the panel is actually set to, so the reader can find it */
+    var cur = null;
+    if (currentT_C != null && pts.length) {
+      cur = pts.reduce(function (a, b) {
+        return Math.abs(b.T_C - currentT_C) < Math.abs(a.T_C - currentT_C)
+          ? b : a;
+      });
+    }
+    return {
+      T_lo: pts.length ? pts[0].T_C : 0,
+      T_hi: pts.length ? pts[pts.length - 1].T_C : 0,
+      rows: pts, segments: segs,
+      current: cur && { T_C: currentT_C, margin_kJ: cur.margin_kJ,
+                        winner: cur.winner.slice(), nearest: cur.nearest }
+    };
+  }
+
+  /* ---------------------------------------------------------- figures */
+
+  function optimality(D) {
+    var d = D.optimality;
+    var f = K.square();
+    /* The left margin holds a formula, not a number, so it is wider than
+       the kit's default and there is no y axis to carry a label. Bars
+       fill the box top to bottom, so the condition goes in a header band
+       above the frame. */
+    var p = { x0: 62, y0: 34, x1: 222, y1: 210 };
+    var n = d.costs.length;
+    if (!n) {
+      f.text(126, 110, 'no excluded phase has a finite reduced cost',
+             { size: T.small, anchor: 'middle', fill: C.structure });
+      return f.done();
+    }
+    var vmax = d.costs[n - 1].r_kJ;
+    var X = lin(0, vmax * 1.15, p.x0, p.x1);
+    var row = (p.y1 - p.y0) / n;
+    var bh = row * 0.58;
+
+    d.costs.forEach(function (q, i) {
+      var near = i === 0;
+      var col = near ? NEAR : FAR;
+      var y = p.y0 + (i + 0.5) * row - bh / 2;
+      f.rect(p.x0, y, X(q.r_kJ) - p.x0, bh, tint(col, 0.30), col, 0.6);
+      f.text(p.x0 - 4, y + bh - 1.5, chem(q.phase),
+             { size: T.small, anchor: 'end',
+               weight: near ? 'bold' : null });
+      f.text(X(q.r_kJ) + 3, y + bh - 1.5,
+             q.r_kJ < 10 ? q.r_kJ.toFixed(2) : q.r_kJ.toFixed(1),
+             { size: T.small, fill: col });
+      if (near) {
+        f.text(X(q.r_kJ) + 3, y + bh + 8,
+               q.degenerate ? 'on the boundary' : 'first to appear',
+               { size: T.small, fill: col });
+      }
+    });
+
+    frame(f, X, [p.y0, p.y1]);
+    axisX(f, X, p.y1, K.niceTicks(0, vmax * 1.15, 4),
+          'KKT reduced cost (kJ per formula unit)',
+          function (v) { return vmax < 4 ? v.toFixed(1) : String(Math.round(v)); });
+
+    var note = d.candidates.total + ' sets enumerated, '
+      + d.candidates.optimal + ' optimal';
+    if (d.unbounded.length) {
+      note += ' \u00b7 ' + d.unbounded.length + ' unbounded (no gas oxygen)';
+    }
+    f.text(6, 14, chem(d.winner.join(' + ')) + ' survives at '
+           + Math.round(d.T_C) + ' °C', { size: T.body, weight: 'bold' });
+    f.text(6, 25, note, { size: T.small, fill: C.structure });
+    return f.done();
+  }
+
+  function margin(D) {
+    var d = D.margin;
+    var f = K.square();
+    /* the same header band the bar figure carries, so the pair reads as
+       one answer given two ways */
+    var p = { x0: f.pane.x0, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
+    var STRIP = 14;                       /* the assemblage ladder */
+    var yStrip = p.y1 - STRIP;
+    var vals = d.rows.map(function (q) { return q.margin_kJ; })
+      .filter(function (v) { return v != null && isFinite(v); });
+    var vmax = vals.length ? Math.max.apply(null, vals) : 1;
+    var X = lin(d.T_lo, d.T_hi, p.x0, p.x1);
+    var Y = lin(0, vmax * 1.08, yStrip, p.y0);
+
+    /* Every run of one assemblage gets a cell, and the two-phase runs -
+       the tie lines the ladder rests on - are shaded darker than the
+       one-phase fields between them, so the alternation is readable
+       without a label on every segment; most are a few points wide. The
+       curve dips to zero at each of these edges, which is the same
+       crossing seen from above. */
+    d.segments.forEach(function (g) {
+      var x0 = X(g.from_C), x1 = X(g.to_C);
+      f.rect(x0, yStrip, x1 - x0, STRIP, g.phases.length > 1
+             ? tint(C.surface, 0.34) : tint(C.structure, 0.16));
+      if (g.from_C > d.T_lo) {
+        f.line(x0, yStrip, x0, p.y1, C.paper, LW.axis);
+      }
+    });
+    f.line(p.x0, yStrip, p.x1, yStrip, C.structure, LW.hair);
+    /* a cell is named only if the name fits inside it; the ticks come up
+       4 pt from the bottom spine, so the text sits clear above them */
+    d.segments.forEach(function (g) {
+      var x0 = X(g.from_C), x1 = X(g.to_C);
+      var label = chem(g.phases.join('+'));
+      if (x1 - x0 < label.length * 4.3 + 4) return;
+      f.text((x0 + x1) / 2, yStrip + 8, label,
+             { size: T.small, anchor: 'middle' });
+    });
+
+    series(f, d.rows.map(function (q) { return [q.T_C, q.margin_kJ]; }),
+           X, Y, C.surface, LW.curve);
+
+    frame(f, X, [p.y0, p.y1]);
+    axisX(f, X, p.y1, K.niceTicks(d.T_lo, d.T_hi, 4), 'temperature (°C)',
+          function (v) { return String(Math.round(v)); });
+    axisY(f, Y, p.x0, K.niceTicks(0, vmax * 1.08, 4),
+          'margin to the nearest phase (kJ)',
+          function (v) { return vmax < 4 ? v.toFixed(1) : String(Math.round(v)); });
+
+    var c = d.current;
+    if (c && c.margin_kJ != null) {
+      var qx = X(Math.min(Math.max(c.T_C, d.T_lo), d.T_hi));
+      var qy = Y(Math.min(c.margin_kJ, vmax * 1.08));
+      /* The curve runs through the marker, so a box directly above or
+         below it is never clear on a steep limb; the room is diagonal.
+         Each corner is tried in turn and the first free one takes the
+         word - and on a sawtooth, where a spike can fill all four, the
+         ring goes down alone, because the header already names the
+         condition and a word laid over the curve costs more than it
+         says. Free is measured on the curve's segments, not its sample
+         points: on a steep limb two neighbours are a point and a half
+         apart in x and thirty apart in y, and a box tested only at the
+         points is jumped clean over. */
+      var pad = (d.T_hi - d.T_lo) * 30 / (p.x1 - p.x0);
+      var nearPts = d.rows.filter(function (q) {
+        return q.margin_kJ != null && isFinite(q.margin_kJ)
+          && Math.abs(q.T_C - c.T_C) <= pad;
+      }).map(function (q) {
+        return [X(q.T_C), Y(Math.min(q.margin_kJ, vmax * 1.08))];
+      });
+      var clear = function (bx0, bx1, top, bot) {
+        if (top < p.y0 + 1 || bot > yStrip - 1) return false;
+        if (bx0 < p.x0 + 1 || bx1 > p.x1 - 1) return false;
+        for (var i = 1; i < nearPts.length; i++) {
+          var a = nearPts[i - 1], b = nearPts[i];
+          if (Math.max(a[0], b[0]) < bx0 || Math.min(a[0], b[0]) > bx1) {
+            continue;
+          }
+          if (Math.min(a[1], b[1]) < bot && Math.max(a[1], b[1]) > top) {
+            return false;
+          }
+        }
+        return true;
+      };
+      f.dot(qx, qy, 4.2, C.paper, C.gas);
+      f.dot(qx, qy, 1.6, C.gas);
+      var W = 20, corner = null;
+      [[6, -12, 'start'], [-6, -12, 'end'],
+       [6, 14, 'start'], [-6, 14, 'end']].forEach(function (o) {
+        if (corner) return;
+        var bx0 = o[0] > 0 ? qx + o[0] : qx + o[0] - W;
+        if (clear(bx0, bx0 + W, qy + o[1] - 7, qy + o[1] + 3)) corner = o;
+      });
+      if (corner) {
+        f.text(qx + corner[0], qy + corner[1], 'here',
+               { size: T.small, anchor: corner[2], fill: C.gas,
+                 weight: 'bold' });
+      }
+      f.text(6, 14, chem(c.winner.join(' + ')) + ' survives at '
+             + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
+      f.text(6, 25, 'nearest: ' + chem(c.nearest || '—') + ', '
+             + (c.margin_kJ < 10 ? c.margin_kJ.toFixed(2)
+                                 : c.margin_kJ.toFixed(1)) + ' kJ away',
+             { size: T.small, fill: C.structure });
+    }
+    return f.done();
+  }
+
+  /* --------------------------------------------- conversion over T */
+
+  /* How much of the CO2 is gone, at every temperature the panel admits.
+     The rows are the sweep the margin figure already ran, so this costs
+     nothing extra and cannot report a temperature the curve does not.
+
+     One thing the number hides and the band shows. Conversion is counted
+     against the feed, so oxygen that left the gas is counted whether it
+     went into CO or into the solid. Where the assemblage is no longer the
+     host alone, part of the answer is the solid being eaten, and the
+     shaded run says exactly where that starts. */
+  function conversionData(rows, currentT_C, host, exactPct) {
+    var pts = rows.map(function (r) {
+      return { T_C: r.T_C, conv_pct: r.conversion_CO2_pct,
+               winner: (r.active_condensed_phases || []).slice() };
+    }).filter(function (q) {
+      return q.conv_pct != null && isFinite(q.conv_pct);
+    });
+    var segs = [], last = null;
+    pts.forEach(function (q) {
+      var key = q.winner.join('+');
+      if (key !== last) {
+        if (segs.length) segs[segs.length - 1].to_C = q.T_C;
+        segs.push({ from_C: q.T_C, to_C: q.T_C, phases: q.winner.slice() });
+        last = key;
+      } else {
+        segs[segs.length - 1].to_C = q.T_C;
+      }
+    });
+    /* The curve is a grid; the panel is not. Reading the marker off the
+       nearest sample would put a number in the header the workspace never
+       reported - eleven degrees away is a fifth of a percent here - so the
+       caller passes the solve it already has and the grid is only drawn. */
+    var cur = null;
+    if (currentT_C != null && pts.length) {
+      cur = pts.reduce(function (a, b) {
+        return Math.abs(b.T_C - currentT_C) < Math.abs(a.T_C - currentT_C)
+          ? b : a;
+      });
+    }
+    var host2 = host || 'TiO2';
+    return {
+      T_lo: pts.length ? pts[0].T_C : 0,
+      T_hi: pts.length ? pts[pts.length - 1].T_C : 0,
+      rows: pts, segments: segs, host: host2,
+      any_reduction: segs.some(function (g) {
+        return g.phases.length !== 1 || g.phases[0] !== host2;
+      }),
+      current: cur && {
+        T_C: currentT_C,
+        conv_pct: exactPct != null && isFinite(exactPct) ? exactPct
+                                                         : cur.conv_pct,
+        winner: cur.winner.slice() }
+    };
+  }
+
+  function conversion(D) {
+    var d = D.conversion;
+    var f = K.square();
+    var p = { x0: f.pane.x0, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
+    var vals = d.rows.map(function (q) { return q.conv_pct; });
+    var vmax = vals.length ? Math.max.apply(null, vals) : 1;
+    var vmin = vals.length ? Math.min.apply(null, vals) : 0;
+    var top = Math.max(vmax * 1.08, 1e-9);
+    var bot = Math.min(vmin, 0);
+    var X = lin(d.T_lo, d.T_hi, p.x0, p.x1);
+    var Y = lin(bot, top, p.y1, p.y0);
+
+    /* the runs where something other than the host alone is standing */
+    d.segments.forEach(function (g) {
+      if (g.phases.length === 1 && g.phases[0] === d.host) return;
+      var x0 = X(g.from_C), x1 = X(g.to_C);
+      f.rect(x0, p.y0, x1 - x0, p.y1 - p.y0, tint(C.subsurface, 0.16));
+      if (x1 - x0 > 42) {
+        f.text((x0 + x1) / 2, p.y0 + 10, 'solid reducing',
+               { size: T.small, anchor: 'middle', fill: C.subsurface });
+      }
+    });
+    if (bot < 0) f.line(p.x0, Y(0), p.x1, Y(0), C.structure, LW.hair);
+
+    series(f, d.rows.map(function (q) { return [q.T_C, q.conv_pct]; }),
+           X, Y, C.surface, LW.curve);
+
+    frame(f, X, [p.y0, p.y1]);
+    axisX(f, X, p.y1, K.niceTicks(d.T_lo, d.T_hi, 4), 'temperature (°C)',
+          function (v) { return String(Math.round(v)); });
+    axisY(f, Y, p.x0, K.niceTicks(bot, top, 4),
+          'CO₂ converted (%)',
+          function (v) { return top < 4 ? v.toFixed(1) : String(Math.round(v)); });
+
+    var c = d.current;
+    if (c && c.conv_pct != null) {
+      var qx = X(Math.min(Math.max(c.T_C, d.T_lo), d.T_hi));
+      var qy = Y(Math.min(Math.max(c.conv_pct, bot), top));
+      f.line(qx, Y(bot), qx, qy, C.gas, LW.hair, '2 2');
+      f.dot(qx, qy, 4.2, C.paper, C.gas);
+      f.dot(qx, qy, 1.6, C.gas);
+      f.text(6, 14, c.conv_pct.toFixed(1) + '% of the CO₂ is gone at '
+             + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
+      f.text(6, 25, d.any_reduction
+             ? 'shaded: oxygen leaving the solid counts too'
+             : 'gas-phase shift only — the solid stays whole',
+             { size: T.small, fill: C.structure });
+    }
+    return f.done();
+  }
+
+  /* ------------------------------------------- where reduction starts */
+
+  /* The line the feed has to stay above. Below it the host gives way to
+     the phase named in the header; above it the host survives.
+
+     The y axis is a feed, not a potential, because a feed is what anyone
+     reading this can set on a mass-flow controller. Every gas can be put
+     on it: a mixture of H2 and CO2 lands at the fraction it was mixed at,
+     and anything else lands at the H2/CO2 mixture that would be equally
+     reducing. The marker is the panel's own feed before the solid touches
+     it, which is the quantity the question is about - once a closed charge
+     has equilibrated against a reducible solid the gas is buffered onto
+     this very line and no longer says how reducing it started out. */
+  function boundaryData(curve, feed, currentT_C, exactAt) {
+    var pts = (curve || []).filter(function (q) {
+      return q && q.y_CO2 > 0 && isFinite(q.y_CO2);
+    }).map(function (q) {
+      return { T_C: q.T_C, pct: q.y_CO2 * 100.0, phase: q.phase };
+    });
+    /* same rule as the conversion figure: the header quotes the closed
+       form at the panel's own temperature, not the nearest grid point -
+       on a curve this steep those differ by eight percent */
+    var at = null;
+    if (exactAt && exactAt.y_CO2 > 0 && isFinite(exactAt.y_CO2)) {
+      at = { T_C: currentT_C, pct: exactAt.y_CO2 * 100.0,
+             phase: exactAt.phase };
+    } else if (currentT_C != null && pts.length) {
+      at = pts.reduce(function (a, b) {
+        return Math.abs(b.T_C - currentT_C) < Math.abs(a.T_C - currentT_C)
+          ? b : a;
+      });
+    }
+    var fd = null;
+    if (feed && feed.y_CO2 > 0 && isFinite(feed.y_CO2)) {
+      fd = { T_C: feed.T_C, pct: feed.y_CO2 * 100.0,
+             literal: !!feed.literal,
+             ratio: at ? feed.y_CO2 * 100.0 / at.pct : null };
+    }
+    return {
+      T_lo: pts.length ? pts[0].T_C : 0,
+      T_hi: pts.length ? pts[pts.length - 1].T_C : 0,
+      rows: pts, host: (feed && feed.host) || 'TiO2',
+      at: at, feed: fd, why_no_feed: (feed && feed.why) || null
+    };
+  }
+
+  function boundary(D) {
+    var d = D.boundary;
+    var f = K.square();
+    var p = { x0: f.pane.x0 + 6, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
+    var vals = d.rows.map(function (q) { return q.pct; });
+    if (d.feed) vals = vals.concat([d.feed.pct]);
+    var lo = Math.pow(10, Math.floor(log10(Math.min.apply(null, vals))) - 0.3);
+    var hi = Math.pow(10, Math.ceil(log10(Math.max.apply(null, vals))) + 0.3);
+    var X = lin(d.T_lo, d.T_hi, p.x0, p.x1);
+    var Y = K.lg(lo, hi, p.y1, p.y0);
+
+    /* everything above the line is the host surviving; fill it so the
+       reader never has to work out which side is which */
+    var above = ['M', p.x0, p.y0].join(' ');
+    d.rows.forEach(function (q) { above += ' L ' + X(q.T_C) + ' ' + Y(q.pct); });
+    above += ' L ' + p.x1 + ' ' + p.y0 + ' Z';
+    f.path(above, 'none', 0, null, tint(C.surface, 0.13));
+
+    series(f, d.rows.map(function (q) { return [q.T_C, q.pct]; }),
+           X, Y, C.surface, LW.curve);
+
+    /* Where the marker is, and how far its stem runs, worked out before
+       anything is written so the words can get out of its way. */
+    var q = d.feed, qx = null, qy = null, stem = null;
+    if (q) {
+      qx = X(Math.min(Math.max(q.T_C, d.T_lo), d.T_hi));
+      qy = Y(Math.min(Math.max(q.pct, lo), hi));
+      if (d.at) {
+        var qb = Y(Math.min(Math.max(d.at.pct, lo), hi));
+        stem = [Math.min(qy, qb), Math.max(qy, qb)];
+      }
+    }
+
+    /* One word in each field. Anywhere along the line a horizontal word
+       set close to it gets crossed, because over its own width the line
+       climbs a decade or more. The right-hand edge is the one place that
+       cannot happen: the curve leaves the panel at a fixed height, and
+       the two words sit above and below that exit, each in its own
+       field, reading against the spine rather than against the slope.
+       A word is dropped if the marker's stem would run through it - the
+       header and the marker have already said which side the feed is
+       on, and a struck-through label says it worse. */
+    var last = d.rows[d.rows.length - 1];
+    if (last) {
+      var ye = Y(last.pct);
+      var edge = function (y, txt, col) {
+        var w = txt.length * 4.3 + 4;
+        var hitX = qx !== null && qx > p.x1 - 9 - w && qx < p.x1 - 1;
+        var hitY = stem && stem[0] < y + 3 && stem[1] > y - 7;
+        if (hitX && (hitY || (qy !== null && qy > y - 7 && qy < y + 3))) {
+          return;
+        }
+        f.text(p.x1 - 9, y, txt, { size: T.small, anchor: 'end', fill: col });
+      };
+      edge(Math.max(ye - 7, p.y0 + 9), chem(d.host) + ' survives', C.surface);
+      edge(Math.min(ye + 15, p.y1 - 5), 'reduction', C.structure);
+    }
+
+    frame(f, X, [p.y0, p.y1]);
+    axisX(f, X, p.y1, K.niceTicks(d.T_lo, d.T_hi, 4), 'temperature (°C)',
+          function (v) { return String(Math.round(v)); });
+    axisY(f, Y, p.x0, thinDecades(lo, hi, 6), 'CO₂ in the feed (mol%)',
+          K.expLabel);
+
+    if (q) {
+      if (stem) f.line(qx, stem[0], qx, stem[1], C.subsurface, LW.hair, '2 2');
+      f.rect(qx - 3, qy - 3, 6, 6, C.subsurface, C.paper, 0.8);
+      var right = qx > p.x0 + (p.x1 - p.x0) * 0.62;
+      f.text(qx + (right ? -7 : 7), qy + 3, 'this feed',
+             { size: T.small, anchor: right ? 'end' : 'start',
+               fill: C.subsurface });
+    }
+    if (d.at) {
+      f.text(6, 14, 'reduction to ' + chem(d.at.phase) + ' starts below '
+             + fmtPct(d.at.pct) + ' CO₂',
+             { size: T.body, weight: 'bold' });
+      f.text(6, 25, q
+        ? (q.ratio >= 1
+            ? 'the feed on the panel sits ' + fmtTimes(q.ratio)
+              + ' above that'
+            : 'the feed on the panel sits ' + fmtTimes(1 / q.ratio)
+              + ' below it, so the solid reduces')
+        : (d.why_no_feed || 'this feed sets no oxygen potential'),
+        { size: T.small, fill: q ? C.structure : C.subsurface });
+    }
+    return f.done();
+  }
+
+  function log10(v) { return Math.log(v) / Math.LN10; }
+
+  /* Decade ticks, thinned to every second or fifth one when the span is
+     tall enough that labelling all of them would collide. */
+  function thinDecades(lo, hi, want) {
+    var all = K.decades(lo, hi);
+    var step = 1;
+    while (Math.ceil(all.length / step) > want) step += 1;
+    return all.filter(function (v, i) {
+      return (all.length - 1 - i) % step === 0;
+    });
+  }
+
+  function fmtPct(v) {
+    if (v >= 1) return v.toFixed(1) + '%';
+    if (v >= 0.01) return v.toFixed(3) + '%';
+    return v.toPrecision(2) + '%';
+  }
+
+  function fmtTimes(r) {
+    if (r >= 1e4) return r.toPrecision(2).replace(/e\+?(-?\d+)/,
+      '×10^$1') + '×';
+    if (r >= 100) return String(Math.round(r)) + '×';
+    if (r >= 10) return r.toFixed(0) + '×';
+    return r.toFixed(1) + '×';
+  }
+
+  return { optimality: optimality, margin: margin,
+           conversion: conversion, boundary: boundary,
+           optimalityData: optimalityData, marginData: marginData,
+           conversionData: conversionData, boundaryData: boundaryData,
+           FIGURES: { optimality: optimality, margin: margin,
+                      conversion: conversion, boundary: boundary } };
+});
+</script>
+<script>/* The two figures the surface-capacity bound exists to produce.
+
+   Both draw the same comparison from opposite ends. The first puts the
+   measured oxygen removal next to the oxygen the (110) surface could
+   hold, on one axis, so the gap is a length rather than a ratio in a
+   sentence. The second turns that gap into the bound itself: the largest
+   fraction of the measured inventory that could be surface oxygen, and
+   by complement the smallest fraction that must lie below it.
+
+   Nothing here is a partition. The bar's upper band is "not surface",
+   not "subsurface" and not "bulk" - this repository does not distinguish
+   them and the figure must not imply that it does. */
+
+(function (root, factory) {
+  'use strict';
+  var kit = (typeof module !== 'undefined' && module.exports)
+    ? require('./figkit.js') : root.FigKit;
+  if (!kit) throw new Error('figures_surface.js needs figkit.js');
+  var api = factory(kit);
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.SurfaceFigures = api;
+})(typeof self !== 'undefined' ? self : this, function (K) {
+  'use strict';
+
+  var C = K.C, LW = K.LW, T = K.FIGTYPE;
+  var lin = K.lin, frame = K.frame, axisX = K.axisX, axisY = K.axisY;
+  var series = K.series, tint = K.tint;
+
+  var SURF = C.surface, DEEP = C.extended;
+
+  /* --------------------------------------------------------- payloads */
+
+  function capacityData(rows, d_um, markInventory) {
+    var sel = rows.filter(function (r) {
+      return Math.abs(r.diameter_um - d_um) < 1e-9;
+    }).sort(function (a, b) {
+      return a.measured_umol_O_g - b.measured_umol_O_g;
+    });
+    if (!sel.length) return null;
+    return {
+      d_um: d_um,
+      area_m2_g: sel[0].area_m2_g,
+      ceiling: sel[0].reconstruction_deficiency_umol_O_g,
+      full_row: sel[0].bridging_capacity_umol_O_g,
+      bars: sel.map(function (r) {
+        return { measured: r.measured_umol_O_g,
+                 surface_max: r.reconstruction_deficiency_umol_O_g,
+                 below_min: r.measured_umol_O_g
+                   - r.reconstruction_deficiency_umol_O_g };
+      }),
+      mark: markInventory == null ? null : Number(markInventory)
+    };
+  }
+
+  function boundData(rows, d_um, markInventory) {
+    var sel = rows.filter(function (r) {
+      return Math.abs(r.diameter_um - d_um) < 1e-9;
+    }).sort(function (a, b) {
+      return a.measured_umol_O_g - b.measured_umol_O_g;
+    });
+    if (!sel.length) return null;
+    var ceiling = sel[0].reconstruction_deficiency_umol_O_g;
+    var full = sel[0].bridging_capacity_umol_O_g;
+    var lo = sel[0].measured_umol_O_g, hi = sel[sel.length - 1].measured_umol_O_g;
+    var recon = [], row = [];
+    for (var i = 0; i <= 120; i++) {
+      var v = lo + (hi - lo) * i / 120;
+      recon.push([v, Math.min(ceiling / v, 1) * 100]);
+      row.push([v, Math.min(full / v, 1) * 100]);
+    }
+    var at = null;
+    if (markInventory != null && markInventory > 0) {
+      at = { measured: Number(markInventory),
+             pct: Math.min(ceiling / markInventory, 1) * 100,
+             pct_full: Math.min(full / markInventory, 1) * 100 };
+    }
+    return { d_um: d_um, ceiling: ceiling, full_row: full,
+             lo: lo, hi: hi, recon: recon, row: row, at: at };
+  }
+
+  /* ---------------------------------------------------------- drawing */
+
+  function capacity(D) {
+    var f = K.square();
+    var p = f.pane;
+    if (!D) return f.done();
+
+    var top = Math.max.apply(null, D.bars.map(function (b) {
+      return b.measured;
+    }));
+    var ys = lin(0, top * 1.08, p.y1, p.y0);
+    var n = D.bars.length;
+    var xs = lin(-0.5, n - 0.5, p.x0, p.x1);
+    var wid = (p.x1 - p.x0) / n * 0.62;
+
+    frame(f, [p.x0, p.x1], [p.y0, p.y1]);
+
+    D.bars.forEach(function (b, i) {
+      var cx = xs(i);
+      var yTop = ys(b.measured), yCut = ys(b.surface_max), y0 = ys(0);
+      f.rect(cx - wid / 2, yTop, wid, yCut - yTop,
+             tint(DEEP, 0.22), DEEP, LW.axis);
+      f.rect(cx - wid / 2, yCut, wid, y0 - yCut, SURF, SURF, LW.axis);
+      if (D.mark != null && Math.abs(b.measured - D.mark) < 1e-9) {
+        f.line(cx, yTop - 9, cx, yTop - 2.5, C.ink, LW.curve);
+      }
+    });
+
+    /* the whole bridging row, which nothing has been observed to strip */
+    f.line(p.x0, ys(D.full_row), p.x1, ys(D.full_row), C.ink, LW.axis, '3 2');
+    f.text(p.x1 - 3, ys(D.full_row) - 4, 'whole bridging row',
+           { size: T.small, anchor: 'end' });
+
+    axisX(f, xs, p.y1, D.bars.map(function (_, i) { return i; }),
+          'oxygen removed by titration (µmol-O g⁻¹)',
+          function (i) { return String(Math.round(D.bars[i].measured)); });
+    axisY(f, ys, p.x0, K.niceTicks(0, top * 1.08, 5),
+          'µmol-O g⁻¹');
+    K.legend(f, p.x0 + 8, p.y0 + 12, [
+      { col: SURF, text: 'could be surface (at most)' },
+      { col: DEEP, swatch: true, text: 'must be below the surface' }
+    ]);
+    return f.done();
+  }
+
+  function bound(D) {
+    var f = K.square();
+    var p = f.pane;
+    if (!D) return f.done();
+
+    var top = Math.min(100, Math.max.apply(null, D.row.map(function (q) {
+      return q[1];
+    })) * 1.15);
+    var xs = lin(D.lo, D.hi, p.x0, p.x1);
+    var ys = lin(0, top, p.y1, p.y0);
+    frame(f, [p.x0, p.x1], [p.y0, p.y1]);
+
+    series(f, D.row, xs, ys, C.ink, LW.axis, '3 2');
+    series(f, D.recon, xs, ys, SURF, LW.curve);
+
+    if (D.at) {
+      f.line(xs(D.at.measured), ys(0), xs(D.at.measured), ys(D.at.pct),
+             C.ink, LW.axis, '1 2');
+      f.dot(xs(D.at.measured), ys(D.at.pct), K.MARK.r, SURF);
+      f.text(xs(D.at.measured) + 5, ys(D.at.pct) - 5,
+             D.at.pct.toFixed(1) + '% at most',
+             { size: T.small });
+    }
+
+    axisX(f, xs, p.y1, K.niceTicks(D.lo, D.hi, 5),
+          'oxygen removed by titration (µmol-O g⁻¹)');
+    axisY(f, ys, p.x0, K.niceTicks(0, top, 5),
+          'largest possible surface share (%)');
+    K.legend(f, p.x0 + 8, p.y0 + 12, [
+      { col: SURF, text: '(1×2) reconstructed surface' },
+      { col: C.ink, dash: '3 2', text: 'whole bridging row' }
+    ]);
+    return f.done();
+  }
+
+  return { capacity: capacity, bound: bound,
+           capacityData: capacityData, boundData: boundData,
+           FIGURES: { capacity: capacity, bound: bound } };
+});
+</script>
+<script>/* The page. It displays; it does not calculate.
+
+   Every number here was produced by scripts/reproduce_paper.py and is
+   inlined as SITE_DATA at build time. There is no solver in the browser
+   and no second implementation of any physics in this repository: if a
+   value is on this page, it came out of the Python package, and running
+   the script again is what changes it. The only arithmetic below is
+   formatting and picking which row to show. */
+
+(function () {
+  'use strict';
+  var D = window.SITE_DATA;
+  var TF = window.ThermoFigures, SF = window.SurfaceFigures;
+  function $(id) { return document.getElementById(id); }
+  function chem(s) { return window.FigKit.chem(String(s)); }
+  function n(v, d) {
+    return (v == null || !isFinite(v)) ? '—' : Number(v).toFixed(d == null ? 2 : d);
+  }
+
+  /* ------------------------------------------------------- workspaces */
+
+  function showWorkspace(id) {
+    ['ws-equilibrium', 'ws-surface'].forEach(function (w) {
+      var el = $(w);
+      if (el) el.style.display = (w === id) ? '' : 'none';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.wstab'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-ws') === id);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.workspace-head'), function (h) {
+      h.classList.toggle('active', h.id === 'head-' + id.replace('ws-', ''));
+    });
+    if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
+  }
+
+  /* ----------------------------------------------------- equilibrium */
+
+  function equilibriumTemperature() {
+    var sel = $('eqT');
+    return sel ? Number(sel.value) : 600;
+  }
+
+  function rowAt(T_C) {
+    var rows = D.equilibrium.rows;
+    return rows.reduce(function (a, b) {
+      return Math.abs(b.T_C - T_C) < Math.abs(a.T_C - T_C) ? b : a;
+    });
+  }
+
+  function drawEquilibrium() {
+    var T = equilibriumTemperature();
+    var r = rowAt(T);
+    var rows = D.equilibrium.rows;
+
+    /* the drawers take the whole payload object, keyed by figure name */
+    $('figConversion').innerHTML = TF.conversion(
+      { conversion: TF.conversionData(rows, T, 'TiO2', r.conversion_CO2_pct) });
+    $('figMargin').innerHTML = TF.margin({ margin: TF.marginData(rows, T) });
+    var curve = D.equilibrium.boundary;
+    var at = curve.reduce(function (a, b) {
+      return Math.abs(b.T_C - T) < Math.abs(a.T_C - T) ? b : a;
+    });
+    $('figBoundary').innerHTML = TF.boundary(
+      { boundary: TF.boundaryData(curve, null, T, at) });
+
+    var costs = r.inactive_phase_reduced_costs || {};
+    var near = Object.keys(costs).reduce(function (a, b) {
+      return (a === null || costs[b].per_formula_kJ < costs[a].per_formula_kJ) ? b : a;
+    }, null);
+
+    $('eqKpis').innerHTML = [
+      kpi('CO₂ conversion', n(r.conversion_CO2_pct, 1) + '%'),
+      kpi('Stable solid', chem(r.active_condensed_phases.join(' + '))),
+      kpi('Nearest reduced phase', chem(near || '—')),
+      kpi('Margin to it', near ? n(costs[near].per_formula_kJ, 1) + ' kJ' : '—'),
+      kpi('CO₂ needed to hold rutile', n(at.y_CO2 * 100, 4) + ' mol%')
+    ].join('');
+
+    var g = r.gas_fractions;
+    $('eqGas').innerHTML = ['CO2', 'H2', 'CO', 'H2O', 'N2'].map(function (s) {
+      return '<tr><td>' + chem(s) + '</td><td class="k2">'
+        + n(g[s] * 100, 3) + '</td></tr>';
+    }).join('');
+  }
+
+  function kpi(label, value) {
+    return '<div class="kpi"><div class="sub">' + label + '</div><b>'
+      + value + '</b></div>';
+  }
+
+  /* --------------------------------------------------------- surface */
+
+  function surfaceDiameter() {
+    var sel = $('sfD');
+    return sel ? Number(sel.value) : 0.9;
+  }
+  function surfaceInventory() {
+    var sel = $('sfV');
+    return sel ? Number(sel.value) : 95;
+  }
+
+  function drawSurface() {
+    var d = surfaceDiameter(), inv = surfaceInventory();
+    var rows = D.surface.rows;
+    $('figCapacity').innerHTML = SF.capacity(SF.capacityData(rows, d, inv));
+    $('figBound').innerHTML = SF.bound(SF.boundData(rows, d, inv));
+
+    var g = D.surface.by_diameter[String(d)];
+    var row = rows.filter(function (r) {
+      return Math.abs(r.diameter_um - d) < 1e-9
+        && Math.abs(r.measured_umol_O_g - inv) < 1e-9;
+    })[0];
+    if (!row) return;
+
+    $('sfKpis').innerHTML = [
+      kpi('Surface area', n(g.area_m2_g, 3) + ' m² g⁻¹'),
+      kpi('Bridging-O capacity', n(g.bridging_capacity_umol_O_g, 2) + ' µmol-O g⁻¹'),
+      kpi('(1×2) deficiency', n(g.reconstruction_deficiency_umol_O_g, 2) + ' µmol-O g⁻¹'),
+      kpi('Measured / capacity', n(row.inventory_over_capacity, 1) + '×'),
+      kpi('Surface share, at most', n(row.surface_fraction_max_pct, 1) + '%'),
+      kpi('Below surface, at least', n(row.below_surface_fraction_min_pct, 1) + '%')
+    ].join('');
+
+    $('sfDerived').innerHTML =
+      '<tr><td>x in TiO<sub>2−x</sub></td><td class="k2">'
+      + n(row.x_in_TiO2mx, 5) + '</td></tr>'
+      + '<tr><td>Ti reduced to Ti³⁺</td><td class="k2">'
+      + n(row.Ti3_fraction_pct, 2) + '%</td></tr>';
+  }
+
+  /* ------------------------------------------------------------ wire */
+
+  function init() {
+    if (!D) return;
+    var eqT = $('eqT');
+    D.equilibrium.rows.forEach(function (r) {
+      if (r.T_C % 100 !== 0) return;
+      var o = document.createElement('option');
+      o.value = r.T_C; o.textContent = r.T_C + ' °C';
+      if (r.T_C === 600) o.selected = true;
+      eqT.appendChild(o);
+    });
+    var sfV = $('sfV');
+    D.surface.inventories.forEach(function (v) {
+      var o = document.createElement('option');
+      o.value = v; o.textContent = v + ' µmol-O g⁻¹';
+      if (v === 95) o.selected = true;
+      sfV.appendChild(o);
+    });
+
+    eqT.addEventListener('change', drawEquilibrium);
+    $('sfD').addEventListener('change', drawSurface);
+    sfV.addEventListener('change', drawSurface);
+    Array.prototype.forEach.call(document.querySelectorAll('.wstab'), function (b) {
+      b.addEventListener('click', function () {
+        showWorkspace(b.getAttribute('data-ws'));
+      });
+    });
+
+    drawEquilibrium();
+    drawSurface();
+    var want = location.hash.slice(1);
+    showWorkspace(want === 'ws-surface' ? 'ws-surface' : 'ws-equilibrium');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
