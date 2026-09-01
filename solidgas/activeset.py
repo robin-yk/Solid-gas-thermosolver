@@ -538,3 +538,209 @@ def solve(feed_rel, T_K, P_atm=1.0, V_cm3=25.0, mass_g=0.100,
                         'solid_moles': r.get('m')}
                        for r in results],
     }
+
+
+# ------------------------------------------------------- the reduction line
+
+# Where does reduction begin?  `solve` answers it one condition at a time,
+# and bisecting it over feed composition costs sixty solves per temperature.
+# It does not have to.  Titanium never enters the gas below about 2000 K, so
+# the solid and the gas exchange nothing but oxygen, and the whole question
+# is whether the gas sits above or below one number:
+#
+#     mu_O(gas)  vs  mu_crit = max over reduced phases of the potential
+#                              at which that phase replaces the host
+#
+# Both sides are cheap.  mu_crit is a difference of two Waldner free
+# energies - a plain function of temperature, no optimisation at all.  The
+# gas side is one scalar root, and inverting it back to a feed composition
+# is closed form.  So the boundary curve costs a handful of exponentials
+# per point where the solver costs sixty Newton solves, and the two agree
+# to five figures, which is what tests/test_activeset_boundary.py checks.
+#
+# Free O2 is carried, not dropped.  With hydrogen in the feed it is worth
+# nothing - 1.6e-5 kJ per mol O at the top of the range - and it was
+# tempting to leave out on that basis.  Take the hydrogen away and it is
+# worth 5.8 kJ, because nothing else is left to mop up the oxygen: a
+# CO2/CO mixture at 1650 C runs 0.2 mol% O2.  It costs one more
+# exponential and one more term, and unlike the two couples it brings the
+# total pressure in with it, since a partial pressure is not a property of
+# a mixture on its own.
+
+COUPLES = (('CO', 'CO2'), ('H2', 'H2O'))
+
+
+def _sigma(x):
+    """Logistic, written so neither tail overflows."""
+    if x >= 0.0:
+        return 1.0 / (1.0 + math.exp(-x))
+    e = math.exp(x)
+    return e / (1.0 + e)
+
+
+def couple_potential(red, ox, T):
+    """Standard oxygen potential of one redox couple, kJ per mol O.
+
+    The potential a gas carries when the two members are equimolar.  Adding
+    RT ln(n_ox / n_red) gives the potential at any ratio.
+    """
+    return mu0_gas(ox, T) - mu0_gas(red, T)
+
+
+def _o2_per_unit(mu, T, P_atm):
+    """Moles of free O2 per mole of everything that is not O2.
+
+    p(O2) = exp((2 mu - mu0(O2)) / RT) is an absolute pressure, so the
+    amount it corresponds to depends on how much other gas is present and
+    at what total pressure - which is why P reaches this far in at all.
+    Returns None where the arithmetic says the gas would be all O2, which
+    no C-H-O mixture in this registry ever is.
+    """
+    k = math.exp(min((2.0 * mu - mu0_gas('O2', T)) / (R_KJ * T), EXP_CAP))
+    f = k / P_atm
+    if f >= 1.0:
+        return None
+    return f / (1.0 - f)
+
+
+def gas_oxygen_potential(feed_rel, T_K, P_atm=1.0, iters=200):
+    """Oxygen potential of a C-H-O gas equilibrated on its own, kJ per mol O.
+
+    This is the gas the solid has not touched yet: the feed, shifted only by
+    the water-gas shift among its own members and by whatever O2 it holds.
+    It is the quantity the reduction question is actually about, because a
+    closed charge in contact with a reducible solid gets buffered onto the
+    phase boundary and then no longer reports how reducing the feed was.
+
+    Returns None when the feed cannot set a potential at all: no carbon and
+    no hydrogen, so there is no couple and only free O2 is left, and then
+    the answer is a property of the vessel rather than of the mixture.
+    Also None outside n_C < n_O, which is short of enough oxygen to make
+    every carbon a CO.
+    """
+    n_c = n_h = n_o = n_i = 0.0
+    for g, amt in feed_rel.items():
+        if amt <= 0.0:
+            continue
+        f = GAS_FORMULA[g]
+        n_c += amt * f.get('C', 0)
+        n_h += amt * f.get('H', 0)
+        n_o += amt * f.get('O', 0)
+        if not f.get('C') and not f.get('H') and not f.get('O'):
+            n_i += amt
+    if n_c <= 0.0 and n_h <= 0.0:
+        return None
+    if n_o <= n_c:
+        return None
+
+    rt = R_KJ * T_K
+    a = couple_potential('CO', 'CO2', T_K)
+    b = couple_potential('H2', 'H2O', T_K)
+    base = n_c + n_h / 2.0 + n_i
+
+    def oxygen_at(mu):
+        """Oxygen atoms the gas holds at this potential. Rises with mu."""
+        w = _o2_per_unit(mu, T_K, P_atm)
+        return (n_c * (2.0 - _sigma((a - mu) / rt))
+                + (n_h / 2.0) * _sigma((mu - b) / rt)
+                + (float('inf') if w is None else 2.0 * base * w))
+
+    lo, hi = min(a, b) - 300.0 * rt, max(a, b) + 300.0 * rt
+    if oxygen_at(hi) < n_o:
+        return None                      # more oxygen than the gas can hold
+    for _ in range(iters):
+        mid = 0.5 * (lo + hi)
+        if oxygen_at(mid) < n_o:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
+def equivalent_co2_fraction(mu_O, T_K, P_atm=1.0):
+    """The H2/CO2 feed that carries this oxygen potential, as mole fraction.
+
+    One axis every gas can be placed on.  A feed of y CO2 and (1-y) H2 has
+    a potential that rises monotonically with y, so the map inverts, and for
+    a feed that really is H2 and CO2 the answer is the fraction it was mixed
+    at - exactly, because this is the same oxygen balance
+    `gas_oxygen_potential` solves, run backwards.  For any other feed it is
+    the H2/CO2 mixture that would be equally reducing, which is what makes
+    the boundary curve readable at all.
+    """
+    rt = R_KJ * T_K
+    s_c = _sigma((couple_potential('CO', 'CO2', T_K) - mu_O) / rt)
+    s_h = _sigma((mu_O - couple_potential('H2', 'H2O', T_K)) / rt)
+    w = _o2_per_unit(mu_O, T_K, P_atm)
+    if w is None:
+        return 1.0
+    den = s_c + s_h
+    if den <= 0.0:
+        return 1.0
+    return min(max((s_h + 2.0 * w) / den, 0.0), 1.0)
+
+
+def critical_potential(lower, higher, T):
+    """Oxygen potential at which `higher` gives way to `lower`, kJ per mol O.
+
+    Both are line compounds at unit activity, so this is a difference of two
+    free energies divided by the oxygen it takes to get from one to the
+    other - a function of temperature and nothing else.
+    """
+    th, oh = STOICH[higher]
+    tl, ol = STOICH[lower]
+    n_hi = float(tl) / th                  # same titanium on both sides
+    d_o = n_hi * oh - ol
+    if d_o <= 0.0:
+        raise ValueError('%s is not more reduced than %s' % (lower, higher))
+    return float((n_hi * mu0_solid(higher, T) - mu0_solid(lower, T)) / d_o)
+
+
+def reduction_boundary(T_K, host='TiO2', solids=None, P_atm=1.0):
+    """The feed at which the host stops surviving, at one temperature.
+
+    Every reduced phase is compared straight to the host rather than down a
+    chain, because the question is which one appears first out of an
+    untouched host.  The one that appears first is the one whose critical
+    potential is highest.
+    """
+    reg = list(solids or SOLIDS)
+    rho_host = float(STOICH[host][1]) / STOICH[host][0]
+    cand = [s for s in reg
+            if float(STOICH[s][1]) / STOICH[s][0] < rho_host]
+    if not cand:
+        return None
+    first, mu_crit = None, float('-inf')
+    for s in cand:
+        c = critical_potential(s, host, T_K)
+        if c > mu_crit:
+            first, mu_crit = s, c
+    return {'phase': first, 'host': host,
+            'mu_crit_kJ_per_mol_O': mu_crit,
+            'y_CO2': equivalent_co2_fraction(mu_crit, T_K, P_atm)}
+
+
+def feed_on_boundary_axis(feed_rel, T_K, P_atm=1.0):
+    """Where a feed lands on the boundary's axis, with its failures named.
+
+    `literal` marks the feeds the axis was built for - H2 and CO2, plus any
+    inert - where the marker is the mixing fraction itself rather than the
+    mixture that would be equally reducing.
+    """
+    mu = gas_oxygen_potential(feed_rel, T_K, P_atm)
+    if mu is None:
+        any_c = any(feed_rel.get(g, 0) > 0 and GAS_FORMULA[g].get('C')
+                    for g in feed_rel)
+        any_h = any(feed_rel.get(g, 0) > 0 and GAS_FORMULA[g].get('H')
+                    for g in feed_rel)
+        return {'y_CO2': None, 'mu_O_kJ_per_mol': None, 'literal': False,
+                'why': ('this feed is short of the oxygen to make every '
+                        'carbon a CO') if (any_c or any_h)
+                       else 'this feed carries no CO/CO₂ or '
+                            'H₂/H₂O couple'}
+    literal = all(g in ('CO2', 'H2')
+                  or not (GAS_FORMULA[g].get('C') or GAS_FORMULA[g].get('H')
+                          or GAS_FORMULA[g].get('O'))
+                  for g in feed_rel if feed_rel[g] > 0)
+    return {'y_CO2': equivalent_co2_fraction(mu, T_K, P_atm),
+            'mu_O_kJ_per_mol': mu, 'literal': literal, 'why': None}

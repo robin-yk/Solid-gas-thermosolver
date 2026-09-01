@@ -733,6 +733,123 @@ def boundary_block():
     return out
 
 
+# --------------------------------------------- the CO2/H2 reduction line
+
+
+def reduction_line_block():
+    """The feed at which rutile stops surviving, to certified precision.
+
+    Same statement as h2_h2o_boundary above, on the axis the workspace
+    draws: an H2/CO2 mixture rather than an H2/H2O one, and swept over
+    temperature rather than pinned at 900 C.
+
+    Written in the ratio form on purpose. The production engine works in
+    a logistic coordinate so neither tail overflows a double; mpmath has
+    no such tail to dodge, so the ratios r = n_ox / n_red are carried
+    straight. Two roads to the same number is the point of an oracle -
+    if this file transcribed the engine's algebra it would be checking a
+    typist, not a result.
+
+    Free O2 is carried on both sides. It is worth nothing wherever
+    hydrogen is present and 5.8 kJ per mol O in a CO2/CO mixture at
+    1650 C, which is why it is here and why the total pressure comes with
+    it: a partial pressure is not a property of a mixture on its own.
+    """
+    P = mpf(str(P_ATM))
+
+    def couples(T):
+        return (mu0_shomate('CO2', T) - mu0_shomate('CO', T),
+                mu0_shomate('H2O', T) - mu0_shomate('H2', T))
+
+    def w_o2(mu, T):
+        """Free O2 per mole of everything that is not O2."""
+        k = exp((2 * mu - mu0_shomate('O2', T)) / (R_KJ * T))
+        f = k / P
+        return None if f >= 1 else f / (1 - f)
+
+    def y_of_mu(mu, T):
+        """H2/CO2 feed carrying this oxygen potential, as a mole fraction."""
+        a, b = couples(T)
+        rt = R_KJ * T
+        r_c = exp((mu - a) / rt)          # n_CO2 / n_CO
+        r_h = exp((mu - b) / rt)          # n_H2O / n_H2
+        w = w_o2(mu, T)
+        s_c = 1 / (1 + r_c)               # CO share of the carbon
+        s_h = r_h / (1 + r_h)             # H2O share of the hydrogen
+        return (s_h + 2 * w) / (s_c + s_h)
+
+    def mu_of_feed(n_c, n_h, n_o, n_i, T):
+        """Invert it: the potential a C-H-O gas sets on its own."""
+        a, b = couples(T)
+        rt = R_KJ * T
+        base = n_c + n_h / 2 + n_i
+        lo, hi = min(a, b) - 300 * rt, max(a, b) + 300 * rt
+        for _ in range(400):
+            mid = (lo + hi) / 2
+            r_c = exp((mid - a) / rt)
+            r_h = exp((mid - b) / rt)
+            w = w_o2(mid, T)
+            held = (n_c * (1 + 2 * r_c) / (1 + r_c)
+                    + (n_h / 2) * r_h / (1 + r_h)
+                    + (mpf('1e50') if w is None else 2 * base * w))
+            if held < n_o:
+                lo = mid
+            else:
+                hi = mid
+        return (lo + hi) / 2
+
+    line = {}
+    for T_C in sorted(set(TEMPS_C + [600, 1650])):
+        T = mpf(str(T_C)) + mpf('273.15')
+        first, crit = None, None
+        for name in SOLIDS:
+            if name == 'TiO2':
+                continue
+            t_s, o_s = STOICH[name]
+            c = (t_s * mu0_waldner('TiO2', T) - mu0_waldner(name, T)) \
+                / (2 * t_s - o_s)
+            if crit is None or c > crit:
+                first, crit = name, c
+        line[str(T_C)] = {
+            'phase': first,
+            'mu_crit_kJ_per_mol_O': jnum(crit),
+            'y_CO2_boundary': jnum(y_of_mu(crit, T)),
+        }
+
+    feeds = []
+    for feed, T_C in (({'CO2': 1, 'H2': 1}, 600),
+                      ({'CO2': 9, 'H2': 1}, 600),
+                      ({'CO2': 1, 'H2': 99}, 900),
+                      ({'CO2': 4, 'CO': 1, 'H2': 5}, 800),
+                      ({'H2': 98, 'H2O': 2}, 700),
+                      ({'CO2': 99, 'CO': 1}, 1650),
+                      ({'CO2': 1}, 1200),
+                      ({'CO2': 3, 'H2': 3, 'N2': 4}, 1650)):
+        T = mpf(str(T_C)) + mpf('273.15')
+        n_c = n_h = n_o = n_i = mpf(0)
+        for g, amt in feed.items():
+            a = mpf(amt)
+            n_c += a * GAS_FORMULA[g].get('C', 0)
+            n_h += a * GAS_FORMULA[g].get('H', 0)
+            n_o += a * GAS_FORMULA[g].get('O', 0)
+            if not any(GAS_FORMULA[g].get(e) for e in ('C', 'H', 'O')):
+                n_i += a
+        mu = mu_of_feed(n_c, n_h, n_o, n_i, T)
+        feeds.append({'feed': feed, 'T_C': T_C,
+                      'mu_O_kJ_per_mol': jnum(mu),
+                      'y_CO2_equivalent': jnum(y_of_mu(mu, T))})
+
+    return {
+        'note': ('boundary composition for host TiO2 against an H2/CO2 feed, '
+                 'and the potential a few feeds set on their own; free O2 '
+                 'carried on both sides at P = %s atm' % float(P)),
+        'host': 'TiO2',
+        'P_atm': float(P),
+        'boundary_by_T': line,
+        'feeds': feeds,
+    }
+
+
 def main():
     rows = []
     for case, cfg in CASES.items():
@@ -785,6 +902,7 @@ def main():
         'temperatures_C': TEMPS_C,
         'rows': rows,
         'boundary_validation': bb,
+        'co2_h2_reduction_line': reduction_line_block(),
     }
     with (DATA / 'reference_results_high_precision.json').open('w') as fh:
         json.dump(doc, fh, indent=1)

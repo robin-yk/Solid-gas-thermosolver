@@ -561,6 +561,153 @@ Solver.prototype.solve = function (opts) {
   };
 };
 
+/* ------------------------------------------------- the reduction line
+
+   Mirror of the same section in solidgas/activeset.py. Titanium never
+   enters the gas here, so solid and gas trade nothing but oxygen and the
+   whole question is one comparison: does the gas sit above or below the
+   potential at which the first reduced phase replaces the host. Both
+   sides are closed form, which is why this curve is free where bisecting
+   the solver over feed composition would be sixty solves a point.
+
+   Free O2 is carried. With hydrogen in the feed it is worth nothing; take
+   the hydrogen away and a CO2/CO mixture at 1650 C runs 0.2 mol% O2 and
+   it is worth 5.8 kJ per mol O. It brings the total pressure in with it,
+   since a partial pressure is not a property of a mixture on its own. */
+
+function sigma(x) {
+  if (x >= 0) return 1 / (1 + Math.exp(-x));
+  var e = Math.exp(x);
+  return e / (1 + e);
+}
+
+Solver.prototype.couplePotential = function (red, ox, T) {
+  return this.mu0Gas(ox, T) - this.mu0Gas(red, T);
+};
+
+/* Moles of free O2 per mole of everything that is not O2. Null where the
+   arithmetic says the gas would be all O2. */
+Solver.prototype.o2PerUnit = function (mu, T, P) {
+  var k = Math.exp(Math.min((2 * mu - this.mu0Gas('O2', T)) / (this.R * T),
+                            EXP_CAP));
+  var f = k / P;
+  if (f >= 1) return null;
+  return f / (1 - f);
+};
+
+/* Oxygen potential of a C-H-O gas equilibrated on its own, kJ per mol O.
+   The feed before the solid touches it. Null when no couple exists, or
+   when the feed is short of enough oxygen to make every carbon a CO. */
+Solver.prototype.gasOxygenPotential = function (feedRel, T_K, P, iters) {
+  var D = this.D, nC = 0, nH = 0, nO = 0, nI = 0, self = this;
+  P = P || 1;
+  Object.keys(feedRel).forEach(function (g) {
+    var amt = feedRel[g];
+    if (!(amt > 0)) return;
+    var f = D.gas_formula[g];
+    nC += amt * (f.C || 0);
+    nH += amt * (f.H || 0);
+    nO += amt * (f.O || 0);
+    if (!f.C && !f.H && !f.O) nI += amt;
+  });
+  if (nC <= 0 && nH <= 0) return null;
+  if (nO <= nC) return null;
+
+  var rt = this.R * T_K;
+  var a = this.couplePotential('CO', 'CO2', T_K);
+  var b = this.couplePotential('H2', 'H2O', T_K);
+  var base = nC + nH / 2 + nI;
+  var oxygenAt = function (mu) {
+    var w = self.o2PerUnit(mu, T_K, P);
+    return nC * (2 - sigma((a - mu) / rt))
+         + (nH / 2) * sigma((mu - b) / rt)
+         + (w === null ? Infinity : 2 * base * w);
+  };
+
+  var lo = Math.min(a, b) - 300 * rt, hi = Math.max(a, b) + 300 * rt, mid;
+  if (oxygenAt(hi) < nO) return null;
+  var n = iters || 200, i;
+  for (i = 0; i < n; i++) {
+    mid = 0.5 * (lo + hi);
+    if (oxygenAt(mid) < nO) lo = mid; else hi = mid;
+  }
+  return 0.5 * (lo + hi);
+};
+
+/* The H2/CO2 feed that carries a given oxygen potential, as a mole
+   fraction: the same oxygen balance run backwards, so for a feed that
+   really is H2 and CO2 it returns the fraction it was mixed at. For
+   anything else, the mixture that would be equally reducing. */
+Solver.prototype.equivalentCO2Fraction = function (muO, T_K, P) {
+  var rt = this.R * T_K;
+  P = P || 1;
+  var sc = sigma((this.couplePotential('CO', 'CO2', T_K) - muO) / rt);
+  var sh = sigma((muO - this.couplePotential('H2', 'H2O', T_K)) / rt);
+  var w = this.o2PerUnit(muO, T_K, P);
+  if (w === null) return 1;
+  var den = sc + sh;
+  if (!(den > 0)) return 1;
+  return Math.min(Math.max((sh + 2 * w) / den, 0), 1);
+};
+
+/* Oxygen potential at which `higher` gives way to `lower`, kJ per mol O. */
+Solver.prototype.criticalPotential = function (lower, higher, T) {
+  var sh = this.D.stoich[higher], sl = this.D.stoich[lower];
+  var nHi = sl[0] / sh[0];
+  var dO = nHi * sh[1] - sl[1];
+  if (!(dO > 0)) throw new Error(lower + ' is not more reduced than ' + higher);
+  return (nHi * this.mu0Solid(higher, T) - this.mu0Solid(lower, T)) / dO;
+};
+
+/* The feed at which the host stops surviving, at one temperature. Every
+   reduced phase is compared straight to the host, because the question is
+   which one appears first out of an untouched host. */
+Solver.prototype.reductionBoundary = function (T_K, host, solids, P) {
+  var D = this.D, self = this;
+  host = host || 'TiO2';
+  var reg = solids || D.solids;
+  var rhoHost = D.stoich[host][1] / D.stoich[host][0];
+  var first = null, muCrit = -Infinity;
+  reg.forEach(function (s) {
+    if (D.stoich[s][1] / D.stoich[s][0] >= rhoHost) return;
+    var c = self.criticalPotential(s, host, T_K);
+    if (c > muCrit) { first = s; muCrit = c; }
+  });
+  if (first === null) return null;
+  return { phase: first, host: host, mu_crit_kJ_per_mol_O: muCrit,
+           y_CO2: this.equivalentCO2Fraction(muCrit, T_K, P || 1) };
+};
+
+/* Where a feed lands on that same axis, with the two ways it can fail to
+   land anywhere named rather than swallowed. `literal` marks the feeds
+   the axis was built for - H2 and CO2, plus any inert - where the marker
+   is the mixing fraction itself and not an equivalent. */
+Solver.prototype.feedOnBoundaryAxis = function (feedRel, T_K, P) {
+  var D = this.D;
+  P = P || 1;
+  var mu = this.gasOxygenPotential(feedRel, T_K, P);
+  if (mu === null) {
+    var anyC = false, anyH = false;
+    Object.keys(feedRel).forEach(function (g) {
+      if (!(feedRel[g] > 0)) return;
+      if (D.gas_formula[g].C) anyC = true;
+      if (D.gas_formula[g].H) anyH = true;
+    });
+    return { y_CO2: null, mu_O_kJ_per_mol: null, literal: false,
+             why: (anyC || anyH)
+               ? 'this feed is short of the oxygen to make every carbon a CO'
+               : 'this feed carries no CO/CO₂ or H₂/H₂O couple' };
+  }
+  var literal = Object.keys(feedRel).every(function (g) {
+    if (!(feedRel[g] > 0)) return true;
+    var f = D.gas_formula[g];
+    return g === 'CO2' || g === 'H2' || (!f.C && !f.H && !f.O);
+  });
+  return { y_CO2: this.equivalentCO2Fraction(mu, T_K, P),
+           mu_O_kJ_per_mol: mu, literal: literal, why: null };
+};
+
+
 root.Solver = Solver;
 })(typeof module !== 'undefined' && module.exports ? module.exports
    : (window.ActiveSet = {}));

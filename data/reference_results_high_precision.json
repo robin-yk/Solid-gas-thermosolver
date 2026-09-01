@@ -23605,5 +23605,127 @@
    "H2O_over_H2_critical_ratio": 0.004120511581405242,
    "note": "feeds H2 + r*H2O at r = ratio*(1 -/+ 1e-3) must land on the two-phase buffer / single-phase rutile respectively"
   }
+ },
+ "co2_h2_reduction_line": {
+  "note": "boundary composition for host TiO2 against an H2/CO2 feed, and the potential a few feeds set on their own; free O2 carried on both sides at P = 1.0 atm",
+  "host": "TiO2",
+  "P_atm": 1.0,
+  "boundary_by_T": {
+   "500": {
+    "phase": "Ti10O19",
+    "mu_crit_kJ_per_mol_O": -363.8708203995416,
+    "y_CO2_boundary": 7.75178893127499e-06
+   },
+   "600": {
+    "phase": "Ti10O19",
+    "mu_crit_kJ_per_mol_O": -364.88101947293745,
+    "y_CO2_boundary": 6.315021604017142e-05
+   },
+   "700": {
+    "phase": "Ti10O19",
+    "mu_crit_kJ_per_mol_O": -365.9684047226384,
+    "y_CO2_boundary": 0.00033570415330418855
+   },
+   "900": {
+    "phase": "Ti10O19",
+    "mu_crit_kJ_per_mol_O": -368.2779953652982,
+    "y_CO2_boundary": 0.004100010315794391
+   },
+   "1100": {
+    "phase": "Ti10O19",
+    "mu_crit_kJ_per_mol_O": -370.65129488230605,
+    "y_CO2_boundary": 0.024229835073931314
+   },
+   "1300": {
+    "phase": "Ti10O19",
+    "mu_crit_kJ_per_mol_O": -372.9928402752412,
+    "y_CO2_boundary": 0.08613154075073902
+   },
+   "1500": {
+    "phase": "Ti10O19",
+    "mu_crit_kJ_per_mol_O": -375.24023057641347,
+    "y_CO2_boundary": 0.20057935513231182
+   },
+   "1650": {
+    "phase": "Ti10O19",
+    "mu_crit_kJ_per_mol_O": -376.83855405513407,
+    "y_CO2_boundary": 0.3012173788302944
+   }
+  },
+  "feeds": [
+   {
+    "feed": {
+     "CO2": 1,
+     "H2": 1
+    },
+    "T_C": 600,
+    "mu_O_kJ_per_mol": -298.2411620311419,
+    "y_CO2_equivalent": 0.5
+   },
+   {
+    "feed": {
+     "CO2": 9,
+     "H2": 1
+    },
+    "T_C": 600,
+    "mu_O_kJ_per_mol": -284.8547079094874,
+    "y_CO2_equivalent": 0.9
+   },
+   {
+    "feed": {
+     "CO2": 1,
+     "H2": 99
+    },
+    "T_C": 900,
+    "mu_O_kJ_per_mol": -359.5109212986822,
+    "y_CO2_equivalent": 0.01
+   },
+   {
+    "feed": {
+     "CO2": 4,
+     "CO": 1,
+     "H2": 5
+    },
+    "T_C": 800,
+    "mu_O_kJ_per_mol": -311.8981658720843,
+    "y_CO2_equivalent": 0.398051085322548
+   },
+   {
+    "feed": {
+     "H2": 98,
+     "H2O": 2
+    },
+    "T_C": 700,
+    "mu_O_kJ_per_mol": -332.7350604425594,
+    "y_CO2_equivalent": 0.020240158937182198
+   },
+   {
+    "feed": {
+     "CO2": 99,
+     "CO": 1
+    },
+    "T_C": 1650,
+    "mu_O_kJ_per_mol": -277.93734410803035,
+    "y_CO2_equivalent": 0.9901082397721594
+   },
+   {
+    "feed": {
+     "CO2": 1
+    },
+    "T_C": 1200,
+    "mu_O_kJ_per_mol": -224.23142108386517,
+    "y_CO2_equivalent": 1.0
+   },
+   {
+    "feed": {
+     "CO2": 3,
+     "H2": 3,
+     "N2": 4
+    },
+    "T_C": 1650,
+    "mu_O_kJ_per_mol": -357.2195364685228,
+    "y_CO2_equivalent": 0.49999989464698
+   }
+  ]
  }
 }
