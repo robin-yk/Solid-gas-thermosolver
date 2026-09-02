@@ -37,6 +37,8 @@ PARTS = [
     ('/*VACANCY*/', os.path.join(WEB, 'vacancy.js')),
     ('/*THERMO*/', os.path.join(WEB, 'figures_thermo.js')),
     ('/*SURFACE*/', os.path.join(WEB, 'figures_surface.js')),
+    ("/*POPENGINE*/", os.path.join(WEB, "population.js")),
+    ("/*POPFIG*/", os.path.join(WEB, "figures_population.js")),
     ('/*PAGE*/', os.path.join(WEB, 'ti_solver_page.js')),
     ('/*THERMOUI*/', os.path.join(WEB, 'thermo_ui.js')),
     ('/*UI*/', os.path.join(WEB, 'site_ui.js')),

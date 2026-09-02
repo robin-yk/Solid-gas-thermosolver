@@ -3118,6 +3118,208 @@
   }
  },
  "generated_by": "scripts/reproduce_paper.py",
+ "population": {
+  "fit": {
+   "log": {
+    "E_loss_eV": 2.1845084940608714,
+    "log10_nu_eff": 6.743332464371596,
+    "ns_at_bound": false,
+    "ns_bounds": [
+     13.6,
+     67.8
+    ],
+    "ns_umol_g": 15.333811593451866,
+    "nu_eff_s1": 5537738.761267012,
+    "objective": 0.0028332816105638226,
+    "residual_kind": "log"
+   },
+   "raw": {
+    "E_loss_eV": 1.6364697820980645,
+    "log10_nu_eff": 4.183426997868615,
+    "ns_at_bound": false,
+    "ns_bounds": [
+     13.6,
+     67.8
+    ],
+    "ns_umol_g": 15.19230504280714,
+    "nu_eff_s1": 15255.51937706773,
+    "objective": 0.02945104303645346,
+    "residual_kind": "raw"
+   },
+   "relative": {
+    "E_loss_eV": 2.1844128245836636,
+    "log10_nu_eff": 6.743037130910911,
+    "ns_at_bound": false,
+    "ns_bounds": [
+     13.6,
+     67.8
+    ],
+    "ns_umol_g": 15.37238113322731,
+    "nu_eff_s1": 5533974.210578561,
+    "objective": 0.0027158131753405998,
+    "residual_kind": "relative"
+   }
+  },
+  "ns_bounds": [
+   13.6,
+   67.8
+  ],
+  "reported": {
+   "E_loss_eV": 2.1845085,
+   "log10_nu_eff": 6.74333249,
+   "ns_umol_g": 15.33381126,
+   "nu_eff_s1": 5537739.088057745
+  },
+  "residual_kinds": [
+   "log",
+   "relative",
+   "raw"
+  ],
+  "rows": [
+   {
+    "T_red_C": 600.0,
+    "T_red_K": 873.15,
+    "below_fraction": 0.3341684693279998,
+    "closure_umol_g": 0.0,
+    "nV_total_umol_g": 13.45,
+    "n_assoc_umol_g": 0.0035026664723059042,
+    "n_below_umol_g": 4.4945659124615975,
+    "n_iso_umol_g": 8.951931421066096,
+    "r_CO_fitted": 2.3020253078413564,
+    "r_CO_measured": 2.26,
+    "residual": 0.04202530784135661,
+    "residual_log": 0.018424490804480855,
+    "residual_relative": 0.01859526895635248,
+    "sample": "A600",
+    "t_red_s": 600.0,
+    "treatment": "He, 600 C, 10 min"
+   },
+   {
+    "T_red_C": 500.0,
+    "T_red_K": 773.15,
+    "below_fraction": 0.6215146790771323,
+    "closure_umol_g": 0.0,
+    "nV_total_umol_g": 36.85,
+    "n_assoc_umol_g": 0.0007909671723904665,
+    "n_below_umol_g": 22.90281592399233,
+    "n_iso_umol_g": 13.946393108835284,
+    "r_CO_fitted": 3.5863712957063405,
+    "r_CO_measured": 3.77,
+    "residual": -0.18362870429365952,
+    "residual_log": -0.049934091283776065,
+    "residual_relative": -0.04870787912298661,
+    "sample": "R500",
+    "t_red_s": 1800.0,
+    "treatment": "H2, 500 C, 30 min"
+   },
+   {
+    "T_red_C": 600.0,
+    "T_red_K": 873.15,
+    "below_fraction": 0.837229317965995,
+    "closure_umol_g": 0.0,
+    "nV_total_umol_g": 94.0,
+    "n_assoc_umol_g": 0.05666245030544026,
+    "n_below_umol_g": 78.69955588880353,
+    "n_iso_umol_g": 15.243781660891031,
+    "r_CO_fitted": 3.9200000000000004,
+    "r_CO_measured": 3.92,
+    "residual": 4.440892098500626e-16,
+    "residual_log": 2.2204460492503128e-16,
+    "residual_relative": 1.1328806373726087e-16,
+    "sample": "R600",
+    "t_red_s": 1800.0,
+    "treatment": "H2, 600 C, 30 min"
+   },
+   {
+    "T_red_C": 800.0,
+    "T_red_K": 1073.15,
+    "below_fraction": 0.9205916147311826,
+    "closure_umol_g": 0.0,
+    "nV_total_umol_g": 193.1,
+    "n_assoc_umol_g": 7.522210077347934,
+    "n_below_umol_g": 177.76624080459135,
+    "n_iso_umol_g": 7.811549118060716,
+    "r_CO_fitted": 2.0087713943948033,
+    "r_CO_measured": 2.01,
+    "residual": -0.0012286056051964422,
+    "residual_log": -0.0006114334570939853,
+    "residual_relative": -0.0006112465697494738,
+    "sample": "R800",
+    "t_red_s": 1800.0,
+    "treatment": "H2, 800 C, 30 min"
+   },
+   {
+    "T_red_C": 1000.0,
+    "T_red_K": 1273.15,
+    "below_fraction": 0.9803714653609832,
+    "closure_umol_g": 0.0,
+    "nV_total_umol_g": 781.2,
+    "n_assoc_umol_g": 15.157231586355866,
+    "n_below_umol_g": 765.8661887400001,
+    "n_iso_umol_g": 0.17657967364413193,
+    "r_CO_fitted": 0.045408176007982595,
+    "r_CO_measured": 0.0454,
+    "residual": 8.176007982592381e-06,
+    "residual_log": 0.00018007206760682428,
+    "residual_relative": 0.00018008828155489825,
+    "sample": "R1000",
+    "t_red_s": 3600.0,
+    "treatment": "H2, 1000 C, 60 min"
+   }
+  ],
+  "series": [
+   {
+    "T_red_C": 600.0,
+    "T_red_K": 873.15,
+    "gas": "He",
+    "nV_total_umol_g": 13.45,
+    "r_CO_umol_g_s": 2.26,
+    "sample": "A600",
+    "t_red_s": 600.0,
+    "treatment": "He, 600 C, 10 min"
+   },
+   {
+    "T_red_C": 500.0,
+    "T_red_K": 773.15,
+    "gas": "H2",
+    "nV_total_umol_g": 36.85,
+    "r_CO_umol_g_s": 3.77,
+    "sample": "R500",
+    "t_red_s": 1800.0,
+    "treatment": "H2, 500 C, 30 min"
+   },
+   {
+    "T_red_C": 600.0,
+    "T_red_K": 873.15,
+    "gas": "H2",
+    "nV_total_umol_g": 94.0,
+    "r_CO_umol_g_s": 3.92,
+    "sample": "R600",
+    "t_red_s": 1800.0,
+    "treatment": "H2, 600 C, 30 min"
+   },
+   {
+    "T_red_C": 800.0,
+    "T_red_K": 1073.15,
+    "gas": "H2",
+    "nV_total_umol_g": 193.1,
+    "r_CO_umol_g_s": 2.01,
+    "sample": "R800",
+    "t_red_s": 1800.0,
+    "treatment": "H2, 800 C, 30 min"
+   },
+   {
+    "T_red_C": 1000.0,
+    "T_red_K": 1273.15,
+    "gas": "H2",
+    "nV_total_umol_g": 781.2,
+    "r_CO_umol_g_s": 0.0454,
+    "sample": "R1000",
+    "t_red_s": 3600.0,
+    "treatment": "H2, 1000 C, 60 min"
+   }
+  ]
+ },
  "scope": "This repository computes gas-solid equilibrium and a geometric surface-capacity bound. It does not assign the below-surface inventory among subsurface point defects, bulk defects or extended defects.",
  "surface": {
   "by_diameter": {

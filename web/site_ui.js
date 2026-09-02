@@ -9,6 +9,7 @@
   'use strict';
   var D = window.SITE_DATA;
   var SF = window.SurfaceFigures, VI = window.Vacancy;
+  var PF = window.PopulationFigures, PM = window.Population;
   function $(id) { return document.getElementById(id); }
   function n(v, d) {
     return (v == null || !isFinite(v)) ? '—' : Number(v).toFixed(d == null ? 2 : d);
@@ -19,7 +20,7 @@
   }
 
   function showWorkspace(id) {
-    ['ws-thermo', 'ws-surface'].forEach(function (w) {
+    ['ws-thermo', 'ws-surface', 'ws-population'].forEach(function (w) {
       var el = $(w);
       if (el) el.style.display = (w === id) ? '' : 'none';
     });
@@ -102,7 +103,105 @@
       + n(b.surface_fraction_max_full_row * 100, 1) + '%</td></tr>';
   }
 
+  /* ------------------------------------------------------ population */
+
+  var REPORTED = { ns: PM.REPORTED.ns, E: PM.REPORTED.E_loss,
+                   lognu: PM.REPORTED.log10_nu };
+
+  function popKind() {
+    var el = $('pnKind');
+    return el ? el.value : 'log';
+  }
+
+  function popParams() {
+    return { ns: parseFloat($('pnNs').value),
+             E: parseFloat($('pnE').value),
+             lognu: parseFloat($('pnNu').value) };
+  }
+
+  function drawPopulation() {
+    var p = popParams(), st = $('pnStatus');
+    var series = D.population.series;
+    if (!(p.ns > 0) || !(p.E >= 0) || !isFinite(p.lognu)) {
+      st.textContent = 'give a positive capacity, a non-negative barrier and a finite log prefactor';
+      return;
+    }
+    var nu = Math.pow(10, p.lognu);
+    var rows = PM.partition(series, p.ns, p.E, nu);
+    $('figPopulation').innerHTML = PF.population(PF.partitionData(rows));
+    $('figRates').innerHTML = PF.rates(PF.ratesData(rows));
+
+    var ssq = PM.objective(series, p.ns, p.E, nu, popKind());
+    var ratio = PM.rateRatio(series, p.ns, p.E, nu);
+    var meas = PM.measuredRatio(series);
+    var isoMax = Math.max.apply(null, rows.map(function (q) { return q.n_iso_umol_g; }));
+    var isoMin = Math.min.apply(null, rows.map(function (q) { return q.n_iso_umol_g; }));
+    var closure = Math.max.apply(null, rows.map(function (q) {
+      return Math.abs(q.closure_umol_g); }));
+
+    var lo = D.population.ns_bounds[0], hi = D.population.ns_bounds[1];
+    st.textContent = (p.ns < lo || p.ns > hi)
+      ? 'n_s is outside the geometric bounds ' + lo + '–' + hi + ' µmol-O g⁻¹'
+      : 'n_s sits between the bridging row and the bridging plus first subsurface layer';
+
+    $('pnKpis').innerHTML = [
+      kpi('Objective (' + popKind() + ')', ssq.toExponential(3)),
+      kpi('R800 / R600, fitted', n(ratio, 3)),
+      kpi('R800 / R600, measured', n(meas, 3)),
+      kpi('Isolated, highest', n(isoMax, 2) + ' µmol-O g⁻¹'),
+      kpi('Isolated, lowest', n(isoMin, 3) + ' µmol-O g⁻¹'),
+      kpi('Mass-balance residual', n(closure, 9) + ' µmol-O g⁻¹')
+    ].join('');
+
+    $('pnTable').innerHTML = rows.map(function (q) {
+      return '<tr><td>' + q.sample + '</td><td>' + q.treatment + '</td>'
+        + '<td class="k2">' + n(q.nV_total_umol_g, 2) + '</td>'
+        + '<td class="k2">' + n(q.r_CO_measured, 4) + '</td>'
+        + '<td class="k2">' + n(q.r_CO_fitted, 4) + '</td>'
+        + '<td class="k2">' + n(q.n_iso_umol_g, 2) + '</td>'
+        + '<td class="k2">' + n(q.n_assoc_umol_g, 2) + '</td>'
+        + '<td class="k2">' + n(q.n_below_umol_g, 2) + '</td></tr>';
+    }).join('');
+
+    var below = rows.every(function (q) { return q.below_fraction > 0.5; });
+    $('pnIdent').innerHTML =
+      '<tr><td>ν<sub>eff</sub></td><td class="k2">'
+      + nu.toExponential(2) + ' s⁻¹</td></tr>'
+      + '<tr><td>Most of the inventory below the active region</td>'
+      + '<td class="k2">' + (below ? 'yes, every sample' : 'not every sample') + '</td></tr>'
+      + '<tr><td>Isolated population, R1000 over its maximum</td><td class="k2">'
+      + n(isoMin / isoMax * 100, 2) + '%</td></tr>'
+      + '<tr><td>Measured inventory, R1000 over A600</td><td class="k2">'
+      + n(series[series.length - 1].nV_total_umol_g / series[0].nV_total_umol_g, 1)
+      + '×</td></tr>';
+  }
+
+  function fitPopulation() {
+    var st = $('pnStatus');
+    st.textContent = 'fitting…';
+    setTimeout(function () {
+      var f = PM.fit(D.population.series, popKind(),
+                     D.population.ns_bounds);
+      $('pnNs').value = f.ns.toFixed(3);
+      $('pnE').value = f.E_loss.toFixed(4);
+      $('pnNu').value = f.log10_nu.toFixed(4);
+      drawPopulation();
+    }, 10);
+  }
+
   function init() {
+    ['pnNs', 'pnE', 'pnNu', 'pnKind'].forEach(function (id) {
+      var el = $(id);
+      if (el) el.addEventListener('input', drawPopulation);
+      if (el && el.tagName === 'SELECT') el.addEventListener('change', drawPopulation);
+    });
+    if ($('pnFit')) $('pnFit').addEventListener('click', fitPopulation);
+    if ($('pnReset')) $('pnReset').addEventListener('click', function () {
+      $('pnNs').value = REPORTED.ns.toFixed(3);
+      $('pnE').value = REPORTED.E.toFixed(4);
+      $('pnNu').value = REPORTED.lognu.toFixed(4);
+      drawPopulation();
+    });
     ['sfD', 'sfBET', 'sfV'].forEach(function (id) {
       var el = $(id);
       if (el) el.addEventListener('input', drawSurface);
@@ -113,7 +212,10 @@
       });
     });
     drawSurface();
-    showWorkspace(location.hash.slice(1) === 'ws-surface' ? 'ws-surface' : 'ws-thermo');
+    drawPopulation();
+    var want = location.hash.slice(1);
+    showWorkspace(['ws-surface', 'ws-population'].indexOf(want) >= 0
+                  ? want : 'ws-thermo');
   }
 
   if (document.readyState === 'loading') {

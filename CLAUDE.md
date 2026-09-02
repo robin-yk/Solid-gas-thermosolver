@@ -30,7 +30,20 @@ Ti–O 고체–기체 열역학. 논문에 실제로 쓰이는 **계산 두 개
 얼마나 멀리 있는지는 KKT reduced cost 로 따로 보고한다. 루타일이 살아남지
 못하는 feed 는 닫힌형으로 나온다.
 
-### 2. Surface-capacity bound (`solidgas/vacancy_inventory.py`)
+### 2. Isolated-vacancy population (`solidgas/vacancy_population.py`)
+
+측정 총량은 8배 늘어나는데 CO 속도는 600 °C에서 꺾인다. 표면의 **고립된** 공공만
+CO2를 활성화하고, 그게 열활성 회합으로 사라지기 때문이라는 설명의 최소 모델.
+
+q = n_iso + n_assoc 로 두면 loss 항이 합에서 상쇄돼서 q 와 n_below 가 닫힌형으로
+나오고, 실제로 적분할 식은 **하나**다. 질량보존이 검사가 아니라 항등식이 되고,
+남은 scalar 식을 implicit solver 에 넘기므로 탐색이 어디로 가든 안 터진다.
+
+**잔차 정의를 반드시 같이 보고한다.** 측정 속도가 86배 차이나서 raw least squares
+는 한 시료가 지배한다. log/relative 는 논문 값을 되찾고, raw 는 prefactor 가 두 자리
+어긋난다. 논문 SI 에 어느 걸 썼는지가 안 적혀 있다.
+
+### 3. Surface-capacity bound (`solidgas/vacancy_inventory.py`)
 
 적정은 숫자 **하나**만 준다 — 빠진 산소 총량. 어디서 빠졌는지는 안 알려준다.
 루타일 격자상수와 노출 면적만으로 (110) bridging 줄이 담을 수 있는 양을
@@ -68,13 +81,14 @@ Ti–O 고체–기체 열역학. 논문에 실제로 쓰이는 **계산 두 개
 
 1. 파이썬 엔진 (`solidgas/`)
 2. mpmath 80자리 오라클 (`scripts/oracle_tio.py` → `data/reference_*.json`)
-3. 브라우저 미러 (`web/activeset.js`, `web/vacancy.js`)
+3. 브라우저 미러 (`web/activeset.js`, `web/vacancy.js`, `web/population.js`)
 
 오라클은 엔진을 호출하지 않는다. 안 그러면 검증이 아니라 복사다.
 
 브라우저 미러는 물리가 아니라 **포팅**을 검증한다. 그래도 필요하다 — 페이지가
 계산을 하는 이상 두 구현이 조용히 갈라지는 걸 막아야 한다. 예산: activeset 은
-4 ulp (glibc exp 대 V8 exp), vacancy 는 **0 ulp** (지수함수가 없다).
+4 ulp (glibc exp 대 V8 exp), vacancy 는 **0 ulp** (지수함수가 없다),
+population 은 상대 1e-6 (Radau 대 Strang splitting — 같은 식의 다른 적분기다).
 
 표면 용량 쪽은 오라클이 없다 — 솔버가 없기 때문이다. 대신 게이트가 산술을
 검증한다: 단위격자가 루타일 밀도 4.25 g/cm³ 와 19.22 Å² (110) 셀을 재현하는지,

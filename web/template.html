@@ -13,6 +13,11 @@
       <h1>Gas&ndash;solid equilibrium</h1>
       <p>Put in a gas composition and a temperature; the solver returns the stable Ti&ndash;O phase assemblage, the equilibrium gas, and how far the feed is from reducing the solid.</p>
     </div>
+    <div class="workspace-head" id="head-population">
+      <p class="eyebrow">Surface defect population &middot; Vlachos Group</p>
+      <h1>Isolated surface vacancies</h1>
+      <p>The measured inventory rises eightfold across the reduction series while the CO rate peaks after 600&nbsp;&deg;C. This is the smallest model that produces that shape, and what it can and cannot be asked is written on the panel.</p>
+    </div>
     <div class="workspace-head" id="head-surface">
       <p class="eyebrow">Rutile surface geometry &middot; Vlachos Group</p>
       <h1>Vacancy inventory versus surface capacity</h1>
@@ -25,6 +30,7 @@
 <div class="wstabs" id="wstabs">
   <button class="wstab active" data-ws="ws-thermo" type="button">Gas&ndash;solid equilibrium</button>
   <button class="wstab" data-ws="ws-surface" type="button">Inventory vs surface capacity</button>
+  <button class="wstab" data-ws="ws-population" type="button">Isolated-vacancy population</button>
 </div>
 
 <div id="ws-thermo">
@@ -365,6 +371,92 @@
     <code>data/literature_dft.json</code> and are not used here.</div>
 </section>
 </div>
+
+<!-- ========================================== population -->
+<div id="ws-population" style="display:none">
+<section class="panel pad">
+  <div class="dfx-controls">
+    <div class="field pair">
+      <div><label for="pnNs">Active-region capacity n<sub>s</sub></label>
+        <input type="number" id="pnNs" value="15.334" min="1" step="0.1">
+        <div class="readout">µmol-O g⁻¹ · bounded 13.6&ndash;67.8</div></div>
+      <div><label for="pnE">E<sub>loss</sub></label>
+        <input type="number" id="pnE" value="2.1845" min="0" step="0.05">
+        <div class="readout">eV · effective, not elementary</div></div>
+    </div>
+    <div class="field">
+      <label for="pnNu">log<sub>10</sub> ν<sub>eff</sub></label>
+      <input type="number" id="pnNu" value="6.7433" step="0.1">
+      <div class="readout">s⁻¹ · 6.7433 is 5.54×10⁶, 13 is an attempt frequency</div>
+    </div>
+    <div class="field">
+      <label for="pnKind">Residual</label>
+      <select id="pnKind">
+        <option value="log" selected>log ratio — ln(fitted / measured)</option>
+        <option value="relative">relative — (fitted − measured) / measured</option>
+        <option value="raw">raw — fitted − measured</option>
+      </select>
+      <div class="readout">the rates span 86-fold, so this choice moves the fit</div>
+    </div>
+    <div class="field pair">
+      <button type="button" class="mini" id="pnFit">Fit all three</button>
+      <button type="button" class="mini" id="pnReset">Reported values</button>
+    </div>
+    <div class="readout" id="pnStatus"></div>
+  </div>
+  <div class="kpis" id="pnKpis"></div>
+</section>
+
+<section class="panel pad">
+  <h2>Where the measured inventory goes</h2>
+  <p class="sub">Each bar is one sample&rsquo;s total oxygen removal, split into isolated
+    vacancies in the active region, associated or reconstructed deficiency in that
+    same region, and everything below it.</p>
+  <div class="chartwrap"><div id="figPopulation"></div></div>
+  <figcaption class="sub">Effective partition of the measured oxygen-vacancy inventory.
+    The isolated population saturates early and then falls; the total keeps rising.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>Measured rate against fitted rate</h2>
+  <p class="sub">Rates are proportional to the isolated population with one coefficient
+    for every sample, normalised to R600. Five rates, three parameters.</p>
+  <div class="chartwrap"><div id="figRates"></div></div>
+  <figcaption class="sub">Initial CO formation rate at a common 600&nbsp;&deg;C reaction
+    temperature, measured and fitted, against the reduction treatment.</figcaption>
+</section>
+
+<section class="panel pad">
+  <h2>Populations</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Sample</th><th>Treatment</th><th class="k2">n<sub>V,tot</sub></th>
+      <th class="k2">r<sub>CO</sub></th><th class="k2">r<sub>CO</sub> fitted</th>
+      <th class="k2">n<sub>iso</sub></th><th class="k2">n<sub>assoc</sub></th>
+      <th class="k2">n<sub>below</sub></th></tr></thead>
+    <tbody id="pnTable"></tbody>
+  </table></div>
+  <p class="sub">Inventories in µmol-O g⁻¹; rates in µmol g⁻¹ s⁻¹.</p>
+</section>
+
+<section class="panel pad">
+  <h2>What the fit can and cannot resolve</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Quantity</th><th class="k2">Value</th></tr></thead>
+    <tbody id="pnIdent"></tbody>
+  </table></div>
+  <div class="note"><b>What this does not claim.</b> The measured rates are used to
+    infer n<sub>iso</sub>, so the model does not predict them independently and
+    n<sub>iso</sub> must not be reused as a turnover-frequency denominator. The rates
+    constrain n<sub>iso</sub> but do not separate n<sub>assoc</sub> from
+    n<sub>below</sub>; those two columns are conditional on the second-order loss law,
+    uniform generation and a constant capacity. Surface area is taken as unchanged by
+    the 1000&nbsp;&deg;C treatment because sample-specific BET values were not
+    available. No reconstruction, cluster geometry or shear structure is identified.
+    E<sub>loss</sub> and log ν<sub>eff</sub> are an effective temperature dependence
+    for the net loss of isolated vacancies, not an elementary barrier.</div>
+</section>
+</div>
+
 </main>
 
 <footer>
@@ -383,6 +475,8 @@
 <script>/*THERMO*/</script>
 <script>/*VACANCY*/</script>
 <script>/*SURFACE*/</script>
+<script>/*POPENGINE*/</script>
+<script>/*POPFIG*/</script>
 <script>/*PAGE*/</script>
 <script>/*THERMOUI*/</script>
 <script>/*UI*/</script>

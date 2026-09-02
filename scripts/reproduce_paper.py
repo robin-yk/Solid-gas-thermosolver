@@ -29,6 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from solidgas import activeset as A
 from solidgas import vacancy_inventory as V
+from solidgas import vacancy_population as VP
 from analysis import dielectric_correlation as D
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -129,6 +130,20 @@ def _write(name, rows):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
+    pop_series = VP.load_series()
+    R = VP.REPORTED
+    pop_rows = VP.partition(pop_series, R['ns'], R['E_loss'],
+                            10.0 ** R['log10_nu'])
+    pop_csv = [{
+        'sample': q['sample'], 'treatment': q['treatment'],
+        'T_red_C': q['T_red_C'], 't_red_s': q['t_red_s'],
+        'nV_total_umol_g': q['nV_total_umol_g'],
+        'r_CO_measured': q['r_CO_measured'], 'r_CO_fitted': q['r_CO_fitted'],
+        'n_iso_umol_g': q['n_iso_umol_g'], 'n_assoc_umol_g': q['n_assoc_umol_g'],
+        'n_below_umol_g': q['n_below_umol_g'],
+        'below_fraction': q['below_fraction'],
+    } for q in pop_rows]
+
     eq = _rows_equilibrium()
     ps = _rows_phase_stability()
     sb = _rows_surface_bound()
@@ -137,6 +152,7 @@ def main():
     for name, rows in (('equilibrium_conversion.csv', eq),
                        ('phase_stability.csv', ps),
                        ('vacancy_surface_bound.csv', sb),
+                       ('vacancy_population.csv', pop_csv),
                        ('dielectric_correlation.csv', di)):
         path, n = _write(name, rows)
         print('%-34s %4d rows' % (os.path.basename(path), n))
@@ -164,6 +180,10 @@ def main():
         })
         b = A.reduction_boundary(T_C + 273.15)
         boundary.append({'T_C': T_C, 'y_CO2': b['y_CO2'], 'phase': b.get('phase')})
+
+    # The supplement does not record which residual it minimised and the
+    # rates span 86-fold, so every one is reported.
+    pop_fit = {k: VP.fit(pop_series, kind=k, iters=250) for k in VP.RESIDUALS}
 
     g = V.load()
     site = {
@@ -200,6 +220,17 @@ def main():
                 } for d in DIAMETERS_UM},
             'rows': sb,
             'inventories': INVENTORIES,
+        },
+        'population': {
+            'series': VP.load_series(),
+            'ns_bounds': list(VP.NS_BOUNDS),
+            'reported': {'ns_umol_g': VP.REPORTED['ns'],
+                         'E_loss_eV': VP.REPORTED['E_loss'],
+                         'log10_nu_eff': VP.REPORTED['log10_nu'],
+                         'nu_eff_s1': 10.0 ** VP.REPORTED['log10_nu']},
+            'residual_kinds': list(VP.RESIDUALS),
+            'rows': pop_rows,
+            'fit': pop_fit,
         },
         'dielectric': D.stored(),
         'scope': ('This repository computes gas-solid equilibrium and a geometric '
