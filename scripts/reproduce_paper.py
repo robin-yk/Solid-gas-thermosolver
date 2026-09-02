@@ -182,6 +182,9 @@ def main():
                        for T in T_QUOTED},
         },
         'surface': {
+            # the browser mirror reads this card verbatim, so the page and
+            # the package cannot disagree about the lattice
+            'geometry_card': g,
             'geometry': {
                 'cell_area_A2': V.surface_cell_area_cm2(g) * 1e16,
                 'bridging_areal_cm2': V.bridging_areal_density_cm2(g),

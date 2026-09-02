@@ -54,11 +54,17 @@ byte.
 
 ## Verification
 
-Two independent implementations must agree before a number is quoted: the Python
-package, and an mpmath oracle at 80 significant digits in `scripts/oracle_tio.py`
-that shares only the raw coefficient tables and never imports the solver. The
-browser does not compute anything — it displays the JSON the package wrote — so
-there is no third implementation to keep in step.
+Three implementations must agree before a number is quoted: the Python package,
+an mpmath oracle at 80 significant digits in `scripts/oracle_tio.py` that shares
+only the raw coefficient tables and never imports the solver, and the browser
+mirror. The page solves rather than displaying a precomputed grid, because a
+grid cannot answer a composition or a BET area the user actually has — and every
+browser engine is paired with a parity gate that holds it to its Python
+original: `web/activeset.js` to 4 ulp (the difference between glibc's `exp` and
+V8's), `web/vacancy.js` bit for bit, since the bound has no exponential in it.
+
+The values the manuscript quotes are not recomputed in the page. They ride along
+as committed JSON, so what a reader types and what the paper says cannot drift.
 
 `scripts/check_page.py` loads the built page in a real browser and holds every
 number it displays against a fresh calculation.
@@ -71,7 +77,7 @@ analysis/       dielectric_correlation — an empirical regression, not thermody
 scripts/        reproduce_paper · build_site · oracle_tio · check_page
 data/           thermodynamic tables, rutile geometry, tabulated literature DFT
 paper_outputs/  every computed number in the manuscript, as committed CSV
-web/            the display layer: a drawing kit, two figure modules, one page
+web/            the browser mirrors, a drawing kit, figure modules, one page
 docs/           the built page and the method notes
 ```
 

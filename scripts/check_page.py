@@ -44,30 +44,52 @@ const P = require(process.env.PW + '/node_modules/playwright');
   }, id);
 
   const out = { errors: errs, drew: {}, eq: {}, sf: {} };
-  for (const id of ['figConversion', 'figMargin', 'figBoundary'])
+  await pg.click('#run');
+  await pg.waitForTimeout(900);
+  for (const id of ['figOptimality', 'figBoundary'])
     out.drew[id] = await svg(id);
+  /* the two swept figures cost sixty solves, so the page keeps them behind
+     a button; the gate presses it rather than pretending they draw free */
+  out.beforeSweep = { margin: await svg('figMargin'),
+                      conversion: await svg('figConversion') };
+  await pg.click('#sweepBtn');
+  await pg.waitForTimeout(2500);
+  for (const id of ['figMargin', 'figConversion']) out.drew[id] = await svg(id);
 
-  for (const T of ['600', '800', '1000']) {
-    await pg.selectOption('#eqT', T);
-    await pg.waitForTimeout(150);
-    out.eq[T] = await txt('eqKpis');
-  }
+  const gasIds = await pg.evaluate(() =>
+    Array.from(document.querySelectorAll('#gasInputs input')).map(i => i.id));
+  const solve = async (T, gas) => {
+    await pg.fill('#T', String(T));
+    for (const id of gasIds)
+      await pg.fill('#' + id, String(gas[id.replace('gas_', '')] || 0));
+    await pg.click('#run');
+    await pg.waitForTimeout(700);
+    return txt('kpis');
+  };
+  for (const T of ['600', '800', '1000'])
+    out.eq[T] = await solve(T, { CO2: 10, H2: 10, N2: 80 });
+  out.pure_h2 = await solve(1200, { H2: 1 });
 
   await pg.click('.wstab[data-ws="ws-surface"]');
   await pg.waitForTimeout(200);
   for (const id of ['figCapacity', 'figBound']) out.drew[id] = await svg(id);
   out.tabSwitch = await pg.evaluate(() => ({
     surface: document.getElementById('ws-surface').style.display,
-    equilibrium: document.getElementById('ws-equilibrium').style.display }));
+    equilibrium: document.getElementById('ws-thermo').style.display }));
 
   for (const d of ['0.9', '1.6']) {
-    await pg.selectOption('#sfD', d);
+    await pg.fill('#sfD', d);
     for (const v of ['95', '190']) {
-      await pg.selectOption('#sfV', v);
-      await pg.waitForTimeout(120);
+      await pg.fill('#sfV', v);
+      await pg.waitForTimeout(150);
       out.sf[d + '/' + v] = await txt('sfKpis');
     }
   }
+  // a measured BET area must override the sphere estimate
+  await pg.fill('#sfBET', '3.25');
+  await pg.fill('#sfV', '95');
+  await pg.waitForTimeout(150);
+  out.bet = await txt('sfKpis');
   out.scope = await pg.evaluate(() =>
     document.body.textContent.indexOf('not assigned here') >= 0);
   console.log(JSON.stringify(out));
@@ -92,6 +114,8 @@ def check(out):
     ok('no page errors', not out['errors'], out['errors'])
     for k, v in sorted(out['drew'].items()):
         ok('%s drew' % k, v == 1)
+    ok('the swept figures wait for the button',
+       out['beforeSweep'] == {'margin': 0, 'conversion': 0}, out['beforeSweep'])
     ok('the workspace switch works',
        out['tabSwitch']['surface'] == '' and out['tabSwitch']['equilibrium'] == 'none',
        out['tabSwitch'])
@@ -99,11 +123,16 @@ def check(out):
 
     for T, text in sorted(out['eq'].items()):
         r = A.solve(FEED, float(T) + 273.15)
-        ok('%s C conversion matches a fresh solve' % T,
-           _pct(r['conversion_CO2_pct']) in text, text)
-        b = A.reduction_boundary(float(T) + 273.15)
-        ok('%s C rutile boundary matches the closed form' % T,
-           '%.4f mol%%' % (b['y_CO2'] * 100) in text, text)
+        ok('%s C: the page solved it and got the package answer' % T,
+           ('%.2f' % r['conversion_CO2_pct']) in text, text)
+        ok('%s C: the page names the same assemblage' % T,
+           '+'.join(r['active_condensed_phases']).replace('TiO2', 'TiO')
+           in text.replace('₂', '2').replace('TiO2', 'TiO'), text)
+
+    r = A.solve({'H2': 1}, 1473.15)
+    ok('pure H2 at 1200 C reduces, and the page says so',
+       'Ti10O19' in out['pure_h2'].replace('₁', '1').replace('₀', '0')
+       .replace('₉', '9').replace('Ti10O19', 'Ti10O19'), out['pure_h2'])
 
     g = V.load()
     for key, text in sorted(out['sf'].items()):
@@ -113,6 +142,11 @@ def check(out):
            '%.2f µmol-O g⁻¹' % bd['bridging_capacity_umol_o_g'] in text, text)
         ok('d=%s, %s umol: the bound matches' % (d, inv),
            _pct(bd['surface_fraction_max'] * 100) in text, text)
+
+    bd = V.surface_fraction_bound(g, 95.0, bet_m2_g=3.25)
+    ok('a measured BET area overrides the sphere estimate',
+       '%.2f µmol-O g⁻¹' % bd['bridging_capacity_umol_o_g'] in out['bet'],
+       out['bet'])
     return fails
 
 

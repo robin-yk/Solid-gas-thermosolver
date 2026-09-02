@@ -3138,6 +3138,27 @@
    "density_g_cm3": 4.248296665273981,
    "reconstruction_ML": 0.5
   },
+  "geometry_card": {
+   "facet": "(110)",
+   "formula_units_per_cell": 2,
+   "lattice_constants_A": {
+    "a": 4.5937,
+    "c": 2.9587
+   },
+   "material": "rutile TiO2",
+   "molar_mass_g_mol": 79.866,
+   "oxygen_per_formula_unit": 2,
+   "provenance": "Lattice constants and molar mass are tabulated rutile values. Everything else in this file is arithmetic on them.",
+   "reconstruction": {
+    "areal_O_deficiency_ML": 0.5,
+    "phase": "(1x2) added-row Ti2O3",
+    "provenance": "Onishi & Iwasawa: one added Ti2O3 unit per (1x2) cell is one O vacancy per two bridging sites. This is the only structural literature input in this file; the capacity itself is lattice geometry."
+   },
+   "surface_cell": {
+    "area_A2_note": "the (110) 1x1 cell is c x a*sqrt(2)",
+    "bridging_O_per_1x1_cell": 1
+   }
+  },
   "inventories": [
    30.0,
    40.0,

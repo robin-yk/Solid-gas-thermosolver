@@ -1,26 +1,25 @@
-/* The page. It displays; it does not calculate.
+/* The surface workspace, and the switch between the two.
 
-   Every number here was produced by scripts/reproduce_paper.py and is
-   inlined as SITE_DATA at build time. There is no solver in the browser
-   and no second implementation of any physics in this repository: if a
-   value is on this page, it came out of the Python package, and running
-   the script again is what changes it. The only arithmetic below is
-   formatting and picking which row to show. */
+   The equilibrium half is driven by ti_solver_page.js and thermo_ui.js,
+   which solve in the browser. This half needs no solver: the capacity is
+   lattice geometry and the bound is one division, both mirrored in
+   vacancy.js and gated against the Python module. */
 
 (function () {
   'use strict';
   var D = window.SITE_DATA;
-  var TF = window.ThermoFigures, SF = window.SurfaceFigures;
+  var SF = window.SurfaceFigures, VI = window.Vacancy;
   function $(id) { return document.getElementById(id); }
-  function chem(s) { return window.FigKit.chem(String(s)); }
   function n(v, d) {
     return (v == null || !isFinite(v)) ? '—' : Number(v).toFixed(d == null ? 2 : d);
   }
-
-  /* ------------------------------------------------------- workspaces */
+  function kpi(label, value) {
+    return '<div class="kpi"><div class="sub">' + label + '</div><b>'
+      + value + '</b></div>';
+  }
 
   function showWorkspace(id) {
-    ['ws-equilibrium', 'ws-surface'].forEach(function (w) {
+    ['ws-thermo', 'ws-surface'].forEach(function (w) {
       var el = $(w);
       if (el) el.style.display = (w === id) ? '' : 'none';
     });
@@ -33,134 +32,88 @@
     if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
   }
 
-  /* ----------------------------------------------------- equilibrium */
-
-  function equilibriumTemperature() {
-    var sel = $('eqT');
-    return sel ? Number(sel.value) : 600;
-  }
-
-  function rowAt(T_C) {
-    var rows = D.equilibrium.rows;
-    return rows.reduce(function (a, b) {
-      return Math.abs(b.T_C - T_C) < Math.abs(a.T_C - T_C) ? b : a;
-    });
-  }
-
-  function drawEquilibrium() {
-    var T = equilibriumTemperature();
-    var r = rowAt(T);
-    var rows = D.equilibrium.rows;
-
-    /* the drawers take the whole payload object, keyed by figure name */
-    $('figConversion').innerHTML = TF.conversion(
-      { conversion: TF.conversionData(rows, T, 'TiO2', r.conversion_CO2_pct) });
-    $('figMargin').innerHTML = TF.margin({ margin: TF.marginData(rows, T) });
-    var curve = D.equilibrium.boundary;
-    var at = curve.reduce(function (a, b) {
-      return Math.abs(b.T_C - T) < Math.abs(a.T_C - T) ? b : a;
-    });
-    $('figBoundary').innerHTML = TF.boundary(
-      { boundary: TF.boundaryData(curve, null, T, at) });
-
-    var costs = r.inactive_phase_reduced_costs || {};
-    var near = Object.keys(costs).reduce(function (a, b) {
-      return (a === null || costs[b].per_formula_kJ < costs[a].per_formula_kJ) ? b : a;
-    }, null);
-
-    $('eqKpis').innerHTML = [
-      kpi('CO₂ conversion', n(r.conversion_CO2_pct, 1) + '%'),
-      kpi('Stable solid', chem(r.active_condensed_phases.join(' + '))),
-      kpi('Nearest reduced phase', chem(near || '—')),
-      kpi('Margin to it', near ? n(costs[near].per_formula_kJ, 1) + ' kJ' : '—'),
-      kpi('CO₂ needed to hold rutile', n(at.y_CO2 * 100, 4) + ' mol%')
-    ].join('');
-
-    var g = r.gas_fractions;
-    $('eqGas').innerHTML = ['CO2', 'H2', 'CO', 'H2O', 'N2'].map(function (s) {
-      return '<tr><td>' + chem(s) + '</td><td class="k2">'
-        + n(g[s] * 100, 3) + '</td></tr>';
-    }).join('');
-  }
-
-  function kpi(label, value) {
-    return '<div class="kpi"><div class="sub">' + label + '</div><b>'
-      + value + '</b></div>';
-  }
-
   /* --------------------------------------------------------- surface */
 
-  function surfaceDiameter() {
-    var sel = $('sfD');
-    return sel ? Number(sel.value) : 0.9;
+  function inputs() {
+    var d = parseFloat($('sfD').value);
+    var bet = parseFloat($('sfBET').value);
+    var inv = parseFloat($('sfV').value);
+    return {
+      d_um: isFinite(d) && d > 0 ? d : null,
+      bet: isFinite(bet) && bet > 0 ? bet : null,
+      inv: isFinite(inv) && inv > 0 ? inv : null
+    };
   }
-  function surfaceInventory() {
-    var sel = $('sfV');
-    return sel ? Number(sel.value) : 95;
+
+  function series(g, o) {
+    /* the bar figure wants a ladder of inventories; keep the one the user
+       typed in it so the marked bar is always the one being read out */
+    var base = [30, 40, 60, 95, 130, 150, 190, 220];
+    if (o.inv && base.indexOf(o.inv) < 0) base.push(o.inv);
+    base.sort(function (a, b) { return a - b; });
+    return base.map(function (v) {
+      var b = VI.bound(g, v, o.d_um, o.bet);
+      return {
+        diameter_um: o.d_um || 0, area_m2_g: b.area_m2_g,
+        measured_umol_O_g: v,
+        bridging_capacity_umol_O_g: b.bridging_capacity_umol_o_g,
+        reconstruction_deficiency_umol_O_g: b.reconstruction_deficiency_umol_o_g,
+        inventory_over_capacity: b.inventory_over_capacity,
+        surface_fraction_max_pct: b.surface_fraction_max * 100,
+        below_surface_fraction_min_pct: b.below_surface_fraction_min * 100
+      };
+    });
   }
 
   function drawSurface() {
-    var d = surfaceDiameter(), inv = surfaceInventory();
-    var rows = D.surface.rows;
-    $('figCapacity').innerHTML = SF.capacity(SF.capacityData(rows, d, inv));
-    $('figBound').innerHTML = SF.bound(SF.boundData(rows, d, inv));
+    var g = D.surface.geometry_card, o = inputs();
+    var st = $('sfStatus');
+    if (!o.inv || (!o.d_um && !o.bet)) {
+      st.textContent = 'give a positive oxygen removal and either a diameter '
+        + 'or a BET area';
+      return;
+    }
+    st.textContent = o.bet
+      ? 'area from the measured BET value; the diameter is ignored'
+      : 'area from the smooth-sphere estimate 6/(ρd), a lower bound on a rough particle';
 
-    var g = D.surface.by_diameter[String(d)];
-    var row = rows.filter(function (r) {
-      return Math.abs(r.diameter_um - d) < 1e-9
-        && Math.abs(r.measured_umol_O_g - inv) < 1e-9;
-    })[0];
-    if (!row) return;
+    var rows = series(g, o);
+    /* every row shares one area here, so the figures key off it directly */
+    rows.forEach(function (r) { r.diameter_um = rows[0].diameter_um; });
+    var d0 = rows[0].diameter_um;
+    $('figCapacity').innerHTML = SF.capacity(SF.capacityData(rows, d0, o.inv));
+    $('figBound').innerHTML = SF.bound(SF.boundData(rows, d0, o.inv));
 
+    var b = VI.bound(g, o.inv, o.d_um, o.bet);
     $('sfKpis').innerHTML = [
-      kpi('Surface area', n(g.area_m2_g, 3) + ' m² g⁻¹'),
-      kpi('Bridging-O capacity', n(g.bridging_capacity_umol_O_g, 2) + ' µmol-O g⁻¹'),
-      kpi('(1×2) deficiency', n(g.reconstruction_deficiency_umol_O_g, 2) + ' µmol-O g⁻¹'),
-      kpi('Measured / capacity', n(row.inventory_over_capacity, 1) + '×'),
-      kpi('Surface share, at most', n(row.surface_fraction_max_pct, 1) + '%'),
-      kpi('Below surface, at least', n(row.below_surface_fraction_min_pct, 1) + '%')
+      kpi('Surface area', n(b.area_m2_g, 3) + ' m² g⁻¹'),
+      kpi('Bridging-O capacity', n(b.bridging_capacity_umol_o_g, 2) + ' µmol-O g⁻¹'),
+      kpi('(1×2) deficiency', n(b.reconstruction_deficiency_umol_o_g, 2) + ' µmol-O g⁻¹'),
+      kpi('Measured / capacity', n(b.inventory_over_capacity, 1) + '×'),
+      kpi('Surface share, at most', n(b.surface_fraction_max * 100, 1) + '%'),
+      kpi('Below surface, at least', n(b.below_surface_fraction_min * 100, 1) + '%')
     ].join('');
-
     $('sfDerived').innerHTML =
       '<tr><td>x in TiO<sub>2−x</sub></td><td class="k2">'
-      + n(row.x_in_TiO2mx, 5) + '</td></tr>'
+      + n(b.x_in_TiO2mx, 5) + '</td></tr>'
       + '<tr><td>Ti reduced to Ti³⁺</td><td class="k2">'
-      + n(row.Ti3_fraction_pct, 2) + '%</td></tr>';
+      + n(b.Ti3_fraction * 100, 2) + '%</td></tr>'
+      + '<tr><td>Whole bridging row stripped, at most</td><td class="k2">'
+      + n(b.surface_fraction_max_full_row * 100, 1) + '%</td></tr>';
   }
 
-  /* ------------------------------------------------------------ wire */
-
   function init() {
-    if (!D) return;
-    var eqT = $('eqT');
-    D.equilibrium.rows.forEach(function (r) {
-      if (r.T_C % 100 !== 0) return;
-      var o = document.createElement('option');
-      o.value = r.T_C; o.textContent = r.T_C + ' °C';
-      if (r.T_C === 600) o.selected = true;
-      eqT.appendChild(o);
+    ['sfD', 'sfBET', 'sfV'].forEach(function (id) {
+      var el = $(id);
+      if (el) el.addEventListener('input', drawSurface);
     });
-    var sfV = $('sfV');
-    D.surface.inventories.forEach(function (v) {
-      var o = document.createElement('option');
-      o.value = v; o.textContent = v + ' µmol-O g⁻¹';
-      if (v === 95) o.selected = true;
-      sfV.appendChild(o);
-    });
-
-    eqT.addEventListener('change', drawEquilibrium);
-    $('sfD').addEventListener('change', drawSurface);
-    sfV.addEventListener('change', drawSurface);
     Array.prototype.forEach.call(document.querySelectorAll('.wstab'), function (b) {
       b.addEventListener('click', function () {
         showWorkspace(b.getAttribute('data-ws'));
       });
     });
-
-    drawEquilibrium();
     drawSurface();
-    var want = location.hash.slice(1);
-    showWorkspace(want === 'ws-surface' ? 'ws-surface' : 'ws-equilibrium');
+    showWorkspace(location.hash.slice(1) === 'ws-surface' ? 'ws-surface' : 'ws-thermo');
   }
 
   if (document.readyState === 'loading') {

@@ -119,18 +119,29 @@ def test_the_page_makes_no_external_request():
     assert 'href="http' not in html.replace('href="https://github.com', '')
 
 
-def test_the_page_carries_no_solver():
-    """Two implementations of one calculation is how they drift. The page
-    displays; the package computes, and nothing under web/ may solve."""
-    assert not (ROOT / 'web' / 'activeset.js').exists()
+def test_the_browser_engines_are_mirrors_under_a_parity_gate():
+    """The page solves, and that is the point - it is the tool. What must
+    not happen is a second engine drifting from the first unwatched, so
+    every browser engine has to be paired with a gate that holds it to the
+    Python module it mirrors."""
+    engines = {'activeset.js': 'test_activeset_port.py',
+               'vacancy.js': 'test_vacancy_port.py'}
+    for js, gate in engines.items():
+        assert (ROOT / 'web' / js).exists(), js
+        assert (ROOT / 'tests' / gate).exists(), \
+            '%s has no parity gate; %s must exist' % (js, gate)
     inlined = sorted(p.name for p in (ROOT / 'web').iterdir()
                      if p.suffix == '.js')
-    assert inlined == ['figkit.js', 'figures_surface.js',
-                       'figures_thermo.js', 'site_ui.js'], inlined
-    for js in inlined:
-        src = (ROOT / 'web' / js).read_text()
-        for gone in ('mu0', 'SHOMATE', 'WALDNER', 'newtonStep', 'lambda_Ti'):
-            assert gone not in src, (js, gone)
+    assert inlined == ['activeset.js', 'figkit.js', 'figures_surface.js',
+                       'figures_thermo.js', 'site_ui.js', 'thermo_ui.js',
+                       'ti_solver_page.js', 'vacancy.js'], inlined
+
+
+def test_the_manuscript_values_are_read_not_recomputed(site):
+    """The page may solve whatever the user types, but the numbers the
+    paper quotes come out of the committed JSON, so the two cannot differ."""
+    html = PAGE.read_text()
+    assert json.dumps(site, separators=(',', ':')) in html
 
 
 def test_the_page_states_what_it_does_not_claim():
