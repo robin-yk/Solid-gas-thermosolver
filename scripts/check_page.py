@@ -45,6 +45,14 @@ const P = require(process.env.PW + '/node_modules/playwright');
   }, id);
 
   const out = { errors: errs, drew: {}, eq: {}, sf: {} };
+  /* the page opens on the home screen: three cards, no workspace */
+  out.home = await pg.evaluate(() => ({
+    cards: document.querySelectorAll('.card').length,
+    thermo: document.getElementById('ws-thermo').style.display,
+    topbar: document.getElementById('topbar').style.display }));
+  await pg.click('.card[data-ws="ws-thermo"]');
+  await pg.waitForTimeout(200);
+  out.hash = await pg.evaluate(() => location.hash);
   await pg.click('#run');
   await pg.waitForTimeout(900);
   for (const id of ['figOptimality', 'figBoundary'])
@@ -132,6 +140,9 @@ def check(out):
         ok('%s drew' % k, v == 1)
     ok('the swept figures wait for the button',
        out['beforeSweep'] == {'margin': 0, 'conversion': 0}, out['beforeSweep'])
+    ok('the page opens on the home screen',
+       out['home'] == {'cards': 3, 'thermo': 'none', 'topbar': 'none'}, out['home'])
+    ok('a card opens its workspace under its hash', out['hash'] == '#thermo', out['hash'])
     ok('the workspace switch works',
        out['tabSwitch']['surface'] == '' and out['tabSwitch']['equilibrium'] == 'none',
        out['tabSwitch'])

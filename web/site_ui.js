@@ -1,9 +1,8 @@
-/* The surface workspace, and the switch between the two.
-
-   The equilibrium half is driven by ti_solver_page.js and thermo_ui.js,
-   which solve in the browser. This half needs no solver: the capacity is
-   lattice geometry and the bound is one division, both mirrored in
-   vacancy.js and gated against the Python module. */
+/* The home screen, the switch between the three workspaces, and the two
+   workspaces that need no solver: defect-location is lattice geometry and
+   one division, defect-kinetics is one rate equation, both mirrored in
+   vacancy.js and population.js and gated against the Python modules.
+   Sol-gas-thermo is driven by ti_solver_page.js and thermo_ui.js. */
 
 (function () {
   'use strict';
@@ -22,23 +21,41 @@
     if (v === 0) return '0';
     return Math.abs(v) >= 0.01 ? v.toFixed(2) : v.toExponential(1);
   }
-  function kpi(label, value) {
-    return '<div class="kpi"><div class="sub">' + label + '</div><b>'
-      + value + '</b></div>';
+  function kpi(label, value, unit) {
+    var text = /[a-z]{4}/.test(String(value));   /* a sentence, not a number */
+    return '<div class="kpi"><div class="k">' + label + '</div><div class="v'
+      + (text ? ' text' : '') + '">' + value + '</div>'
+      + (unit ? ' <div class="u">' + unit + '</div>' : '') + '</div>';
+  }
+
+  /* Three workspaces behind three hashes; no hash is the home screen. */
+  var HASH = { thermo: 'ws-thermo', location: 'ws-surface', kinetics: 'ws-population' };
+  var WS = ['ws-thermo', 'ws-surface', 'ws-population'];
+
+  function hashOf(id) {
+    for (var k in HASH) if (HASH[k] === id) return k;
+    return 'home';
   }
 
   function showWorkspace(id) {
-    ['ws-thermo', 'ws-surface', 'ws-population'].forEach(function (w) {
+    var home = WS.indexOf(id) < 0;
+    WS.forEach(function (w) {
       var el = $(w);
       if (el) el.style.display = (w === id) ? '' : 'none';
     });
+    $('home').style.display = home ? '' : 'none';
+    $('topbar').style.display = home ? 'none' : '';
     Array.prototype.forEach.call(document.querySelectorAll('.wstab'), function (b) {
       b.classList.toggle('active', b.getAttribute('data-ws') === id);
     });
-    Array.prototype.forEach.call(document.querySelectorAll('.workspace-head'), function (h) {
-      h.classList.toggle('active', h.id === 'head-' + id.replace('ws-', ''));
-    });
-    if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
+    var want = home ? '' : '#' + hashOf(id);
+    if (location.hash !== want) history.replaceState(null, '', location.pathname + want);
+    window.scrollTo(0, 0);
+  }
+
+  function route() {
+    var h = location.hash.replace(/^#/, '');
+    showWorkspace(HASH[h] || 'home');
   }
 
   /* --------------------------------------------------------- surface */
@@ -95,9 +112,9 @@
 
     var b = VI.bound(g, o.inv, o.d_um, o.bet);
     $('sfKpis').innerHTML = [
-      kpi('Surface area', n(b.area_m2_g, 3) + ' m² g⁻¹'),
-      kpi('Bridging-O capacity', n(b.bridging_capacity_umol_o_g, 2) + ' µmol-O g⁻¹'),
-      kpi('(1×2) deficiency', n(b.reconstruction_deficiency_umol_o_g, 2) + ' µmol-O g⁻¹'),
+      kpi('Surface area', n(b.area_m2_g, 3), 'm² g⁻¹'),
+      kpi('Bridging-O capacity', n(b.bridging_capacity_umol_o_g, 2), 'µmol-O g⁻¹'),
+      kpi('(1×2) deficiency', n(b.reconstruction_deficiency_umol_o_g, 2), 'µmol-O g⁻¹'),
       kpi('Measured / capacity', n(b.inventory_over_capacity, 1) + '×'),
       kpi('Surface share, at most', n(b.surface_fraction_max * 100, 1) + '%'),
       kpi('Below surface, at least', n(b.below_surface_fraction_min * 100, 1) + '%')
@@ -156,10 +173,10 @@
       kpi('Objective (' + popKind() + ')', ssq.toExponential(3)),
       kpi('R800 / R600, fitted', n(ratio, 3)),
       kpi('R800 / R600, measured', n(meas, 3)),
-      kpi('Isolated, highest', n(isoMax, 2) + ' µmol-O g⁻¹'),
-      kpi('Isolated, lowest', n(isoMin, 3) + ' µmol-O g⁻¹'),
+      kpi('Isolated, highest', n(isoMax, 2), 'µmol-O g⁻¹'),
+      kpi('Isolated, lowest', n(isoMin, 3), 'µmol-O g⁻¹'),
       kpi('Mass balance', closure === 0 ? 'exact by construction'
-          : n(closure, 9) + ' µmol-O g⁻¹')
+          : n(closure, 9), closure === 0 ? '' : 'µmol-O g⁻¹')
     ].join('');
 
     $('pnTable').innerHTML = rows.map(function (q) {
@@ -215,16 +232,15 @@
       var el = $(id);
       if (el) el.addEventListener('input', drawSurface);
     });
-    Array.prototype.forEach.call(document.querySelectorAll('.wstab'), function (b) {
+    Array.prototype.forEach.call(document.querySelectorAll('.wstab, .card'), function (b) {
       b.addEventListener('click', function () {
         showWorkspace(b.getAttribute('data-ws'));
       });
     });
+    window.addEventListener('hashchange', route);
     drawSurface();
     drawPopulation();
-    var want = location.hash.slice(1);
-    showWorkspace(['ws-surface', 'ws-population'].indexOf(want) >= 0
-                  ? want : 'ws-thermo');
+    route();
   }
 
   if (document.readyState === 'loading') {

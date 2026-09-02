@@ -1,343 +1,312 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Solid&ndash;gas thermosolver</title>
-<meta name="description" content="Active-set Gibbs energy minimisation for a CO2/H2/CO/H2O/N2/O2 gas in contact with titanium oxides, and a geometric comparison between a measured oxygen-removal inventory and the oxygen capacity of the rutile (110) surface. Self-contained, no external requests.">
+<meta name="description" content="Active-set Gibbs energy minimisation for a CO2/H2/CO/H2O/N2/O2 gas in contact with titanium oxides, a geometric bound on how much of a measured oxygen removal can be surface oxygen, and the isolated-vacancy population that sets the CO rate. Self-contained, no external requests.">
 <style>
 /*CSS*/
 </style>
 <body>
-<header class="app-header">
-  <div class="app-head-inner">
-    <div class="workspace-head active" id="head-thermo">
-      <p class="eyebrow">Ti&ndash;O thermodynamics &middot; Vlachos Group</p>
-      <h1>Gas&ndash;solid equilibrium</h1>
-      <p>Put in a gas composition and a temperature; the solver returns the stable Ti&ndash;O phase assemblage, the equilibrium gas, and how far the feed is from reducing the solid.</p>
-    </div>
-    <div class="workspace-head" id="head-population">
-      <p class="eyebrow">Surface defect population &middot; Vlachos Group</p>
-      <h1>Isolated surface vacancies</h1>
-      <p>The measured inventory rises eightfold across the reduction series while the CO rate peaks after 600&nbsp;&deg;C. This is the smallest model that produces that shape, and what it can and cannot be asked is written on the panel.</p>
-    </div>
-    <div class="workspace-head" id="head-surface">
-      <p class="eyebrow">Rutile surface geometry &middot; Vlachos Group</p>
-      <h1>Vacancy inventory versus surface capacity</h1>
-      <p>How a measured oxygen removal compares with the oxygen the rutile (110) surface could hold. A bound from lattice geometry, not a partition.</p>
-    </div>
-  </div>
+
+<header class="topbar" id="topbar" style="display:none">
+  <a class="back" href="#home">&larr; Home</a>
+  <nav class="switch" aria-label="workspace">
+    <button class="wstab" data-ws="ws-thermo" type="button">Sol-gas-thermo</button>
+    <button class="wstab" data-ws="ws-surface" type="button">defect-location</button>
+    <button class="wstab" data-ws="ws-population" type="button">defect-kinetics</button>
+  </nav>
 </header>
 
 <main>
-<div class="wstabs" id="wstabs">
-  <button class="wstab active" data-ws="ws-thermo" type="button">Gas&ndash;solid equilibrium</button>
-  <button class="wstab" data-ws="ws-surface" type="button">Inventory vs surface capacity</button>
-  <button class="wstab" data-ws="ws-population" type="button">Isolated-vacancy population</button>
-</div>
 
-<div id="ws-thermo">
-<details class="model-notes" id="thermo-notes">
-<summary>Model scope and assumptions</summary>
-<div class="note calm">
-  <b>Scope.</b> C&ndash;H&ndash;O&ndash;N / Ti&ndash;O Gibbs equilibrium. Gas registry in
-  this version: CO<sub>2</sub>, H<sub>2</sub>, CO, H<sub>2</sub>O, N<sub>2</sub>, O<sub>2</sub>.
-  Hydrocarbon species (CH<sub>4</sub>), graphite, nitrides, and the rutile
-  TiO<sub>2&minus;x</sub> solution phase are not included in this version. The calculation is
-  a closed, finite-inventory equilibrium between one gas charge and one solid charge, not a
-  flow-reactor steady state. Every reported value is <code>gibbs_min</code>.
-</div>
-</details>
-
-<div class="grid thermo-grid">
-
-  <aside>
-    <div class="panel pad">
-      <div class="field">
-        <label for="solid0">Initial Ti oxide</label>
-        <select id="solid0"></select>
-        <div class="readout">Loaded as this phase; the equilibrium assemblage is an output.</div>
-      </div>
-      <div class="field pair">
-        <div><label for="mass">Oxide mass</label><input type="number" id="mass" value="100" min="0.001" step="10"><div class="readout">mg</div></div>
-        <div><label for="P">Pressure</label><input type="number" id="P" value="1" min="0.001" step="0.1"><div class="readout">atm</div></div>
-      </div>
-      <div class="field pair">
-        <div><label for="V">Gas volume</label><input type="number" id="V" value="25" min="0.01" step="5"><div class="readout">mL</div></div>
-        <div><label for="T">Temperature</label><input type="number" id="T" value="900" min="300" max="1650" step="25"><div class="readout">&deg;C</div></div>
-      </div>
-      <div class="field">
-        <label for="chargeAtT">Gas charge</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="checkbox" id="chargeAtT" checked style="width:auto">
-          <span style="font-size:12px">n<sub>g</sub> = PV/RT at reaction T (sealed vessel)</span>
-        </div>
-        <div class="pair" id="chargeTWrap" style="display:none;margin-top:6px">
-          <div><input type="number" id="Tcharge" value="25" step="5"><div class="readout">charge temperature, &deg;C</div></div>
-        </div>
-      </div>
-
-      <label>Initial gas composition <span style="text-transform:none">(relative moles)</span></label>
-      <div class="gasgrid" id="gasInputs"></div>
-      <div class="field" style="margin-top:8px">
-        <div class="pair">
-          <button type="button" class="mini" id="normBtn">Normalize</button>
-          <div class="g" style="display:grid;grid-template-columns:1fr 44px;gap:6px;align-items:center">
-            <input type="number" id="o2ppm" placeholder="O2 ppm" step="any" min="0">
-            <button type="button" class="mini" id="o2ppmSet">set</button>
-          </div>
-        </div>
-        <div class="readout" id="normRead"></div>
-      </div>
-      <div class="field">
-        <label for="preset">Preset</label>
-        <select id="preset">
-          <option value="">custom</option>
-          <optgroup label="RWGS feeds">
-            <option value="rwgs">fresh feed &middot; CO2:H2 = 1:1</option>
-            <option value="rwgsdil">diluted feed &middot; CO2/H2/inert = 10/10/80</option>
-            <option value="h2rich">H2-rich &middot; CO2:H2 = 1:3</option>
-            <option value="product">product/recycle &middot; 3:3:2:2</option>
-          </optgroup>
-          <optgroup label="Single gases and traces">
-            <option value="h2">pure H2</option>
-            <option value="h2co2">H2 + 1% CO2</option>
-            <option value="n2">pure N2</option>
-            <option value="n2o2">N2 + 10 ppm O2</option>
-            <option value="co2">pure CO2</option>
-          </optgroup>
-          <optgroup label="Scenarios (also set T, mass, solid)">
-            <option value="magneli">deep Magneli window &middot; H2, 2 mg, 1200 &deg;C</option>
-            <option value="reox">reoxidation of Ti4O7 &middot; CO2, 600 &deg;C</option>
-          </optgroup>
-        </select>
-      </div>
-      <button class="act" id="run" type="button">Run equilibrium</button>
-      <div class="readout" id="status" style="margin-top:9px"></div>
-    </div>
-
-  </aside>
-
-  <section>
-    <div id="verdict"></div>
-    <div class="kpis" id="kpis"></div>
-
-    <div class="tabs" id="tabs">
-      <button class="tab active" data-page="p-res" type="button">Results</button>
-      <button class="tab" data-page="p-kkt" type="button">Active set &amp; KKT</button>
-      <button class="tab" data-page="p-bal" type="button">Element balance</button>
-      <button class="tab" data-page="p-how" type="button">Method</button>
-      <button class="tab" data-page="p-val" type="button">Validation</button>
-    </div>
-
-    <div class="panel pad page active" id="p-res">
-      <h2>Equilibrium at this condition</h2>
-      <p class="sub">Method: <code>gibbs_min</code>, active-set enumeration with KKT
-      classification. Excluded phases are held at exactly zero moles.</p>
-      <h3>Condensed phases</h3>
-      <div class="tablewrap"><table id="tPhase"></table></div>
-      <h3>Gas: initial and equilibrium</h3>
-      <div class="tablewrap"><table id="tGas"></table></div>
-      <p class="sub" style="margin-top:10px">
-        <button type="button" class="mini" id="csv">Download CSV of this result</button></p>
-      <div id="resNotes"></div>
-
-      <section>
-        <h3>How far from a different answer</h3>
-        <p class="sub">The same question the KKT tab answers in numbers, asked
-        three ways: across the phases that were excluded at this condition,
-        across the feed that would be needed to bring the first of them out,
-        and across temperature at this charge. Bars and margin curve carry the
-        reduced cost <em>per formula unit</em> &mdash; the quantity the KKT test
-        is stated on, so it is positive at every reported solution. The
-        per&#8209;mol&#8209;O column stays on the KKT tab, next to the oxygen
-        deficiency it is divided by, which changes sign whenever a candidate
-        is less deficient than the host.</p>
-        <figure class="pubfig" id="figOptimality">
-          <div class="figbox" role="img" aria-label="Reduced cost of every excluded phase at this condition"></div>
-          <details class="figdl"><summary>Download figure</summary>
-            <button type="button" data-fmt="svg">SVG</button>
-            <button type="button" data-fmt="png">PNG, 600 dpi</button>
-          </details>
-          <figcaption>What every excluded phase would have to give up to appear.
-          The shortest bar, in orange, is the phase that would come first.</figcaption>
-        </figure>
-        <p class="sub" style="margin-top:14px">A kilojoule is not something
-        anyone sets on a rig. The same margin, put in the units that are: how
-        much CO<sub>2</sub> the feed has to carry before the host stops giving
-        up oxygen. Any gas can be placed on that axis &mdash; a mixture of
-        H<sub>2</sub> and CO<sub>2</sub> lands at the fraction it was mixed at,
-        anything else at the H<sub>2</sub>/CO<sub>2</sub> mixture that would be
-        equally reducing. The line itself is closed form, so it costs nothing
-        and redraws with every run.</p>
-        <figure class="pubfig" id="figBoundary">
-          <div class="figbox" role="img" aria-label="Feed composition at which the host phase begins to reduce, against temperature, with the panel's own feed marked"></div>
-          <details class="figdl"><summary>Download figure</summary>
-            <button type="button" data-fmt="svg">SVG</button>
-            <button type="button" data-fmt="png">PNG, 600 dpi</button>
-          </details>
-          <figcaption>Below the line the host gives way to the phase named in
-          the header; the shaded field above it is where the host survives. The
-          orange square is the feed on this panel, placed before the solid has
-          touched it &mdash; once a closed charge has equilibrated against a
-          reducible solid the gas is buffered onto this very line and no longer
-          says how reducing it started out.</figcaption>
-        </figure>
-        <p class="sub" style="margin-top:14px">
-          <button type="button" class="mini" id="sweepBtn">Sweep temperature</button>
-          <span id="sweepNote">121 solves at this charge, about half a second.</span></p>
-        <figure class="pubfig" id="figMargin">
-          <div class="figbox" role="img" aria-label="Margin to the nearest excluded phase against temperature"></div>
-          <details class="figdl"><summary>Download figure</summary>
-            <button type="button" data-fmt="svg">SVG</button>
-            <button type="button" data-fmt="png">PNG, 600 dpi</button>
-          </details>
-          <figcaption>The smallest of those bars, at every temperature. The band
-          along the bottom is the winning assemblage: shaded where two phases
-          coexist, pale where one does. The curve touches zero at each edge of
-          that band, which is the same crossing seen from above; the green ring
-          is the temperature on the panel.</figcaption>
-        </figure>
-        <p class="sub" style="margin-top:14px">And what the gas itself did,
-        out of the same sweep. Conversion is counted against the feed, so
-        oxygen that left the gas is counted whether it went into CO or into
-        the solid: where the assemblage is no longer the host alone, the
-        shaded run says that part of the answer is the solid being eaten.</p>
-        <figure class="pubfig" id="figConversion">
-          <div class="figbox" role="img" aria-label="Equilibrium CO2 conversion against temperature at this charge"></div>
-          <details class="figdl"><summary>Download figure</summary>
-            <button type="button" data-fmt="svg">SVG</button>
-            <button type="button" data-fmt="png">PNG, 600 dpi</button>
-          </details>
-          <figcaption>How much of the fed CO<sub>2</sub> is gone at
-          equilibrium, at every temperature this charge admits. The green ring
-          is the temperature on the panel and reads the solve the workspace is
-          showing, not the nearest point of the grid.</figcaption>
-        </figure>
-      </section>
-    </div>
-
-    <div class="panel pad page" id="p-kkt">
-      <h2>Active set and KKT reduced costs</h2>
-      <p class="sub">Phase stability is decided by the sign of the reduced cost.
-      r<sub>j</sub> &gt; 0: the phase is absent. |r<sub>j</sub>| within tolerance: phase
-      boundary. Negative values do not occur at a reported solution.</p>
-      <h3>Inactive phases at the winner</h3>
-      <div class="tablewrap"><table id="tKKT"></table></div>
-      <h3>Element potentials &lambda;</h3>
-      <div class="tablewrap"><table id="tLam"></table></div>
-      <h3>Every candidate active set</h3>
-      <div class="tablewrap"><table id="tCand"></table></div>
-    </div>
-
-    <div class="panel pad page" id="p-bal">
-      <h2>Element balance</h2>
-      <p class="sub">The constraint the minimisation was subject to, checked on its own answer.</p>
-      <div class="tablewrap"><table id="tBal"></table></div>
-      <div id="balNote"></div>
-    </div>
-
-    <div class="panel pad page" id="p-how">
-      <h2>Method</h2>
-      <p>The solver computes the minimum of the total Gibbs energy</p>
-      <div class="eq">G = &Sigma;<sub>gas</sub> n<sub>i</sub> [&mu;&deg;<sub>i</sub>(T) + RT ln(y<sub>i</sub>P/P&deg;)] + &Sigma;<sub>solid</sub> m<sub>j</sub> &mu;&deg;<sub>j</sub>(T)</div>
-      <p>subject to the elemental balance <code>A&middot;n = b</code> and <code>n &ge; 0</code>.
-      Gases form an ideal mixture; each condensed phase is a pure line compound at unit
-      activity. The inputs defining <code>b</code> are the initial gas composition, the gas
-      charge n<sub>g,0</sub> = PV/RT<sub>charge</sub>, and the initial solid phase and mass.
-      The equilibrium phase split is an output.</p>
-      <p><b>Active set.</b> Condensed phases are enumerated as candidates: every single phase
-      and every phase pair (the phase rule allows two line compounds in an M&ndash;O system at
-      fixed T and P; N<sub>2</sub> adds no solid component). For each candidate the equilibrium
-      conditions are</p>
-      <div class="eq">gas:&nbsp; &mu;<sub>i</sub> = &Sigma;<sub>e</sub> a<sub>ie</sub>&lambda;<sub>e</sub>&nbsp;&nbsp;&nbsp;&nbsp;active solids:&nbsp; &mu;&deg;<sub>j</sub> = t<sub>j</sub>&lambda;<sub>Ti</sub> + o<sub>j</sub>&lambda;<sub>O</sub></div>
-      <p>solved by Newton iteration in the element potentials &lambda; with the gas in
-      logarithmic coordinates. Condensed amounts follow linearly from the Ti and O balances
-      through the combination O&nbsp;&minus;&nbsp;&rho;<sub>host</sub>&middot;Ti, which removes
-      the host oxygen symbolically; coexisting phases are resolved down to
-      ~10<sup>&minus;41</sup> mol. A phase outside the candidate is not a variable and is
-      exactly zero in the result.</p>
-      <p><b>Stability criterion.</b> Each inactive phase carries a reduced cost
-      r<sub>j</sub> = &mu;&deg;<sub>j</sub> &minus; t<sub>j</sub>&lambda;<sub>Ti</sub> &minus; o<sub>j</sub>&lambda;<sub>O</sub>,
-      reported per formula unit and per mole of oxygen (def<sub>j</sub> = 2t<sub>j</sub> &minus; o<sub>j</sub>;
-      def<sub>j</sub> = 1 for each TiO<sub>2</sub>&rarr;Magn&eacute;li step). The problem is
-      convex, so a feasible candidate with all r<sub>j</sub> &ge; 0 is the global minimum.
-      Candidates are not ranked by total Gibbs energy, whose differences can fall below
-      double-precision resolution. Reduced costs at zero within tolerance are reported as
-      phase coexistence.</p>
-      <p><b>Oxygen-free feeds.</b> Under pure H<sub>2</sub> or N<sub>2</sub> the single-phase
-      candidate leaves the gas with zero oxygen inventory, and the derivative of G toward
-      forming a trace of O-bearing gas together with a reduced phase diverges. The solver
-      therefore reports the two-phase buffer with a finite trace amount; under sealed
-      N<sub>2</sub> this trace is the equilibrium result. An O<sub>2</sub> impurity at the ppm
-      level is sufficient to suppress reduction, with a positive margin.</p>
-      <div class="note calm">The oxygen-potential margin used by earlier versions of this site
-      equals the reduced cost per mole of oxygen (the dual of the same minimisation); it is
-      reported on the Active set &amp; KKT tab. Independent verification is provided by an
-      80-digit reference implementation and by the NIST&ndash;Waldner data comparison
-      (Validation tab).</div>
-      <h3 style="margin-top:24px">Complete formulation</h3>
-      <p class="sub">Equations (1)&ndash;(30), as implemented. Rendered at build time from
-      <code>equations_registry.py</code>; a PDF version is in the repository
-      (<a href="assets/equations.pdf"><code>assets/equations.pdf</code></a>).</p>
-      __EQS__
-    </div>
-
-    <div class="panel pad page" id="p-val">
-      <h2>Validation</h2>
-      <p class="sub">This engine against an independent 80-digit reference implementation
-      (<code>oracle_tio.py</code>, element-potential root solve, no shared solver code).
-      Reference values are embedded below; the same conditions can be re-run in the
-      browser.</p>
-      <p><button type="button" class="mini" id="valRun">Run all reference points in this browser</button></p>
-      <div id="valBody"></div>
-    </div>
-
-  </section>
-</div>
-</div>
-
-
-<div id="ws-surface" style="display:none">
-<section class="panel pad">
-  <div class="dfx-controls">
-    <div class="field pair">
-      <div><label for="sfD">Particle diameter</label>
-        <input type="number" id="sfD" value="0.9" min="0.01" step="0.1">
-        <div class="readout">µm &middot; sphere estimate</div></div>
-      <div><label for="sfBET">or BET area</label>
-        <input type="number" id="sfBET" placeholder="measured" min="0.001" step="0.1">
-        <div class="readout">m² g⁻¹ &middot; wins if given</div></div>
-    </div>
-    <div class="field">
-      <label for="sfV">Oxygen removed by titration</label>
-      <input type="number" id="sfV" value="95" min="0.01" step="5">
-      <div class="readout">µmol-O g⁻¹</div>
-    </div>
-    <div class="readout" id="sfStatus"></div>
-    <p class="sub">The capacity comes from the rutile lattice constants and the
-      exposed area, and nothing else. The (1×2) added-row deficiency of half a
-      bridging monolayer is the only structural literature value used.</p>
+<!-- ========================================== home -->
+<section id="home">
+  <p class="eyebrow">Ti&ndash;O solid&ndash;gas thermodynamics &middot; Vlachos Group</p>
+  <h1>Three calculations, one page.</h1>
+  <p class="lede">Everything solves in the browser from the same tables the Python package uses. Pick one.</p>
+  <div class="cards">
+    <button class="card" data-ws="ws-thermo" type="button">
+      <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
+        <path d="M10 68 L110 68 M10 68 L10 8" stroke="#657482" stroke-width="1" fill="none"/>
+        <path d="M14 60 C40 58 60 40 74 26 C86 15 98 12 106 11" stroke="#087bd8" stroke-width="2" fill="none"/>
+        <path d="M14 66 L106 66 L106 60 C86 58 60 50 40 45 C30 43 20 45 14 48 Z" fill="#087bd8" fill-opacity=".12"/>
+        <rect x="70" y="42" width="6" height="6" fill="#d66b13"/>
+      </svg>
+      <span class="cname">Sol-gas-thermo</span>
+      <span class="cdesc">Gas composition and temperature in; the stable Ti&ndash;O phase, the equilibrium gas, and the margin to reduction out.</span>
+    </button>
+    <button class="card" data-ws="ws-surface" type="button">
+      <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
+        <path d="M10 68 L110 68 M10 68 L10 8" stroke="#657482" stroke-width="1" fill="none"/>
+        <rect x="20" y="52" width="14" height="16" fill="#0072B2"/><rect x="20" y="40" width="14" height="12" fill="#D55E00" fill-opacity=".45"/>
+        <rect x="42" y="52" width="14" height="16" fill="#0072B2"/><rect x="42" y="30" width="14" height="22" fill="#D55E00" fill-opacity=".45"/>
+        <rect x="64" y="52" width="14" height="16" fill="#0072B2"/><rect x="64" y="20" width="14" height="32" fill="#D55E00" fill-opacity=".45"/>
+        <rect x="86" y="52" width="14" height="16" fill="#0072B2"/><rect x="86" y="12" width="14" height="40" fill="#D55E00" fill-opacity=".45"/>
+        <path d="M10 46 L110 46" stroke="#1c2b36" stroke-width="1" stroke-dasharray="3 2"/>
+      </svg>
+      <span class="cname">defect-location</span>
+      <span class="cdesc">Titration gives one number. Lattice geometry says at most how much of it can be on the (110) surface, so at least how much sits below.</span>
+    </button>
+    <button class="card" data-ws="ws-population" type="button">
+      <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
+        <path d="M10 68 L110 68 M10 68 L10 8" stroke="#657482" stroke-width="1" fill="none"/>
+        <path d="M18 62 L38 40 L58 22 L78 16 L98 18" stroke="#0072B2" stroke-width="1.2" stroke-dasharray="3 2" fill="none"/>
+        <circle cx="18" cy="62" r="3.5" fill="#fff" stroke="#0072B2" stroke-width="1.5"/>
+        <circle cx="38" cy="40" r="3.5" fill="#fff" stroke="#0072B2" stroke-width="1.5"/>
+        <circle cx="58" cy="22" r="3.5" fill="#fff" stroke="#0072B2" stroke-width="1.5"/>
+        <circle cx="78" cy="16" r="3.5" fill="#fff" stroke="#0072B2" stroke-width="1.5"/>
+        <circle cx="98" cy="18" r="3.5" fill="#fff" stroke="#0072B2" stroke-width="1.5"/>
+        <path d="M18 58 L38 48 L58 42 L78 38 L98 35" stroke="#777777" stroke-width="1.2" fill="none"/>
+      </svg>
+      <span class="cname">defect-kinetics</span>
+      <span class="cdesc">The inventory rises eightfold while the CO rate peaks. Only isolated surface vacancies count, and they associate away.</span>
+    </button>
   </div>
-  <div class="kpis" id="sfKpis"></div>
 </section>
 
-<section class="panel pad">
-  <h2>Measured removal against surface capacity</h2>
-  <p class="sub">The filled band is every oxygen the reconstructed surface could
-    give up. The rest of each bar is oxygen that has to have come from below it.</p>
-  <div class="chartwrap"><div id="figCapacity"></div></div>
-  <figcaption class="sub">Titrated oxygen removal for the reduction series, split
-    at the surface ceiling. The dashed line is the whole bridging row, which no
-    measurement has been reported to strip.</figcaption>
+<!-- ========================================== Sol-gas-thermo -->
+<div id="ws-thermo" class="ws" style="display:none">
+
+<section class="controls">
+  <div class="crow">
+    <div class="c c-wide"><label for="solid0">Initial Ti oxide</label><select id="solid0"></select></div>
+    <div class="c"><label for="mass">Oxide mass</label><input type="number" id="mass" value="100" min="0.001" step="10"><div class="readout">mg</div></div>
+    <div class="c"><label for="P">Pressure</label><input type="number" id="P" value="1" min="0.001" step="0.1"><div class="readout">atm</div></div>
+    <div class="c"><label for="V">Gas volume</label><input type="number" id="V" value="25" min="0.01" step="5"><div class="readout">mL</div></div>
+    <div class="c"><label for="T">Temperature</label><input type="number" id="T" value="900" min="300" max="1650" step="25"><div class="readout">&deg;C</div></div>
+    <div class="c c-wide"><label for="preset">Preset</label>
+      <select id="preset">
+        <option value="">custom</option>
+        <optgroup label="RWGS feeds">
+          <option value="rwgs">fresh feed &middot; CO2:H2 = 1:1</option>
+          <option value="rwgsdil">diluted feed &middot; CO2/H2/inert = 10/10/80</option>
+          <option value="h2rich">H2-rich &middot; CO2:H2 = 1:3</option>
+          <option value="product">product/recycle &middot; 3:3:2:2</option>
+        </optgroup>
+        <optgroup label="Single gases and traces">
+          <option value="h2">pure H2</option>
+          <option value="h2co2">H2 + 1% CO2</option>
+          <option value="n2">pure N2</option>
+          <option value="n2o2">N2 + 10 ppm O2</option>
+          <option value="co2">pure CO2</option>
+        </optgroup>
+        <optgroup label="Scenarios (also set T, mass, solid)">
+          <option value="magneli">deep Magneli window &middot; H2, 2 mg, 1200 &deg;C</option>
+          <option value="reox">reoxidation of Ti4O7 &middot; CO2, 600 &deg;C</option>
+        </optgroup>
+      </select></div>
+    <div class="c c-act"><button class="act" id="run" type="button">Run equilibrium</button></div>
+  </div>
+  <div class="crow crow-gas">
+    <div class="c c-gas"><label>Initial gas composition <span style="text-transform:none">(relative moles)</span></label>
+      <div class="gasgrid" id="gasInputs"></div></div>
+    <div class="c"><label>&nbsp;</label>
+      <div class="minirow">
+        <button type="button" class="mini" id="normBtn">Normalize</button>
+        <input type="number" id="o2ppm" placeholder="O2 ppm" step="any" min="0" style="width:110px">
+        <button type="button" class="mini" id="o2ppmSet">set</button>
+      </div>
+      <div class="readout" id="normRead"></div></div>
+    <div class="c"><label for="chargeAtT">Gas charge</label>
+      <div class="check"><input type="checkbox" id="chargeAtT" checked>
+        <span>n<sub>g</sub> = PV/RT at reaction T (sealed vessel)</span></div>
+      <div id="chargeTWrap" style="display:none;margin-top:6px">
+        <input type="number" id="Tcharge" value="25" step="5"><div class="readout">charge temperature, &deg;C</div></div>
+      <div class="readout" id="status"></div></div>
+  </div>
 </section>
 
-<section class="panel pad">
-  <h2>The bound</h2>
-  <p class="sub">The largest share of the measured inventory that could be surface
-    oxygen. Its complement is the smallest share that must lie below the surface.</p>
-  <div class="chartwrap"><div id="figBound"></div></div>
-  <figcaption class="sub">Upper bound on the surface-associated fraction against
-    oxygen removed, for the reconstructed surface and for a fully stripped
-    bridging row.</figcaption>
+<div class="figgrid">
+  <figure class="pubfig" id="figOptimality">
+    <h3>What every excluded phase would have to give up</h3>
+    <div class="figbox" role="img" aria-label="Reduced cost of every excluded phase at this condition"></div>
+    <details class="figdl"><summary>Download figure</summary>
+      <button type="button" data-fmt="svg">SVG</button>
+      <button type="button" data-fmt="png">PNG, 600 dpi</button>
+    </details>
+    <figcaption>Reduced cost per formula unit of each phase held at zero. The
+    shortest bar, in orange, is the phase that would come first.</figcaption>
+  </figure>
+  <figure class="pubfig" id="figBoundary">
+    <h3>Feed at which the host starts to reduce</h3>
+    <div class="figbox" role="img" aria-label="Feed composition at which the host phase begins to reduce, against temperature, with the panel's own feed marked"></div>
+    <details class="figdl"><summary>Download figure</summary>
+      <button type="button" data-fmt="svg">SVG</button>
+      <button type="button" data-fmt="png">PNG, 600 dpi</button>
+    </details>
+    <figcaption>Below the line the host gives way; the shaded field above it is
+    where it survives. The orange square is this panel's feed before the solid
+    has touched it. Closed form, so it redraws with every run.</figcaption>
+  </figure>
+  <figure class="pubfig" id="figMargin">
+    <h3>Margin to the nearest excluded phase
+      <button type="button" class="mini" id="sweepBtn">Sweep temperature</button></h3>
+    <div class="figbox" role="img" aria-label="Margin to the nearest excluded phase against temperature"></div>
+    <details class="figdl"><summary>Download figure</summary>
+      <button type="button" data-fmt="svg">SVG</button>
+      <button type="button" data-fmt="png">PNG, 600 dpi</button>
+    </details>
+    <figcaption><span id="sweepNote">121 solves at this charge, about half a second.</span>
+    The smallest bar at every temperature. The band along the bottom is the
+    winning assemblage; the curve touches zero at each edge of it. The green
+    ring is the temperature on the panel.</figcaption>
+  </figure>
+  <figure class="pubfig" id="figConversion">
+    <h3>CO<sub>2</sub> conversion across temperature</h3>
+    <div class="figbox" role="img" aria-label="Equilibrium CO2 conversion against temperature at this charge"></div>
+    <details class="figdl"><summary>Download figure</summary>
+      <button type="button" data-fmt="svg">SVG</button>
+      <button type="button" data-fmt="png">PNG, 600 dpi</button>
+    </details>
+    <figcaption>From the same sweep. Conversion is counted against the feed,
+    so where the assemblage is no longer the host alone the shaded run says
+    part of the answer is the solid being eaten. The green ring reads the
+    solve the workspace is showing.</figcaption>
+  </figure>
+</div>
+
+<div id="verdict"></div>
+<div class="kpis" id="kpis"></div>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-page="p-res" type="button">Results</button>
+  <button class="tab" data-page="p-kkt" type="button">Active set &amp; KKT</button>
+  <button class="tab" data-page="p-bal" type="button">Element balance</button>
+  <button class="tab" data-page="p-how" type="button">Method</button>
+  <button class="tab" data-page="p-val" type="button">Validation</button>
+</div>
+
+<div class="panel pad page active" id="p-res">
+  <h2>Equilibrium at this condition</h2>
+  <p class="sub">Method: <code>gibbs_min</code>, active-set enumeration with KKT
+  classification. Excluded phases are held at exactly zero moles.</p>
+  <h3>Condensed phases</h3>
+  <div class="tablewrap"><table id="tPhase"></table></div>
+  <h3>Gas: initial and equilibrium</h3>
+  <div class="tablewrap"><table id="tGas"></table></div>
+  <p class="sub" style="margin-top:10px">
+    <button type="button" class="mini" id="csv">Download CSV of this result</button></p>
+  <div id="resNotes"></div>
+</div>
+
+<div class="panel pad page" id="p-kkt">
+  <h2>Active set and KKT reduced costs</h2>
+  <p class="sub">Phase stability is decided by the sign of the reduced cost.
+  r<sub>j</sub> &gt; 0: the phase is absent. |r<sub>j</sub>| within tolerance: phase
+  boundary. Negative values do not occur at a reported solution.</p>
+  <h3>Inactive phases at the winner</h3>
+  <div class="tablewrap"><table id="tKKT"></table></div>
+  <h3>Element potentials &lambda;</h3>
+  <div class="tablewrap"><table id="tLam"></table></div>
+  <h3>Every candidate active set</h3>
+  <div class="tablewrap"><table id="tCand"></table></div>
+</div>
+<div class="panel pad page" id="p-bal">
+  <h2>Element balance</h2>
+  <p class="sub">The constraint the minimisation was subject to, checked on its own answer.</p>
+  <div class="tablewrap"><table id="tBal"></table></div>
+  <div id="balNote"></div>
+</div>
+<div class="panel pad page" id="p-how">
+  <h2>Method</h2>
+  <div class="note calm">
+    <b>Scope.</b> C&ndash;H&ndash;O&ndash;N / Ti&ndash;O Gibbs equilibrium. Gas registry in
+    this version: CO<sub>2</sub>, H<sub>2</sub>, CO, H<sub>2</sub>O, N<sub>2</sub>, O<sub>2</sub>.
+    Hydrocarbon species (CH<sub>4</sub>), graphite, nitrides, and the rutile
+    TiO<sub>2&minus;x</sub> solution phase are not included in this version. The calculation is
+    a closed, finite-inventory equilibrium between one gas charge and one solid charge, not a
+    flow-reactor steady state. Every reported value is <code>gibbs_min</code>.
+  </div>
+  <p>The solver computes the minimum of the total Gibbs energy</p>
+  <div class="eq">G = &Sigma;<sub>gas</sub> n<sub>i</sub> [&mu;&deg;<sub>i</sub>(T) + RT ln(y<sub>i</sub>P/P&deg;)] + &Sigma;<sub>solid</sub> m<sub>j</sub> &mu;&deg;<sub>j</sub>(T)</div>
+  <p>subject to the elemental balance <code>A&middot;n = b</code> and <code>n &ge; 0</code>.
+  Gases form an ideal mixture; each condensed phase is a pure line compound at unit
+  activity. The inputs defining <code>b</code> are the initial gas composition, the gas
+  charge n<sub>g,0</sub> = PV/RT<sub>charge</sub>, and the initial solid phase and mass.
+  The equilibrium phase split is an output.</p>
+  <p><b>Active set.</b> Condensed phases are enumerated as candidates: every single phase
+  and every phase pair (the phase rule allows two line compounds in an M&ndash;O system at
+  fixed T and P; N<sub>2</sub> adds no solid component). For each candidate the equilibrium
+  conditions are</p>
+  <div class="eq">gas:&nbsp; &mu;<sub>i</sub> = &Sigma;<sub>e</sub> a<sub>ie</sub>&lambda;<sub>e</sub>&nbsp;&nbsp;&nbsp;&nbsp;active solids:&nbsp; &mu;&deg;<sub>j</sub> = t<sub>j</sub>&lambda;<sub>Ti</sub> + o<sub>j</sub>&lambda;<sub>O</sub></div>
+  <p>solved by Newton iteration in the element potentials &lambda; with the gas in
+  logarithmic coordinates. Condensed amounts follow linearly from the Ti and O balances
+  through the combination O&nbsp;&minus;&nbsp;&rho;<sub>host</sub>&middot;Ti, which removes
+  the host oxygen symbolically; coexisting phases are resolved down to
+  ~10<sup>&minus;41</sup> mol. A phase outside the candidate is not a variable and is
+  exactly zero in the result.</p>
+  <p><b>Stability criterion.</b> Each inactive phase carries a reduced cost
+  r<sub>j</sub> = &mu;&deg;<sub>j</sub> &minus; t<sub>j</sub>&lambda;<sub>Ti</sub> &minus; o<sub>j</sub>&lambda;<sub>O</sub>,
+  reported per formula unit and per mole of oxygen (def<sub>j</sub> = 2t<sub>j</sub> &minus; o<sub>j</sub>;
+  def<sub>j</sub> = 1 for each TiO<sub>2</sub>&rarr;Magn&eacute;li step). The problem is
+  convex, so a feasible candidate with all r<sub>j</sub> &ge; 0 is the global minimum.
+  Candidates are not ranked by total Gibbs energy, whose differences can fall below
+  double-precision resolution. Reduced costs at zero within tolerance are reported as
+  phase coexistence.</p>
+  <p><b>Oxygen-free feeds.</b> Under pure H<sub>2</sub> or N<sub>2</sub> the single-phase
+  candidate leaves the gas with zero oxygen inventory, and the derivative of G toward
+  forming a trace of O-bearing gas together with a reduced phase diverges. The solver
+  therefore reports the two-phase buffer with a finite trace amount; under sealed
+  N<sub>2</sub> this trace is the equilibrium result. An O<sub>2</sub> impurity at the ppm
+  level is sufficient to suppress reduction, with a positive margin.</p>
+  <div class="note calm">The oxygen-potential margin used by earlier versions of this site
+  equals the reduced cost per mole of oxygen (the dual of the same minimisation); it is
+  reported on the Active set &amp; KKT tab. Independent verification is provided by an
+  80-digit reference implementation and by the NIST&ndash;Waldner data comparison
+  (Validation tab).</div>
+</div>
+<div class="panel pad page" id="p-val">
+  <h2>Validation</h2>
+  <p class="sub">This engine against an independent 80-digit reference implementation
+  (<code>oracle_tio.py</code>, element-potential root solve, no shared solver code).
+  Reference values are embedded below; the same conditions can be re-run in the
+  browser.</p>
+  <p><button type="button" class="mini" id="valRun">Run all reference points in this browser</button></p>
+  <div id="valBody"></div>
+</div>
+</div>
+
+<!-- ========================================== defect-location -->
+<div id="ws-surface" class="ws" style="display:none">
+
+<section class="controls">
+  <div class="crow">
+    <div class="c"><label for="sfD">Particle diameter</label>
+      <input type="number" id="sfD" value="0.9" min="0.01" step="0.1">
+      <div class="readout">µm &middot; sphere estimate</div></div>
+    <div class="c"><label for="sfBET">or BET area</label>
+      <input type="number" id="sfBET" placeholder="measured" min="0.001" step="0.1">
+      <div class="readout">m² g⁻¹ &middot; wins if given</div></div>
+    <div class="c"><label for="sfV">Oxygen removed by titration</label>
+      <input type="number" id="sfV" value="95" min="0.01" step="5">
+      <div class="readout">µmol-O g⁻¹</div></div>
+    <div class="c c-wide c-status"><label>&nbsp;</label>
+      <div class="readout" id="sfStatus"></div>
+      <div class="readout">The capacity comes from the rutile lattice constants and the
+        exposed area, and nothing else. The (1×2) added-row deficiency of half a
+        bridging monolayer is the only structural literature value used.</div></div>
+  </div>
 </section>
+
+<div class="figgrid">
+  <figure class="pubfig">
+    <h3>Measured removal against surface capacity</h3>
+    <div class="figbox" id="figCapacity"></div>
+    <figcaption>Titrated oxygen removal for the reduction series, split at the
+    surface ceiling. The filled band is every oxygen the reconstructed surface
+    could give up; the rest of each bar has to have come from below it. The
+    dashed line is the whole bridging row, which no measurement has been
+    reported to strip.</figcaption>
+  </figure>
+  <figure class="pubfig">
+    <h3>The bound</h3>
+    <div class="figbox" id="figBound"></div>
+    <figcaption>Upper bound on the surface-associated fraction against oxygen
+    removed, for the reconstructed surface and for a fully stripped bridging
+    row. Its complement is the smallest share that must lie below the surface.</figcaption>
+  </figure>
+</div>
+
+<div class="kpis" id="sfKpis"></div>
 
 <section class="panel pad">
   <h2>Derived composition</h2>
@@ -345,9 +314,6 @@
     <thead><tr><th>Quantity</th><th class="k2">Value</th></tr></thead>
     <tbody id="sfDerived"></tbody>
   </table></div>
-</section>
-
-<section class="panel pad">
   <div class="note"><b>What this does not say.</b> The oxygen that is not on the
     surface is not assigned here among subsurface point defects, bulk point
     defects and extended defects. No measurement in this work resolves depth, and
@@ -358,61 +324,57 @@
 </section>
 </div>
 
-<!-- ========================================== population -->
-<div id="ws-population" style="display:none">
-<section class="panel pad">
-  <div class="dfx-controls">
-    <div class="field pair">
-      <div><label for="pnNs">Active-region capacity n<sub>s</sub></label>
-        <input type="number" id="pnNs" value="15.334" min="1" step="0.1">
-        <div class="readout">µmol-O g⁻¹ · bounded 13.6&ndash;67.8</div></div>
-      <div><label for="pnE">E<sub>loss</sub></label>
-        <input type="number" id="pnE" value="2.1845" min="0" step="0.05">
-        <div class="readout">eV · effective, not elementary</div></div>
-    </div>
-    <div class="field">
-      <label for="pnNu">log<sub>10</sub> ν<sub>eff</sub></label>
+<!-- ========================================== defect-kinetics -->
+<div id="ws-population" class="ws" style="display:none">
+
+<section class="controls">
+  <div class="crow">
+    <div class="c"><label for="pnNs">Active-region capacity n<sub>s</sub></label>
+      <input type="number" id="pnNs" value="15.334" min="1" step="0.1">
+      <div class="readout">µmol-O g⁻¹ · bounded 13.6&ndash;67.8</div></div>
+    <div class="c"><label for="pnE">E<sub>loss</sub></label>
+      <input type="number" id="pnE" value="2.1845" min="0" step="0.05">
+      <div class="readout">eV · effective, not elementary</div></div>
+    <div class="c"><label for="pnNu">log<sub>10</sub> ν<sub>eff</sub></label>
       <input type="number" id="pnNu" value="6.7433" step="0.1">
-      <div class="readout">s⁻¹ · 6.7433 is 5.54×10⁶, 13 is an attempt frequency</div>
-    </div>
-    <div class="field">
-      <label for="pnKind">Residual</label>
+      <div class="readout">s⁻¹ · 6.7433 is 5.54×10⁶, 13 is an attempt frequency</div></div>
+    <div class="c c-wide"><label for="pnKind">Residual</label>
       <select id="pnKind">
         <option value="log" selected>log ratio — ln(fitted / measured)</option>
         <option value="relative">relative — (fitted − measured) / measured</option>
         <option value="raw">raw — fitted − measured</option>
       </select>
-      <div class="readout">the rates span 86-fold, so this choice moves the fit</div>
-    </div>
-    <div class="field pair">
-      <button type="button" class="mini" id="pnFit">Fit all three</button>
-      <button type="button" class="mini" id="pnReset">Reported values</button>
-    </div>
-    <div class="readout" id="pnStatus"></div>
+      <div class="readout">the rates span 86-fold, so this choice moves the fit</div></div>
+    <div class="c"><label>&nbsp;</label>
+      <div class="minirow">
+        <button type="button" class="mini" id="pnFit">Fit all three</button>
+        <button type="button" class="mini" id="pnReset">Reported values</button>
+      </div>
+      <div class="readout" id="pnStatus"></div></div>
   </div>
-  <div class="kpis" id="pnKpis"></div>
 </section>
 
-<section class="panel pad">
-  <h2>Where the measured inventory goes</h2>
-  <p class="sub">Each sample&rsquo;s total oxygen removal on the horizontal axis, and what
-    the model assigns it to on the vertical: isolated vacancies in the active region,
-    associated or reconstructed deficiency in that same region, and everything below it.
-    Both axes are logarithmic &mdash; the assignments span five decades.</p>
-  <div class="chartwrap"><div id="figPopulation"></div></div>
-  <figcaption class="sub">Effective partition of the measured oxygen-vacancy inventory.
-    The isolated population turns over near 100&nbsp;&micro;mol&nbsp;g&#8315;&sup1; while
-    the total keeps rising; the dashed curve is a guide through the five computed points.</figcaption>
-</section>
+<div class="figgrid">
+  <figure class="pubfig">
+    <h3>Where the measured inventory goes</h3>
+    <div class="figbox" id="figPopulation"></div>
+    <figcaption>Each sample&rsquo;s total oxygen removal on the horizontal axis and
+    what the model assigns it to on the vertical: isolated vacancies in the
+    active region, associated or reconstructed deficiency there, and everything
+    below it. Both axes logarithmic; the isolated population turns over near
+    100&nbsp;&micro;mol&nbsp;g&#8315;&sup1; while the total keeps rising.</figcaption>
+  </figure>
+  <figure class="pubfig">
+    <h3>Measured rate against fitted rate</h3>
+    <div class="figbox" id="figRates"></div>
+    <figcaption>Initial CO formation rate at a common 600&nbsp;&deg;C reaction
+    temperature, measured and fitted, against the reduction treatment. Rates are
+    proportional to the isolated population with one coefficient for every
+    sample, normalised to R600. Five rates, three parameters.</figcaption>
+  </figure>
+</div>
 
-<section class="panel pad">
-  <h2>Measured rate against fitted rate</h2>
-  <p class="sub">Rates are proportional to the isolated population with one coefficient
-    for every sample, normalised to R600. Five rates, three parameters.</p>
-  <div class="chartwrap"><div id="figRates"></div></div>
-  <figcaption class="sub">Initial CO formation rate at a common 600&nbsp;&deg;C reaction
-    temperature, measured and fitted, against the reduction treatment.</figcaption>
-</section>
+<div class="kpis" id="pnKpis"></div>
 
 <section class="panel pad">
   <h2>Populations</h2>
@@ -448,10 +410,10 @@
 </main>
 
 <footer>
-  <p>The equilibrium workspace solves in the browser from the same coefficient tables the Python
-    package uses, and a parity gate holds the two to the last place. The surface workspace is
-    lattice geometry. Regenerate the committed manuscript values with
-    <code>python3 scripts/reproduce_paper.py</code>.
+  <p>Sol-gas-thermo solves in the browser from the same coefficient tables the Python
+    package uses, and a parity gate holds the two to the last place. defect-location is
+    lattice geometry; defect-kinetics integrates one rate equation. Regenerate the
+    committed manuscript values with <code>python3 scripts/reproduce_paper.py</code>.
     <a href="https://github.com/robin-yk/Solid-gas-thermosolver">Source</a>.</p>
 </footer>
 
