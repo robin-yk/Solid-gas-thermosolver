@@ -15,7 +15,6 @@ import subprocess
 import pytest
 
 from solidgas import activeset as A
-from solidgas import vacancy_inventory as V
 from solidgas import vacancy_population as VP
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -68,46 +67,6 @@ def test_the_margin_payload_is_the_reduced_cost(js):
            if abs(q['T_C'] - 600) < 1e-6][0]
     assert row['margin_kJ'] == pytest.approx(costs[near], rel=1e-9)
     assert row['nearest'] == near
-
-
-def test_the_capacity_payload_is_the_geometry(js):
-    g = V.load()
-    cap = js['payload']['capacity']
-    assert cap['ceiling'] == pytest.approx(
-        V.reconstruction_deficiency(g, d_um=0.9), rel=1e-12)
-    assert cap['full_row'] == pytest.approx(
-        V.bridging_oxygen_capacity(g, d_um=0.9), rel=1e-12)
-
-
-def test_every_bar_splits_at_the_surface_ceiling(js):
-    cap = js['payload']['capacity']
-    for b in cap['bars']:
-        assert b['surface_max'] == pytest.approx(cap['ceiling'], rel=1e-12)
-        assert b['surface_max'] + b['below_min'] == pytest.approx(
-            b['measured'], rel=1e-12)
-
-
-def test_the_bound_payload_is_the_bound(js):
-    g = V.load()
-    at = js['payload']['bound']['at']
-    want = V.surface_fraction_bound(g, 95.0, d_um=0.9)
-    assert at['pct'] == pytest.approx(want['surface_fraction_max'] * 100, rel=1e-9)
-    assert at['pct_full'] == pytest.approx(
-        want['surface_fraction_max_full_row'] * 100, rel=1e-9)
-
-
-def test_the_bound_figure_says_it_is_a_bound(js):
-    """A reader must not be able to read the curve as an estimate."""
-    text = ' '.join(js['texts']['bound'])
-    assert 'at most' in text
-    assert 'largest possible surface share' in text
-
-
-def test_the_capacity_figure_names_what_the_bands_are(js):
-    text = ' '.join(js['texts']['capacity'])
-    assert 'could be surface (at most)' in text
-    assert 'must be below the surface' in text
-    assert 'whole bridging row' in text
 
 
 @pytest.mark.parametrize('T_C', [400, 800, 1200, 1500])

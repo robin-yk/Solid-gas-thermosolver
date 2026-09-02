@@ -25,9 +25,8 @@ The registry carries CO2, H2, CO, H2O, N2 and O2, and no condensed carbon. Metha
 - `solidgas/shomate.py`: NIST-JANAF gas and condensed-phase coefficients
 - `solidgas/species.py`: species, phases, Ti(3+) counts and the element matrix
 - `solidgas/waldner.py`: Ti-O assessment and integrated solid chemical potentials
-- `solidgas/vacancy_inventory.py`: the surface-capacity bound
-- `data/rutile_geometry.json`: rutile lattice constants and the (110) cell
-- `data/literature_dft.json`: tabulated vacancy formation energies, not used
+- `solidgas/vacancy_population.py`: the isolated-vacancy population model
+- `data/reduction_series.csv`: the reduction series it is fitted to
 - `data/dielectric_fit.json`: the manuscript's own dielectric regression
 - `data/reference_results_high_precision.json`: the 80-digit oracle output
 

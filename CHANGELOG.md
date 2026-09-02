@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Removed the surface-capacity bound from the repository: the Python module, its browser mirror and parity gate, the rutile geometry and literature-DFT tables, its manuscript table and its page. The page now offers two calculations, gas-solid equilibrium and the vacancy population model, each opening on the operating basis and the result, with the method and the numerical diagnostics on their own tabs.
 - The population table and the figure above it were saying different things. Two fixed decimals printed the two smallest assignments as 0.00 while the figure drew them at 3.5e-3 and 7.9e-4; the table now keeps the magnitude of a small number instead of rounding it away.
 - Put the rate figure on a log axis. The fact the model exists to explain is the 86-fold collapse at the last sample, and on a linear axis that bar was a line along the floor.
 - The mass-balance card reads "exact by construction" rather than nine decimal places of zero. It is an identity now, not a measurement.

@@ -12,8 +12,9 @@ Two calculations run here and nothing else:
   gas-solid equilibrium over the C-H-O-N/Ti-O system, for the reaction
   feed the paper uses, across the temperature range it covers;
 
-  the surface-capacity bound, comparing a measured oxygen removal with
-  the oxygen the rutile (110) surface could hold.
+  the isolated-vacancy population fitted to the reduction series: the
+  effective partition of each sample's oxygen removal and the CO rate
+  it predicts.
 
 The dielectric regression is carried through verbatim from the fit
 published with the paper; it is a measurement analysis and no model here
@@ -28,7 +29,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from solidgas import activeset as A
-from solidgas import vacancy_inventory as V
 from solidgas import vacancy_population as VP
 from analysis import dielectric_correlation as D
 
@@ -41,10 +41,6 @@ FEED_LABEL = 'CO2/H2/He = 10/10/80'
 T_SWEEP = list(range(400, 1501, 25))
 T_QUOTED = [500, 600, 700, 800, 900, 1000, 1100, 1300, 1500]
 
-# Particle sizing as reported: 0.9-1.6 um.
-DIAMETERS_UM = [0.9, 1.6]
-# Oxygen removals spanning the reported reduction series.
-INVENTORIES = [30.0, 40.0, 60.0, 95.0, 130.0, 150.0, 190.0, 220.0]
 
 
 def _rows_equilibrium():
@@ -78,29 +74,6 @@ def _rows_phase_stability():
             'mu_O_crit_kJ_per_mol': b['mu_crit_kJ_per_mol_O'],
             'first_phase': b.get('phase', ''),
         })
-    return rows
-
-
-def _rows_surface_bound():
-    g = V.load()
-    rows = []
-    for d in DIAMETERS_UM:
-        for inv in INVENTORIES:
-            b = V.surface_fraction_bound(g, inv, d_um=d)
-            rows.append({
-                'diameter_um': d,
-                'area_m2_g': b['area_m2_g'],
-                'measured_umol_O_g': inv,
-                'bridging_capacity_umol_O_g': b['bridging_capacity_umol_o_g'],
-                'reconstruction_deficiency_umol_O_g':
-                    b['reconstruction_deficiency_umol_o_g'],
-                'inventory_over_capacity': b['inventory_over_capacity'],
-                'surface_fraction_max_pct': b['surface_fraction_max'] * 100.0,
-                'below_surface_fraction_min_pct':
-                    b['below_surface_fraction_min'] * 100.0,
-                'x_in_TiO2mx': b['x_in_TiO2mx'],
-                'Ti3_fraction_pct': b['Ti3_fraction'] * 100.0,
-            })
     return rows
 
 
@@ -146,12 +119,10 @@ def main():
 
     eq = _rows_equilibrium()
     ps = _rows_phase_stability()
-    sb = _rows_surface_bound()
     di = _rows_dielectric()
 
     for name, rows in (('equilibrium_conversion.csv', eq),
                        ('phase_stability.csv', ps),
-                       ('vacancy_surface_bound.csv', sb),
                        ('vacancy_population.csv', pop_csv),
                        ('dielectric_correlation.csv', di)):
         path, n = _write(name, rows)
@@ -185,7 +156,6 @@ def main():
     # rates span 86-fold, so every one is reported.
     pop_fit = {k: VP.fit(pop_series, kind=k, iters=250) for k in VP.RESIDUALS}
 
-    g = V.load()
     site = {
         'generated_by': 'scripts/reproduce_paper.py',
         'feed': {'label': FEED_LABEL, 'sccm': FEED},
@@ -201,26 +171,6 @@ def main():
             'quoted': {str(T): A.solve(FEED, T + 273.15)['conversion_CO2_pct']
                        for T in T_QUOTED},
         },
-        'surface': {
-            # the browser mirror reads this card verbatim, so the page and
-            # the package cannot disagree about the lattice
-            'geometry_card': g,
-            'geometry': {
-                'cell_area_A2': V.surface_cell_area_cm2(g) * 1e16,
-                'bridging_areal_cm2': V.bridging_areal_density_cm2(g),
-                'density_g_cm3': V.crystal_density_g_cm3(g),
-                'reconstruction_ML': g['reconstruction']['areal_O_deficiency_ML'],
-            },
-            'by_diameter': {
-                str(d): {
-                    'area_m2_g': V.specific_surface_area(g, d_um=d),
-                    'bridging_capacity_umol_O_g': V.bridging_oxygen_capacity(g, d_um=d),
-                    'reconstruction_deficiency_umol_O_g':
-                        V.reconstruction_deficiency(g, d_um=d),
-                } for d in DIAMETERS_UM},
-            'rows': sb,
-            'inventories': INVENTORIES,
-        },
         'population': {
             'series': VP.load_series(),
             'ns_bounds': list(VP.NS_BOUNDS),
@@ -233,10 +183,10 @@ def main():
             'fit': pop_fit,
         },
         'dielectric': D.stored(),
-        'scope': ('This repository computes gas-solid equilibrium and a geometric '
-                  'surface-capacity bound. It does not assign the below-surface '
-                  'inventory among subsurface point defects, bulk defects or '
-                  'extended defects.'),
+        'scope': ('This repository computes gas-solid equilibrium and an '
+                  'isolated-vacancy population fitted to the reduction series. '
+                  'The population model infers n_iso from the measured rates; '
+                  'it does not predict them independently.'),
     }
     path = os.path.join(OUT, 'site_data.json')
     with open(path, 'w') as fh:

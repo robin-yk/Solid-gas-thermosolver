@@ -14,15 +14,12 @@ The committed reference is `data/reference_results_high_precision.json`. It cove
 
 Trace solid amounts down to about 1e-41 mol are compared in logarithmic form.
 
-## The surface-capacity bound
+## The population model
 
-There is no oracle here because there is no solver here. The bound is arithmetic
-on the rutile lattice constants and the exposed area, and the gates in
-`tests/test_surface_capacity.py` check the arithmetic against tabulated rutile
-(the unit cell must reproduce 4.25 g/cm3 and a 19.22 square-angstrom (110) cell),
-check the inequality itself (the two fractions are complements, the bound falls
-as more oxygen comes out, the reconstructed bound is half the full-row one), and
-check that no defect formation energy has been wired in.
+The browser mirror `web/population.js` integrates the same scalar equation as
+`solidgas/vacancy_population.py` with a different integrator (Strang splitting
+against Radau), and `tests/test_population_port.py` holds the two to a relative
+1e-6 across the reduction series and the parameter search.
 
 ## Release gates
 
@@ -31,7 +28,6 @@ The test suite checks:
 - elemental balance and KKT feasibility
 - phase assemblage and inactive-phase stability
 - high-precision oracle agreement
-- deterministic Monte Carlo trajectories
 - data export freshness
 - generated-page freshness
 - absence of external runtime requests

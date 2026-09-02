@@ -7,7 +7,7 @@ outside `solidgas/`. It fits
 
 by ordinary least squares and reports the slope, the intercept, their
 standard errors and R-squared. It is not coupled to the equilibrium
-calculation or to the surface-capacity bound, and nothing in the package
+calculation or to the population model, and nothing in the package
 reads its output.
 
 The fit reported in the manuscript was produced in OriginLab from four

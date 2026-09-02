@@ -180,13 +180,13 @@ def test_page_is_built_and_fresh():
     html = page.read_text()
     assert (DATA / 'activeset_data.json').read_text().strip() in html, \
         'page is stale against activeset_data.json - run build_site.py'
-    sources = (WEB / 'activeset.js', WEB / 'vacancy.js',
+    sources = (WEB / 'activeset.js', WEB / 'population.js',
                WEB / 'ti_solver_page.js', WEB / 'site_ui.js')
     for src in sources:
         assert src.read_text() in html, \
             f'page is stale against {src.name} - run build_site.py'
     for token in ('/*ASDATA*/', '/*REFDATA*/', '/*DATA*/', '/*ENGINE*/',
-                  '/*PAGE*/', '/*VACANCY*/'):
+                  '/*PAGE*/', '/*POPENGINE*/'):
         assert token not in html
     assert 'gibbs_min' in html
     for phrase in ('CH', 'graphite', 'nitrides', 'not a flow reactor'):

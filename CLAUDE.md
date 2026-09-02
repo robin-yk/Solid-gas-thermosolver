@@ -21,7 +21,7 @@
 ## What this repo is
 
 Ti–O 고체–기체 열역학. 논문에 실제로 쓰이는 **계산 두 개**와, 그걸 보여주는
-웹페이지 하나.
+웹페이지 하나. 표면 용량 부등식은 제거했다 — 페이지에서도, 레포에서도.
 
 ### 1. Gas–solid equilibrium (`solidgas/activeset.py`)
 
@@ -42,22 +42,6 @@ q = n_iso + n_assoc 로 두면 loss 항이 합에서 상쇄돼서 q 와 n_below 
 **잔차 정의를 반드시 같이 보고한다.** 측정 속도가 86배 차이나서 raw least squares
 는 한 시료가 지배한다. log/relative 는 논문 값을 되찾고, raw 는 prefactor 가 두 자리
 어긋난다. 논문 SI 에 어느 걸 썼는지가 안 적혀 있다.
-
-### 3. Surface-capacity bound (`solidgas/vacancy_inventory.py`)
-
-적정은 숫자 **하나**만 준다 — 빠진 산소 총량. 어디서 빠졌는지는 안 알려준다.
-루타일 격자상수와 노출 면적만으로 (110) bridging 줄이 담을 수 있는 양을
-계산하고, 거기서 **부등식**을 낸다: 측정값 중 최대 몇 %가 표면일 수 있는가,
-따라서 최소 몇 %가 아래에 있어야 하는가.
-
-- 0.9 µm 입자: bridging 줄 전체 13.6, 재배열 시 6.8 µmol-O g⁻¹
-- 측정 95 µmol-O g⁻¹ → 표면은 **최대 7.1 %**, 아래가 **최소 92.9 %**
-- (1×2) 0.5 ML 결손이 **유일한** 문헌 구조 입력. DFT 에너지는 안 들어간다.
-
-**표면 아래를 subsurface / bulk / extended defect 로 나누지 않는다.** 깊이를
-분해하는 측정이 이 연구에 없다. 나눴던 코드(3-class stat mech, 몬테카를로,
-반경 프로파일, 수송, CS 용해도)는 전부 제거했다 — 위 부등식을 그대로 재현하면서
-측정이 확인할 수 없는 가정만 얹고 있었다.
 
 ## Rules
 
@@ -81,18 +65,14 @@ q = n_iso + n_assoc 로 두면 loss 항이 합에서 상쇄돼서 q 와 n_below 
 
 1. 파이썬 엔진 (`solidgas/`)
 2. mpmath 80자리 오라클 (`scripts/oracle_tio.py` → `data/reference_*.json`)
-3. 브라우저 미러 (`web/activeset.js`, `web/vacancy.js`, `web/population.js`)
+3. 브라우저 미러 (`web/activeset.js`, `web/population.js`)
 
 오라클은 엔진을 호출하지 않는다. 안 그러면 검증이 아니라 복사다.
 
 브라우저 미러는 물리가 아니라 **포팅**을 검증한다. 그래도 필요하다 — 페이지가
 계산을 하는 이상 두 구현이 조용히 갈라지는 걸 막아야 한다. 예산: activeset 은
-4 ulp (glibc exp 대 V8 exp), vacancy 는 **0 ulp** (지수함수가 없다),
-population 은 상대 1e-6 (Radau 대 Strang splitting — 같은 식의 다른 적분기다).
+4 ulp (glibc exp 대 V8 exp), population 은 상대 1e-6 (Radau 대 Strang splitting — 같은 식의 다른 적분기다).
 
-표면 용량 쪽은 오라클이 없다 — 솔버가 없기 때문이다. 대신 게이트가 산술을
-검증한다: 단위격자가 루타일 밀도 4.25 g/cm³ 와 19.22 Å² (110) 셀을 재현하는지,
-부등식이 부등식인지, 그리고 **DFT 에너지가 흘러들어오지 않았는지**.
 
 ## Reproducing
 

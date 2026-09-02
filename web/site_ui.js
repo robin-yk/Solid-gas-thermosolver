@@ -129,16 +129,14 @@
     }).join('');
 
     var below = rows.every(function (q) { return q.below_fraction > 0.5; });
-    $('pnIdent').innerHTML =
-      '<tr><td>Objective (' + popKind() + ' residual)</td><td class="k2">'
-      + ssq.toExponential(3) + '</td></tr>'
-      + '<tr><td>Mass balance</td><td class="k2">'
-      + (closure === 0 ? 'closes exactly, by construction'
-         : 'closes to ' + n(closure, 9) + ' µmol-O g⁻¹') + '</td></tr>'
-      + '<tr><td>Parameters fitted</td><td class="k2">3 (n<sub>s</sub>, E<sub>loss</sub>, ν<sub>eff</sub>)</td></tr>'
-      + '<tr><td>Rates fitted</td><td class="k2">' + series.length + '</td></tr>'
-      + '<tr><td>Inventory mostly below the active region</td>'
-      + '<td class="k2">' + (below ? 'every sample' : 'not every sample') + '</td></tr>';
+    $('pnIdent').innerHTML = kv([
+      row('Objective (' + popKind() + ' residual)', ssq.toExponential(3)),
+      row('Mass balance', closure === 0 ? 'closes exactly, by construction'
+          : 'closes to ' + n(closure, 9) + ' µmol-O g⁻¹'),
+      row('Parameters fitted', '3 (n<sub>s</sub>, E<sub>loss</sub>, ν<sub>eff</sub>)'),
+      row('Rates fitted', String(series.length)),
+      row('Inventory mostly below the active region', below ? 'every sample' : 'not every sample')
+    ]);
   }
 
   function fitPopulation() {

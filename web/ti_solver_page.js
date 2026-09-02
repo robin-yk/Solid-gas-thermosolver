@@ -482,13 +482,14 @@
 
   /* ------------------------------------------------------------- shell */
 
-  document.querySelectorAll('.tab').forEach(function (b) {
-    b.addEventListener('click', function () {
-      document.querySelectorAll('.tab').forEach(function (x) {
-        x.classList.toggle('active', x === b);
-      });
-      document.querySelectorAll('.page').forEach(function (p) {
-        p.classList.toggle('active', p.id === b.dataset.page);
+  /* each workspace has its own tab bar; a click only touches its own pages */
+  document.querySelectorAll('.tabs').forEach(function (bar) {
+    var tabs = bar.querySelectorAll('.tab');
+    var pages = bar.parentNode.querySelectorAll(':scope > .page');
+    tabs.forEach(function (b) {
+      b.addEventListener('click', function () {
+        tabs.forEach(function (x) { x.classList.toggle('active', x === b); });
+        pages.forEach(function (p) { p.classList.toggle('active', p.id === b.dataset.page); });
       });
     });
   });

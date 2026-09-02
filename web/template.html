@@ -337,7 +337,13 @@
   </figure>
 </div>
 
-<section class="panel pad">
+<div class="tabs">
+  <button class="tab active" data-page="pp-res" type="button">Results</button>
+  <button class="tab" data-page="pp-how" type="button">Method</button>
+  <button class="tab" data-page="pp-val" type="button">Validation</button>
+</div>
+
+<div class="panel pad page active" id="pp-res">
   <h2>Populations</h2>
   <div class="tablewrap"><table>
     <thead><tr><th>Sample</th><th>Treatment</th><th class="k2">n<sub>V,tot</sub></th>
@@ -347,14 +353,37 @@
     <tbody id="pnTable"></tbody>
   </table></div>
   <p class="sub">Inventories in µmol-O g⁻¹; rates in µmol g⁻¹ s⁻¹.</p>
-</section>
+</div>
 
-<section class="panel pad">
-  <h2>Numerical fit</h2>
-  <div class="tablewrap"><table>
-    <thead><tr><th>Quantity</th><th class="k2">Value</th></tr></thead>
-    <tbody id="pnIdent"></tbody>
-  </table></div>
+<div class="panel pad page" id="pp-how">
+  <h2>Method</h2>
+  <p>The titration gives the total oxygen removed per sample. The model splits it
+  into three populations,</p>
+  <div class="eq">n<sub>V,tot</sub> = n<sub>iso</sub> + n<sub>assoc</sub> + n<sub>below</sub></div>
+  <p>Removal is generated uniformly over the reduction time, g = n<sub>V,tot</sub> / t<sub>red</sub>.
+  A new vacancy joins the surface active region of capacity n<sub>s</sub> with probability
+  f<sub>free</sub> = 1 &minus; (n<sub>iso</sub> + n<sub>assoc</sub>) / n<sub>s</sub> and otherwise
+  goes below it. Two isolated vacancies associate at second order.</p>
+  <p><b>Reduction to one equation.</b> With q = n<sub>iso</sub> + n<sub>assoc</sub> the loss
+  term cancels from the sum:</p>
+  <div class="eq">dq/dt = g (1 &minus; q/n<sub>s</sub>)&nbsp;&nbsp;&rArr;&nbsp;&nbsp;q(t) = n<sub>s</sub> [1 &minus; exp(&minus;g t / n<sub>s</sub>)],&nbsp;&nbsp;n<sub>below</sub>(t) = g t &minus; q(t)</div>
+  <p>so f<sub>free</sub> = exp(&minus;g t / n<sub>s</sub>) in closed form and a single scalar equation remains:</p>
+  <div class="eq">dn<sub>iso</sub>/dt = g exp(&minus;g t / n<sub>s</sub>) &minus; (2 k<sub>loss</sub> / n<sub>s</sub>) n<sub>iso</sub>&sup2;,&nbsp;&nbsp;n<sub>iso</sub>(0) = 0<br>
+  k<sub>loss</sub> = &nu;<sub>eff</sub> exp(&minus;E<sub>loss</sub> / k<sub>B</sub> T)<br>
+  n<sub>assoc</sub> = q &minus; n<sub>iso</sub></div>
+  <p>The mass balance n<sub>iso</sub> + n<sub>assoc</sub> + n<sub>below</sub> = n<sub>V,tot</sub> is
+  then an identity. The scalar equation goes to an implicit integrator (Radau in the
+  package, Strang splitting in the browser), which stays stable wherever a parameter
+  search tries a small E<sub>loss</sub> with a large &nu;<sub>eff</sub>.</p>
+  <p><b>Rate.</b> The initial CO formation rate is taken proportional to n<sub>iso</sub> with
+  one coefficient for every sample, so rates are predicted as ratios normalised to R600
+  and no absolute turnover number is claimed.</p>
+  <div class="eq">r<sub>CO</sub>(sample) / r<sub>CO</sub>(R600) = n<sub>iso</sub>(sample) / n<sub>iso</sub>(R600)</div>
+  <p><b>Fit.</b> Three parameters, n<sub>s</sub> (bounded between the bridging row and the
+  bridging row plus the first subsurface oxygen layer, 13.6 to 67.8 µmol-O g⁻¹),
+  E<sub>loss</sub> and log<sub>10</sub> &nu;<sub>eff</sub>, against five rates. The rates span
+  86-fold, so the residual definition moves the fit: a log or relative residual
+  recovers the reported parameters, a raw residual is dominated by one sample.</p>
   <div class="note calm"><b>Scope.</b> The measured rates are used to
     infer n<sub>iso</sub>, so the model does not predict them independently and
     n<sub>iso</sub> must not be reused as a turnover-frequency denominator. The rates
@@ -363,9 +392,21 @@
     uniform generation and a constant capacity. Surface area is taken as unchanged by
     the 1000&nbsp;&deg;C treatment because sample-specific BET values were not
     available. No reconstruction, cluster geometry or shear structure is identified.
-    E<sub>loss</sub> and log ν<sub>eff</sub> are an effective temperature dependence
+    E<sub>loss</sub> and log &nu;<sub>eff</sub> are an effective temperature dependence
     for the net loss of isolated vacancies, not an elementary barrier.</div>
-</section>
+</div>
+
+<div class="panel pad page" id="pp-val">
+  <h2>Validation</h2>
+  <h3>Numerical fit</h3>
+  <table class="kv" id="pnIdent"></table>
+  <h3>Browser against package</h3>
+  <p class="sub">The browser integrates the same scalar equation as the Python package
+  with a different integrator, Strang splitting against Radau, and a parity gate holds
+  the two to a relative 1e&minus;6 across the reduction series and the parameter search.
+  The reported parameters reproduce the supplement's table at the reported digits.</p>
+</div>
+
 </div>
 </div>
 </div>

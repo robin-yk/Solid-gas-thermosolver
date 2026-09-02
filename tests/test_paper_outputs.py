@@ -15,7 +15,6 @@ import sys
 import pytest
 
 from solidgas import activeset as A
-from solidgas import vacancy_inventory as V
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT = ROOT / 'paper_outputs'
@@ -51,7 +50,7 @@ def test_regenerating_reproduces_the_committed_outputs():
 def test_every_output_the_manuscript_needs_is_there():
     have = {p.name for p in OUT.iterdir()}
     assert {'equilibrium_conversion.csv', 'phase_stability.csv',
-            'vacancy_surface_bound.csv', 'dielectric_correlation.csv',
+            'vacancy_population.csv', 'dielectric_correlation.csv',
             'site_data.json'} <= have
 
 
@@ -85,17 +84,6 @@ def test_rutile_survives_the_whole_reported_range():
         assert float(row['margin_kJ_per_mol_O']) > 0
 
 
-def test_the_surface_table_is_a_fresh_geometry(): 
-    g = V.load()
-    for row in _rows('vacancy_surface_bound.csv'):
-        b = V.surface_fraction_bound(g, float(row['measured_umol_O_g']),
-                                     d_um=float(row['diameter_um']))
-        assert float(row['surface_fraction_max_pct']) == pytest.approx(
-            b['surface_fraction_max'] * 100.0, rel=1e-9)
-        assert float(row['below_surface_fraction_min_pct']) == pytest.approx(
-            b['below_surface_fraction_min'] * 100.0, rel=1e-9)
-
-
 def test_the_dielectric_row_is_carried_not_recomputed():
     """It is the manuscript's own fit; the repository must not re-derive it
     from a file it does not have."""
@@ -125,7 +113,6 @@ def test_the_browser_engines_are_mirrors_under_a_parity_gate():
     every browser engine has to be paired with a gate that holds it to the
     Python module it mirrors."""
     engines = {'activeset.js': 'test_activeset_port.py',
-               'vacancy.js': 'test_vacancy_port.py',
                'population.js': 'test_population_port.py'}
     for js, gate in engines.items():
         assert (ROOT / 'web' / js).exists(), js
@@ -134,9 +121,8 @@ def test_the_browser_engines_are_mirrors_under_a_parity_gate():
     inlined = sorted(p.name for p in (ROOT / 'web').iterdir()
                      if p.suffix == '.js')
     assert inlined == ['activeset.js', 'figkit.js', 'figures_population.js',
-                       'figures_surface.js', 'figures_thermo.js',
-                       'population.js', 'site_ui.js', 'thermo_ui.js',
-                       'ti_solver_page.js', 'vacancy.js'], inlined
+                       'figures_thermo.js', 'population.js', 'site_ui.js',
+                       'thermo_ui.js', 'ti_solver_page.js'], inlined
 
 
 def test_the_manuscript_values_are_read_not_recomputed(site):
@@ -148,8 +134,8 @@ def test_the_manuscript_values_are_read_not_recomputed(site):
 
 def test_the_page_states_what_it_does_not_claim():
     html = PAGE.read_text()
-    assert 'not assigned here' in html
-    assert 'extended defects' in html
+    assert 'must not be reused as a turnover-frequency denominator' in html
+    assert 'not an elementary barrier' in html
 
 
 def test_the_site_data_and_the_tables_agree(site):

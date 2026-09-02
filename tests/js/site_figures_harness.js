@@ -5,7 +5,6 @@
 const fs = require('fs');
 const ROOT = process.argv[2];
 const TF = require(ROOT + '/web/figures_thermo.js');
-const SF = require(ROOT + '/web/figures_surface.js');
 const PF = require(ROOT + '/web/figures_population.js');
 const PM = require(ROOT + '/web/population.js');
 const D = JSON.parse(fs.readFileSync(ROOT + '/paper_outputs/site_data.json', 'utf8'));
@@ -20,8 +19,6 @@ const r = rows.reduce((a, b) =>
 const conv = TF.conversionData(rows, T, 'TiO2', r.conversion_CO2_pct);
 const marg = TF.marginData(rows, T);
 const bnd = TF.boundaryData(D.equilibrium.boundary, null, T, at);
-const cap = SF.capacityData(D.surface.rows, 0.9, 95);
-const bd = SF.boundData(D.surface.rows, 0.9, 95);
 const R = D.population.reported;
 const prows = PM.partition(D.population.series, R.ns_umol_g, R.E_loss_eV,
                            R.nu_eff_s1);
@@ -32,8 +29,6 @@ const svg = {
   conversion: TF.conversion({ conversion: conv }),
   margin: TF.margin({ margin: marg }),
   boundary: TF.boundary({ boundary: bnd }),
-  capacity: SF.capacity(cap),
-  bound: SF.bound(bd),
   population: PF.population(pop),
   rates: PF.rates(rat),
 };
@@ -41,7 +36,7 @@ const svg = {
 console.log(JSON.stringify({
   T_C: T,
   payload: { conversion: conv, margin: marg, boundary: bnd,
-             capacity: cap, bound: bd, population: pop, rates: rat },
+             population: pop, rates: rat },
   bytes: Object.fromEntries(Object.entries(svg).map(([k, v]) => [k, v.length])),
   viewBoxes: Object.fromEntries(Object.entries(svg).map(([k, v]) =>
     [k, (v.match(/viewBox="([^"]+)"/) || [])[1]])),
