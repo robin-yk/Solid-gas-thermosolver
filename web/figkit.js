@@ -402,7 +402,10 @@
       } else if (it.dash) {
         p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.0, it.dash);
       } else if (it.swatch) {
-        p.rect(x, yy - 5.2, 7, 6, it.col);
+        /* edge is for a filled shape whose outline carries meaning: a
+           tinted bar with an ink stroke reads as black in the legend
+           unless the key is drawn the same way as the bar. */
+        p.rect(x, yy - 5.2, 7, 6, it.col, it.edge, it.edge ? LW.axis : null);
       } else {
         p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.4);
       }

@@ -14,6 +14,14 @@
   function n(v, d) {
     return (v == null || !isFinite(v)) ? '—' : Number(v).toFixed(d == null ? 2 : d);
   }
+  /* Inventories run from 8e-4 to 766 umol-O/g. Two fixed decimals print
+     the smallest of them as 0.00, which reads as "there are none" and
+     contradicts the figure directly above the table. */
+  function amt(v) {
+    if (v == null || !isFinite(v)) return '—';
+    if (v === 0) return '0';
+    return Math.abs(v) >= 0.01 ? v.toFixed(2) : v.toExponential(1);
+  }
   function kpi(label, value) {
     return '<div class="kpi"><div class="sub">' + label + '</div><b>'
       + value + '</b></div>';
@@ -150,7 +158,8 @@
       kpi('R800 / R600, measured', n(meas, 3)),
       kpi('Isolated, highest', n(isoMax, 2) + ' µmol-O g⁻¹'),
       kpi('Isolated, lowest', n(isoMin, 3) + ' µmol-O g⁻¹'),
-      kpi('Mass-balance residual', n(closure, 9) + ' µmol-O g⁻¹')
+      kpi('Mass balance', closure === 0 ? 'exact by construction'
+          : n(closure, 9) + ' µmol-O g⁻¹')
     ].join('');
 
     $('pnTable').innerHTML = rows.map(function (q) {
@@ -158,9 +167,9 @@
         + '<td class="k2">' + n(q.nV_total_umol_g, 2) + '</td>'
         + '<td class="k2">' + n(q.r_CO_measured, 4) + '</td>'
         + '<td class="k2">' + n(q.r_CO_fitted, 4) + '</td>'
-        + '<td class="k2">' + n(q.n_iso_umol_g, 2) + '</td>'
-        + '<td class="k2">' + n(q.n_assoc_umol_g, 2) + '</td>'
-        + '<td class="k2">' + n(q.n_below_umol_g, 2) + '</td></tr>';
+        + '<td class="k2">' + amt(q.n_iso_umol_g) + '</td>'
+        + '<td class="k2">' + amt(q.n_assoc_umol_g) + '</td>'
+        + '<td class="k2">' + amt(q.n_below_umol_g) + '</td></tr>';
     }).join('');
 
     var below = rows.every(function (q) { return q.below_fraction > 0.5; });

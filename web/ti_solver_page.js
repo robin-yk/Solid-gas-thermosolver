@@ -226,7 +226,11 @@
       ['Assemblage', R.active_condensed_phases.map(sub).join(' + '), 'active condensed phases', reduced.length ? 'warn' : 'good'],
       ['Ti³⁺', sci(R.reduced_pct, 4) + '%', 'of total titanium', ''],
       ['x in TiO₂₋ₓ', sci(R.x_in_TiO2x, 4), 'solid O deficit', ''],
-      ['O moved to gas', sci(R.oxygen_to_gas_mol_O, 4), 'mol O (negative = into solid)', ''],
+      /* a difference of two large numbers: when the host is untouched it
+         comes back at the rounding floor, and printing -1e-18 on a
+         headline card reads as oxygen having moved */
+      ['O moved to gas', R.x_in_TiO2x === 0 ? '0'
+        : sci(R.oxygen_to_gas_mol_O, 4), 'mol O (negative = into solid)', ''],
     ];
     if (R.conversion_CO2_pct !== null) {
       kpis.push(['CO₂ conversion', R.conversion_CO2_pct.toFixed(2) + '%', 'net, vs feed', '']);
@@ -445,41 +449,6 @@
     $('valBody').innerHTML = out;
   });
 
-  /* ------------------------------------------------------ coefficients */
-
-  function renderCoefs() {
-    var h = '<h3>Gases - NIST-JANAF Shomate</h3>'
-      + '<div class="tablewrap"><table><thead><tr><th>species</th><th>set</th>'
-      + '<th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th>'
-      + '<th>H</th><th>ΔH°f (kJ/mol)</th><th>break (K)</th></tr></thead><tbody>';
-    D.gases.forEach(function (g) {
-      var e = D.shomate[g];
-      ['lo', 'hi'].forEach(function (band) {
-        h += '<tr><td>' + (band === 'lo' ? sub(g) : '') + '</td><td>' + band + '</td>'
-          + e[band].map(function (c) { return '<td>' + c + '</td>'; }).join('')
-          + '<td>' + e.dHf + '</td><td>' + (band === 'lo' ? e.brk : '') + '</td></tr>';
-      });
-    });
-    h += '</tbody></table></div>'
-      + '<h3>Condensed phases - Waldner &amp; Eriksson CALPHAD</h3>'
-      + '<div class="tablewrap"><table><thead><tr><th>phase</th>'
-      + '<th>ΔH°f,298 (J/mol)</th><th>S°298 (J/mol K)</th>'
-      + '<th>range (K)</th><th>form</th><th>Cp coefficients</th>'
-      + '<th>ΔH trans (J)</th></tr></thead><tbody>';
-    D.solids.forEach(function (s) {
-      var e = D.waldner[s];
-      e.ranges.forEach(function (r, i) {
-        h += '<tr><td>' + (i ? '' : sub(s)) + '</td><td>' + (i ? '' : e.dHf298)
-          + '</td><td>' + (i ? '' : e.S298) + '</td><td>' + r.T0 + '–' + r.T1
-          + '</td><td>' + r.form + '</td><td>' + r.c.join(', ') + '</td><td>'
-          + r.dHt + '</td></tr>';
-      });
-    });
-    h += '</tbody></table></div>'
-      + '<div class="note calm">' + D.provenance.gases + ' &middot; '
-      + D.provenance.solids + '</div>';
-    $('coefBody').innerHTML = h;
-  }
 
   /* ------------------------------------------------------------- shell */
 
@@ -493,14 +462,6 @@
       });
     });
   });
-
-  $('rawSrc').textContent = [
-    'mu0Gas', 'mu0Solid', 'buildCharge', 'solveCandidate',
-    'enumerateCandidates', 'tripleProbes', 'solve',
-  ].map(function (f) {
-    return '// Solver.prototype.' + f + '\n'
-      + ActiveSet.Solver.prototype[f].toString();
-  }).join('\n\n');
 
   /* Bridge for the defect workspace: this workspace's charge - gas,
      pressure, volume, solid - re-evaluated at any temperature, plus the
@@ -559,7 +520,6 @@
   };
 
   $('run').addEventListener('click', run);
-  renderCoefs();
   setFeed(PRESETS.rwgs.gas);
   $('preset').value = 'rwgs';
   run();

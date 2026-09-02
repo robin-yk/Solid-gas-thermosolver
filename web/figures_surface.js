@@ -101,8 +101,15 @@
       f.rect(cx - wid / 2, yTop, wid, yCut - yTop,
              tint(DEEP, 0.22), DEEP, LW.axis);
       f.rect(cx - wid / 2, yCut, wid, y0 - yCut, SURF, SURF, LW.axis);
+      /* the reader's own number. A 6 pt tick above the bar was too small
+         to find, and finding it is the whole point of typing a value in. */
       if (D.mark != null && Math.abs(b.measured - D.mark) < 1e-9) {
-        f.line(cx, yTop - 9, cx, yTop - 2.5, C.ink, LW.curve);
+        var a = 7, ty = yTop - 4;
+        f.path('M' + (cx - a / 2) + ',' + (ty - a * 0.866)
+             + 'L' + (cx + a / 2) + ',' + (ty - a * 0.866)
+             + 'L' + cx + ',' + ty + 'Z', C.ink, LW.axis, null, C.ink);
+        f.text(cx, ty - a * 0.866 - 3.5, 'entered',
+               { size: f.type.small, anchor: 'middle' });
       }
     });
 

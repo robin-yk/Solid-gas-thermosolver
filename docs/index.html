@@ -348,8 +348,6 @@ p.warn { color: var(--orange); }
       <button class="tab" data-page="p-bal" type="button">Element balance</button>
       <button class="tab" data-page="p-how" type="button">Method</button>
       <button class="tab" data-page="p-val" type="button">Validation</button>
-      <button class="tab" data-page="p-coef" type="button">Coefficients</button>
-      <button class="tab" data-page="p-src" type="button">Solver source</button>
     </div>
 
     <div class="panel pad page active" id="p-res">
@@ -513,18 +511,6 @@ p.warn { color: var(--orange); }
       browser.</p>
       <p><button type="button" class="mini" id="valRun">Run all reference points in this browser</button></p>
       <div id="valBody"></div>
-    </div>
-
-    <div class="panel pad page" id="p-coef">
-      <h2>Coefficients in use</h2>
-      <p class="sub">The coefficient tables used by this page.</p>
-      <div id="coefBody"></div>
-    </div>
-
-    <div class="panel pad page" id="p-src">
-      <h2>Solver source</h2>
-      <p class="sub">The functions below are printed from the running page.</p>
-      <pre id="rawSrc"></pre>
     </div>
 
   </section>
@@ -1512,7 +1498,10 @@ p.warn { color: var(--orange); }
       } else if (it.dash) {
         p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.0, it.dash);
       } else if (it.swatch) {
-        p.rect(x, yy - 5.2, 7, 6, it.col);
+        /* edge is for a filled shape whose outline carries meaning: a
+           tinted bar with an ink stroke reads as black in the legend
+           unless the key is drawn the same way as the bar. */
+        p.rect(x, yy - 5.2, 7, 6, it.col, it.edge, it.edge ? LW.axis : null);
       } else {
         p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.4);
       }
@@ -3136,8 +3125,15 @@ root.Solver = Solver;
       f.rect(cx - wid / 2, yTop, wid, yCut - yTop,
              tint(DEEP, 0.22), DEEP, LW.axis);
       f.rect(cx - wid / 2, yCut, wid, y0 - yCut, SURF, SURF, LW.axis);
+      /* the reader's own number. A 6 pt tick above the bar was too small
+         to find, and finding it is the whole point of typing a value in. */
       if (D.mark != null && Math.abs(b.measured - D.mark) < 1e-9) {
-        f.line(cx, yTop - 9, cx, yTop - 2.5, C.ink, LW.curve);
+        var a = 7, ty = yTop - 4;
+        f.path('M' + (cx - a / 2) + ',' + (ty - a * 0.866)
+             + 'L' + (cx + a / 2) + ',' + (ty - a * 0.866)
+             + 'L' + cx + ',' + ty + 'Z', C.ink, LW.axis, null, C.ink);
+        f.text(cx, ty - a * 0.866 - 3.5, 'entered',
+               { size: f.type.small, anchor: 'middle' });
       }
     });
 
@@ -3506,10 +3502,17 @@ root.Solver = Solver;
     var p = { x0: f.pane.x0 + 4, y0: 22, x1: f.pane.x1, y1: f.pane.y1 };
     if (!D || !D.points.length) return f.done();
 
+    /* the rates span 86-fold and the collapse at the last sample is the
+       fact the model exists to explain, so the axis has to be logarithmic:
+       on a linear one that bar is a line along the floor */
     var vals = [];
-    D.points.forEach(function (q) { vals.push(q.measured, q.fitted); });
-    var hi = Math.max.apply(null, vals);
-    var Y = lin(0, hi * 1.15, p.y1, p.y0);
+    D.points.forEach(function (q) {
+      if (q.measured > 0) vals.push(q.measured);
+      if (q.fitted > 0) vals.push(q.fitted);
+    });
+    if (!vals.length) return f.done();
+    var Y = lg(K.decadeFloor(Math.min.apply(null, vals)),
+               K.decadeCeil(Math.max.apply(null, vals)), p.y1, p.y0);
     var n = D.points.length;
     var X = lin(-0.5, n - 0.5, p.x0, p.x1);
     var w = (p.x1 - p.x0) / n * 0.30;
@@ -3517,16 +3520,17 @@ root.Solver = Solver;
     frame(f, [p.x0, p.x1], [p.y0, p.y1]);
     D.points.forEach(function (q, i) {
       var cx = X(i);
-      f.rect(cx - w - 1, Y(q.measured), w, Y(0) - Y(q.measured),
+      var y0 = Y(Y.d0);
+      f.rect(cx - w - 1, Y(q.measured), w, y0 - Y(q.measured),
              tint(C.ink, 0.18), C.ink, LW.axis);
-      f.rect(cx + 1, Y(q.fitted), w, Y(0) - Y(q.fitted), ISO, ISO, LW.axis);
+      f.rect(cx + 1, Y(q.fitted), w, y0 - Y(q.fitted), ISO, ISO, LW.axis);
     });
     axisX(f, X, p.y1, D.points.map(function (_, i) { return i; }),
           'reduction treatment', function (i) { return D.points[i].sample; });
-    axisY(f, Y, p.x0, K.niceTicks(0, hi * 1.15, 5),
-          'initial CO rate (µmol g⁻¹ s⁻¹)');
+    axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1),
+          'initial CO rate (µmol g⁻¹ s⁻¹)', K.powLabel);
     K.legend(f, p.x0 + 7, p.y0 + 11, [
-      { col: C.ink, swatch: true, text: 'measured' },
+      { col: tint(C.ink, 0.18), edge: C.ink, swatch: true, text: 'measured' },
       { col: ISO, swatch: true, text: 'fitted, ∝ n(isolated)' }
     ]);
     return f.done();
@@ -3765,7 +3769,11 @@ root.Solver = Solver;
       ['Assemblage', R.active_condensed_phases.map(sub).join(' + '), 'active condensed phases', reduced.length ? 'warn' : 'good'],
       ['Ti³⁺', sci(R.reduced_pct, 4) + '%', 'of total titanium', ''],
       ['x in TiO₂₋ₓ', sci(R.x_in_TiO2x, 4), 'solid O deficit', ''],
-      ['O moved to gas', sci(R.oxygen_to_gas_mol_O, 4), 'mol O (negative = into solid)', ''],
+      /* a difference of two large numbers: when the host is untouched it
+         comes back at the rounding floor, and printing -1e-18 on a
+         headline card reads as oxygen having moved */
+      ['O moved to gas', R.x_in_TiO2x === 0 ? '0'
+        : sci(R.oxygen_to_gas_mol_O, 4), 'mol O (negative = into solid)', ''],
     ];
     if (R.conversion_CO2_pct !== null) {
       kpis.push(['CO₂ conversion', R.conversion_CO2_pct.toFixed(2) + '%', 'net, vs feed', '']);
@@ -3984,41 +3992,6 @@ root.Solver = Solver;
     $('valBody').innerHTML = out;
   });
 
-  /* ------------------------------------------------------ coefficients */
-
-  function renderCoefs() {
-    var h = '<h3>Gases - NIST-JANAF Shomate</h3>'
-      + '<div class="tablewrap"><table><thead><tr><th>species</th><th>set</th>'
-      + '<th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th>'
-      + '<th>H</th><th>ΔH°f (kJ/mol)</th><th>break (K)</th></tr></thead><tbody>';
-    D.gases.forEach(function (g) {
-      var e = D.shomate[g];
-      ['lo', 'hi'].forEach(function (band) {
-        h += '<tr><td>' + (band === 'lo' ? sub(g) : '') + '</td><td>' + band + '</td>'
-          + e[band].map(function (c) { return '<td>' + c + '</td>'; }).join('')
-          + '<td>' + e.dHf + '</td><td>' + (band === 'lo' ? e.brk : '') + '</td></tr>';
-      });
-    });
-    h += '</tbody></table></div>'
-      + '<h3>Condensed phases - Waldner &amp; Eriksson CALPHAD</h3>'
-      + '<div class="tablewrap"><table><thead><tr><th>phase</th>'
-      + '<th>ΔH°f,298 (J/mol)</th><th>S°298 (J/mol K)</th>'
-      + '<th>range (K)</th><th>form</th><th>Cp coefficients</th>'
-      + '<th>ΔH trans (J)</th></tr></thead><tbody>';
-    D.solids.forEach(function (s) {
-      var e = D.waldner[s];
-      e.ranges.forEach(function (r, i) {
-        h += '<tr><td>' + (i ? '' : sub(s)) + '</td><td>' + (i ? '' : e.dHf298)
-          + '</td><td>' + (i ? '' : e.S298) + '</td><td>' + r.T0 + '–' + r.T1
-          + '</td><td>' + r.form + '</td><td>' + r.c.join(', ') + '</td><td>'
-          + r.dHt + '</td></tr>';
-      });
-    });
-    h += '</tbody></table></div>'
-      + '<div class="note calm">' + D.provenance.gases + ' &middot; '
-      + D.provenance.solids + '</div>';
-    $('coefBody').innerHTML = h;
-  }
 
   /* ------------------------------------------------------------- shell */
 
@@ -4032,14 +4005,6 @@ root.Solver = Solver;
       });
     });
   });
-
-  $('rawSrc').textContent = [
-    'mu0Gas', 'mu0Solid', 'buildCharge', 'solveCandidate',
-    'enumerateCandidates', 'tripleProbes', 'solve',
-  ].map(function (f) {
-    return '// Solver.prototype.' + f + '\n'
-      + ActiveSet.Solver.prototype[f].toString();
-  }).join('\n\n');
 
   /* Bridge for the defect workspace: this workspace's charge - gas,
      pressure, volume, solid - re-evaluated at any temperature, plus the
@@ -4098,7 +4063,6 @@ root.Solver = Solver;
   };
 
   $('run').addEventListener('click', run);
-  renderCoefs();
   setFeed(PRESETS.rwgs.gas);
   $('preset').value = 'rwgs';
   run();
@@ -4298,6 +4262,14 @@ root.Solver = Solver;
   function n(v, d) {
     return (v == null || !isFinite(v)) ? '—' : Number(v).toFixed(d == null ? 2 : d);
   }
+  /* Inventories run from 8e-4 to 766 umol-O/g. Two fixed decimals print
+     the smallest of them as 0.00, which reads as "there are none" and
+     contradicts the figure directly above the table. */
+  function amt(v) {
+    if (v == null || !isFinite(v)) return '—';
+    if (v === 0) return '0';
+    return Math.abs(v) >= 0.01 ? v.toFixed(2) : v.toExponential(1);
+  }
   function kpi(label, value) {
     return '<div class="kpi"><div class="sub">' + label + '</div><b>'
       + value + '</b></div>';
@@ -4434,7 +4406,8 @@ root.Solver = Solver;
       kpi('R800 / R600, measured', n(meas, 3)),
       kpi('Isolated, highest', n(isoMax, 2) + ' µmol-O g⁻¹'),
       kpi('Isolated, lowest', n(isoMin, 3) + ' µmol-O g⁻¹'),
-      kpi('Mass-balance residual', n(closure, 9) + ' µmol-O g⁻¹')
+      kpi('Mass balance', closure === 0 ? 'exact by construction'
+          : n(closure, 9) + ' µmol-O g⁻¹')
     ].join('');
 
     $('pnTable').innerHTML = rows.map(function (q) {
@@ -4442,9 +4415,9 @@ root.Solver = Solver;
         + '<td class="k2">' + n(q.nV_total_umol_g, 2) + '</td>'
         + '<td class="k2">' + n(q.r_CO_measured, 4) + '</td>'
         + '<td class="k2">' + n(q.r_CO_fitted, 4) + '</td>'
-        + '<td class="k2">' + n(q.n_iso_umol_g, 2) + '</td>'
-        + '<td class="k2">' + n(q.n_assoc_umol_g, 2) + '</td>'
-        + '<td class="k2">' + n(q.n_below_umol_g, 2) + '</td></tr>';
+        + '<td class="k2">' + amt(q.n_iso_umol_g) + '</td>'
+        + '<td class="k2">' + amt(q.n_assoc_umol_g) + '</td>'
+        + '<td class="k2">' + amt(q.n_below_umol_g) + '</td></tr>';
     }).join('');
 
     var below = rows.every(function (q) { return q.below_fraction > 0.5; });

@@ -117,10 +117,17 @@
     var p = { x0: f.pane.x0 + 4, y0: 22, x1: f.pane.x1, y1: f.pane.y1 };
     if (!D || !D.points.length) return f.done();
 
+    /* the rates span 86-fold and the collapse at the last sample is the
+       fact the model exists to explain, so the axis has to be logarithmic:
+       on a linear one that bar is a line along the floor */
     var vals = [];
-    D.points.forEach(function (q) { vals.push(q.measured, q.fitted); });
-    var hi = Math.max.apply(null, vals);
-    var Y = lin(0, hi * 1.15, p.y1, p.y0);
+    D.points.forEach(function (q) {
+      if (q.measured > 0) vals.push(q.measured);
+      if (q.fitted > 0) vals.push(q.fitted);
+    });
+    if (!vals.length) return f.done();
+    var Y = lg(K.decadeFloor(Math.min.apply(null, vals)),
+               K.decadeCeil(Math.max.apply(null, vals)), p.y1, p.y0);
     var n = D.points.length;
     var X = lin(-0.5, n - 0.5, p.x0, p.x1);
     var w = (p.x1 - p.x0) / n * 0.30;
@@ -128,16 +135,17 @@
     frame(f, [p.x0, p.x1], [p.y0, p.y1]);
     D.points.forEach(function (q, i) {
       var cx = X(i);
-      f.rect(cx - w - 1, Y(q.measured), w, Y(0) - Y(q.measured),
+      var y0 = Y(Y.d0);
+      f.rect(cx - w - 1, Y(q.measured), w, y0 - Y(q.measured),
              tint(C.ink, 0.18), C.ink, LW.axis);
-      f.rect(cx + 1, Y(q.fitted), w, Y(0) - Y(q.fitted), ISO, ISO, LW.axis);
+      f.rect(cx + 1, Y(q.fitted), w, y0 - Y(q.fitted), ISO, ISO, LW.axis);
     });
     axisX(f, X, p.y1, D.points.map(function (_, i) { return i; }),
           'reduction treatment', function (i) { return D.points[i].sample; });
-    axisY(f, Y, p.x0, K.niceTicks(0, hi * 1.15, 5),
-          'initial CO rate (µmol g⁻¹ s⁻¹)');
+    axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1),
+          'initial CO rate (µmol g⁻¹ s⁻¹)', K.powLabel);
     K.legend(f, p.x0 + 7, p.y0 + 11, [
-      { col: C.ink, swatch: true, text: 'measured' },
+      { col: tint(C.ink, 0.18), edge: C.ink, swatch: true, text: 'measured' },
       { col: ISO, swatch: true, text: 'fitted, ∝ n(isolated)' }
     ]);
     return f.done();

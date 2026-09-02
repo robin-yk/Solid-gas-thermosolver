@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The population table and the figure above it were saying different things. Two fixed decimals printed the two smallest assignments as 0.00 while the figure drew them at 3.5e-3 and 7.9e-4; the table now keeps the magnitude of a small number instead of rounding it away.
+- Put the rate figure on a log axis. The fact the model exists to explain is the 86-fold collapse at the last sample, and on a linear axis that bar was a line along the floor.
+- The mass-balance card reads "exact by construction" rather than nine decimal places of zero. It is an identity now, not a measurement.
+- Made the entered inventory findable on the capacity figure. It was a 6 pt tick above one bar, and finding it is the point of typing a value in.
+- Cut the coefficient tables and the printed solver source from the equilibrium workspace, which was 14 times the length of the other two and the only one showing its own internals to a reader. The headline oxygen-transfer card no longer prints a rounding-floor difference of two large numbers as though oxygen had moved.
 - Redrew the partition figure as the manuscript draws it: assigned population against measured total, both axes logarithmic, one open marker shape per population, and a dashed guide through the isolated series. The stacked bars it replaces put the samples on a categorical axis, which hid the two things the figure exists to show at once - that the isolated population turns over near 100 umol-O/g while the total keeps rising, and that the associated population spans five decades. It is recomputed from whatever parameters the reader sets, so the axis range is derived from the data rather than written down.
 - Fixed a log axis dropping the tick at its own edge. log10 of an exact decade lands a few ulp short of the integer, so a range bounded at 1e3 lost the 1e3 label; every log axis in the repository was missing its endpoint tick.
 - Gated both population figures. They were the only figures on the page with no gate: the figure harness now builds them and holds the plotted values to the Python partition, and the browser check counts the marks the page actually drew.
