@@ -263,8 +263,13 @@
       px.push(x);
       p.line(x, y, x, y - TICK.major, C.ink, LW.axis);
       if (top != null) p.line(x, top, x, top + TICK.major, C.ink, LW.axis);
-      p.text(x, y + T.tick + 3, fmt ? fmt(t) : String(t),
-        { size: T.tick, anchor: 'middle' });
+      /* the outermost label is centred on a tick that sits on the frame,
+         so half of it hangs past the figure edge and gets clipped. Nudge
+         only those back inside; every interior label is untouched. */
+      var s = fmt ? fmt(t) : String(t);
+      var half = 0.28 * T.tick * s.length;
+      var tx = Math.min(Math.max(x, half + 1), p.W - half - 1);
+      p.text(tx, y + T.tick + 3, s, { size: T.tick, anchor: 'middle' });
     });
     minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1)
       .forEach(function (x) {

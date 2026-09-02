@@ -518,14 +518,18 @@
       f.text(6, 14, 'reduction to ' + chem(d.at.phase) + ' starts below '
              + fmtPct(d.at.pct) + ' CO₂',
              { size: T.body, weight: 'bold' });
-      f.text(6, 25, q
+      /* with no feed marked there is nothing to say about one, and a
+         warning about a feed the caller never supplied reads as an error */
+      var why = q
         ? (q.ratio >= 1
-            ? 'the feed on the panel sits ' + fmtTimes(q.ratio)
-              + ' above that'
+            ? 'the feed on the panel sits ' + fmtTimes(q.ratio) + ' above that'
             : 'the feed on the panel sits ' + fmtTimes(1 / q.ratio)
               + ' below it, so the solid reduces')
-        : (d.why_no_feed || 'this feed sets no oxygen potential'),
-        { size: T.small, fill: q ? C.structure : C.subsurface });
+        : d.why_no_feed;
+      if (why) {
+        f.text(6, 25, why,
+               { size: T.small, fill: q ? C.structure : C.subsurface });
+      }
     }
     return f.done();
   }

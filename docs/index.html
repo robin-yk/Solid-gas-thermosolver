@@ -637,8 +637,13 @@ p.warn { color: var(--orange); }
       px.push(x);
       p.line(x, y, x, y - TICK.major, C.ink, LW.axis);
       if (top != null) p.line(x, top, x, top + TICK.major, C.ink, LW.axis);
-      p.text(x, y + T.tick + 3, fmt ? fmt(t) : String(t),
-        { size: T.tick, anchor: 'middle' });
+      /* the outermost label is centred on a tick that sits on the frame,
+         so half of it hangs past the figure edge and gets clipped. Nudge
+         only those back inside; every interior label is untouched. */
+      var s = fmt ? fmt(t) : String(t);
+      var half = 0.28 * T.tick * s.length;
+      var tx = Math.min(Math.max(x, half + 1), p.W - half - 1);
+      p.text(tx, y + T.tick + 3, s, { size: T.tick, anchor: 'middle' });
     });
     minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1)
       .forEach(function (x) {
@@ -1373,14 +1378,18 @@ p.warn { color: var(--orange); }
       f.text(6, 14, 'reduction to ' + chem(d.at.phase) + ' starts below '
              + fmtPct(d.at.pct) + ' CO₂',
              { size: T.body, weight: 'bold' });
-      f.text(6, 25, q
+      /* with no feed marked there is nothing to say about one, and a
+         warning about a feed the caller never supplied reads as an error */
+      var why = q
         ? (q.ratio >= 1
-            ? 'the feed on the panel sits ' + fmtTimes(q.ratio)
-              + ' above that'
+            ? 'the feed on the panel sits ' + fmtTimes(q.ratio) + ' above that'
             : 'the feed on the panel sits ' + fmtTimes(1 / q.ratio)
               + ' below it, so the solid reduces')
-        : (d.why_no_feed || 'this feed sets no oxygen potential'),
-        { size: T.small, fill: q ? C.structure : C.subsurface });
+        : d.why_no_feed;
+      if (why) {
+        f.text(6, 25, why,
+               { size: T.small, fill: q ? C.structure : C.subsurface });
+      }
     }
     return f.done();
   }
@@ -1528,10 +1537,10 @@ p.warn { color: var(--orange); }
       }
     });
 
-    /* the whole bridging row, which nothing has been observed to strip */
+    /* the whole bridging row, which nothing has been observed to strip.
+       It sits low enough to cross every bar, so it is named in the legend
+       rather than labelled in place. */
     f.line(p.x0, ys(D.full_row), p.x1, ys(D.full_row), C.ink, LW.axis, '3 2');
-    f.text(p.x1 - 3, ys(D.full_row) - 4, 'whole bridging row',
-           { size: T.small, anchor: 'end' });
 
     axisX(f, xs, p.y1, D.bars.map(function (_, i) { return i; }),
           'oxygen removed by titration (µmol-O g⁻¹)',
@@ -1539,8 +1548,9 @@ p.warn { color: var(--orange); }
     axisY(f, ys, p.x0, K.niceTicks(0, top * 1.08, 5),
           'µmol-O g⁻¹');
     K.legend(f, p.x0 + 8, p.y0 + 12, [
-      { col: SURF, text: 'could be surface (at most)' },
-      { col: DEEP, swatch: true, text: 'must be below the surface' }
+      { col: SURF, swatch: true, text: 'could be surface (at most)' },
+      { col: tint(DEEP, 0.45), swatch: true, text: 'must be below the surface' },
+      { col: C.ink, dash: '3 2', text: 'whole bridging row' }
     ]);
     return f.done();
   }

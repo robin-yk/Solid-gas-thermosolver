@@ -106,10 +106,10 @@
       }
     });
 
-    /* the whole bridging row, which nothing has been observed to strip */
+    /* the whole bridging row, which nothing has been observed to strip.
+       It sits low enough to cross every bar, so it is named in the legend
+       rather than labelled in place. */
     f.line(p.x0, ys(D.full_row), p.x1, ys(D.full_row), C.ink, LW.axis, '3 2');
-    f.text(p.x1 - 3, ys(D.full_row) - 4, 'whole bridging row',
-           { size: T.small, anchor: 'end' });
 
     axisX(f, xs, p.y1, D.bars.map(function (_, i) { return i; }),
           'oxygen removed by titration (µmol-O g⁻¹)',
@@ -117,8 +117,9 @@
     axisY(f, ys, p.x0, K.niceTicks(0, top * 1.08, 5),
           'µmol-O g⁻¹');
     K.legend(f, p.x0 + 8, p.y0 + 12, [
-      { col: SURF, text: 'could be surface (at most)' },
-      { col: DEEP, swatch: true, text: 'must be below the surface' }
+      { col: SURF, swatch: true, text: 'could be surface (at most)' },
+      { col: tint(DEEP, 0.45), swatch: true, text: 'must be below the surface' },
+      { col: C.ink, dash: '3 2', text: 'whole bridging row' }
     ]);
     return f.done();
   }
