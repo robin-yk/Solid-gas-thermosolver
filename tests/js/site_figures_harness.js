@@ -6,6 +6,8 @@ const fs = require('fs');
 const ROOT = process.argv[2];
 const TF = require(ROOT + '/web/figures_thermo.js');
 const SF = require(ROOT + '/web/figures_surface.js');
+const PF = require(ROOT + '/web/figures_population.js');
+const PM = require(ROOT + '/web/population.js');
 const D = JSON.parse(fs.readFileSync(ROOT + '/paper_outputs/site_data.json', 'utf8'));
 
 const T = Number(process.argv[3] || 600);
@@ -20,6 +22,11 @@ const marg = TF.marginData(rows, T);
 const bnd = TF.boundaryData(D.equilibrium.boundary, null, T, at);
 const cap = SF.capacityData(D.surface.rows, 0.9, 95);
 const bd = SF.boundData(D.surface.rows, 0.9, 95);
+const R = D.population.reported;
+const prows = PM.partition(D.population.series, R.ns_umol_g, R.E_loss_eV,
+                           R.nu_eff_s1);
+const pop = PF.partitionData(prows);
+const rat = PF.ratesData(prows);
 
 const svg = {
   conversion: TF.conversion({ conversion: conv }),
@@ -27,16 +34,25 @@ const svg = {
   boundary: TF.boundary({ boundary: bnd }),
   capacity: SF.capacity(cap),
   bound: SF.bound(bd),
+  population: PF.population(pop),
+  rates: PF.rates(rat),
 };
 
 console.log(JSON.stringify({
   T_C: T,
   payload: { conversion: conv, margin: marg, boundary: bnd,
-             capacity: cap, bound: bd },
+             capacity: cap, bound: bd, population: pop, rates: rat },
   bytes: Object.fromEntries(Object.entries(svg).map(([k, v]) => [k, v.length])),
   viewBoxes: Object.fromEntries(Object.entries(svg).map(([k, v]) =>
     [k, (v.match(/viewBox="([^"]+)"/) || [])[1]])),
   texts: Object.fromEntries(Object.entries(svg).map(([k, v]) =>
     [k, (v.match(/<text[^>]*>([^<]*)<\/text>/g) || [])
         .map(t => t.replace(/<[^>]+>/g, ''))])),
+  /* one entry per drawn marker, so a gate can count the scatter rather
+     than trust that it drew */
+  marks: Object.fromEntries(Object.entries(svg).map(([k, v]) => [k, {
+    circle: (v.match(/<circle[^>]*stroke="#0072B2"/g) || []).length,
+    square: (v.match(/<rect[^>]*stroke="#D55E00"/g) || []).length,
+    triangle: (v.match(/class="marker"[^>]*stroke="#777777"/g) || []).length,
+  }])),
 }));

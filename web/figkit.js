@@ -195,18 +195,42 @@
     }
     return out;
   }
+  /* Every decade inside the range, endpoints included. log10 of an exact
+     decade lands a few ulp short of the integer, so a bound written as
+     1e3 used to lose its own tick; the tolerance and the literal
+     construction keep an axis from dropping the label at its own edge. */
   function decades(d0, d1) {
     var out = [];
-    for (var e = Math.ceil(log10(d0)); e <= Math.floor(log10(d1)); e++) {
-      out.push(Math.pow(10, e));
+    var e1 = Math.floor(log10(d1) + 1e-9);
+    for (var e = Math.ceil(log10(d0) - 1e-9); e <= e1; e++) {
+      out.push(Number('1e' + e));
     }
     return out;
   }
+
+  /* The enclosing decades of a value, so a log axis brackets its data
+     without a hand-set range: a figure that is recomputed from the user's
+     own numbers must not be able to draw a point outside its own frame. */
+  function decadeFloor(v) { return Number('1e' + Math.floor(log10(v))); }
+  function decadeCeil(v) { return Number('1e' + Math.ceil(log10(v))); }
+
   function expLabel(v) {
     var e = Math.round(log10(v));
     if (e >= 0 && e <= 3) return String(Math.round(v));
     return '10' + String(e).replace(/-/g, '−')
       .split('').map(function (ch) {
+        return '⁰¹²³⁴⁵⁶⁷⁸⁹'
+          [Number(ch)] || (ch === '−' ? '⁻' : ch);
+      }).join('');
+  }
+
+  /* Always the exponent form. An axis spanning many decades reads as one
+     ladder only if every rung is written the same way; expLabel's plain
+     integers are for the two- or three-decade axes. */
+  function powLabel(v) {
+    var e = Math.round(log10(v));
+    return '10' + String(e).replace(/-/g, '−').split('')
+      .map(function (ch) {
         return '⁰¹²³⁴⁵⁶⁷⁸⁹'
           [Number(ch)] || (ch === '−' ? '⁻' : ch);
       }).join('');
@@ -314,6 +338,50 @@
     }
     return p;
   }
+  /* Open markers, three shapes. A scatter that carries three populations
+     has to survive greyscale and a printed 3.5 in., so the series are told
+     apart by shape first and colour second. Every shape is drawn hollow on
+     the paper ground and sized to the same visual area as a circle of the
+     same r, so no series looks heavier than another. */
+  function marker(p, shape, x, y, r, col, filled) {
+    var fill = filled ? col : C.paper;
+    if (shape === 'square') {
+      var s = 1.772 * r;                       /* equal area to the circle */
+      return p.rect(x - s / 2, y - s / 2, s, s, fill, col, LW.axis);
+    }
+    if (shape === 'triangle') {
+      var a = 2.694 * r, h = 0.866 * a;        /* equal area, centroid at y */
+      return p.path('M' + n2(x) + ',' + n2(y - 2 * h / 3)
+        + 'L' + n2(x + a / 2) + ',' + n2(y + h / 3)
+        + 'L' + n2(x - a / 2) + ',' + n2(y + h / 3) + 'Z',
+        col, LW.axis, null, fill, 'marker');
+    }
+    return p.el('circle', { cx: x, cy: y, r: r, fill: fill,
+      stroke: col, 'stroke-width': LW.axis });
+  }
+
+  /* A guide through computed points: Catmull-Rom in pixel space, emitted
+     as cubic Beziers. It interpolates every point exactly, so the guide
+     cannot claim a value the model did not produce - it only smooths the
+     path between them, which is what a dashed guide is for. */
+  function smooth(pts) {
+    if (pts.length < 3) {
+      return pts.map(function (q, i) {
+        return (i ? 'L' : 'M') + n2(q[0]) + ',' + n2(q[1]);
+      }).join('');
+    }
+    var d = 'M' + n2(pts[0][0]) + ',' + n2(pts[0][1]);
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i === 0 ? 0 : i - 1], p1 = pts[i], p2 = pts[i + 1];
+      var p3 = pts[Math.min(i + 2, pts.length - 1)];
+      var c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      var c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += 'C' + n2(c1x) + ',' + n2(c1y) + ' ' + n2(c2x) + ',' + n2(c2y)
+        + ' ' + n2(p2[0]) + ',' + n2(p2[1]);
+    }
+    return d;
+  }
+
   function series(p, pts, xs, ys, col, w, dash) {
     var d = '', started = false;
     pts.forEach(function (q) {
@@ -329,7 +397,9 @@
     gap = gap || T.small + 4;
     items.forEach(function (it, i) {
       var yy = y + i * gap;
-      if (it.dash) {
+      if (it.marker) {
+        marker(p, it.marker, x + 4.5, yy - 2.4, MARK + 0.5, it.col, it.filled);
+      } else if (it.dash) {
         p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.0, it.dash);
       } else if (it.swatch) {
         p.rect(x, yy - 5.2, 7, 6, it.col);
@@ -474,9 +544,11 @@
     MARK: MARK, C: C,
     DPI: DPI, PX_PER_M: PX_PER_M, SQUARE_IN: SQUARE_IN, SQUARE_PT: SQUARE_PT,
     tint: tint, esc: esc, n2: n2, chem: chem, expLabel: expLabel,
+    powLabel: powLabel, decadeFloor: decadeFloor, decadeCeil: decadeCeil,
     figure: figure, plate: plate, square: square,
     lin: lin, lg: lg, niceTicks: niceTicks, decades: decades,
     frame: frame, axisX: axisX, axisY: axisY, series: series,
+    marker: marker, smooth: smooth,
     inDomain: inDomain,
     legend: legend, minorsOf: minorsOf,
     toPNG: toPNG, pxAt600: pxAt600, pngWithDPI: pngWithDPI,

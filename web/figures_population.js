@@ -22,11 +22,21 @@
   var lin = K.lin, lg = K.lg, frame = K.frame, axisX = K.axisX, axisY = K.axisY;
   var tint = K.tint;
 
-  var ISO = C.surface, ASSOC = C.subsurface, BELOW = C.extended;
+  /* One shape and one hue per assigned population, so the three series
+     stay apart where they cross and still read printed in greyscale. */
+  var SERIES = [
+    { key: 'iso', shape: 'circle', col: C.surface,
+      text: 'Isolated accessible' },
+    { key: 'assoc', shape: 'square', col: C.subsurface,
+      text: 'Associated surface-region' },
+    { key: 'below', shape: 'triangle', col: C.extended,
+      text: 'Below active region' }
+  ];
+  var ISO = C.surface;
 
   function partitionData(rows) {
     return {
-      bars: rows.map(function (q) {
+      points: rows.map(function (q) {
         return { sample: q.sample, total: q.nV_total_umol_g,
                  iso: q.n_iso_umol_g, assoc: q.n_assoc_umol_g,
                  below: q.n_below_umol_g };
@@ -45,43 +55,60 @@
 
   /* ---------------------------------------------------------- drawing */
 
+  /* The claim, on one pair of axes: the measured total runs eightfold
+     across the series while the isolated population turns over. Plotting
+     the assignment against the total rather than against a sample name
+     puts the turnover on the axis - the blue guide rises, peaks near
+     100 µmol g⁻¹ and falls, while the grey series climbs the whole way.
+     Both axes are logarithmic because the assignments span five decades
+     and a stacked bar would hide the smallest of them entirely. */
   function population(D) {
     var f = K.square();
-    var p = { x0: f.pane.x0 + 4, y0: 22, x1: f.pane.x1, y1: f.pane.y1 };
-    if (!D || !D.bars.length) return f.done();
+    var p = { x0: f.pane.x0 + 4, y0: 12, x1: f.pane.x1, y1: f.pane.y1 };
+    if (!D || !D.points.length) return f.done();
 
-    var hi = Math.max.apply(null, D.bars.map(function (b) { return b.total; }));
-    /* four orders of magnitude between the smallest split and the largest
-       total, so the count axis is logarithmic and the bars are stacked on it */
-    var Y = lg(0.05, hi * 1.6, p.y1, p.y0);
-    var n = D.bars.length;
-    var X = lin(-0.5, n - 0.5, p.x0, p.x1);
-    var w = (p.x1 - p.x0) / n * 0.24;
+    var xs = D.points.map(function (q) { return q.total; })
+      .filter(function (v) { return isFinite(v) && v > 0; });
+    var ys = [];
+    D.points.forEach(function (q) {
+      SERIES.forEach(function (S) {
+        if (isFinite(q[S.key]) && q[S.key] > 0) ys.push(q[S.key]);
+      });
+    });
+    if (!xs.length || !ys.length) return f.done();
+
+    var X = lg(K.decadeFloor(Math.min.apply(null, xs)),
+               K.decadeCeil(Math.max.apply(null, xs)), p.x0, p.x1);
+    var Y = lg(K.decadeFloor(Math.min.apply(null, ys)),
+               K.decadeCeil(Math.max.apply(null, ys)), p.y1, p.y0);
 
     frame(f, [p.x0, p.x1], [p.y0, p.y1]);
 
-    D.bars.forEach(function (b, i) {
-      var cx = X(i);
-      var trio = [[b.iso, ISO], [b.assoc, ASSOC], [b.below, BELOW]];
-      trio.forEach(function (t, j) {
-        var v = Math.max(t[0], 0.05);
-        var y = Y(v), y0 = Y(0.05);
-        var x = cx + (j - 1) * (w + 1.6) - w / 2;
-        f.rect(x, y, w, y0 - y, t[0] > 0.05 ? t[1] : tint(t[1], 0.3),
-               t[1], LW.axis);
+    /* the guide runs through the isolated series only, and it is a guide:
+       it interpolates the five computed points and asserts nothing between
+       them, which is why it is dashed and carries no markers of its own */
+    var guide = D.points.filter(function (q) { return q.iso > 0; })
+      .sort(function (a, b) { return a.total - b.total; })
+      .map(function (q) { return [X(q.total), Y(q.iso)]; });
+    if (guide.length > 1) {
+      f.path(K.smooth(guide), ISO, LW.curve, '5,3.5');
+    }
+
+    SERIES.forEach(function (S) {
+      D.points.forEach(function (q) {
+        var v = q[S.key];
+        if (!isFinite(v) || v <= 0) return;
+        K.marker(f, S.shape, X(q.total), Y(v), K.MARK + 0.5, S.col);
       });
-      f.dot(cx, Y(b.total), K.MARK.r, C.paper, C.ink);
     });
 
-    axisX(f, X, p.y1, D.bars.map(function (_, i) { return i; }), 'reduction treatment',
-          function (i) { return D.bars[i].sample; });
-    axisY(f, Y, p.x0, K.decades(0.05, hi * 1.6), 'µmol-O g⁻¹', K.expLabel);
-    K.legend(f, p.x0 + 7, p.y0 + 11, [
-      { col: ISO, swatch: true, text: 'isolated, active' },
-      { col: ASSOC, swatch: true, text: 'associated' },
-      { col: BELOW, swatch: true, text: 'below the active region' },
-      { col: C.ink, text: 'measured total' }
-    ]);
+    axisX(f, X, p.y1, K.decades(X.d0, X.d1), 'Total Vₒ (µmol g⁻¹)',
+          K.powLabel);
+    axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1), 'Assigned Vₒ (µmol g⁻¹)',
+          K.powLabel);
+    K.legend(f, p.x0 + 7, p.y0 + 11, SERIES.map(function (S) {
+      return { col: S.col, marker: S.shape, text: S.text };
+    }));
     return f.done();
   }
 

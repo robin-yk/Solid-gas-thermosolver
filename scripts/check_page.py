@@ -21,6 +21,7 @@ PAGE = os.path.join(ROOT, 'docs', 'index.html')
 
 from solidgas import activeset as A            # noqa: E402
 from solidgas import vacancy_inventory as V    # noqa: E402
+from solidgas import vacancy_population as VP  # noqa: E402
 
 FEED = {'CO2': 10, 'H2': 10, 'N2': 80}
 
@@ -90,6 +91,21 @@ const P = require(process.env.PW + '/node_modules/playwright');
   await pg.fill('#sfV', '95');
   await pg.waitForTimeout(150);
   out.bet = await txt('sfKpis');
+  await pg.click('.wstab[data-ws="ws-population"]');
+  await pg.waitForTimeout(250);
+  for (const id of ['figPopulation', 'figRates']) out.drew[id] = await svg(id);
+  /* the scatter is the claim, so count the marks the browser actually put
+     on it rather than trusting that an <svg> appeared */
+  out.popMarks = await pg.evaluate(() => {
+    const s = document.querySelector('#figPopulation svg');
+    if (!s) return null;
+    const n = sel => s.querySelectorAll(sel).length;
+    return { circle: n('circle[stroke="#0072B2"]'),
+             square: n('rect[stroke="#D55E00"]'),
+             triangle: n('path.marker[stroke="#777777"]') };
+  });
+  out.popKpis = await txt('pnKpis');
+
   out.scope = await pg.evaluate(() =>
     document.body.textContent.indexOf('not assigned here') >= 0);
   console.log(JSON.stringify(out));
@@ -120,6 +136,20 @@ def check(out):
        out['tabSwitch']['surface'] == '' and out['tabSwitch']['equilibrium'] == 'none',
        out['tabSwitch'])
     ok('the page states what it does not claim', out['scope'])
+
+    n = len(VP.load_series())
+    ok('the population scatter plots all three assignments',
+       out['popMarks'] == {'circle': n + 1, 'square': n + 1,
+                           'triangle': n + 1}, out['popMarks'])
+    rows = VP.partition(VP.load_series(), VP.REPORTED['ns'],
+                        VP.REPORTED['E_loss'],
+                        10.0 ** VP.REPORTED['log10_nu'])
+    hi = max(q['n_iso_umol_g'] for q in rows)
+    ok('the population workspace opens at the reported partition',
+       ('%.2f' % hi) in out['popKpis'], out['popKpis'])
+    ok('mass balance closes exactly',
+       max(abs(q['closure_umol_g']) for q in rows) == 0.0
+       and '0.000000000' in out['popKpis'], out['popKpis'])
 
     for T, text in sorted(out['eq'].items()):
         r = A.solve(FEED, float(T) + 273.15)
