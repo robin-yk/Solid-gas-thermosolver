@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Solid&ndash;gas thermosolver</title>
-<meta name="description" content="Active-set Gibbs energy minimisation for a CO2/H2/CO/H2O/N2/O2 gas in contact with titanium oxides, a geometric bound on how much of a measured oxygen removal can be surface oxygen, and the isolated-vacancy population that sets the CO rate. Self-contained, no external requests.">
+<meta name="description" content="Active-set Gibbs energy minimisation for a CO2/H2/CO/H2O/N2/O2 gas in contact with titanium oxides, and the isolated surface-vacancy population that sets the CO rate. Self-contained, no external requests.">
 <style>
 /*CSS*/
 </style>
@@ -10,9 +10,8 @@
 <header class="topbar" id="topbar" style="display:none">
   <a class="back" href="#home">&larr; Home</a>
   <nav class="switch" aria-label="workspace">
-    <button class="wstab" data-ws="ws-thermo" type="button">Sol-gas-thermo</button>
-    <button class="wstab" data-ws="ws-surface" type="button">defect-location</button>
-    <button class="wstab" data-ws="ws-population" type="button">defect-kinetics</button>
+    <button class="wstab" data-ws="ws-thermo" type="button">Gas&ndash;solid equilibrium</button>
+    <button class="wstab" data-ws="ws-population" type="button">Vacancy population model</button>
   </nav>
 </header>
 
@@ -22,8 +21,8 @@
 <section id="home">
   <p class="eyebrow">Vlachos Group</p>
   <h1>Ti&ndash;O solid&ndash;gas thermodynamics</h1>
-  <p class="lede">Gas&ndash;solid equilibrium, a surface capacity bound, and isolated-vacancy
-  kinetics for reduced titanium oxides. Every calculation runs in the browser.</p>
+  <p class="lede">Gas&ndash;solid equilibrium and the isolated-vacancy population of reduced
+  titanium oxides. Both calculations run in the browser.</p>
   <div class="cards">
     <button class="card" data-ws="ws-thermo" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -32,20 +31,8 @@
         <path d="M14 66 L106 66 L106 60 C86 58 60 50 40 45 C30 43 20 45 14 48 Z" fill="#087bd8" fill-opacity=".12"/>
         <rect x="70" y="42" width="6" height="6" fill="#d66b13"/>
       </svg>
-      <span class="cname">Sol-gas-thermo</span>
+      <span class="cname">Gas&ndash;solid equilibrium</span>
       <span class="cdesc">Calculate the equilibrium phase, gas composition, and reduction margin for a closed gas&ndash;solid contact.</span>
-    </button>
-    <button class="card" data-ws="ws-surface" type="button">
-      <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
-        <path d="M10 68 L110 68 M10 68 L10 8" stroke="#657482" stroke-width="1" fill="none"/>
-        <rect x="20" y="52" width="14" height="16" fill="#0072B2"/><rect x="20" y="40" width="14" height="12" fill="#D55E00" fill-opacity=".45"/>
-        <rect x="42" y="52" width="14" height="16" fill="#0072B2"/><rect x="42" y="30" width="14" height="22" fill="#D55E00" fill-opacity=".45"/>
-        <rect x="64" y="52" width="14" height="16" fill="#0072B2"/><rect x="64" y="20" width="14" height="32" fill="#D55E00" fill-opacity=".45"/>
-        <rect x="86" y="52" width="14" height="16" fill="#0072B2"/><rect x="86" y="12" width="14" height="40" fill="#D55E00" fill-opacity=".45"/>
-        <path d="M10 46 L110 46" stroke="#1c2b36" stroke-width="1" stroke-dasharray="3 2"/>
-      </svg>
-      <span class="cname">defect-location</span>
-      <span class="cdesc">Bound the share of a titrated oxygen removal that can be surface oxygen, from rutile (110) lattice geometry.</span>
     </button>
     <button class="card" data-ws="ws-population" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -58,13 +45,13 @@
         <circle cx="98" cy="18" r="3.5" fill="#fff" stroke="#0072B2" stroke-width="1.5"/>
         <path d="M18 58 L38 48 L58 42 L78 38 L98 35" stroke="#777777" stroke-width="1.2" fill="none"/>
       </svg>
-      <span class="cname">defect-kinetics</span>
+      <span class="cname">Vacancy population model</span>
       <span class="cdesc">Fit the isolated surface-vacancy population that sets the CO formation rate across the reduction series.</span>
     </button>
   </div>
 </section>
 
-<!-- ========================================== Sol-gas-thermo -->
+<!-- ========================================== gas-solid equilibrium -->
 <div id="ws-thermo" class="ws" style="display:none">
 
 <div class="wshead">
@@ -281,83 +268,11 @@
 </div>
 </div>
 
-<!-- ========================================== defect-location -->
-<div id="ws-surface" class="ws" style="display:none">
-
-<div class="wshead">
-  <h2>Surface capacity bound</h2>
-  <p class="sub">Compare a titrated oxygen removal with the oxygen the rutile (110) surface
-  can hold, and bound the share that must lie below the surface.</p>
-</div>
-
-<div class="wsgrid">
-<aside class="controls">
-  <div class="crow">
-    <div class="c"><label for="sfD">Particle diameter</label>
-      <input type="number" id="sfD" value="0.9" min="0.01" step="0.1">
-      <div class="readout">µm &middot; sphere estimate</div></div>
-    <div class="c"><label for="sfBET">or BET area</label>
-      <input type="number" id="sfBET" placeholder="measured" min="0.001" step="0.1">
-      <div class="readout">m² g⁻¹ &middot; wins if given</div></div>
-    <div class="c"><label for="sfV">Oxygen removed by titration</label>
-      <input type="number" id="sfV" value="95" min="0.01" step="5">
-      <div class="readout">µmol-O g⁻¹</div></div>
-    <div class="c c-wide c-status"><label>&nbsp;</label>
-      <div class="readout" id="sfStatus"></div>
-      <div class="readout">The capacity comes from the rutile lattice constants and the
-        exposed area, and nothing else. The (1×2) added-row deficiency of half a
-        bridging monolayer is the only structural literature value used.</div></div>
-  </div>
-</aside>
-<div class="wsmain">
-<div class="kvrow">
-  <div class="kvblock">
-    <h3>Operating basis</h3>
-    <table class="kv" id="sfBasis"></table>
-  </div>
-  <div class="kvblock">
-    <h3>Capacity result</h3>
-    <div id="sfVerdict"></div>
-    <table class="kv" id="sfKpis"></table>
-  </div>
-</div>
-
-<div class="figgrid">
-  <figure class="pubfig">
-    <h3>Oxygen removal against surface capacity</h3>
-    <div class="figbox" id="figCapacity"></div>
-    <figcaption id="capCapacity"></figcaption>
-  </figure>
-  <figure class="pubfig">
-    <h3>Upper bound on the surface share</h3>
-    <div class="figbox" id="figBound"></div>
-    <figcaption id="capBound"></figcaption>
-  </figure>
-</div>
-
-<section class="panel pad">
-  <h2>Derived composition</h2>
-  <div class="tablewrap"><table>
-    <thead><tr><th>Quantity</th><th class="k2">Value</th></tr></thead>
-    <tbody id="sfDerived"></tbody>
-  </table></div>
-  <div class="note calm"><b>Scope.</b> The oxygen that is not on the
-    surface is not assigned here among subsurface point defects, bulk point
-    defects and extended defects. No measurement in this work resolves depth, and
-    a partition computed from literature vacancy formation energies would be a
-    model output presented as a measurement. Literature DFT does indicate a strong
-    depth dependence of vacancy stability; those values are tabulated in
-    <code>data/literature_dft.json</code> and are not used here.</div>
-</section>
-</div>
-</div>
-</div>
-
-<!-- ========================================== defect-kinetics -->
+<!-- ========================================== vacancy population model -->
 <div id="ws-population" class="ws" style="display:none">
 
 <div class="wshead">
-  <h2>Isolated-vacancy population</h2>
+  <h2>Vacancy population model</h2>
   <p class="sub">Fit the isolated surface-vacancy population that sets the CO formation
   rate across the reduction series.</p>
 </div>
@@ -458,10 +373,9 @@
 </main>
 
 <footer>
-  <p>Sol-gas-thermo solves in the browser from the same coefficient tables the Python
-    package uses, and a parity gate holds the two to the last place. defect-location is
-    lattice geometry; defect-kinetics integrates one rate equation. Regenerate the
-    committed manuscript values with <code>python3 scripts/reproduce_paper.py</code>.
+  <p>The equilibrium solves in the browser from the same coefficient tables the Python
+    package uses, and a parity gate holds the two to the last place; the population model
+    integrates one rate equation the same way. Regenerate the committed manuscript values with <code>python3 scripts/reproduce_paper.py</code>.
     <a href="https://github.com/robin-yk/Solid-gas-thermosolver">Source</a>.</p>
 </footer>
 
@@ -471,8 +385,6 @@
 <script>/*FIGKIT*/</script>
 <script>/*ENGINE*/</script>
 <script>/*THERMO*/</script>
-<script>/*VACANCY*/</script>
-<script>/*SURFACE*/</script>
 <script>/*POPENGINE*/</script>
 <script>/*POPFIG*/</script>
 <script>/*PAGE*/</script>

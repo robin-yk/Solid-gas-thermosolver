@@ -6,10 +6,10 @@
     python3 scripts/build_site.py         # -> docs/index.html
 
 Both workspaces solve in the page. The equilibrium half runs the active-set
-solver mirrored in web/activeset.js, and the surface half runs the dozen
-lines of lattice arithmetic mirrored in web/vacancy.js; parity gates hold
-each against its Python original. The committed manuscript values ride
-along as site_data.json so the figures and the paper cannot drift.
+solver mirrored in web/activeset.js, and the population half integrates the
+rate equation mirrored in web/population.js; parity gates hold each against
+its Python original. The committed manuscript values ride along as
+site_data.json so the figures and the paper cannot drift.
 """
 
 import json
@@ -34,9 +34,7 @@ PARTS = [
     ('/*CSS*/', os.path.join(WEB, 'site.css')),
     ('/*FIGKIT*/', os.path.join(WEB, 'figkit.js')),
     ('/*ENGINE*/', os.path.join(WEB, 'activeset.js')),
-    ('/*VACANCY*/', os.path.join(WEB, 'vacancy.js')),
     ('/*THERMO*/', os.path.join(WEB, 'figures_thermo.js')),
-    ('/*SURFACE*/', os.path.join(WEB, 'figures_surface.js')),
     ("/*POPENGINE*/", os.path.join(WEB, "population.js")),
     ("/*POPFIG*/", os.path.join(WEB, "figures_population.js")),
     ('/*PAGE*/', os.path.join(WEB, 'ti_solver_page.js')),

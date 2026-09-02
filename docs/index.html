@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Solid&ndash;gas thermosolver</title>
-<meta name="description" content="Active-set Gibbs energy minimisation for a CO2/H2/CO/H2O/N2/O2 gas in contact with titanium oxides, a geometric bound on how much of a measured oxygen removal can be surface oxygen, and the isolated-vacancy population that sets the CO rate. Self-contained, no external requests.">
+<meta name="description" content="Active-set Gibbs energy minimisation for a CO2/H2/CO/H2O/N2/O2 gas in contact with titanium oxides, and the isolated surface-vacancy population that sets the CO rate. Self-contained, no external requests.">
 <style>
 :root{--blue:#087bd8;--navy:#12334d;--ink:#1c2b36;--muted:#657482;--line:#dbe5ed;
       --bg:#ffffff;--panel:#ffffff;--orange:#d66b13;--green:#16844b;--red:#c0392b;
@@ -33,7 +33,7 @@ h3{margin:20px 0 8px;color:var(--navy);font-size:17px;line-height:1.25}
 /* ---- home: three cards */
 #home{padding:clamp(30px,6vh,70px) 0 40px;max-width:1180px;margin:auto}
 .lede{max-width:640px;margin:14px 0 34px;color:var(--muted);font-size:18px;line-height:1.45}
-.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;max-width:900px}
 .card{display:flex;flex-direction:column;align-items:stretch;text-align:left;gap:10px;
       padding:0 0 22px;background:var(--panel);border:1px solid var(--line);border-radius:16px;
       cursor:pointer;color:var(--ink);transition:border-color .12s,box-shadow .12s}
@@ -147,9 +147,8 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 <header class="topbar" id="topbar" style="display:none">
   <a class="back" href="#home">&larr; Home</a>
   <nav class="switch" aria-label="workspace">
-    <button class="wstab" data-ws="ws-thermo" type="button">Sol-gas-thermo</button>
-    <button class="wstab" data-ws="ws-surface" type="button">defect-location</button>
-    <button class="wstab" data-ws="ws-population" type="button">defect-kinetics</button>
+    <button class="wstab" data-ws="ws-thermo" type="button">Gas&ndash;solid equilibrium</button>
+    <button class="wstab" data-ws="ws-population" type="button">Vacancy population model</button>
   </nav>
 </header>
 
@@ -159,8 +158,8 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 <section id="home">
   <p class="eyebrow">Vlachos Group</p>
   <h1>Ti&ndash;O solid&ndash;gas thermodynamics</h1>
-  <p class="lede">Gas&ndash;solid equilibrium, a surface capacity bound, and isolated-vacancy
-  kinetics for reduced titanium oxides. Every calculation runs in the browser.</p>
+  <p class="lede">Gas&ndash;solid equilibrium and the isolated-vacancy population of reduced
+  titanium oxides. Both calculations run in the browser.</p>
   <div class="cards">
     <button class="card" data-ws="ws-thermo" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -169,20 +168,8 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
         <path d="M14 66 L106 66 L106 60 C86 58 60 50 40 45 C30 43 20 45 14 48 Z" fill="#087bd8" fill-opacity=".12"/>
         <rect x="70" y="42" width="6" height="6" fill="#d66b13"/>
       </svg>
-      <span class="cname">Sol-gas-thermo</span>
+      <span class="cname">Gas&ndash;solid equilibrium</span>
       <span class="cdesc">Calculate the equilibrium phase, gas composition, and reduction margin for a closed gas&ndash;solid contact.</span>
-    </button>
-    <button class="card" data-ws="ws-surface" type="button">
-      <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
-        <path d="M10 68 L110 68 M10 68 L10 8" stroke="#657482" stroke-width="1" fill="none"/>
-        <rect x="20" y="52" width="14" height="16" fill="#0072B2"/><rect x="20" y="40" width="14" height="12" fill="#D55E00" fill-opacity=".45"/>
-        <rect x="42" y="52" width="14" height="16" fill="#0072B2"/><rect x="42" y="30" width="14" height="22" fill="#D55E00" fill-opacity=".45"/>
-        <rect x="64" y="52" width="14" height="16" fill="#0072B2"/><rect x="64" y="20" width="14" height="32" fill="#D55E00" fill-opacity=".45"/>
-        <rect x="86" y="52" width="14" height="16" fill="#0072B2"/><rect x="86" y="12" width="14" height="40" fill="#D55E00" fill-opacity=".45"/>
-        <path d="M10 46 L110 46" stroke="#1c2b36" stroke-width="1" stroke-dasharray="3 2"/>
-      </svg>
-      <span class="cname">defect-location</span>
-      <span class="cdesc">Bound the share of a titrated oxygen removal that can be surface oxygen, from rutile (110) lattice geometry.</span>
     </button>
     <button class="card" data-ws="ws-population" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -195,13 +182,13 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
         <circle cx="98" cy="18" r="3.5" fill="#fff" stroke="#0072B2" stroke-width="1.5"/>
         <path d="M18 58 L38 48 L58 42 L78 38 L98 35" stroke="#777777" stroke-width="1.2" fill="none"/>
       </svg>
-      <span class="cname">defect-kinetics</span>
+      <span class="cname">Vacancy population model</span>
       <span class="cdesc">Fit the isolated surface-vacancy population that sets the CO formation rate across the reduction series.</span>
     </button>
   </div>
 </section>
 
-<!-- ========================================== Sol-gas-thermo -->
+<!-- ========================================== gas-solid equilibrium -->
 <div id="ws-thermo" class="ws" style="display:none">
 
 <div class="wshead">
@@ -418,83 +405,11 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 </div>
 </div>
 
-<!-- ========================================== defect-location -->
-<div id="ws-surface" class="ws" style="display:none">
-
-<div class="wshead">
-  <h2>Surface capacity bound</h2>
-  <p class="sub">Compare a titrated oxygen removal with the oxygen the rutile (110) surface
-  can hold, and bound the share that must lie below the surface.</p>
-</div>
-
-<div class="wsgrid">
-<aside class="controls">
-  <div class="crow">
-    <div class="c"><label for="sfD">Particle diameter</label>
-      <input type="number" id="sfD" value="0.9" min="0.01" step="0.1">
-      <div class="readout">µm &middot; sphere estimate</div></div>
-    <div class="c"><label for="sfBET">or BET area</label>
-      <input type="number" id="sfBET" placeholder="measured" min="0.001" step="0.1">
-      <div class="readout">m² g⁻¹ &middot; wins if given</div></div>
-    <div class="c"><label for="sfV">Oxygen removed by titration</label>
-      <input type="number" id="sfV" value="95" min="0.01" step="5">
-      <div class="readout">µmol-O g⁻¹</div></div>
-    <div class="c c-wide c-status"><label>&nbsp;</label>
-      <div class="readout" id="sfStatus"></div>
-      <div class="readout">The capacity comes from the rutile lattice constants and the
-        exposed area, and nothing else. The (1×2) added-row deficiency of half a
-        bridging monolayer is the only structural literature value used.</div></div>
-  </div>
-</aside>
-<div class="wsmain">
-<div class="kvrow">
-  <div class="kvblock">
-    <h3>Operating basis</h3>
-    <table class="kv" id="sfBasis"></table>
-  </div>
-  <div class="kvblock">
-    <h3>Capacity result</h3>
-    <div id="sfVerdict"></div>
-    <table class="kv" id="sfKpis"></table>
-  </div>
-</div>
-
-<div class="figgrid">
-  <figure class="pubfig">
-    <h3>Oxygen removal against surface capacity</h3>
-    <div class="figbox" id="figCapacity"></div>
-    <figcaption id="capCapacity"></figcaption>
-  </figure>
-  <figure class="pubfig">
-    <h3>Upper bound on the surface share</h3>
-    <div class="figbox" id="figBound"></div>
-    <figcaption id="capBound"></figcaption>
-  </figure>
-</div>
-
-<section class="panel pad">
-  <h2>Derived composition</h2>
-  <div class="tablewrap"><table>
-    <thead><tr><th>Quantity</th><th class="k2">Value</th></tr></thead>
-    <tbody id="sfDerived"></tbody>
-  </table></div>
-  <div class="note calm"><b>Scope.</b> The oxygen that is not on the
-    surface is not assigned here among subsurface point defects, bulk point
-    defects and extended defects. No measurement in this work resolves depth, and
-    a partition computed from literature vacancy formation energies would be a
-    model output presented as a measurement. Literature DFT does indicate a strong
-    depth dependence of vacancy stability; those values are tabulated in
-    <code>data/literature_dft.json</code> and are not used here.</div>
-</section>
-</div>
-</div>
-</div>
-
-<!-- ========================================== defect-kinetics -->
+<!-- ========================================== vacancy population model -->
 <div id="ws-population" class="ws" style="display:none">
 
 <div class="wshead">
-  <h2>Isolated-vacancy population</h2>
+  <h2>Vacancy population model</h2>
   <p class="sub">Fit the isolated surface-vacancy population that sets the CO formation
   rate across the reduction series.</p>
 </div>
@@ -595,10 +510,9 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 </main>
 
 <footer>
-  <p>Sol-gas-thermo solves in the browser from the same coefficient tables the Python
-    package uses, and a parity gate holds the two to the last place. defect-location is
-    lattice geometry; defect-kinetics integrates one rate equation. Regenerate the
-    committed manuscript values with <code>python3 scripts/reproduce_paper.py</code>.
+  <p>The equilibrium solves in the browser from the same coefficient tables the Python
+    package uses, and a parity gate holds the two to the last place; the population model
+    integrates one rate equation the same way. Regenerate the committed manuscript values with <code>python3 scripts/reproduce_paper.py</code>.
     <a href="https://github.com/robin-yk/Solid-gas-thermosolver">Source</a>.</p>
 </footer>
 
@@ -2867,261 +2781,6 @@ root.Solver = Solver;
                       conversion: conversion, boundary: boundary } };
 });
 </script>
-<script>/* The surface-capacity bound, in the browser.
-
-   A line-for-line mirror of solidgas/vacancy_inventory.py. It is a dozen
-   lines of arithmetic on the rutile lattice constants, which is why it is
-   worth mirroring at all: the alternative is a precomputed grid that
-   cannot answer a BET area the user actually measured. A parity gate
-   holds this against the Python module to the last place. */
-
-(function (root, factory) {
-  'use strict';
-  var api = factory();
-  if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  root.Vacancy = api;
-})(typeof self !== 'undefined' ? self : this, function () {
-  'use strict';
-
-  var N_AVO = 6.02214076e23;
-
-  function cellArea(g) {                       /* cm^2, the (110) 1x1 cell */
-    var a = g.lattice_constants_A.a * 1e-8;
-    var c = g.lattice_constants_A.c * 1e-8;
-    return a * Math.sqrt(2) * c;
-  }
-  function arealDensity(g) {
-    return g.surface_cell.bridging_O_per_1x1_cell / cellArea(g);
-  }
-  function density(g) {                        /* g/cm^3, from the cell */
-    var a = g.lattice_constants_A.a * 1e-8;
-    var c = g.lattice_constants_A.c * 1e-8;
-    return g.formula_units_per_cell * g.molar_mass_g_mol / (N_AVO * a * a * c);
-  }
-  /* The grouping below is the Python module's, parenthesis for
-     parenthesis. Floating-point multiplication does not associate, and
-     reordering these chains moves the answer by a couple of places - which
-     is enough to turn a bit-identical gate into a tolerance. */
-  function area(g, d_um, bet) {                /* m^2/g */
-    if (bet != null) return bet;
-    if (d_um == null) throw new Error('give a BET area or a particle diameter');
-    var d_cm = d_um * 1e-4;
-    return 6.0 / (density(g) * d_cm) * 1e-4;
-  }
-  function capacity(g, d_um, bet) {            /* umol-O/g, whole row */
-    var area_cm2_g = area(g, d_um, bet) * 1e4;
-    return arealDensity(g) * area_cm2_g / N_AVO * 1e6;
-  }
-  function deficiency(g, d_um, bet) {          /* umol-O/g, (1x2) */
-    return g.reconstruction.areal_O_deficiency_ML * capacity(g, d_um, bet);
-  }
-  function siteDensity(g) {
-    return g.oxygen_per_formula_unit / g.molar_mass_g_mol * 1e6;
-  }
-  function toX(g, umol) {
-    return umol / siteDensity(g) * g.oxygen_per_formula_unit;
-  }
-  function toTi3(g, umol) {
-    return Math.min(2.0 * umol / (1.0 / g.molar_mass_g_mol * 1e6), 1.0);
-  }
-
-  function bound(g, umol, d_um, bet) {
-    if (!(umol > 0)) throw new Error('the measured inventory must be positive');
-    var full = capacity(g, d_um, bet), recon = deficiency(g, d_um, bet);
-    return {
-      measured_umol_o_g: umol,
-      area_m2_g: area(g, d_um, bet),
-      density_g_cm3: density(g),
-      bridging_capacity_umol_o_g: full,
-      reconstruction_deficiency_umol_o_g: recon,
-      inventory_over_capacity: umol / full,
-      surface_fraction_max: Math.min(recon / umol, 1),
-      below_surface_fraction_min: Math.max(1 - recon / umol, 0),
-      surface_fraction_max_full_row: Math.min(full / umol, 1),
-      below_surface_fraction_min_full_row: Math.max(1 - full / umol, 0),
-      x_in_TiO2mx: toX(g, umol),
-      Ti3_fraction: toTi3(g, umol)
-    };
-  }
-
-  return { cellArea: cellArea, arealDensity: arealDensity, density: density,
-           area: area, capacity: capacity, deficiency: deficiency,
-           siteDensity: siteDensity, toX: toX, toTi3: toTi3, bound: bound };
-});
-</script>
-<script>/* The two figures the surface-capacity bound exists to produce.
-
-   Both draw the same comparison from opposite ends. The first puts the
-   measured oxygen removal next to the oxygen the (110) surface could
-   hold, on one axis, so the gap is a length rather than a ratio in a
-   sentence. The second turns that gap into the bound itself: the largest
-   fraction of the measured inventory that could be surface oxygen, and
-   by complement the smallest fraction that must lie below it.
-
-   Nothing here is a partition. The bar's upper band is "not surface",
-   not "subsurface" and not "bulk" - this repository does not distinguish
-   them and the figure must not imply that it does. */
-
-(function (root, factory) {
-  'use strict';
-  var kit = (typeof module !== 'undefined' && module.exports)
-    ? require('./figkit.js') : root.FigKit;
-  if (!kit) throw new Error('figures_surface.js needs figkit.js');
-  var api = factory(kit);
-  if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  root.SurfaceFigures = api;
-})(typeof self !== 'undefined' ? self : this, function (K) {
-  'use strict';
-
-  var C = K.C, LW = K.LW, T = K.FIGTYPE;
-  var lin = K.lin, frame = K.frame, axisX = K.axisX, axisY = K.axisY;
-  var series = K.series, tint = K.tint;
-
-  var SURF = C.surface, DEEP = C.extended;
-
-  /* --------------------------------------------------------- payloads */
-
-  function capacityData(rows, d_um, markInventory) {
-    var sel = rows.filter(function (r) {
-      return Math.abs(r.diameter_um - d_um) < 1e-9;
-    }).sort(function (a, b) {
-      return a.measured_umol_O_g - b.measured_umol_O_g;
-    });
-    if (!sel.length) return null;
-    return {
-      d_um: d_um,
-      area_m2_g: sel[0].area_m2_g,
-      ceiling: sel[0].reconstruction_deficiency_umol_O_g,
-      full_row: sel[0].bridging_capacity_umol_O_g,
-      bars: sel.map(function (r) {
-        return { measured: r.measured_umol_O_g,
-                 surface_max: r.reconstruction_deficiency_umol_O_g,
-                 below_min: r.measured_umol_O_g
-                   - r.reconstruction_deficiency_umol_O_g };
-      }),
-      mark: markInventory == null ? null : Number(markInventory)
-    };
-  }
-
-  function boundData(rows, d_um, markInventory) {
-    var sel = rows.filter(function (r) {
-      return Math.abs(r.diameter_um - d_um) < 1e-9;
-    }).sort(function (a, b) {
-      return a.measured_umol_O_g - b.measured_umol_O_g;
-    });
-    if (!sel.length) return null;
-    var ceiling = sel[0].reconstruction_deficiency_umol_O_g;
-    var full = sel[0].bridging_capacity_umol_O_g;
-    var lo = sel[0].measured_umol_O_g, hi = sel[sel.length - 1].measured_umol_O_g;
-    var recon = [], row = [];
-    for (var i = 0; i <= 120; i++) {
-      var v = lo + (hi - lo) * i / 120;
-      recon.push([v, Math.min(ceiling / v, 1) * 100]);
-      row.push([v, Math.min(full / v, 1) * 100]);
-    }
-    var at = null;
-    if (markInventory != null && markInventory > 0) {
-      at = { measured: Number(markInventory),
-             pct: Math.min(ceiling / markInventory, 1) * 100,
-             pct_full: Math.min(full / markInventory, 1) * 100 };
-    }
-    return { d_um: d_um, ceiling: ceiling, full_row: full,
-             lo: lo, hi: hi, recon: recon, row: row, at: at };
-  }
-
-  /* ---------------------------------------------------------- drawing */
-
-  function capacity(D) {
-    var f = K.square();
-    var p = f.pane;
-    if (!D) return f.done();
-
-    var top = Math.max.apply(null, D.bars.map(function (b) {
-      return b.measured;
-    }));
-    var ys = lin(0, top * 1.08, p.y1, p.y0);
-    var n = D.bars.length;
-    var xs = lin(-0.5, n - 0.5, p.x0, p.x1);
-    var wid = (p.x1 - p.x0) / n * 0.62;
-
-    frame(f, [p.x0, p.x1], [p.y0, p.y1]);
-
-    D.bars.forEach(function (b, i) {
-      var cx = xs(i);
-      var yTop = ys(b.measured), yCut = ys(b.surface_max), y0 = ys(0);
-      f.rect(cx - wid / 2, yTop, wid, yCut - yTop,
-             tint(DEEP, 0.22), DEEP, LW.axis);
-      f.rect(cx - wid / 2, yCut, wid, y0 - yCut, SURF, SURF, LW.axis);
-      /* the reader's own number. A 6 pt tick above the bar was too small
-         to find, and finding it is the whole point of typing a value in. */
-      if (D.mark != null && Math.abs(b.measured - D.mark) < 1e-9) {
-        var a = 7, ty = yTop - 4;
-        f.path('M' + (cx - a / 2) + ',' + (ty - a * 0.866)
-             + 'L' + (cx + a / 2) + ',' + (ty - a * 0.866)
-             + 'L' + cx + ',' + ty + 'Z', C.ink, LW.axis, null, C.ink);
-        f.text(cx, ty - a * 0.866 - 3.5, 'entered',
-               { size: f.type.small, anchor: 'middle' });
-      }
-    });
-
-    /* the whole bridging row, which nothing has been observed to strip.
-       It sits low enough to cross every bar, so it is named in the legend
-       rather than labelled in place. */
-    f.line(p.x0, ys(D.full_row), p.x1, ys(D.full_row), C.ink, LW.axis, '3 2');
-
-    axisX(f, xs, p.y1, D.bars.map(function (_, i) { return i; }),
-          'oxygen removed by titration (µmol-O g⁻¹)',
-          function (i) { return String(Math.round(D.bars[i].measured)); });
-    axisY(f, ys, p.x0, K.niceTicks(0, top * 1.08, 5),
-          'µmol-O g⁻¹');
-    K.legend(f, p.x0 + 8, p.y0 + 12, [
-      { col: SURF, swatch: true, text: 'could be surface (at most)' },
-      { col: tint(DEEP, 0.45), swatch: true, text: 'must be below the surface' },
-      { col: C.ink, dash: '3 2', text: 'whole bridging row' }
-    ]);
-    return f.done();
-  }
-
-  function bound(D) {
-    var f = K.square();
-    var p = f.pane;
-    if (!D) return f.done();
-
-    var top = Math.min(100, Math.max.apply(null, D.row.map(function (q) {
-      return q[1];
-    })) * 1.15);
-    var xs = lin(D.lo, D.hi, p.x0, p.x1);
-    var ys = lin(0, top, p.y1, p.y0);
-    frame(f, [p.x0, p.x1], [p.y0, p.y1]);
-
-    series(f, D.row, xs, ys, C.ink, LW.axis, '3 2');
-    series(f, D.recon, xs, ys, SURF, LW.curve);
-
-    if (D.at) {
-      f.line(xs(D.at.measured), ys(0), xs(D.at.measured), ys(D.at.pct),
-             C.ink, LW.axis, '1 2');
-      f.dot(xs(D.at.measured), ys(D.at.pct), K.MARK.r, SURF);
-      f.text(xs(D.at.measured) + 5, ys(D.at.pct) - 5,
-             D.at.pct.toFixed(1) + '% at most',
-             { size: T.small });
-    }
-
-    axisX(f, xs, p.y1, K.niceTicks(D.lo, D.hi, 5),
-          'oxygen removed by titration (µmol-O g⁻¹)');
-    axisY(f, ys, p.x0, K.niceTicks(0, top, 5),
-          'largest possible surface share (%)');
-    K.legend(f, p.x0 + 8, p.y0 + 12, [
-      { col: SURF, text: '(1×2) reconstructed surface' },
-      { col: C.ink, dash: '3 2', text: 'whole bridging row' }
-    ]);
-    return f.done();
-  }
-
-  return { capacity: capacity, bound: bound,
-           capacityData: capacityData, boundData: boundData,
-           FIGURES: { capacity: capacity, bound: bound } };
-});
-</script>
 <script>/* The isolated-surface-vacancy population model, in the browser.
 
    A mirror of solidgas/vacancy_population.py, reduction included. Writing
@@ -4232,16 +3891,14 @@ root.Solver = Solver;
   }
 }());
 </script>
-<script>/* The home screen, the switch between the three workspaces, and the two
-   workspaces that need no solver: defect-location is lattice geometry and
-   one division, defect-kinetics is one rate equation, both mirrored in
-   vacancy.js and population.js and gated against the Python modules.
-   Sol-gas-thermo is driven by ti_solver_page.js and thermo_ui.js. */
+<script>/* The home screen, the switch between the two workspaces, and the
+   population workspace, which integrates one rate equation mirrored in
+   population.js and gated against the Python module. The equilibrium
+   workspace is driven by ti_solver_page.js and thermo_ui.js. */
 
 (function () {
   'use strict';
   var D = window.SITE_DATA;
-  var SF = window.SurfaceFigures, VI = window.Vacancy;
   var PF = window.PopulationFigures, PM = window.Population;
   function $(id) { return document.getElementById(id); }
   function n(v, d) {
@@ -4263,8 +3920,8 @@ root.Solver = Solver;
   function row(label, value) { return [label, value]; }
 
   /* Three workspaces behind three hashes; no hash is the home screen. */
-  var HASH = { thermo: 'ws-thermo', location: 'ws-surface', kinetics: 'ws-population' };
-  var WS = ['ws-thermo', 'ws-surface', 'ws-population'];
+  var HASH = { equilibrium: 'ws-thermo', population: 'ws-population' };
+  var WS = ['ws-thermo', 'ws-population'];
 
   function hashOf(id) {
     for (var k in HASH) if (HASH[k] === id) return k;
@@ -4290,96 +3947,6 @@ root.Solver = Solver;
   function route() {
     var h = location.hash.replace(/^#/, '');
     showWorkspace(HASH[h] || 'home');
-  }
-
-  /* --------------------------------------------------------- surface */
-
-  function inputs() {
-    var d = parseFloat($('sfD').value);
-    var bet = parseFloat($('sfBET').value);
-    var inv = parseFloat($('sfV').value);
-    return {
-      d_um: isFinite(d) && d > 0 ? d : null,
-      bet: isFinite(bet) && bet > 0 ? bet : null,
-      inv: isFinite(inv) && inv > 0 ? inv : null
-    };
-  }
-
-  function series(g, o) {
-    /* the bar figure wants a ladder of inventories; keep the one the user
-       typed in it so the marked bar is always the one being read out */
-    var base = [30, 40, 60, 95, 130, 150, 190, 220];
-    if (o.inv && base.indexOf(o.inv) < 0) base.push(o.inv);
-    base.sort(function (a, b) { return a - b; });
-    return base.map(function (v) {
-      var b = VI.bound(g, v, o.d_um, o.bet);
-      return {
-        diameter_um: o.d_um || 0, area_m2_g: b.area_m2_g,
-        measured_umol_O_g: v,
-        bridging_capacity_umol_O_g: b.bridging_capacity_umol_o_g,
-        reconstruction_deficiency_umol_O_g: b.reconstruction_deficiency_umol_o_g,
-        inventory_over_capacity: b.inventory_over_capacity,
-        surface_fraction_max_pct: b.surface_fraction_max * 100,
-        below_surface_fraction_min_pct: b.below_surface_fraction_min * 100
-      };
-    });
-  }
-
-  function drawSurface() {
-    var g = D.surface.geometry_card, o = inputs();
-    var st = $('sfStatus');
-    if (!o.inv || (!o.d_um && !o.bet)) {
-      st.textContent = 'give a positive oxygen removal and either a diameter '
-        + 'or a BET area';
-      return;
-    }
-    st.textContent = o.bet
-      ? 'area from the measured BET value; the diameter is ignored'
-      : 'area from the smooth-sphere estimate 6/(ρd), a lower bound on a rough particle';
-
-    var rows = series(g, o);
-    /* every row shares one area here, so the figures key off it directly */
-    rows.forEach(function (r) { r.diameter_um = rows[0].diameter_um; });
-    var d0 = rows[0].diameter_um;
-    $('figCapacity').innerHTML = SF.capacity(SF.capacityData(rows, d0, o.inv));
-    $('figBound').innerHTML = SF.bound(SF.boundData(rows, d0, o.inv));
-
-    var b = VI.bound(g, o.inv, o.d_um, o.bet);
-    var smax = n(b.surface_fraction_max * 100, 1), bmin = n(b.below_surface_fraction_min * 100, 1);
-    $('sfBasis').innerHTML = kv([
-      row(o.bet ? 'BET area' : 'Particle diameter',
-          o.bet ? n(o.bet, 3) + ' m² g⁻¹' : n(o.d_um, 2) + ' µm, smooth sphere'),
-      row('Surface area', n(b.area_m2_g, 3) + ' m² g⁻¹'),
-      row('Oxygen removed', n(o.inv, 1) + ' µmol-O g⁻¹'),
-      row('Surface structure', 'rutile (110), (1×2) reconstruction, 0.5 ML bridging deficiency')
-    ]);
-    $('sfVerdict').innerHTML = '<div class="verdict">At most <b>' + smax
-      + '%</b> of the measured oxygen removal can be surface oxygen; at least <b>'
-      + bmin + '%</b> lies below the (110) surface.</div>';
-    $('sfKpis').innerHTML = kv([
-      row('Bridging-O capacity', n(b.bridging_capacity_umol_o_g, 2) + ' µmol-O g⁻¹'),
-      row('(1×2) deficiency', n(b.reconstruction_deficiency_umol_o_g, 2) + ' µmol-O g⁻¹'),
-      row('Measured / capacity', n(b.inventory_over_capacity, 1) + '×'),
-      row('Surface share, at most', smax + '%'),
-      row('Below surface, at least', bmin + '%')
-    ]);
-    $('capCapacity').innerHTML = 'Titrated oxygen removal for the reduction series, '
-      + 'split at the surface ceiling of ' + n(b.reconstruction_deficiency_umol_o_g, 2)
-      + ' µmol-O g⁻¹. The filled band is the oxygen the reconstructed surface can '
-      + 'supply; the remainder of each bar comes from below the surface. The dashed '
-      + 'line is the whole bridging row, ' + n(b.bridging_capacity_umol_o_g, 2)
-      + ' µmol-O g⁻¹.';
-    $('capBound').innerHTML = 'Upper bound on the surface-associated share against '
-      + 'oxygen removed, for the reconstructed surface and for a fully stripped '
-      + 'bridging row. At ' + n(o.inv, 0) + ' µmol-O g⁻¹ the bound is ' + smax
-      + '%; its complement, ' + bmin + '%, is the smallest share below the surface.';
-    $('sfDerived').innerHTML =
-      '<tr><td>x in TiO<sub>2−x</sub></td><td class="k2">'
-      + n(b.x_in_TiO2mx, 5) + '</td></tr>'
-      + '<tr><td>Ti reduced to Ti³⁺</td><td class="k2">'
-      + n(b.Ti3_fraction * 100, 2) + '%</td></tr>'
-      + '<tr><td>Whole bridging row stripped, at most</td><td class="k2">'
-      + n(b.surface_fraction_max_full_row * 100, 1) + '%</td></tr>';
   }
 
   /* ------------------------------------------------------ population */
@@ -4493,17 +4060,12 @@ root.Solver = Solver;
       $('pnNu').value = REPORTED.lognu.toFixed(4);
       drawPopulation();
     });
-    ['sfD', 'sfBET', 'sfV'].forEach(function (id) {
-      var el = $(id);
-      if (el) el.addEventListener('input', drawSurface);
-    });
     Array.prototype.forEach.call(document.querySelectorAll('.wstab, .card'), function (b) {
       b.addEventListener('click', function () {
         showWorkspace(b.getAttribute('data-ws'));
       });
     });
     window.addEventListener('hashchange', route);
-    drawSurface();
     drawPopulation();
     route();
   }

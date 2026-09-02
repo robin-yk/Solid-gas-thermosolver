@@ -20,7 +20,6 @@ sys.path.insert(0, ROOT)
 PAGE = os.path.join(ROOT, 'docs', 'index.html')
 
 from solidgas import activeset as A            # noqa: E402
-from solidgas import vacancy_inventory as V    # noqa: E402
 from solidgas import vacancy_population as VP  # noqa: E402
 
 FEED = {'CO2': 10, 'H2': 10, 'N2': 80}
@@ -44,7 +43,7 @@ const P = require(process.env.PW + '/node_modules/playwright');
     return el ? el.textContent.replace(/\s+/g, ' ').trim() : null;
   }, id);
 
-  const out = { errors: errs, drew: {}, eq: {}, sf: {} };
+  const out = { errors: errs, drew: {}, eq: {} };
   /* the page opens on the home screen: three cards, no workspace */
   out.home = await pg.evaluate(() => ({
     cards: document.querySelectorAll('.card').length,
@@ -79,27 +78,11 @@ const P = require(process.env.PW + '/node_modules/playwright');
     out.eq[T] = await solve(T, { CO2: 10, H2: 10, N2: 80 });
   out.pure_h2 = await solve(1200, { H2: 1 });
 
-  await pg.click('.wstab[data-ws="ws-surface"]');
-  await pg.waitForTimeout(200);
-  for (const id of ['figCapacity', 'figBound']) out.drew[id] = await svg(id);
-  out.tabSwitch = await pg.evaluate(() => ({
-    surface: document.getElementById('ws-surface').style.display,
-    equilibrium: document.getElementById('ws-thermo').style.display }));
-
-  for (const d of ['0.9', '1.6']) {
-    await pg.fill('#sfD', d);
-    for (const v of ['95', '190']) {
-      await pg.fill('#sfV', v);
-      await pg.waitForTimeout(150);
-      out.sf[d + '/' + v] = await txt('sfKpis');
-    }
-  }
-  // a measured BET area must override the sphere estimate
-  await pg.fill('#sfBET', '3.25');
-  await pg.fill('#sfV', '95');
-  await pg.waitForTimeout(150);
-  out.bet = await txt('sfKpis');
   await pg.click('.wstab[data-ws="ws-population"]');
+  await pg.waitForTimeout(200);
+  out.tabSwitch = await pg.evaluate(() => ({
+    population: document.getElementById('ws-population').style.display,
+    equilibrium: document.getElementById('ws-thermo').style.display }));
   await pg.waitForTimeout(250);
   for (const id of ['figPopulation', 'figRates']) out.drew[id] = await svg(id);
   /* the scatter is the claim, so count the marks the browser actually put
@@ -116,7 +99,7 @@ const P = require(process.env.PW + '/node_modules/playwright');
   out.popFit = await txt('pnIdent');
 
   out.scope = await pg.evaluate(() =>
-    document.body.textContent.indexOf('not assigned here') >= 0);
+    document.body.textContent.indexOf('must not be reused as a turnover-frequency denominator') >= 0);
   console.log(JSON.stringify(out));
   await b.close();
 })();
@@ -142,10 +125,10 @@ def check(out):
     ok('the swept figures wait for the button',
        out['beforeSweep'] == {'margin': 0, 'conversion': 0}, out['beforeSweep'])
     ok('the page opens on the home screen',
-       out['home'] == {'cards': 3, 'thermo': 'none', 'topbar': 'none'}, out['home'])
-    ok('a card opens its workspace under its hash', out['hash'] == '#thermo', out['hash'])
+       out['home'] == {'cards': 2, 'thermo': 'none', 'topbar': 'none'}, out['home'])
+    ok('a card opens its workspace under its hash', out['hash'] == '#equilibrium', out['hash'])
     ok('the workspace switch works',
-       out['tabSwitch']['surface'] == '' and out['tabSwitch']['equilibrium'] == 'none',
+       out['tabSwitch']['population'] == '' and out['tabSwitch']['equilibrium'] == 'none',
        out['tabSwitch'])
     ok('the page states what it does not claim', out['scope'])
 
@@ -176,19 +159,6 @@ def check(out):
        'Ti10O19' in out['pure_h2'].replace('₁', '1').replace('₀', '0')
        .replace('₉', '9').replace('Ti10O19', 'Ti10O19'), out['pure_h2'])
 
-    g = V.load()
-    for key, text in sorted(out['sf'].items()):
-        d, inv = (float(x) for x in key.split('/'))
-        bd = V.surface_fraction_bound(g, inv, d_um=d)
-        ok('d=%s, %s umol: capacity matches' % (d, inv),
-           '%.2f µmol-O g⁻¹' % bd['bridging_capacity_umol_o_g'] in text, text)
-        ok('d=%s, %s umol: the bound matches' % (d, inv),
-           _pct(bd['surface_fraction_max'] * 100) in text, text)
-
-    bd = V.surface_fraction_bound(g, 95.0, bet_m2_g=3.25)
-    ok('a measured BET area overrides the sphere estimate',
-       '%.2f µmol-O g⁻¹' % bd['bridging_capacity_umol_o_g'] in out['bet'],
-       out['bet'])
     return fails
 
 
