@@ -64,7 +64,9 @@
      and a stacked bar would hide the smallest of them entirely. */
   function population(D) {
     var f = K.square();
-    var p = { x0: f.pane.x0 + 4, y0: 12, x1: f.pane.x1, y1: f.pane.y1 };
+    /* three populations fill every corner of the scatter between them,
+       so the legend takes a band above the frame */
+    var p = { x0: f.pane.x0 + 6, y0: f.pane.y0 + 66, x1: f.pane.x1, y1: f.pane.y1 };
     if (!D || !D.points.length) return f.done();
 
     var xs = D.points.map(function (q) { return q.total; })
@@ -91,14 +93,14 @@
       .sort(function (a, b) { return a.total - b.total; })
       .map(function (q) { return [X(q.total), Y(q.iso)]; });
     if (guide.length > 1) {
-      f.path(K.smooth(guide), ISO, LW.curve, '5,3.5');
+      f.path(K.smooth(guide), ISO, LW.curve, '8,5');
     }
 
     SERIES.forEach(function (S) {
       D.points.forEach(function (q) {
         var v = q[S.key];
         if (!isFinite(v) || v <= 0) return;
-        K.marker(f, S.shape, X(q.total), Y(v), K.MARK + 0.5, S.col);
+        K.marker(f, S.shape, X(q.total), Y(v), K.MARK, S.col);
       });
     });
 
@@ -106,7 +108,7 @@
           K.powLabel);
     axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1), 'Assigned Vₒ (µmol g⁻¹)',
           K.powLabel);
-    K.legend(f, p.x0 + 7, p.y0 + 11, SERIES.map(function (S) {
+    K.legend(f, p.x0 + 2, f.pane.y0 + 12, SERIES.map(function (S) {
       return { col: S.col, marker: S.shape, text: S.text };
     }));
     return f.done();
@@ -114,7 +116,9 @@
 
   function rates(D) {
     var f = K.square();
-    var p = { x0: f.pane.x0 + 4, y0: 22, x1: f.pane.x1, y1: f.pane.y1 };
+    /* the legend sits in a band above the frame: the tallest bars reach
+       the top of the panel and would run under it inside */
+    var p = { x0: f.pane.x0 + 6, y0: f.pane.y0 + 46, x1: f.pane.x1, y1: f.pane.y1 };
     if (!D || !D.points.length) return f.done();
 
     /* the rates span 86-fold and the collapse at the last sample is the
@@ -136,15 +140,15 @@
     D.points.forEach(function (q, i) {
       var cx = X(i);
       var y0 = Y(Y.d0);
-      f.rect(cx - w - 1, Y(q.measured), w, y0 - Y(q.measured),
+      f.rect(cx - w - 1.5, Y(q.measured), w, y0 - Y(q.measured),
              tint(C.ink, 0.18), C.ink, LW.axis);
-      f.rect(cx + 1, Y(q.fitted), w, y0 - Y(q.fitted), ISO, ISO, LW.axis);
+      f.rect(cx + 1.5, Y(q.fitted), w, y0 - Y(q.fitted), ISO, ISO, LW.axis);
     });
     axisX(f, X, p.y1, D.points.map(function (_, i) { return i; }),
           'reduction treatment', function (i) { return D.points[i].sample; });
     axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1),
           'initial CO rate (µmol g⁻¹ s⁻¹)', K.powLabel);
-    K.legend(f, p.x0 + 7, p.y0 + 11, [
+    K.legend(f, p.x0 + 2, f.pane.y0 + 12, [
       { col: tint(C.ink, 0.18), edge: C.ink, swatch: true, text: 'measured' },
       { col: ISO, swatch: true, text: 'fitted, ∝ n(isolated)' }
     ]);

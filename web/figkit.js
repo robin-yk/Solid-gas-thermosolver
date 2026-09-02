@@ -2,7 +2,7 @@
 
    Everything quantitative in this repository is drawn through here - the
    workspace figures on the page, at
-   a square 3.5 in. The coordinate system is typographic points in both,
+   a square 5 in. The coordinate system is typographic points in both,
    so a stroke width written here is the stroke width that reaches the
    page, and the browser preview and the print export share one geometry.
 
@@ -29,18 +29,18 @@
   var FONT = 'Arial, Helvetica, sans-serif';
   /* Two type scales, both in points at print size. A plate is a column
      of a printed page and sits at the journal floor; a workspace figure
-     is a 3.5 in square read on its own and carries the larger set the
-     specification asks for. Offsets below are derived from these, so a
-     figure never needs a hand-placed label. */
-  var TYPE = { panel: 8, body: 7, tick: 6.5, small: 5.5 };
-  var FIGTYPE = { panel: 9, body: 9, tick: 8, small: 8 };
+     is the 5 in square preset: axis label 18, tick label 15, legend 14,
+     annotation 11. Offsets below are derived from these, so a figure
+     never needs a hand-placed label. */
+  var TYPE = { panel: 8, body: 7, tick: 6.5, small: 5.5, note: 5.5 };
+  var FIGTYPE = { panel: 18, body: 18, tick: 15, small: 14, note: 11 };
   /* Print style, in points - the plate coordinate system is points, so
-     these are the numbers that reach the page. Spines and ticks carry one
-     weight, data curves another, guides a third; nothing sets a stroke
-     width by hand. */
-  var LW = { axis: 0.9, curve: 2.2, guide: 0.8, hair: 0.6 };
-  var TICK = { major: 4, minor: 2 };
-  var MARK = 2.5;                 /* radius, so a 5 pt marker */
+     these are the numbers that reach the page. Spines and major ticks
+     carry one weight, minor ticks a lighter one, data curves another,
+     reference guides a fourth; nothing sets a stroke width by hand. */
+  var LW = { axis: 1.2, minor: 0.9, curve: 2.5, guide: 1.8, hair: 0.9 };
+  var TICK = { major: 6, minor: 3 };
+  var MARK = 5;                   /* radius, so a 10 pt marker */
   /* One hue per physical role. Extended defects are the one neutral
      role, so structure - axes, boundaries, anything held fixed - is a
      lighter grey than they are and never competes with them. */
@@ -297,9 +297,9 @@
     });
     minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1)
       .forEach(function (x) {
-        p.line(x, y, x, y - TICK.minor, C.ink, LW.axis);
+        p.line(x, y, x, y - TICK.minor, C.ink, LW.minor);
         if (top != null) {
-          p.line(x, top, x, top + TICK.minor, C.ink, LW.axis);
+          p.line(x, top, x, top + TICK.minor, C.ink, LW.minor);
         }
       });
     if (label) {
@@ -322,14 +322,14 @@
       if (right != null) {
         p.line(right - TICK.major, y, right, y, C.ink, LW.axis);
       }
-      p.text(x - 4, y + T.tick / 2 - 0.95, fmt ? fmt(t) : String(t),
+      p.text(x - 5, y + T.tick / 2 - 0.95, fmt ? fmt(t) : String(t),
         { size: T.tick, anchor: 'end' });
     });
     minorsOf(px, bx ? bx.y0 : sc.r1, bx ? bx.y1 : sc.r0)
       .forEach(function (y) {
-        p.line(x, y, x + TICK.minor, y, C.ink, LW.axis);
+        p.line(x, y, x + TICK.minor, y, C.ink, LW.minor);
         if (right != null) {
-          p.line(right - TICK.minor, y, right, y, C.ink, LW.axis);
+          p.line(right - TICK.minor, y, right, y, C.ink, LW.minor);
         }
       });
     if (label) {
@@ -339,7 +339,7 @@
     return p;
   }
   /* Open markers, three shapes. A scatter that carries three populations
-     has to survive greyscale and a printed 3.5 in., so the series are told
+     has to survive greyscale and a printed 5 in., so the series are told
      apart by shape first and colour second. Every shape is drawn hollow on
      the paper ground and sized to the same visual area as a circle of the
      same r, so no series looks heavier than another. */
@@ -394,33 +394,41 @@
   }
   function legend(p, x, y, items, gap) {
     var T = p.type || TYPE;
-    gap = gap || T.small + 4;
+    var s = T.small;
+    gap = gap || s + 6;
+    var key = 1.6 * s, mid = -0.36 * s;    /* key length, key centre line */
+    var r = p.type === FIGTYPE ? MARK : MARK + 0.5;
     items.forEach(function (it, i) {
       var yy = y + i * gap;
       if (it.marker) {
-        marker(p, it.marker, x + 4.5, yy - 2.4, MARK + 0.5, it.col, it.filled);
+        marker(p, it.marker, x + key / 2, yy + mid, r, it.col, it.filled);
       } else if (it.dash) {
-        p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.0, it.dash);
+        p.line(x, yy + mid, x + key, yy + mid, it.col, LW.guide, it.dash);
       } else if (it.swatch) {
         /* edge is for a filled shape whose outline carries meaning: a
            tinted bar with an ink stroke reads as black in the legend
            unless the key is drawn the same way as the bar. */
-        p.rect(x, yy - 5.2, 7, 6, it.col, it.edge, it.edge ? LW.axis : null);
+        p.rect(x, yy - 0.8 * s, key * 0.8, 0.85 * s, it.col, it.edge,
+               it.edge ? LW.axis : null);
       } else {
-        p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.4);
+        p.line(x, yy + mid, x + key, yy + mid, it.col, LW.curve);
       }
-      p.text(x + 12, yy, it.text, { size: T.small });
+      p.text(x + key + 0.5 * s, yy, it.text, { size: s });
     });
     return p;
   }
 
   /* --------------------------------------------------------- products */
 
-  /* The workspace figure: exactly 3.5 in square, one user unit to the
+  /* The workspace figure: exactly 5 in square, one user unit to the
      point, so the same drawing code serves the preview and the 600 dpi
      export without a change of coordinates. */
-  var SQUARE_IN = 3.5;
-  var SQUARE_PT = SQUARE_IN * 72;              /* 252 */
+  var SQUARE_IN = 5;
+  var SQUARE_PT = SQUARE_IN * 72;              /* 360 */
+  /* a header band of two lines above the frame: a bold statement in body
+     type and a note under it; figures that carry one start their panel
+     at HEAD */
+  var HEAD = 56;
 
   function square(o) {
     o = o || {};
@@ -430,18 +438,30 @@
       kind: o.wide ? 'wide' : 'square'
     });
     f.type = FIGTYPE;
-    /* the plotting panel is square and the margins are what is left */
-    f.pane = { x0: 44, y0: 10, x1: 44 + 200, y1: 210 };
+    /* the plotting panel is square and the margins are what is left:
+       the left one holds a rotated label of body type past the tick
+       labels, the bottom one the same the other way */
+    f.pane = { x0: 74, y0: 16, x1: 74 + 268, y1: 16 + 268 };
+    f.head = HEAD;
+    f.header = function (title, note, col) {
+      f.text(8, 8 + FIGTYPE.body * 0.78, title,
+             { size: FIGTYPE.body, weight: 'bold' });
+      if (note) {
+        f.text(8, 8 + FIGTYPE.body + 4 + FIGTYPE.note * 0.85, note,
+               { size: FIGTYPE.note, fill: col || C.structure });
+      }
+      return f;
+    };
     return f;
   }
 
   /* ---------------------------------------------------------- export */
 
-  /* A 600 dpi raster of a square figure is 2100 px on a side. The browser
+  /* A 600 dpi raster of a square figure is 3000 px on a side. The browser
      draws the SVG into a canvas at that size; toBlob gives a PNG with no
      resolution chunk, so pngWithDPI splices a pHYs in - 600 dpi is 23622
      pixels per metre - and the file then opens at print size rather than
-     at 2100 px of nothing. */
+     at 3000 px of nothing. */
   var DPI = 600;
   var PX_PER_M = Math.round(DPI / 0.0254);     /* 23622 */
 

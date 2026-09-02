@@ -42,7 +42,7 @@ def test_every_figure_draws(js):
 
 def test_every_figure_is_the_same_square(js):
     """One geometry for the whole page, in typographic points."""
-    assert set(js['viewBoxes'].values()) == {'0 0 252 252'}
+    assert set(js['viewBoxes'].values()) == {'0 0 360 360'}
 
 
 def test_the_conversion_payload_is_the_package_number(js):

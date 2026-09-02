@@ -135,10 +135,10 @@
        the kit's default and there is no y axis to carry a label. Bars
        fill the box top to bottom, so the condition goes in a header band
        above the frame. */
-    var p = { x0: 62, y0: 34, x1: 222, y1: 210 };
+    var p = { x0: f.pane.x0 + 34, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
     var n = d.costs.length;
     if (!n) {
-      f.text(126, 110, 'no excluded phase has a finite reduced cost',
+      f.text(f.W / 2, f.H / 2, 'no excluded phase has a finite reduced cost',
              { size: T.small, anchor: 'middle', fill: C.structure });
       return f.done();
     }
@@ -152,22 +152,22 @@
       var col = near ? NEAR : FAR;
       var y = p.y0 + (i + 0.5) * row - bh / 2;
       f.rect(p.x0, y, X(q.r_kJ) - p.x0, bh, tint(col, 0.30), col, 0.6);
-      f.text(p.x0 - 4, y + bh - 1.5, chem(q.phase),
+      f.text(p.x0 - 6, y + bh - 2, chem(q.phase),
              { size: T.small, anchor: 'end',
                weight: near ? 'bold' : null });
-      f.text(X(q.r_kJ) + 3, y + bh - 1.5,
+      f.text(X(q.r_kJ) + 5, y + bh - 2,
              q.r_kJ < 10 ? q.r_kJ.toFixed(2) : q.r_kJ.toFixed(1),
              { size: T.small, fill: col });
       if (near) {
-        f.text(X(q.r_kJ) + 3, y + bh + 8,
+        f.text(X(q.r_kJ) + 5, y + bh + T.note + 2,
                q.degenerate ? 'on the boundary' : 'nearest boundary',
-               { size: T.small, fill: col });
+               { size: T.note, fill: col });
       }
     });
 
     frame(f, X, [p.y0, p.y1]);
     axisX(f, X, p.y1, K.niceTicks(0, vmax * 1.15, 4),
-          'KKT reduced cost (kJ per formula unit)',
+          'KKT reduced cost (kJ)',
           function (v) { return vmax < 4 ? v.toFixed(1) : String(Math.round(v)); });
 
     var note = d.costs.length
@@ -178,9 +178,8 @@
     if (d.unbounded.length) {
       note += ' \u00b7 ' + d.unbounded.length + ' unbounded (no gas oxygen)';
     }
-    f.text(6, 14, chem(d.winner.join(' + ')) + ' stable at '
-           + Math.round(d.T_C) + ' °C', { size: T.body, weight: 'bold' });
-    f.text(6, 25, note, { size: T.small, fill: C.structure });
+    f.header(chem(d.winner.join(' + ')) + ' stable at ' + Math.round(d.T_C)
+             + ' °C', note);
     return f.done();
   }
 
@@ -189,8 +188,8 @@
     var f = K.square();
     /* the same header band the bar figure carries, so the pair reads as
        one answer given two ways */
-    var p = { x0: f.pane.x0, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
-    var STRIP = 14;                       /* the assemblage ladder */
+    var p = { x0: f.pane.x0, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
+    var STRIP = 22;                       /* the assemblage ladder */
     var yStrip = p.y1 - STRIP;
     var vals = d.rows.map(function (q) { return q.margin_kJ; })
       .filter(function (v) { return v != null && isFinite(v); });
@@ -218,9 +217,9 @@
     d.segments.forEach(function (g) {
       var x0 = X(g.from_C), x1 = X(g.to_C);
       var label = chem(g.phases.join('+'));
-      if (x1 - x0 < label.length * 4.3 + 4) return;
-      f.text((x0 + x1) / 2, yStrip + 8, label,
-             { size: T.small, anchor: 'middle' });
+      if (x1 - x0 < label.length * 0.55 * T.note + 6) return;
+      f.text((x0 + x1) / 2, yStrip + STRIP - 7, label,
+             { size: T.note, anchor: 'middle' });
     });
 
     series(f, d.rows.map(function (q) { return [q.T_C, q.margin_kJ]; }),
@@ -230,7 +229,7 @@
     axisX(f, X, p.y1, K.niceTicks(d.T_lo, d.T_hi, 4), 'temperature (°C)',
           function (v) { return String(Math.round(v)); });
     axisY(f, Y, p.x0, K.niceTicks(0, vmax * 1.08, 4),
-          'margin to the nearest phase (kJ)',
+          'reduction margin (kJ)',
           function (v) { return vmax < 4 ? v.toFixed(1) : String(Math.round(v)); });
 
     var c = d.current;
@@ -268,26 +267,25 @@
         }
         return true;
       };
-      f.dot(qx, qy, 4.2, C.paper, C.gas);
-      f.dot(qx, qy, 1.6, C.gas);
-      var W = 20, corner = null;
-      [[6, -12, 'start'], [-6, -12, 'end'],
-       [6, 14, 'start'], [-6, 14, 'end']].forEach(function (o) {
+      f.dot(qx, qy, 6, C.paper, C.gas);
+      f.dot(qx, qy, 2.2, C.gas);
+      var W = 9 * 0.6 * T.note, corner = null;
+      [[9, -16, 'start'], [-9, -16, 'end'],
+       [9, 20, 'start'], [-9, 20, 'end']].forEach(function (o) {
         if (corner) return;
         var bx0 = o[0] > 0 ? qx + o[0] : qx + o[0] - W;
-        if (clear(bx0, bx0 + W, qy + o[1] - 7, qy + o[1] + 3)) corner = o;
+        if (clear(bx0, bx0 + W, qy + o[1] - T.note, qy + o[1] + 4)) corner = o;
       });
       if (corner) {
         f.text(qx + corner[0], qy + corner[1], 'current T',
-               { size: T.small, anchor: corner[2], fill: C.gas,
+               { size: T.note, anchor: corner[2], fill: C.gas,
                  weight: 'bold' });
       }
-      f.text(6, 14, chem(c.winner.join(' + ')) + ' stable at '
-             + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
-      f.text(6, 25, 'nearest reduced phase ' + chem(c.nearest || '—') + ', margin '
-             + (c.margin_kJ < 10 ? c.margin_kJ.toFixed(2)
-                                 : c.margin_kJ.toFixed(1)) + ' kJ',
-             { size: T.small, fill: C.structure });
+      f.header(chem(c.winner.join(' + ')) + ' stable at ' + Math.round(c.T_C)
+               + ' °C', 'nearest reduced phase ' + chem(c.nearest || '—')
+               + ', margin ' + (c.margin_kJ < 10 ? c.margin_kJ.toFixed(2)
+                                                  : c.margin_kJ.toFixed(1))
+               + ' kJ');
     }
     return f.done();
   }
@@ -351,7 +349,7 @@
   function conversion(D) {
     var d = D.conversion;
     var f = K.square();
-    var p = { x0: f.pane.x0, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
+    var p = { x0: f.pane.x0, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
     var vals = d.rows.map(function (q) { return q.conv_pct; });
     var vmax = vals.length ? Math.max.apply(null, vals) : 1;
     var vmin = vals.length ? Math.min.apply(null, vals) : 0;
@@ -365,9 +363,9 @@
       if (g.phases.length === 1 && g.phases[0] === d.host) return;
       var x0 = X(g.from_C), x1 = X(g.to_C);
       f.rect(x0, p.y0, x1 - x0, p.y1 - p.y0, tint(C.subsurface, 0.16));
-      if (x1 - x0 > 42) {
-        f.text((x0 + x1) / 2, p.y0 + 10, 'solid reducing',
-               { size: T.small, anchor: 'middle', fill: C.subsurface });
+      if (x1 - x0 > 14 * 0.6 * T.note + 6) {
+        f.text((x0 + x1) / 2, p.y0 + T.note + 5, 'solid reducing',
+               { size: T.note, anchor: 'middle', fill: C.subsurface });
       }
     });
     if (bot < 0) f.line(p.x0, Y(0), p.x1, Y(0), C.structure, LW.hair);
@@ -386,15 +384,13 @@
     if (c && c.conv_pct != null) {
       var qx = X(Math.min(Math.max(c.T_C, d.T_lo), d.T_hi));
       var qy = Y(Math.min(Math.max(c.conv_pct, bot), top));
-      f.line(qx, Y(bot), qx, qy, C.gas, LW.hair, '2 2');
-      f.dot(qx, qy, 4.2, C.paper, C.gas);
-      f.dot(qx, qy, 1.6, C.gas);
-      f.text(6, 14, 'CO₂ conversion ' + c.conv_pct.toFixed(1) + '% at '
-             + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
-      f.text(6, 25, d.any_reduction
-             ? 'shaded: includes oxygen transfer from the solid'
-             : 'no oxygen transfer from the solid',
-             { size: T.small, fill: C.structure });
+      f.line(qx, Y(bot), qx, qy, C.gas, LW.hair, '3 3');
+      f.dot(qx, qy, 6, C.paper, C.gas);
+      f.dot(qx, qy, 2.2, C.gas);
+      f.header('CO₂ conversion ' + c.conv_pct.toFixed(1) + '% at '
+               + Math.round(c.T_C) + ' °C', d.any_reduction
+               ? 'shaded: includes oxygen transfer from the solid'
+               : 'no oxygen transfer from the solid');
     }
     return f.done();
   }
@@ -448,7 +444,7 @@
   function boundary(D) {
     var d = D.boundary;
     var f = K.square();
-    var p = { x0: f.pane.x0 + 6, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
+    var p = { x0: f.pane.x0 + 8, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
     var vals = d.rows.map(function (q) { return q.pct; });
     if (d.feed) vals = vals.concat([d.feed.pct]);
     var lo = Math.pow(10, Math.floor(log10(Math.min.apply(null, vals))) - 0.3);
@@ -491,16 +487,16 @@
     if (last) {
       var ye = Y(last.pct);
       var edge = function (y, txt, col) {
-        var w = txt.length * 4.3 + 4;
-        var hitX = qx !== null && qx > p.x1 - 9 - w && qx < p.x1 - 1;
-        var hitY = stem && stem[0] < y + 3 && stem[1] > y - 7;
-        if (hitX && (hitY || (qy !== null && qy > y - 7 && qy < y + 3))) {
+        var w = txt.length * 0.55 * T.note + 6;
+        var hitX = qx !== null && qx > p.x1 - 12 - w && qx < p.x1 - 1;
+        var hitY = stem && stem[0] < y + 4 && stem[1] > y - T.note;
+        if (hitX && (hitY || (qy !== null && qy > y - T.note && qy < y + 4))) {
           return;
         }
-        f.text(p.x1 - 9, y, txt, { size: T.small, anchor: 'end', fill: col });
+        f.text(p.x1 - 12, y, txt, { size: T.note, anchor: 'end', fill: col });
       };
-      edge(Math.max(ye - 7, p.y0 + 9), chem(d.host) + ' stable', C.surface);
-      edge(Math.min(ye + 15, p.y1 - 5), 'reduction', C.structure);
+      edge(Math.max(ye - 10, p.y0 + T.note + 6), chem(d.host) + ' stable', C.surface);
+      edge(Math.min(ye + 22, p.y1 - 8), 'reduction', C.structure);
     }
 
     frame(f, X, [p.y0, p.y1]);
@@ -510,17 +506,16 @@
           K.expLabel);
 
     if (q) {
-      if (stem) f.line(qx, stem[0], qx, stem[1], C.subsurface, LW.hair, '2 2');
-      f.rect(qx - 3, qy - 3, 6, 6, C.subsurface, C.paper, 0.8);
+      if (stem) f.line(qx, stem[0], qx, stem[1], C.subsurface, LW.hair, '3 3');
+      f.rect(qx - 5, qy - 5, 10, 10, C.subsurface, C.paper, LW.hair);
       var right = qx > p.x0 + (p.x1 - p.x0) * 0.62;
-      f.text(qx + (right ? -7 : 7), qy + 3, 'feed',
-             { size: T.small, anchor: right ? 'end' : 'start',
+      f.text(qx + (right ? -10 : 10), qy + 4, 'feed',
+             { size: T.note, anchor: right ? 'end' : 'start',
                fill: C.subsurface });
     }
     if (d.at) {
-      f.text(6, 14, chem(d.host) + ' reduces to ' + chem(d.at.phase) + ' below '
-             + fmtPct(d.at.pct) + ' CO₂',
-             { size: T.body, weight: 'bold' });
+      f.header(chem(d.host) + ' reduces to ' + chem(d.at.phase) + ' below '
+               + fmtPct(d.at.pct) + ' CO₂', null);
       /* with no feed marked there is nothing to say about one, and a
          warning about a feed the caller never supplied reads as an error */
       var why = q
@@ -530,8 +525,8 @@
               + ' below the boundary, the solid reduces')
         : d.why_no_feed;
       if (why) {
-        f.text(6, 25, why,
-               { size: T.small, fill: q ? C.structure : C.subsurface });
+        f.text(8, 8 + T.body + 4 + T.note * 0.85, why,
+               { size: T.note, fill: q ? C.structure : C.subsurface });
       }
     }
     return f.done();

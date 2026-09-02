@@ -977,7 +977,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 
    Everything quantitative in this repository is drawn through here - the
    workspace figures on the page, at
-   a square 3.5 in. The coordinate system is typographic points in both,
+   a square 5 in. The coordinate system is typographic points in both,
    so a stroke width written here is the stroke width that reaches the
    page, and the browser preview and the print export share one geometry.
 
@@ -1004,18 +1004,18 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   var FONT = 'Arial, Helvetica, sans-serif';
   /* Two type scales, both in points at print size. A plate is a column
      of a printed page and sits at the journal floor; a workspace figure
-     is a 3.5 in square read on its own and carries the larger set the
-     specification asks for. Offsets below are derived from these, so a
-     figure never needs a hand-placed label. */
-  var TYPE = { panel: 8, body: 7, tick: 6.5, small: 5.5 };
-  var FIGTYPE = { panel: 9, body: 9, tick: 8, small: 8 };
+     is the 5 in square preset: axis label 18, tick label 15, legend 14,
+     annotation 11. Offsets below are derived from these, so a figure
+     never needs a hand-placed label. */
+  var TYPE = { panel: 8, body: 7, tick: 6.5, small: 5.5, note: 5.5 };
+  var FIGTYPE = { panel: 18, body: 18, tick: 15, small: 14, note: 11 };
   /* Print style, in points - the plate coordinate system is points, so
-     these are the numbers that reach the page. Spines and ticks carry one
-     weight, data curves another, guides a third; nothing sets a stroke
-     width by hand. */
-  var LW = { axis: 0.9, curve: 2.2, guide: 0.8, hair: 0.6 };
-  var TICK = { major: 4, minor: 2 };
-  var MARK = 2.5;                 /* radius, so a 5 pt marker */
+     these are the numbers that reach the page. Spines and major ticks
+     carry one weight, minor ticks a lighter one, data curves another,
+     reference guides a fourth; nothing sets a stroke width by hand. */
+  var LW = { axis: 1.2, minor: 0.9, curve: 2.5, guide: 1.8, hair: 0.9 };
+  var TICK = { major: 6, minor: 3 };
+  var MARK = 5;                   /* radius, so a 10 pt marker */
   /* One hue per physical role. Extended defects are the one neutral
      role, so structure - axes, boundaries, anything held fixed - is a
      lighter grey than they are and never competes with them. */
@@ -1272,9 +1272,9 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
     });
     minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1)
       .forEach(function (x) {
-        p.line(x, y, x, y - TICK.minor, C.ink, LW.axis);
+        p.line(x, y, x, y - TICK.minor, C.ink, LW.minor);
         if (top != null) {
-          p.line(x, top, x, top + TICK.minor, C.ink, LW.axis);
+          p.line(x, top, x, top + TICK.minor, C.ink, LW.minor);
         }
       });
     if (label) {
@@ -1297,14 +1297,14 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
       if (right != null) {
         p.line(right - TICK.major, y, right, y, C.ink, LW.axis);
       }
-      p.text(x - 4, y + T.tick / 2 - 0.95, fmt ? fmt(t) : String(t),
+      p.text(x - 5, y + T.tick / 2 - 0.95, fmt ? fmt(t) : String(t),
         { size: T.tick, anchor: 'end' });
     });
     minorsOf(px, bx ? bx.y0 : sc.r1, bx ? bx.y1 : sc.r0)
       .forEach(function (y) {
-        p.line(x, y, x + TICK.minor, y, C.ink, LW.axis);
+        p.line(x, y, x + TICK.minor, y, C.ink, LW.minor);
         if (right != null) {
-          p.line(right - TICK.minor, y, right, y, C.ink, LW.axis);
+          p.line(right - TICK.minor, y, right, y, C.ink, LW.minor);
         }
       });
     if (label) {
@@ -1314,7 +1314,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
     return p;
   }
   /* Open markers, three shapes. A scatter that carries three populations
-     has to survive greyscale and a printed 3.5 in., so the series are told
+     has to survive greyscale and a printed 5 in., so the series are told
      apart by shape first and colour second. Every shape is drawn hollow on
      the paper ground and sized to the same visual area as a circle of the
      same r, so no series looks heavier than another. */
@@ -1369,33 +1369,41 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   }
   function legend(p, x, y, items, gap) {
     var T = p.type || TYPE;
-    gap = gap || T.small + 4;
+    var s = T.small;
+    gap = gap || s + 6;
+    var key = 1.6 * s, mid = -0.36 * s;    /* key length, key centre line */
+    var r = p.type === FIGTYPE ? MARK : MARK + 0.5;
     items.forEach(function (it, i) {
       var yy = y + i * gap;
       if (it.marker) {
-        marker(p, it.marker, x + 4.5, yy - 2.4, MARK + 0.5, it.col, it.filled);
+        marker(p, it.marker, x + key / 2, yy + mid, r, it.col, it.filled);
       } else if (it.dash) {
-        p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.0, it.dash);
+        p.line(x, yy + mid, x + key, yy + mid, it.col, LW.guide, it.dash);
       } else if (it.swatch) {
         /* edge is for a filled shape whose outline carries meaning: a
            tinted bar with an ink stroke reads as black in the legend
            unless the key is drawn the same way as the bar. */
-        p.rect(x, yy - 5.2, 7, 6, it.col, it.edge, it.edge ? LW.axis : null);
+        p.rect(x, yy - 0.8 * s, key * 0.8, 0.85 * s, it.col, it.edge,
+               it.edge ? LW.axis : null);
       } else {
-        p.line(x, yy - 2.2, x + 9, yy - 2.2, it.col, 1.4);
+        p.line(x, yy + mid, x + key, yy + mid, it.col, LW.curve);
       }
-      p.text(x + 12, yy, it.text, { size: T.small });
+      p.text(x + key + 0.5 * s, yy, it.text, { size: s });
     });
     return p;
   }
 
   /* --------------------------------------------------------- products */
 
-  /* The workspace figure: exactly 3.5 in square, one user unit to the
+  /* The workspace figure: exactly 5 in square, one user unit to the
      point, so the same drawing code serves the preview and the 600 dpi
      export without a change of coordinates. */
-  var SQUARE_IN = 3.5;
-  var SQUARE_PT = SQUARE_IN * 72;              /* 252 */
+  var SQUARE_IN = 5;
+  var SQUARE_PT = SQUARE_IN * 72;              /* 360 */
+  /* a header band of two lines above the frame: a bold statement in body
+     type and a note under it; figures that carry one start their panel
+     at HEAD */
+  var HEAD = 56;
 
   function square(o) {
     o = o || {};
@@ -1405,18 +1413,30 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
       kind: o.wide ? 'wide' : 'square'
     });
     f.type = FIGTYPE;
-    /* the plotting panel is square and the margins are what is left */
-    f.pane = { x0: 44, y0: 10, x1: 44 + 200, y1: 210 };
+    /* the plotting panel is square and the margins are what is left:
+       the left one holds a rotated label of body type past the tick
+       labels, the bottom one the same the other way */
+    f.pane = { x0: 74, y0: 16, x1: 74 + 268, y1: 16 + 268 };
+    f.head = HEAD;
+    f.header = function (title, note, col) {
+      f.text(8, 8 + FIGTYPE.body * 0.78, title,
+             { size: FIGTYPE.body, weight: 'bold' });
+      if (note) {
+        f.text(8, 8 + FIGTYPE.body + 4 + FIGTYPE.note * 0.85, note,
+               { size: FIGTYPE.note, fill: col || C.structure });
+      }
+      return f;
+    };
     return f;
   }
 
   /* ---------------------------------------------------------- export */
 
-  /* A 600 dpi raster of a square figure is 2100 px on a side. The browser
+  /* A 600 dpi raster of a square figure is 3000 px on a side. The browser
      draws the SVG into a canvas at that size; toBlob gives a PNG with no
      resolution chunk, so pngWithDPI splices a pHYs in - 600 dpi is 23622
      pixels per metre - and the file then opens at print size rather than
-     at 2100 px of nothing. */
+     at 3000 px of nothing. */
   var DPI = 600;
   var PX_PER_M = Math.round(DPI / 0.0254);     /* 23622 */
 
@@ -2385,10 +2405,10 @@ root.Solver = Solver;
        the kit's default and there is no y axis to carry a label. Bars
        fill the box top to bottom, so the condition goes in a header band
        above the frame. */
-    var p = { x0: 62, y0: 34, x1: 222, y1: 210 };
+    var p = { x0: f.pane.x0 + 34, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
     var n = d.costs.length;
     if (!n) {
-      f.text(126, 110, 'no excluded phase has a finite reduced cost',
+      f.text(f.W / 2, f.H / 2, 'no excluded phase has a finite reduced cost',
              { size: T.small, anchor: 'middle', fill: C.structure });
       return f.done();
     }
@@ -2402,22 +2422,22 @@ root.Solver = Solver;
       var col = near ? NEAR : FAR;
       var y = p.y0 + (i + 0.5) * row - bh / 2;
       f.rect(p.x0, y, X(q.r_kJ) - p.x0, bh, tint(col, 0.30), col, 0.6);
-      f.text(p.x0 - 4, y + bh - 1.5, chem(q.phase),
+      f.text(p.x0 - 6, y + bh - 2, chem(q.phase),
              { size: T.small, anchor: 'end',
                weight: near ? 'bold' : null });
-      f.text(X(q.r_kJ) + 3, y + bh - 1.5,
+      f.text(X(q.r_kJ) + 5, y + bh - 2,
              q.r_kJ < 10 ? q.r_kJ.toFixed(2) : q.r_kJ.toFixed(1),
              { size: T.small, fill: col });
       if (near) {
-        f.text(X(q.r_kJ) + 3, y + bh + 8,
+        f.text(X(q.r_kJ) + 5, y + bh + T.note + 2,
                q.degenerate ? 'on the boundary' : 'nearest boundary',
-               { size: T.small, fill: col });
+               { size: T.note, fill: col });
       }
     });
 
     frame(f, X, [p.y0, p.y1]);
     axisX(f, X, p.y1, K.niceTicks(0, vmax * 1.15, 4),
-          'KKT reduced cost (kJ per formula unit)',
+          'KKT reduced cost (kJ)',
           function (v) { return vmax < 4 ? v.toFixed(1) : String(Math.round(v)); });
 
     var note = d.costs.length
@@ -2428,9 +2448,8 @@ root.Solver = Solver;
     if (d.unbounded.length) {
       note += ' \u00b7 ' + d.unbounded.length + ' unbounded (no gas oxygen)';
     }
-    f.text(6, 14, chem(d.winner.join(' + ')) + ' stable at '
-           + Math.round(d.T_C) + ' °C', { size: T.body, weight: 'bold' });
-    f.text(6, 25, note, { size: T.small, fill: C.structure });
+    f.header(chem(d.winner.join(' + ')) + ' stable at ' + Math.round(d.T_C)
+             + ' °C', note);
     return f.done();
   }
 
@@ -2439,8 +2458,8 @@ root.Solver = Solver;
     var f = K.square();
     /* the same header band the bar figure carries, so the pair reads as
        one answer given two ways */
-    var p = { x0: f.pane.x0, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
-    var STRIP = 14;                       /* the assemblage ladder */
+    var p = { x0: f.pane.x0, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
+    var STRIP = 22;                       /* the assemblage ladder */
     var yStrip = p.y1 - STRIP;
     var vals = d.rows.map(function (q) { return q.margin_kJ; })
       .filter(function (v) { return v != null && isFinite(v); });
@@ -2468,9 +2487,9 @@ root.Solver = Solver;
     d.segments.forEach(function (g) {
       var x0 = X(g.from_C), x1 = X(g.to_C);
       var label = chem(g.phases.join('+'));
-      if (x1 - x0 < label.length * 4.3 + 4) return;
-      f.text((x0 + x1) / 2, yStrip + 8, label,
-             { size: T.small, anchor: 'middle' });
+      if (x1 - x0 < label.length * 0.55 * T.note + 6) return;
+      f.text((x0 + x1) / 2, yStrip + STRIP - 7, label,
+             { size: T.note, anchor: 'middle' });
     });
 
     series(f, d.rows.map(function (q) { return [q.T_C, q.margin_kJ]; }),
@@ -2480,7 +2499,7 @@ root.Solver = Solver;
     axisX(f, X, p.y1, K.niceTicks(d.T_lo, d.T_hi, 4), 'temperature (°C)',
           function (v) { return String(Math.round(v)); });
     axisY(f, Y, p.x0, K.niceTicks(0, vmax * 1.08, 4),
-          'margin to the nearest phase (kJ)',
+          'reduction margin (kJ)',
           function (v) { return vmax < 4 ? v.toFixed(1) : String(Math.round(v)); });
 
     var c = d.current;
@@ -2518,26 +2537,25 @@ root.Solver = Solver;
         }
         return true;
       };
-      f.dot(qx, qy, 4.2, C.paper, C.gas);
-      f.dot(qx, qy, 1.6, C.gas);
-      var W = 20, corner = null;
-      [[6, -12, 'start'], [-6, -12, 'end'],
-       [6, 14, 'start'], [-6, 14, 'end']].forEach(function (o) {
+      f.dot(qx, qy, 6, C.paper, C.gas);
+      f.dot(qx, qy, 2.2, C.gas);
+      var W = 9 * 0.6 * T.note, corner = null;
+      [[9, -16, 'start'], [-9, -16, 'end'],
+       [9, 20, 'start'], [-9, 20, 'end']].forEach(function (o) {
         if (corner) return;
         var bx0 = o[0] > 0 ? qx + o[0] : qx + o[0] - W;
-        if (clear(bx0, bx0 + W, qy + o[1] - 7, qy + o[1] + 3)) corner = o;
+        if (clear(bx0, bx0 + W, qy + o[1] - T.note, qy + o[1] + 4)) corner = o;
       });
       if (corner) {
         f.text(qx + corner[0], qy + corner[1], 'current T',
-               { size: T.small, anchor: corner[2], fill: C.gas,
+               { size: T.note, anchor: corner[2], fill: C.gas,
                  weight: 'bold' });
       }
-      f.text(6, 14, chem(c.winner.join(' + ')) + ' stable at '
-             + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
-      f.text(6, 25, 'nearest reduced phase ' + chem(c.nearest || '—') + ', margin '
-             + (c.margin_kJ < 10 ? c.margin_kJ.toFixed(2)
-                                 : c.margin_kJ.toFixed(1)) + ' kJ',
-             { size: T.small, fill: C.structure });
+      f.header(chem(c.winner.join(' + ')) + ' stable at ' + Math.round(c.T_C)
+               + ' °C', 'nearest reduced phase ' + chem(c.nearest || '—')
+               + ', margin ' + (c.margin_kJ < 10 ? c.margin_kJ.toFixed(2)
+                                                  : c.margin_kJ.toFixed(1))
+               + ' kJ');
     }
     return f.done();
   }
@@ -2601,7 +2619,7 @@ root.Solver = Solver;
   function conversion(D) {
     var d = D.conversion;
     var f = K.square();
-    var p = { x0: f.pane.x0, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
+    var p = { x0: f.pane.x0, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
     var vals = d.rows.map(function (q) { return q.conv_pct; });
     var vmax = vals.length ? Math.max.apply(null, vals) : 1;
     var vmin = vals.length ? Math.min.apply(null, vals) : 0;
@@ -2615,9 +2633,9 @@ root.Solver = Solver;
       if (g.phases.length === 1 && g.phases[0] === d.host) return;
       var x0 = X(g.from_C), x1 = X(g.to_C);
       f.rect(x0, p.y0, x1 - x0, p.y1 - p.y0, tint(C.subsurface, 0.16));
-      if (x1 - x0 > 42) {
-        f.text((x0 + x1) / 2, p.y0 + 10, 'solid reducing',
-               { size: T.small, anchor: 'middle', fill: C.subsurface });
+      if (x1 - x0 > 14 * 0.6 * T.note + 6) {
+        f.text((x0 + x1) / 2, p.y0 + T.note + 5, 'solid reducing',
+               { size: T.note, anchor: 'middle', fill: C.subsurface });
       }
     });
     if (bot < 0) f.line(p.x0, Y(0), p.x1, Y(0), C.structure, LW.hair);
@@ -2636,15 +2654,13 @@ root.Solver = Solver;
     if (c && c.conv_pct != null) {
       var qx = X(Math.min(Math.max(c.T_C, d.T_lo), d.T_hi));
       var qy = Y(Math.min(Math.max(c.conv_pct, bot), top));
-      f.line(qx, Y(bot), qx, qy, C.gas, LW.hair, '2 2');
-      f.dot(qx, qy, 4.2, C.paper, C.gas);
-      f.dot(qx, qy, 1.6, C.gas);
-      f.text(6, 14, 'CO₂ conversion ' + c.conv_pct.toFixed(1) + '% at '
-             + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
-      f.text(6, 25, d.any_reduction
-             ? 'shaded: includes oxygen transfer from the solid'
-             : 'no oxygen transfer from the solid',
-             { size: T.small, fill: C.structure });
+      f.line(qx, Y(bot), qx, qy, C.gas, LW.hair, '3 3');
+      f.dot(qx, qy, 6, C.paper, C.gas);
+      f.dot(qx, qy, 2.2, C.gas);
+      f.header('CO₂ conversion ' + c.conv_pct.toFixed(1) + '% at '
+               + Math.round(c.T_C) + ' °C', d.any_reduction
+               ? 'shaded: includes oxygen transfer from the solid'
+               : 'no oxygen transfer from the solid');
     }
     return f.done();
   }
@@ -2698,7 +2714,7 @@ root.Solver = Solver;
   function boundary(D) {
     var d = D.boundary;
     var f = K.square();
-    var p = { x0: f.pane.x0 + 6, y0: 34, x1: f.pane.x1, y1: f.pane.y1 };
+    var p = { x0: f.pane.x0 + 8, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
     var vals = d.rows.map(function (q) { return q.pct; });
     if (d.feed) vals = vals.concat([d.feed.pct]);
     var lo = Math.pow(10, Math.floor(log10(Math.min.apply(null, vals))) - 0.3);
@@ -2741,16 +2757,16 @@ root.Solver = Solver;
     if (last) {
       var ye = Y(last.pct);
       var edge = function (y, txt, col) {
-        var w = txt.length * 4.3 + 4;
-        var hitX = qx !== null && qx > p.x1 - 9 - w && qx < p.x1 - 1;
-        var hitY = stem && stem[0] < y + 3 && stem[1] > y - 7;
-        if (hitX && (hitY || (qy !== null && qy > y - 7 && qy < y + 3))) {
+        var w = txt.length * 0.55 * T.note + 6;
+        var hitX = qx !== null && qx > p.x1 - 12 - w && qx < p.x1 - 1;
+        var hitY = stem && stem[0] < y + 4 && stem[1] > y - T.note;
+        if (hitX && (hitY || (qy !== null && qy > y - T.note && qy < y + 4))) {
           return;
         }
-        f.text(p.x1 - 9, y, txt, { size: T.small, anchor: 'end', fill: col });
+        f.text(p.x1 - 12, y, txt, { size: T.note, anchor: 'end', fill: col });
       };
-      edge(Math.max(ye - 7, p.y0 + 9), chem(d.host) + ' stable', C.surface);
-      edge(Math.min(ye + 15, p.y1 - 5), 'reduction', C.structure);
+      edge(Math.max(ye - 10, p.y0 + T.note + 6), chem(d.host) + ' stable', C.surface);
+      edge(Math.min(ye + 22, p.y1 - 8), 'reduction', C.structure);
     }
 
     frame(f, X, [p.y0, p.y1]);
@@ -2760,17 +2776,16 @@ root.Solver = Solver;
           K.expLabel);
 
     if (q) {
-      if (stem) f.line(qx, stem[0], qx, stem[1], C.subsurface, LW.hair, '2 2');
-      f.rect(qx - 3, qy - 3, 6, 6, C.subsurface, C.paper, 0.8);
+      if (stem) f.line(qx, stem[0], qx, stem[1], C.subsurface, LW.hair, '3 3');
+      f.rect(qx - 5, qy - 5, 10, 10, C.subsurface, C.paper, LW.hair);
       var right = qx > p.x0 + (p.x1 - p.x0) * 0.62;
-      f.text(qx + (right ? -7 : 7), qy + 3, 'feed',
-             { size: T.small, anchor: right ? 'end' : 'start',
+      f.text(qx + (right ? -10 : 10), qy + 4, 'feed',
+             { size: T.note, anchor: right ? 'end' : 'start',
                fill: C.subsurface });
     }
     if (d.at) {
-      f.text(6, 14, chem(d.host) + ' reduces to ' + chem(d.at.phase) + ' below '
-             + fmtPct(d.at.pct) + ' CO₂',
-             { size: T.body, weight: 'bold' });
+      f.header(chem(d.host) + ' reduces to ' + chem(d.at.phase) + ' below '
+               + fmtPct(d.at.pct) + ' CO₂', null);
       /* with no feed marked there is nothing to say about one, and a
          warning about a feed the caller never supplied reads as an error */
       var why = q
@@ -2780,8 +2795,8 @@ root.Solver = Solver;
               + ' below the boundary, the solid reduces')
         : d.why_no_feed;
       if (why) {
-        f.text(6, 25, why,
-               { size: T.small, fill: q ? C.structure : C.subsurface });
+        f.text(8, 8 + T.body + 4 + T.note * 0.85, why,
+               { size: T.note, fill: q ? C.structure : C.subsurface });
       }
     }
     return f.done();
@@ -3076,7 +3091,9 @@ root.Solver = Solver;
      and a stacked bar would hide the smallest of them entirely. */
   function population(D) {
     var f = K.square();
-    var p = { x0: f.pane.x0 + 4, y0: 12, x1: f.pane.x1, y1: f.pane.y1 };
+    /* three populations fill every corner of the scatter between them,
+       so the legend takes a band above the frame */
+    var p = { x0: f.pane.x0 + 6, y0: f.pane.y0 + 66, x1: f.pane.x1, y1: f.pane.y1 };
     if (!D || !D.points.length) return f.done();
 
     var xs = D.points.map(function (q) { return q.total; })
@@ -3103,14 +3120,14 @@ root.Solver = Solver;
       .sort(function (a, b) { return a.total - b.total; })
       .map(function (q) { return [X(q.total), Y(q.iso)]; });
     if (guide.length > 1) {
-      f.path(K.smooth(guide), ISO, LW.curve, '5,3.5');
+      f.path(K.smooth(guide), ISO, LW.curve, '8,5');
     }
 
     SERIES.forEach(function (S) {
       D.points.forEach(function (q) {
         var v = q[S.key];
         if (!isFinite(v) || v <= 0) return;
-        K.marker(f, S.shape, X(q.total), Y(v), K.MARK + 0.5, S.col);
+        K.marker(f, S.shape, X(q.total), Y(v), K.MARK, S.col);
       });
     });
 
@@ -3118,7 +3135,7 @@ root.Solver = Solver;
           K.powLabel);
     axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1), 'Assigned Vₒ (µmol g⁻¹)',
           K.powLabel);
-    K.legend(f, p.x0 + 7, p.y0 + 11, SERIES.map(function (S) {
+    K.legend(f, p.x0 + 2, f.pane.y0 + 12, SERIES.map(function (S) {
       return { col: S.col, marker: S.shape, text: S.text };
     }));
     return f.done();
@@ -3126,7 +3143,9 @@ root.Solver = Solver;
 
   function rates(D) {
     var f = K.square();
-    var p = { x0: f.pane.x0 + 4, y0: 22, x1: f.pane.x1, y1: f.pane.y1 };
+    /* the legend sits in a band above the frame: the tallest bars reach
+       the top of the panel and would run under it inside */
+    var p = { x0: f.pane.x0 + 6, y0: f.pane.y0 + 46, x1: f.pane.x1, y1: f.pane.y1 };
     if (!D || !D.points.length) return f.done();
 
     /* the rates span 86-fold and the collapse at the last sample is the
@@ -3148,15 +3167,15 @@ root.Solver = Solver;
     D.points.forEach(function (q, i) {
       var cx = X(i);
       var y0 = Y(Y.d0);
-      f.rect(cx - w - 1, Y(q.measured), w, y0 - Y(q.measured),
+      f.rect(cx - w - 1.5, Y(q.measured), w, y0 - Y(q.measured),
              tint(C.ink, 0.18), C.ink, LW.axis);
-      f.rect(cx + 1, Y(q.fitted), w, y0 - Y(q.fitted), ISO, ISO, LW.axis);
+      f.rect(cx + 1.5, Y(q.fitted), w, y0 - Y(q.fitted), ISO, ISO, LW.axis);
     });
     axisX(f, X, p.y1, D.points.map(function (_, i) { return i; }),
           'reduction treatment', function (i) { return D.points[i].sample; });
     axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1),
           'initial CO rate (µmol g⁻¹ s⁻¹)', K.powLabel);
-    K.legend(f, p.x0 + 7, p.y0 + 11, [
+    K.legend(f, p.x0 + 2, f.pane.y0 + 12, [
       { col: tint(C.ink, 0.18), edge: C.ink, swatch: true, text: 'measured' },
       { col: ISO, swatch: true, text: 'fitted, ∝ n(isolated)' }
     ]);
