@@ -169,9 +169,8 @@
       return;
     }
     LAST = R;
-    $('status').innerHTML = 'solved in ' + (performance.now() - t0).toFixed(1)
-      + ' ms &middot; ' + R.iterations + ' Newton steps &middot; residual '
-      + sci(R.newton_residual, 2) + ' &middot; method <code>gibbs_min</code>';
+    R.solve_ms = performance.now() - t0;
+    $('status').innerHTML = '';
     render(R);
     LISTENERS.forEach(function (fn) {
       try { fn(R); } catch (e) { /* a figure must not break a solve */ }
@@ -190,58 +189,89 @@
     return best ? { phase: best, r: bestV } : null;
   }
 
+  function kv(rows) {
+    return '<tbody>' + rows.map(function (r) {
+      return '<tr><th>' + r[0] + '</th><td>' + r[1] + '</td></tr>';
+    }).join('') + '</tbody>';
+  }
+
+  function feedText(R) {
+    var parts = [];
+    D.gases.forEach(function (g) {
+      var y = R.feed_mole_fractions[g] || 0;
+      if (y > 0) {
+        parts.push((y * 100 >= 0.01 ? (y * 100).toFixed(1)
+                    : (y * 100).toPrecision(2)) + ' mol% ' + sub(g));
+      }
+    });
+    return parts.join(' &middot; ');
+  }
+
   function render(R) {
+    var T_C = Math.round(R.T_C);
     var reduced = R.active_condensed_phases.filter(function (s) {
       return D.ti3[s] > 0;
     });
+    var phases = R.active_condensed_phases.map(sub).join(' + ');
+    var nb = nearestBoundary(R);
     var v;
     if (reduced.length) {
-      v = '<div class="verdict red"><b>Reduction is thermodynamically favoured.</b> '
-        + 'Stable assemblage: <b>' + R.active_condensed_phases.map(sub).join(' + ')
-        + '</b>; Ti³⁺ = ' + sci(R.reduced_pct, 4) + '% of the titanium'
-        + (R.reduced_pct < 1e-6
-           ? ' (trace amount: log₁₀ n = '
-             + (R.log10_trace_amounts[reduced[0]] || 0).toFixed(1)
-             + '; two-phase buffer under an oxygen-free gas)' : '')
-        + '.</div>';
+      v = '<div class="verdict red"><b>' + phases + '</b> is the stable '
+        + 'assemblage at ' + T_C + ' °C; ' + sub(R.initial_solid)
+        + ' is reduced.</div>';
     } else {
-      var nb = nearestBoundary(R);
-      v = '<div class="verdict none"><b>No reduced phase is stable at this '
-        + 'condition.</b> All reduced phases are held at zero moles with '
-        + 'positive KKT reduced costs' + (nb
-          ? '; the nearest boundary is <b>' + sub(nb.phase) + '</b> at r = +'
-            + sci(nb.r, 4) + ' kJ per mol O' : '')
-        + '.</div>';
+      v = '<div class="verdict"><b>' + phases + '</b> remains the stable '
+        + 'solid phase at ' + T_C + ' °C.</div>';
     }
     if (R.boundary_or_degenerate) {
-      v += '<div class="note">Degenerate boundary: '
+      v += '<div class="note">Phase boundary: '
         + (R.degenerate_phases.map(sub).join(', ') || 'triple-point probe')
-        + '. A reduced cost is zero within '
+        + '. A reduction margin is zero within '
         + sci(R.solver_tolerance.degeneracy_kJ_per_mol_O, 1)
-        + ' kJ/mol O; two assemblages coexist.</div>';
+        + ' kJ mol⁻¹ O; two assemblages coexist.</div>';
     }
     $('verdict').innerHTML = v;
 
-    var kpis = [
-      ['Assemblage', R.active_condensed_phases.map(sub).join(' + '), 'active condensed phases', reduced.length ? 'warn' : 'good'],
-      ['Ti³⁺', sci(R.reduced_pct, 4) + '%', 'of total titanium', ''],
-      ['x in TiO₂₋ₓ', sci(R.x_in_TiO2x, 4), 'solid O deficit', ''],
-      /* a difference of two large numbers: when the host is untouched it
-         comes back at the rounding floor, and printing -1e-18 on a
-         headline card reads as oxygen having moved */
-      ['O moved to gas', R.x_in_TiO2x === 0 ? '0'
-        : sci(R.oxygen_to_gas_mol_O, 4), 'mol O (negative = into solid)', ''],
-    ];
+    $('basis').innerHTML = kv([
+      ['Solid', String(+(R.mass_g * 1000).toPrecision(4)) + ' mg '
+        + sub(R.initial_solid)],
+      ['Gas volume', R.V_cm3 + ' mL'],
+      ['Pressure', R.P_atm + ' atm'],
+      ['Temperature', T_C + ' °C'],
+      ['Feed', feedText(R)]
+    ]);
+
+    var rows = [['Equilibrium phase', phases]];
     if (R.conversion_CO2_pct !== null) {
-      kpis.push(['CO₂ conversion', R.conversion_CO2_pct.toFixed(2) + '%', 'net, vs feed', '']);
+      rows.push(['CO₂ conversion', R.conversion_CO2_pct.toFixed(2) + '%']);
     }
-    kpis.push(['Gas charge', sci(R.n_gas_charge_mol, 4), 'mol at Tₑ = '
-               + (R.T_charge_K - 273.15).toFixed(0) + ' °C', '']);
-    $('kpis').innerHTML = kpis.map(function (k) {
-      return '<div class="kpi ' + k[3] + '"><div class="k">' + k[0]
-        + '</div><div class="v">' + k[1] + '</div><div class="u">' + k[2]
-        + '</div></div>';
-    }).join('');
+    /* a difference of two large numbers: when the host is untouched it
+       comes back at the rounding floor, and printing -1e-18 reads as
+       oxygen having moved */
+    rows.push(['O transferred to gas', (R.x_in_TiO2x === 0 ? '0'
+      : sci(R.oxygen_to_gas_mol_O, 4)) + ' mol O']);
+    if (reduced.length) {
+      rows.push(['Ti³⁺', sci(R.reduced_pct, 4) + '% of Ti']);
+      rows.push(['x in TiO₂₋ₓ', sci(R.x_in_TiO2x, 4)]);
+    }
+    if (nb) {
+      rows.push(['Nearest reduced phase', sub(nb.phase)]);
+      rows.push(['Reduction margin', '+' + sci(nb.r, 4) + ' kJ mol⁻¹ O']);
+    }
+    $('kpis').innerHTML = kv(rows);
+
+    var worst = 0;
+    ['C', 'H', 'N', 'O', 'Ti'].forEach(function (e) {
+      worst = Math.max(worst, Math.abs(R.balance_by_element[e] || 0));
+    });
+    $('tConv').innerHTML = kv([
+      ['Method', 'Gibbs minimization, active-set enumeration with KKT test'],
+      ['Active sets tested', String(R.candidates.length)],
+      ['Newton steps', String(R.iterations)],
+      ['Solver residual', sci(R.newton_residual, 2)],
+      ['Element balance', 'closes to ' + sci(worst, 2) + ' mol, worst element'],
+      ['Solve time', R.solve_ms.toFixed(1) + ' ms']
+    ]);
 
     /* phase table */
     var h = '<thead><tr><th>phase</th><th>mol</th><th>% of Ti</th><th>status</th></tr></thead><tbody>';

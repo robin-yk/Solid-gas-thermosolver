@@ -67,6 +67,18 @@ button.mini{width:auto;padding:8px 12px;font-size:12px;cursor:pointer}
 .minirow{display:flex;flex-wrap:wrap;gap:8px}
 .minirow input{width:auto}
 
+.wshead{margin:0 0 22px}
+.wshead .sub{margin:4px 0 0;max-width:640px}
+.kvrow{display:grid;grid-template-columns:1fr 1fr;gap:26px 32px;margin:0 0 30px}
+.kvblock h3{margin:0 0 8px}
+table.kv{width:auto;font-size:14px}
+table.kv th{text-align:left;font-weight:400;color:var(--muted);padding:5px 22px 5px 0;white-space:nowrap;font-size:13px;letter-spacing:0;text-transform:none}
+table.kv td{text-align:left;padding:5px 0;color:var(--navy);font-weight:700}
+.verdict{border-left:3px solid var(--green);padding:2px 0 2px 12px;margin:0 0 12px;font-size:15px}
+.verdict.red{border-left-color:var(--orange)}
+.verdict b{color:var(--navy)}
+@media (max-width:980px){.kvrow{grid-template-columns:1fr}}
+
 /* figures: square SVGs two abreast, the SVG itself untouched */
 .figgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 32px;margin:0 0 26px}
 .pubfig{margin:0;padding:0}
@@ -91,9 +103,6 @@ button.mini{width:auto;padding:8px 12px;font-size:12px;cursor:pointer}
 .kpi .v.text{font-size:19px;line-height:1.25}
 .kpi .u{font-size:12px;color:var(--muted)}
 .kpi.good .v{color:var(--green)} .kpi.warn .v{color:var(--orange)}
-.verdict{border-radius:14px;border:1px solid var(--line);padding:18px 22px;margin-bottom:18px;font-size:16px;background:var(--panel)}
-.verdict.red{border-left:5px solid var(--orange)}
-.verdict.none{border-left:5px solid var(--green)}
 .verdict b{color:var(--navy)}
 
 /* the tables under the KPI row */
@@ -194,6 +203,12 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 <!-- ========================================== Sol-gas-thermo -->
 <div id="ws-thermo" class="ws" style="display:none">
 
+<div class="wshead">
+  <h2>Gas&ndash;solid equilibrium</h2>
+  <p class="sub">Calculate the equilibrium phase, gas composition, and reduction margin
+  for a closed gas&ndash;solid contact.</p>
+</div>
+
 <div class="wsgrid">
 <aside class="controls">
   <div class="crow">
@@ -223,7 +238,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
           <option value="reox">reoxidation of Ti4O7 &middot; CO2, 600 &deg;C</option>
         </optgroup>
       </select></div>
-    <div class="c c-act"><button class="act" id="run" type="button">Run equilibrium</button></div>
+    <div class="c c-act"><button class="act" id="run" type="button">Calculate equilibrium</button></div>
   </div>
   <div class="crow crow-gas">
     <div class="c c-gas"><label>Initial gas composition <span style="text-transform:none">(relative moles)</span></label>
@@ -244,58 +259,60 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   </div>
 </aside>
 <div class="wsmain">
+<div class="kvrow">
+  <div class="kvblock">
+    <h3>Operating basis</h3>
+    <table class="kv" id="basis"></table>
+  </div>
+  <div class="kvblock">
+    <h3>Equilibrium result</h3>
+    <div id="verdict"></div>
+    <table class="kv" id="kpis"></table>
+  </div>
+</div>
 
 <div class="figgrid">
   <figure class="pubfig" id="figOptimality">
-    <h3>What every excluded phase would have to give up</h3>
-    <div class="figbox" role="img" aria-label="Reduced cost of every excluded phase at this condition"></div>
+    <h3>Reduction margin by Ti&ndash;O phase</h3>
+    <div class="figbox" role="img" aria-label="Reduction margin of every Ti-O phase at this condition"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
     </details>
-    <figcaption>Reduced cost per formula unit of each phase held at zero. The
-    shortest bar, in orange, is the phase that would come first.</figcaption>
+    <figcaption id="capOptimality"></figcaption>
   </figure>
   <figure class="pubfig" id="figBoundary">
-    <h3>Feed at which the host starts to reduce</h3>
-    <div class="figbox" role="img" aria-label="Feed composition at which the host phase begins to reduce, against temperature, with the panel's own feed marked"></div>
+    <h3>CO<sub>2</sub>/H<sub>2</sub> reduction boundary</h3>
+    <div class="figbox" role="img" aria-label="Feed composition at which the solid begins to reduce, against temperature, with the current feed marked"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
     </details>
-    <figcaption>Below the line the host gives way; the shaded field above it is
-    where it survives. The orange square is this panel's feed before the solid
-    has touched it. Closed form, so it redraws with every run.</figcaption>
+    <figcaption id="capBoundary"></figcaption>
   </figure>
   <figure class="pubfig" id="figMargin">
-    <h3>Margin to the nearest excluded phase
+    <h3>Stable phase assemblage across temperature
       <button type="button" class="mini" id="sweepBtn">Sweep temperature</button></h3>
-    <div class="figbox" role="img" aria-label="Margin to the nearest excluded phase against temperature"></div>
+    <div class="figbox" role="img" aria-label="Reduction margin and stable assemblage against temperature"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
     </details>
     <figcaption><span id="sweepNote">121 solves at this charge, about half a second.</span>
-    The smallest bar at every temperature. The band along the bottom is the
-    winning assemblage; the curve touches zero at each edge of it. The green
-    ring is the temperature on the panel.</figcaption>
+    A zero reduction margin marks a phase transition. The band identifies the
+    stable equilibrium assemblage at each temperature.</figcaption>
   </figure>
   <figure class="pubfig" id="figConversion">
-    <h3>CO<sub>2</sub> conversion across temperature</h3>
+    <h3>Equilibrium CO<sub>2</sub> conversion across temperature</h3>
     <div class="figbox" role="img" aria-label="Equilibrium CO2 conversion against temperature at this charge"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
     </details>
-    <figcaption>From the same sweep. Conversion is counted against the feed,
-    so where the assemblage is no longer the host alone the shaded run says
-    part of the answer is the solid being eaten. The green ring reads the
-    solve the workspace is showing.</figcaption>
+    <figcaption>The curve reports net CO<sub>2</sub> conversion relative to the feed.
+    The result includes gas equilibration and oxygen exchange with the solid.</figcaption>
   </figure>
 </div>
-
-<div id="verdict"></div>
-<div class="kpis" id="kpis"></div>
 
 <div class="tabs" id="tabs">
   <button class="tab active" data-page="p-res" type="button">Results</button>
@@ -386,6 +403,9 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 </div>
 <div class="panel pad page" id="p-val">
   <h2>Validation</h2>
+  <h3>Numerical convergence</h3>
+  <table class="kv" id="tConv"></table>
+  <h3>Reference comparison</h3>
   <p class="sub">This engine against an independent 80-digit reference implementation
   (<code>oracle_tio.py</code>, element-potential root solve, no shared solver code).
   Reference values are embedded below; the same conditions can be re-run in the
@@ -2410,7 +2430,7 @@ root.Solver = Solver;
              { size: T.small, fill: col });
       if (near) {
         f.text(X(q.r_kJ) + 3, y + bh + 8,
-               q.degenerate ? 'on the boundary' : 'first to appear',
+               q.degenerate ? 'on the boundary' : 'nearest boundary',
                { size: T.small, fill: col });
       }
     });
@@ -2420,12 +2440,15 @@ root.Solver = Solver;
           'KKT reduced cost (kJ per formula unit)',
           function (v) { return vmax < 4 ? v.toFixed(1) : String(Math.round(v)); });
 
-    var note = d.candidates.total + ' sets enumerated, '
-      + d.candidates.optimal + ' optimal';
+    var note = d.costs.length
+      ? 'smallest margin: ' + chem(d.costs[0].phase) + ', '
+        + (d.costs[0].r_kJ < 10 ? d.costs[0].r_kJ.toFixed(2)
+                                : d.costs[0].r_kJ.toFixed(1)) + ' kJ'
+      : 'no finite margin';
     if (d.unbounded.length) {
       note += ' \u00b7 ' + d.unbounded.length + ' unbounded (no gas oxygen)';
     }
-    f.text(6, 14, chem(d.winner.join(' + ')) + ' survives at '
+    f.text(6, 14, chem(d.winner.join(' + ')) + ' stable at '
            + Math.round(d.T_C) + ' °C', { size: T.body, weight: 'bold' });
     f.text(6, 25, note, { size: T.small, fill: C.structure });
     return f.done();
@@ -2525,15 +2548,15 @@ root.Solver = Solver;
         if (clear(bx0, bx0 + W, qy + o[1] - 7, qy + o[1] + 3)) corner = o;
       });
       if (corner) {
-        f.text(qx + corner[0], qy + corner[1], 'here',
+        f.text(qx + corner[0], qy + corner[1], 'current T',
                { size: T.small, anchor: corner[2], fill: C.gas,
                  weight: 'bold' });
       }
-      f.text(6, 14, chem(c.winner.join(' + ')) + ' survives at '
+      f.text(6, 14, chem(c.winner.join(' + ')) + ' stable at '
              + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
-      f.text(6, 25, 'nearest: ' + chem(c.nearest || '—') + ', '
+      f.text(6, 25, 'nearest reduced phase ' + chem(c.nearest || '—') + ', margin '
              + (c.margin_kJ < 10 ? c.margin_kJ.toFixed(2)
-                                 : c.margin_kJ.toFixed(1)) + ' kJ away',
+                                 : c.margin_kJ.toFixed(1)) + ' kJ',
              { size: T.small, fill: C.structure });
     }
     return f.done();
@@ -2636,11 +2659,11 @@ root.Solver = Solver;
       f.line(qx, Y(bot), qx, qy, C.gas, LW.hair, '2 2');
       f.dot(qx, qy, 4.2, C.paper, C.gas);
       f.dot(qx, qy, 1.6, C.gas);
-      f.text(6, 14, c.conv_pct.toFixed(1) + '% of the CO₂ is gone at '
+      f.text(6, 14, 'CO₂ conversion ' + c.conv_pct.toFixed(1) + '% at '
              + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
       f.text(6, 25, d.any_reduction
-             ? 'shaded: oxygen leaving the solid counts too'
-             : 'gas-phase shift only — the solid stays whole',
+             ? 'shaded: includes oxygen transfer from the solid'
+             : 'no oxygen transfer from the solid',
              { size: T.small, fill: C.structure });
     }
     return f.done();
@@ -2746,7 +2769,7 @@ root.Solver = Solver;
         }
         f.text(p.x1 - 9, y, txt, { size: T.small, anchor: 'end', fill: col });
       };
-      edge(Math.max(ye - 7, p.y0 + 9), chem(d.host) + ' survives', C.surface);
+      edge(Math.max(ye - 7, p.y0 + 9), chem(d.host) + ' stable', C.surface);
       edge(Math.min(ye + 15, p.y1 - 5), 'reduction', C.structure);
     }
 
@@ -2760,21 +2783,21 @@ root.Solver = Solver;
       if (stem) f.line(qx, stem[0], qx, stem[1], C.subsurface, LW.hair, '2 2');
       f.rect(qx - 3, qy - 3, 6, 6, C.subsurface, C.paper, 0.8);
       var right = qx > p.x0 + (p.x1 - p.x0) * 0.62;
-      f.text(qx + (right ? -7 : 7), qy + 3, 'this feed',
+      f.text(qx + (right ? -7 : 7), qy + 3, 'feed',
              { size: T.small, anchor: right ? 'end' : 'start',
                fill: C.subsurface });
     }
     if (d.at) {
-      f.text(6, 14, 'reduction to ' + chem(d.at.phase) + ' starts below '
+      f.text(6, 14, chem(d.host) + ' reduces to ' + chem(d.at.phase) + ' below '
              + fmtPct(d.at.pct) + ' CO₂',
              { size: T.body, weight: 'bold' });
       /* with no feed marked there is nothing to say about one, and a
          warning about a feed the caller never supplied reads as an error */
       var why = q
         ? (q.ratio >= 1
-            ? 'the feed on the panel sits ' + fmtTimes(q.ratio) + ' above that'
-            : 'the feed on the panel sits ' + fmtTimes(1 / q.ratio)
-              + ' below it, so the solid reduces')
+            ? 'feed: ' + fmtTimes(q.ratio) + ' the boundary'
+            : 'feed: ' + fmtTimes(1 / q.ratio)
+              + ' below the boundary, the solid reduces')
         : d.why_no_feed;
       if (why) {
         f.text(6, 25, why,
@@ -3591,9 +3614,8 @@ root.Solver = Solver;
       return;
     }
     LAST = R;
-    $('status').innerHTML = 'solved in ' + (performance.now() - t0).toFixed(1)
-      + ' ms &middot; ' + R.iterations + ' Newton steps &middot; residual '
-      + sci(R.newton_residual, 2) + ' &middot; method <code>gibbs_min</code>';
+    R.solve_ms = performance.now() - t0;
+    $('status').innerHTML = '';
     render(R);
     LISTENERS.forEach(function (fn) {
       try { fn(R); } catch (e) { /* a figure must not break a solve */ }
@@ -3612,58 +3634,89 @@ root.Solver = Solver;
     return best ? { phase: best, r: bestV } : null;
   }
 
+  function kv(rows) {
+    return '<tbody>' + rows.map(function (r) {
+      return '<tr><th>' + r[0] + '</th><td>' + r[1] + '</td></tr>';
+    }).join('') + '</tbody>';
+  }
+
+  function feedText(R) {
+    var parts = [];
+    D.gases.forEach(function (g) {
+      var y = R.feed_mole_fractions[g] || 0;
+      if (y > 0) {
+        parts.push((y * 100 >= 0.01 ? (y * 100).toFixed(1)
+                    : (y * 100).toPrecision(2)) + ' mol% ' + sub(g));
+      }
+    });
+    return parts.join(' &middot; ');
+  }
+
   function render(R) {
+    var T_C = Math.round(R.T_C);
     var reduced = R.active_condensed_phases.filter(function (s) {
       return D.ti3[s] > 0;
     });
+    var phases = R.active_condensed_phases.map(sub).join(' + ');
+    var nb = nearestBoundary(R);
     var v;
     if (reduced.length) {
-      v = '<div class="verdict red"><b>Reduction is thermodynamically favoured.</b> '
-        + 'Stable assemblage: <b>' + R.active_condensed_phases.map(sub).join(' + ')
-        + '</b>; Ti³⁺ = ' + sci(R.reduced_pct, 4) + '% of the titanium'
-        + (R.reduced_pct < 1e-6
-           ? ' (trace amount: log₁₀ n = '
-             + (R.log10_trace_amounts[reduced[0]] || 0).toFixed(1)
-             + '; two-phase buffer under an oxygen-free gas)' : '')
-        + '.</div>';
+      v = '<div class="verdict red"><b>' + phases + '</b> is the stable '
+        + 'assemblage at ' + T_C + ' °C; ' + sub(R.initial_solid)
+        + ' is reduced.</div>';
     } else {
-      var nb = nearestBoundary(R);
-      v = '<div class="verdict none"><b>No reduced phase is stable at this '
-        + 'condition.</b> All reduced phases are held at zero moles with '
-        + 'positive KKT reduced costs' + (nb
-          ? '; the nearest boundary is <b>' + sub(nb.phase) + '</b> at r = +'
-            + sci(nb.r, 4) + ' kJ per mol O' : '')
-        + '.</div>';
+      v = '<div class="verdict"><b>' + phases + '</b> remains the stable '
+        + 'solid phase at ' + T_C + ' °C.</div>';
     }
     if (R.boundary_or_degenerate) {
-      v += '<div class="note">Degenerate boundary: '
+      v += '<div class="note">Phase boundary: '
         + (R.degenerate_phases.map(sub).join(', ') || 'triple-point probe')
-        + '. A reduced cost is zero within '
+        + '. A reduction margin is zero within '
         + sci(R.solver_tolerance.degeneracy_kJ_per_mol_O, 1)
-        + ' kJ/mol O; two assemblages coexist.</div>';
+        + ' kJ mol⁻¹ O; two assemblages coexist.</div>';
     }
     $('verdict').innerHTML = v;
 
-    var kpis = [
-      ['Assemblage', R.active_condensed_phases.map(sub).join(' + '), 'active condensed phases', reduced.length ? 'warn' : 'good'],
-      ['Ti³⁺', sci(R.reduced_pct, 4) + '%', 'of total titanium', ''],
-      ['x in TiO₂₋ₓ', sci(R.x_in_TiO2x, 4), 'solid O deficit', ''],
-      /* a difference of two large numbers: when the host is untouched it
-         comes back at the rounding floor, and printing -1e-18 on a
-         headline card reads as oxygen having moved */
-      ['O moved to gas', R.x_in_TiO2x === 0 ? '0'
-        : sci(R.oxygen_to_gas_mol_O, 4), 'mol O (negative = into solid)', ''],
-    ];
+    $('basis').innerHTML = kv([
+      ['Solid', String(+(R.mass_g * 1000).toPrecision(4)) + ' mg '
+        + sub(R.initial_solid)],
+      ['Gas volume', R.V_cm3 + ' mL'],
+      ['Pressure', R.P_atm + ' atm'],
+      ['Temperature', T_C + ' °C'],
+      ['Feed', feedText(R)]
+    ]);
+
+    var rows = [['Equilibrium phase', phases]];
     if (R.conversion_CO2_pct !== null) {
-      kpis.push(['CO₂ conversion', R.conversion_CO2_pct.toFixed(2) + '%', 'net, vs feed', '']);
+      rows.push(['CO₂ conversion', R.conversion_CO2_pct.toFixed(2) + '%']);
     }
-    kpis.push(['Gas charge', sci(R.n_gas_charge_mol, 4), 'mol at Tₑ = '
-               + (R.T_charge_K - 273.15).toFixed(0) + ' °C', '']);
-    $('kpis').innerHTML = kpis.map(function (k) {
-      return '<div class="kpi ' + k[3] + '"><div class="k">' + k[0]
-        + '</div><div class="v">' + k[1] + '</div><div class="u">' + k[2]
-        + '</div></div>';
-    }).join('');
+    /* a difference of two large numbers: when the host is untouched it
+       comes back at the rounding floor, and printing -1e-18 reads as
+       oxygen having moved */
+    rows.push(['O transferred to gas', (R.x_in_TiO2x === 0 ? '0'
+      : sci(R.oxygen_to_gas_mol_O, 4)) + ' mol O']);
+    if (reduced.length) {
+      rows.push(['Ti³⁺', sci(R.reduced_pct, 4) + '% of Ti']);
+      rows.push(['x in TiO₂₋ₓ', sci(R.x_in_TiO2x, 4)]);
+    }
+    if (nb) {
+      rows.push(['Nearest reduced phase', sub(nb.phase)]);
+      rows.push(['Reduction margin', '+' + sci(nb.r, 4) + ' kJ mol⁻¹ O']);
+    }
+    $('kpis').innerHTML = kv(rows);
+
+    var worst = 0;
+    ['C', 'H', 'N', 'O', 'Ti'].forEach(function (e) {
+      worst = Math.max(worst, Math.abs(R.balance_by_element[e] || 0));
+    });
+    $('tConv').innerHTML = kv([
+      ['Method', 'Gibbs minimization, active-set enumeration with KKT test'],
+      ['Active sets tested', String(R.candidates.length)],
+      ['Newton steps', String(R.iterations)],
+      ['Solver residual', sci(R.newton_residual, 2)],
+      ['Element balance', 'closes to ' + sci(worst, 2) + ' mol, worst element'],
+      ['Solve time', R.solve_ms.toFixed(1) + ' ms']
+    ]);
 
     /* phase table */
     var h = '<thead><tr><th>phase</th><th>mol</th><th>% of Ti</th><th>status</th></tr></thead><tbody>';
@@ -4010,8 +4063,19 @@ root.Solver = Solver;
   function drawOptimality(R) {
     if (!R) { figFail('figOptimality', 'no result to draw'); return; }
     try {
+      var d = FIG.optimalityData(R);
       mountFigure('figOptimality', 'equilibrium-optimality',
-                  FIG.optimality({ optimality: FIG.optimalityData(R) }));
+                  FIG.optimality({ optimality: d }));
+      var cap = $('capOptimality');
+      if (cap) {
+        var near = d.costs[0];
+        cap.innerHTML = !near
+          ? 'No reduced Ti&ndash;O phase carries a finite margin at this condition.'
+          : (near.r_kJ > 0
+             ? 'All reduction margins are positive, so no reduced Ti&ndash;O phase is stable. '
+               + KIT.chem(near.phase) + ' has the smallest margin and defines the nearest phase boundary.'
+             : KIT.chem(near.phase) + ' is at zero margin and is part of the stable assemblage.');
+      }
     } catch (e) {
       figFail('figOptimality', 'figure failed: ' + e.message);
     }
@@ -4040,9 +4104,27 @@ root.Solver = Solver;
       return;
     }
     var here = TB.T_C();
-    mountFigure('figBoundary', 'equilibrium-boundary',
-                FIG.boundary({ boundary: FIG.boundaryData(
-                  curve, TB.feedPoint(here), here, TB.boundaryAt(here)) }));
+    var d = FIG.boundaryData(curve, TB.feedPoint(here), here, TB.boundaryAt(here));
+    mountFigure('figBoundary', 'equilibrium-boundary', FIG.boundary({ boundary: d }));
+    var cap = $('capBoundary');
+    if (cap) {
+      var pct = function (v) { return v >= 1 ? v.toFixed(1) : v >= 0.01 ? v.toFixed(3) : v.toPrecision(2); };
+      var times = function (r) { return r >= 100 ? String(Math.round(r)) : r >= 10 ? r.toFixed(0) : r.toFixed(1); };
+      var txt = d.at
+        ? 'At ' + Math.round(here) + ' °C, ' + KIT.chem(d.host) + ' begins to reduce below '
+          + pct(d.at.pct) + ' mol% CO₂.'
+        : '';
+      if (d.at && d.feed && d.feed.ratio != null) {
+        txt += d.feed.ratio >= 1
+          ? ' The current feed contains ' + pct(d.feed.pct) + ' mol% CO₂, '
+            + times(d.feed.ratio) + ' times this boundary.'
+          : ' The current feed contains ' + pct(d.feed.pct) + ' mol% CO₂, '
+            + times(1 / d.feed.ratio) + ' times below this boundary, so the solid reduces.';
+      } else if (d.why_no_feed) {
+        txt += ' ' + d.why_no_feed;
+      }
+      cap.innerHTML = txt;
+    }
   }
 
   /* ------------------------------------------------------------ sweep */

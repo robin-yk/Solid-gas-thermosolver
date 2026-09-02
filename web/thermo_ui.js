@@ -61,8 +61,19 @@
   function drawOptimality(R) {
     if (!R) { figFail('figOptimality', 'no result to draw'); return; }
     try {
+      var d = FIG.optimalityData(R);
       mountFigure('figOptimality', 'equilibrium-optimality',
-                  FIG.optimality({ optimality: FIG.optimalityData(R) }));
+                  FIG.optimality({ optimality: d }));
+      var cap = $('capOptimality');
+      if (cap) {
+        var near = d.costs[0];
+        cap.innerHTML = !near
+          ? 'No reduced Ti&ndash;O phase carries a finite margin at this condition.'
+          : (near.r_kJ > 0
+             ? 'All reduction margins are positive, so no reduced Ti&ndash;O phase is stable. '
+               + KIT.chem(near.phase) + ' has the smallest margin and defines the nearest phase boundary.'
+             : KIT.chem(near.phase) + ' is at zero margin and is part of the stable assemblage.');
+      }
     } catch (e) {
       figFail('figOptimality', 'figure failed: ' + e.message);
     }
@@ -91,9 +102,27 @@
       return;
     }
     var here = TB.T_C();
-    mountFigure('figBoundary', 'equilibrium-boundary',
-                FIG.boundary({ boundary: FIG.boundaryData(
-                  curve, TB.feedPoint(here), here, TB.boundaryAt(here)) }));
+    var d = FIG.boundaryData(curve, TB.feedPoint(here), here, TB.boundaryAt(here));
+    mountFigure('figBoundary', 'equilibrium-boundary', FIG.boundary({ boundary: d }));
+    var cap = $('capBoundary');
+    if (cap) {
+      var pct = function (v) { return v >= 1 ? v.toFixed(1) : v >= 0.01 ? v.toFixed(3) : v.toPrecision(2); };
+      var times = function (r) { return r >= 100 ? String(Math.round(r)) : r >= 10 ? r.toFixed(0) : r.toFixed(1); };
+      var txt = d.at
+        ? 'At ' + Math.round(here) + ' °C, ' + KIT.chem(d.host) + ' begins to reduce below '
+          + pct(d.at.pct) + ' mol% CO₂.'
+        : '';
+      if (d.at && d.feed && d.feed.ratio != null) {
+        txt += d.feed.ratio >= 1
+          ? ' The current feed contains ' + pct(d.feed.pct) + ' mol% CO₂, '
+            + times(d.feed.ratio) + ' times this boundary.'
+          : ' The current feed contains ' + pct(d.feed.pct) + ' mol% CO₂, '
+            + times(1 / d.feed.ratio) + ' times below this boundary, so the solid reduces.';
+      } else if (d.why_no_feed) {
+        txt += ' ' + d.why_no_feed;
+      }
+      cap.innerHTML = txt;
+    }
   }
 
   /* ------------------------------------------------------------ sweep */

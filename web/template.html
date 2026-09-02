@@ -66,6 +66,12 @@
 <!-- ========================================== Sol-gas-thermo -->
 <div id="ws-thermo" class="ws" style="display:none">
 
+<div class="wshead">
+  <h2>Gas&ndash;solid equilibrium</h2>
+  <p class="sub">Calculate the equilibrium phase, gas composition, and reduction margin
+  for a closed gas&ndash;solid contact.</p>
+</div>
+
 <div class="wsgrid">
 <aside class="controls">
   <div class="crow">
@@ -95,7 +101,7 @@
           <option value="reox">reoxidation of Ti4O7 &middot; CO2, 600 &deg;C</option>
         </optgroup>
       </select></div>
-    <div class="c c-act"><button class="act" id="run" type="button">Run equilibrium</button></div>
+    <div class="c c-act"><button class="act" id="run" type="button">Calculate equilibrium</button></div>
   </div>
   <div class="crow crow-gas">
     <div class="c c-gas"><label>Initial gas composition <span style="text-transform:none">(relative moles)</span></label>
@@ -116,58 +122,60 @@
   </div>
 </aside>
 <div class="wsmain">
+<div class="kvrow">
+  <div class="kvblock">
+    <h3>Operating basis</h3>
+    <table class="kv" id="basis"></table>
+  </div>
+  <div class="kvblock">
+    <h3>Equilibrium result</h3>
+    <div id="verdict"></div>
+    <table class="kv" id="kpis"></table>
+  </div>
+</div>
 
 <div class="figgrid">
   <figure class="pubfig" id="figOptimality">
-    <h3>What every excluded phase would have to give up</h3>
-    <div class="figbox" role="img" aria-label="Reduced cost of every excluded phase at this condition"></div>
+    <h3>Reduction margin by Ti&ndash;O phase</h3>
+    <div class="figbox" role="img" aria-label="Reduction margin of every Ti-O phase at this condition"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
     </details>
-    <figcaption>Reduced cost per formula unit of each phase held at zero. The
-    shortest bar, in orange, is the phase that would come first.</figcaption>
+    <figcaption id="capOptimality"></figcaption>
   </figure>
   <figure class="pubfig" id="figBoundary">
-    <h3>Feed at which the host starts to reduce</h3>
-    <div class="figbox" role="img" aria-label="Feed composition at which the host phase begins to reduce, against temperature, with the panel's own feed marked"></div>
+    <h3>CO<sub>2</sub>/H<sub>2</sub> reduction boundary</h3>
+    <div class="figbox" role="img" aria-label="Feed composition at which the solid begins to reduce, against temperature, with the current feed marked"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
     </details>
-    <figcaption>Below the line the host gives way; the shaded field above it is
-    where it survives. The orange square is this panel's feed before the solid
-    has touched it. Closed form, so it redraws with every run.</figcaption>
+    <figcaption id="capBoundary"></figcaption>
   </figure>
   <figure class="pubfig" id="figMargin">
-    <h3>Margin to the nearest excluded phase
+    <h3>Stable phase assemblage across temperature
       <button type="button" class="mini" id="sweepBtn">Sweep temperature</button></h3>
-    <div class="figbox" role="img" aria-label="Margin to the nearest excluded phase against temperature"></div>
+    <div class="figbox" role="img" aria-label="Reduction margin and stable assemblage against temperature"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
     </details>
     <figcaption><span id="sweepNote">121 solves at this charge, about half a second.</span>
-    The smallest bar at every temperature. The band along the bottom is the
-    winning assemblage; the curve touches zero at each edge of it. The green
-    ring is the temperature on the panel.</figcaption>
+    A zero reduction margin marks a phase transition. The band identifies the
+    stable equilibrium assemblage at each temperature.</figcaption>
   </figure>
   <figure class="pubfig" id="figConversion">
-    <h3>CO<sub>2</sub> conversion across temperature</h3>
+    <h3>Equilibrium CO<sub>2</sub> conversion across temperature</h3>
     <div class="figbox" role="img" aria-label="Equilibrium CO2 conversion against temperature at this charge"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
     </details>
-    <figcaption>From the same sweep. Conversion is counted against the feed,
-    so where the assemblage is no longer the host alone the shaded run says
-    part of the answer is the solid being eaten. The green ring reads the
-    solve the workspace is showing.</figcaption>
+    <figcaption>The curve reports net CO<sub>2</sub> conversion relative to the feed.
+    The result includes gas equilibration and oxygen exchange with the solid.</figcaption>
   </figure>
 </div>
-
-<div id="verdict"></div>
-<div class="kpis" id="kpis"></div>
 
 <div class="tabs" id="tabs">
   <button class="tab active" data-page="p-res" type="button">Results</button>
@@ -258,6 +266,9 @@
 </div>
 <div class="panel pad page" id="p-val">
   <h2>Validation</h2>
+  <h3>Numerical convergence</h3>
+  <table class="kv" id="tConv"></table>
+  <h3>Reference comparison</h3>
   <p class="sub">This engine against an independent 80-digit reference implementation
   (<code>oracle_tio.py</code>, element-potential root solve, no shared solver code).
   Reference values are embedded below; the same conditions can be re-run in the

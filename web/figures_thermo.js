@@ -160,7 +160,7 @@
              { size: T.small, fill: col });
       if (near) {
         f.text(X(q.r_kJ) + 3, y + bh + 8,
-               q.degenerate ? 'on the boundary' : 'first to appear',
+               q.degenerate ? 'on the boundary' : 'nearest boundary',
                { size: T.small, fill: col });
       }
     });
@@ -170,12 +170,15 @@
           'KKT reduced cost (kJ per formula unit)',
           function (v) { return vmax < 4 ? v.toFixed(1) : String(Math.round(v)); });
 
-    var note = d.candidates.total + ' sets enumerated, '
-      + d.candidates.optimal + ' optimal';
+    var note = d.costs.length
+      ? 'smallest margin: ' + chem(d.costs[0].phase) + ', '
+        + (d.costs[0].r_kJ < 10 ? d.costs[0].r_kJ.toFixed(2)
+                                : d.costs[0].r_kJ.toFixed(1)) + ' kJ'
+      : 'no finite margin';
     if (d.unbounded.length) {
       note += ' \u00b7 ' + d.unbounded.length + ' unbounded (no gas oxygen)';
     }
-    f.text(6, 14, chem(d.winner.join(' + ')) + ' survives at '
+    f.text(6, 14, chem(d.winner.join(' + ')) + ' stable at '
            + Math.round(d.T_C) + ' °C', { size: T.body, weight: 'bold' });
     f.text(6, 25, note, { size: T.small, fill: C.structure });
     return f.done();
@@ -275,15 +278,15 @@
         if (clear(bx0, bx0 + W, qy + o[1] - 7, qy + o[1] + 3)) corner = o;
       });
       if (corner) {
-        f.text(qx + corner[0], qy + corner[1], 'here',
+        f.text(qx + corner[0], qy + corner[1], 'current T',
                { size: T.small, anchor: corner[2], fill: C.gas,
                  weight: 'bold' });
       }
-      f.text(6, 14, chem(c.winner.join(' + ')) + ' survives at '
+      f.text(6, 14, chem(c.winner.join(' + ')) + ' stable at '
              + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
-      f.text(6, 25, 'nearest: ' + chem(c.nearest || '—') + ', '
+      f.text(6, 25, 'nearest reduced phase ' + chem(c.nearest || '—') + ', margin '
              + (c.margin_kJ < 10 ? c.margin_kJ.toFixed(2)
-                                 : c.margin_kJ.toFixed(1)) + ' kJ away',
+                                 : c.margin_kJ.toFixed(1)) + ' kJ',
              { size: T.small, fill: C.structure });
     }
     return f.done();
@@ -386,11 +389,11 @@
       f.line(qx, Y(bot), qx, qy, C.gas, LW.hair, '2 2');
       f.dot(qx, qy, 4.2, C.paper, C.gas);
       f.dot(qx, qy, 1.6, C.gas);
-      f.text(6, 14, c.conv_pct.toFixed(1) + '% of the CO₂ is gone at '
+      f.text(6, 14, 'CO₂ conversion ' + c.conv_pct.toFixed(1) + '% at '
              + Math.round(c.T_C) + ' °C', { size: T.body, weight: 'bold' });
       f.text(6, 25, d.any_reduction
-             ? 'shaded: oxygen leaving the solid counts too'
-             : 'gas-phase shift only — the solid stays whole',
+             ? 'shaded: includes oxygen transfer from the solid'
+             : 'no oxygen transfer from the solid',
              { size: T.small, fill: C.structure });
     }
     return f.done();
@@ -496,7 +499,7 @@
         }
         f.text(p.x1 - 9, y, txt, { size: T.small, anchor: 'end', fill: col });
       };
-      edge(Math.max(ye - 7, p.y0 + 9), chem(d.host) + ' survives', C.surface);
+      edge(Math.max(ye - 7, p.y0 + 9), chem(d.host) + ' stable', C.surface);
       edge(Math.min(ye + 15, p.y1 - 5), 'reduction', C.structure);
     }
 
@@ -510,21 +513,21 @@
       if (stem) f.line(qx, stem[0], qx, stem[1], C.subsurface, LW.hair, '2 2');
       f.rect(qx - 3, qy - 3, 6, 6, C.subsurface, C.paper, 0.8);
       var right = qx > p.x0 + (p.x1 - p.x0) * 0.62;
-      f.text(qx + (right ? -7 : 7), qy + 3, 'this feed',
+      f.text(qx + (right ? -7 : 7), qy + 3, 'feed',
              { size: T.small, anchor: right ? 'end' : 'start',
                fill: C.subsurface });
     }
     if (d.at) {
-      f.text(6, 14, 'reduction to ' + chem(d.at.phase) + ' starts below '
+      f.text(6, 14, chem(d.host) + ' reduces to ' + chem(d.at.phase) + ' below '
              + fmtPct(d.at.pct) + ' CO₂',
              { size: T.body, weight: 'bold' });
       /* with no feed marked there is nothing to say about one, and a
          warning about a feed the caller never supplied reads as an error */
       var why = q
         ? (q.ratio >= 1
-            ? 'the feed on the panel sits ' + fmtTimes(q.ratio) + ' above that'
-            : 'the feed on the panel sits ' + fmtTimes(1 / q.ratio)
-              + ' below it, so the solid reduces')
+            ? 'feed: ' + fmtTimes(q.ratio) + ' the boundary'
+            : 'feed: ' + fmtTimes(1 / q.ratio)
+              + ' below the boundary, the solid reduces')
         : d.why_no_feed;
       if (why) {
         f.text(6, 25, why,
