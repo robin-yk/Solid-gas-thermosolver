@@ -21,12 +21,12 @@
     if (v === 0) return '0';
     return Math.abs(v) >= 0.01 ? v.toFixed(2) : v.toExponential(1);
   }
-  function kpi(label, value, unit) {
-    var text = /[a-z]{4}/.test(String(value));   /* a sentence, not a number */
-    return '<div class="kpi"><div class="k">' + label + '</div><div class="v'
-      + (text ? ' text' : '') + '">' + value + '</div>'
-      + (unit ? ' <div class="u">' + unit + '</div>' : '') + '</div>';
+  function kv(rows) {
+    return '<tbody>' + rows.map(function (r) {
+      return '<tr><th>' + r[0] + '</th><td>' + r[1] + '</td></tr>';
+    }).join('') + '</tbody>';
   }
+  function row(label, value) { return [label, value]; }
 
   /* Three workspaces behind three hashes; no hash is the home screen. */
   var HASH = { thermo: 'ws-thermo', location: 'ws-surface', kinetics: 'ws-population' };
@@ -111,14 +111,34 @@
     $('figBound').innerHTML = SF.bound(SF.boundData(rows, d0, o.inv));
 
     var b = VI.bound(g, o.inv, o.d_um, o.bet);
-    $('sfKpis').innerHTML = [
-      kpi('Surface area', n(b.area_m2_g, 3), 'm² g⁻¹'),
-      kpi('Bridging-O capacity', n(b.bridging_capacity_umol_o_g, 2), 'µmol-O g⁻¹'),
-      kpi('(1×2) deficiency', n(b.reconstruction_deficiency_umol_o_g, 2), 'µmol-O g⁻¹'),
-      kpi('Measured / capacity', n(b.inventory_over_capacity, 1) + '×'),
-      kpi('Surface share, at most', n(b.surface_fraction_max * 100, 1) + '%'),
-      kpi('Below surface, at least', n(b.below_surface_fraction_min * 100, 1) + '%')
-    ].join('');
+    var smax = n(b.surface_fraction_max * 100, 1), bmin = n(b.below_surface_fraction_min * 100, 1);
+    $('sfBasis').innerHTML = kv([
+      row(o.bet ? 'BET area' : 'Particle diameter',
+          o.bet ? n(o.bet, 3) + ' m² g⁻¹' : n(o.d_um, 2) + ' µm, smooth sphere'),
+      row('Surface area', n(b.area_m2_g, 3) + ' m² g⁻¹'),
+      row('Oxygen removed', n(o.inv, 1) + ' µmol-O g⁻¹'),
+      row('Surface structure', 'rutile (110), (1×2) reconstruction, 0.5 ML bridging deficiency')
+    ]);
+    $('sfVerdict').innerHTML = '<div class="verdict">At most <b>' + smax
+      + '%</b> of the measured oxygen removal can be surface oxygen; at least <b>'
+      + bmin + '%</b> lies below the (110) surface.</div>';
+    $('sfKpis').innerHTML = kv([
+      row('Bridging-O capacity', n(b.bridging_capacity_umol_o_g, 2) + ' µmol-O g⁻¹'),
+      row('(1×2) deficiency', n(b.reconstruction_deficiency_umol_o_g, 2) + ' µmol-O g⁻¹'),
+      row('Measured / capacity', n(b.inventory_over_capacity, 1) + '×'),
+      row('Surface share, at most', smax + '%'),
+      row('Below surface, at least', bmin + '%')
+    ]);
+    $('capCapacity').innerHTML = 'Titrated oxygen removal for the reduction series, '
+      + 'split at the surface ceiling of ' + n(b.reconstruction_deficiency_umol_o_g, 2)
+      + ' µmol-O g⁻¹. The filled band is the oxygen the reconstructed surface can '
+      + 'supply; the remainder of each bar comes from below the surface. The dashed '
+      + 'line is the whole bridging row, ' + n(b.bridging_capacity_umol_o_g, 2)
+      + ' µmol-O g⁻¹.';
+    $('capBound').innerHTML = 'Upper bound on the surface-associated share against '
+      + 'oxygen removed, for the reconstructed surface and for a fully stripped '
+      + 'bridging row. At ' + n(o.inv, 0) + ' µmol-O g⁻¹ the bound is ' + smax
+      + '%; its complement, ' + bmin + '%, is the smallest share below the surface.';
     $('sfDerived').innerHTML =
       '<tr><td>x in TiO<sub>2−x</sub></td><td class="k2">'
       + n(b.x_in_TiO2mx, 5) + '</td></tr>'
@@ -169,15 +189,26 @@
       ? 'n_s is outside the geometric bounds ' + lo + '–' + hi + ' µmol-O g⁻¹'
       : 'n_s sits between the bridging row and the bridging plus first subsurface layer';
 
-    $('pnKpis').innerHTML = [
-      kpi('Objective (' + popKind() + ')', ssq.toExponential(3)),
-      kpi('R800 / R600, fitted', n(ratio, 3)),
-      kpi('R800 / R600, measured', n(meas, 3)),
-      kpi('Isolated, highest', n(isoMax, 2), 'µmol-O g⁻¹'),
-      kpi('Isolated, lowest', n(isoMin, 3), 'µmol-O g⁻¹'),
-      kpi('Mass balance', closure === 0 ? 'exact by construction'
-          : n(closure, 9), closure === 0 ? '' : 'µmol-O g⁻¹')
-    ].join('');
+    var hiRow = rows.filter(function (q) { return q.n_iso_umol_g === isoMax; })[0];
+    var loRow = rows.filter(function (q) { return q.n_iso_umol_g === isoMin; })[0];
+    var rise = series[series.length - 1].nV_total_umol_g / series[0].nV_total_umol_g;
+    $('pnBasis').innerHTML = kv([
+      row('Active-region capacity n<sub>s</sub>', n(p.ns, 3) + ' µmol-O g⁻¹'),
+      row('E<sub>loss</sub>', n(p.E, 4) + ' eV'),
+      row('ν<sub>eff</sub>', nu.toExponential(2) + ' s⁻¹'),
+      row('Residual', popKind() + ' ratio'),
+      row('Samples', series.length + ' (' + series[0].sample + ' to '
+          + series[series.length - 1].sample + ')')
+    ]);
+    $('pnVerdict').innerHTML = '<div class="verdict">The isolated population peaks at <b>'
+      + hiRow.sample + '</b> and falls to ' + n(isoMin / isoMax * 100, 1) + '% of that at '
+      + loRow.sample + ', while the total inventory rises ' + n(rise, 0) + '×.</div>';
+    $('pnKpis').innerHTML = kv([
+      row('Isolated, highest', n(isoMax, 2) + ' µmol-O g⁻¹ (' + hiRow.sample + ')'),
+      row('Isolated, lowest', n(isoMin, 3) + ' µmol-O g⁻¹ (' + loRow.sample + ')'),
+      row('R800 / R600, fitted', n(ratio, 3)),
+      row('R800 / R600, measured', n(meas, 3))
+    ]);
 
     $('pnTable').innerHTML = rows.map(function (q) {
       return '<tr><td>' + q.sample + '</td><td>' + q.treatment + '</td>'
@@ -191,15 +222,15 @@
 
     var below = rows.every(function (q) { return q.below_fraction > 0.5; });
     $('pnIdent').innerHTML =
-      '<tr><td>ν<sub>eff</sub></td><td class="k2">'
-      + nu.toExponential(2) + ' s⁻¹</td></tr>'
-      + '<tr><td>Most of the inventory below the active region</td>'
-      + '<td class="k2">' + (below ? 'yes, every sample' : 'not every sample') + '</td></tr>'
-      + '<tr><td>Isolated population, R1000 over its maximum</td><td class="k2">'
-      + n(isoMin / isoMax * 100, 2) + '%</td></tr>'
-      + '<tr><td>Measured inventory, R1000 over A600</td><td class="k2">'
-      + n(series[series.length - 1].nV_total_umol_g / series[0].nV_total_umol_g, 1)
-      + '×</td></tr>';
+      '<tr><td>Objective (' + popKind() + ' residual)</td><td class="k2">'
+      + ssq.toExponential(3) + '</td></tr>'
+      + '<tr><td>Mass balance</td><td class="k2">'
+      + (closure === 0 ? 'closes exactly, by construction'
+         : 'closes to ' + n(closure, 9) + ' µmol-O g⁻¹') + '</td></tr>'
+      + '<tr><td>Parameters fitted</td><td class="k2">3 (n<sub>s</sub>, E<sub>loss</sub>, ν<sub>eff</sub>)</td></tr>'
+      + '<tr><td>Rates fitted</td><td class="k2">' + series.length + '</td></tr>'
+      + '<tr><td>Inventory mostly below the active region</td>'
+      + '<td class="k2">' + (below ? 'every sample' : 'not every sample') + '</td></tr>';
   }
 
   function fitPopulation() {

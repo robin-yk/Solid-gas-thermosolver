@@ -113,6 +113,7 @@ const P = require(process.env.PW + '/node_modules/playwright');
              triangle: n('path.marker[stroke="#777777"]') };
   });
   out.popKpis = await txt('pnKpis');
+  out.popFit = await txt('pnIdent');
 
   out.scope = await pg.evaluate(() =>
     document.body.textContent.indexOf('not assigned here') >= 0);
@@ -160,7 +161,7 @@ def check(out):
        ('%.2f' % hi) in out['popKpis'], out['popKpis'])
     ok('mass balance closes exactly',
        max(abs(q['closure_umol_g']) for q in rows) == 0.0
-       and 'exact by construction' in out['popKpis'], out['popKpis'])
+       and 'closes exactly' in out['popFit'], out['popFit'])
 
     for T, text in sorted(out['eq'].items()):
         r = A.solve(FEED, float(T) + 273.15)

@@ -20,9 +20,10 @@
 
 <!-- ========================================== home -->
 <section id="home">
-  <p class="eyebrow">Ti&ndash;O solid&ndash;gas thermodynamics &middot; Vlachos Group</p>
-  <h1>Three calculations, one page.</h1>
-  <p class="lede">Everything solves in the browser from the same tables the Python package uses. Pick one.</p>
+  <p class="eyebrow">Vlachos Group</p>
+  <h1>Ti&ndash;O solid&ndash;gas thermodynamics</h1>
+  <p class="lede">Gas&ndash;solid equilibrium, a surface capacity bound, and isolated-vacancy
+  kinetics for reduced titanium oxides. Every calculation runs in the browser.</p>
   <div class="cards">
     <button class="card" data-ws="ws-thermo" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -32,7 +33,7 @@
         <rect x="70" y="42" width="6" height="6" fill="#d66b13"/>
       </svg>
       <span class="cname">Sol-gas-thermo</span>
-      <span class="cdesc">Gas composition and temperature in; the stable Ti&ndash;O phase, the equilibrium gas, and the margin to reduction out.</span>
+      <span class="cdesc">Calculate the equilibrium phase, gas composition, and reduction margin for a closed gas&ndash;solid contact.</span>
     </button>
     <button class="card" data-ws="ws-surface" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -44,7 +45,7 @@
         <path d="M10 46 L110 46" stroke="#1c2b36" stroke-width="1" stroke-dasharray="3 2"/>
       </svg>
       <span class="cname">defect-location</span>
-      <span class="cdesc">Titration gives one number. Lattice geometry says at most how much of it can be on the (110) surface, so at least how much sits below.</span>
+      <span class="cdesc">Bound the share of a titrated oxygen removal that can be surface oxygen, from rutile (110) lattice geometry.</span>
     </button>
     <button class="card" data-ws="ws-population" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -58,7 +59,7 @@
         <path d="M18 58 L38 48 L58 42 L78 38 L98 35" stroke="#777777" stroke-width="1.2" fill="none"/>
       </svg>
       <span class="cname">defect-kinetics</span>
-      <span class="cdesc">The inventory rises eightfold while the CO rate peaks. Only isolated surface vacancies count, and they associate away.</span>
+      <span class="cdesc">Fit the isolated surface-vacancy population that sets the CO formation rate across the reduction series.</span>
     </button>
   </div>
 </section>
@@ -283,6 +284,12 @@
 <!-- ========================================== defect-location -->
 <div id="ws-surface" class="ws" style="display:none">
 
+<div class="wshead">
+  <h2>Surface capacity bound</h2>
+  <p class="sub">Compare a titrated oxygen removal with the oxygen the rutile (110) surface
+  can hold, and bound the share that must lie below the surface.</p>
+</div>
+
 <div class="wsgrid">
 <aside class="controls">
   <div class="crow">
@@ -303,27 +310,30 @@
   </div>
 </aside>
 <div class="wsmain">
+<div class="kvrow">
+  <div class="kvblock">
+    <h3>Operating basis</h3>
+    <table class="kv" id="sfBasis"></table>
+  </div>
+  <div class="kvblock">
+    <h3>Capacity result</h3>
+    <div id="sfVerdict"></div>
+    <table class="kv" id="sfKpis"></table>
+  </div>
+</div>
 
 <div class="figgrid">
   <figure class="pubfig">
-    <h3>Measured removal against surface capacity</h3>
+    <h3>Oxygen removal against surface capacity</h3>
     <div class="figbox" id="figCapacity"></div>
-    <figcaption>Titrated oxygen removal for the reduction series, split at the
-    surface ceiling. The filled band is every oxygen the reconstructed surface
-    could give up; the rest of each bar has to have come from below it. The
-    dashed line is the whole bridging row, which no measurement has been
-    reported to strip.</figcaption>
+    <figcaption id="capCapacity"></figcaption>
   </figure>
   <figure class="pubfig">
-    <h3>The bound</h3>
+    <h3>Upper bound on the surface share</h3>
     <div class="figbox" id="figBound"></div>
-    <figcaption>Upper bound on the surface-associated fraction against oxygen
-    removed, for the reconstructed surface and for a fully stripped bridging
-    row. Its complement is the smallest share that must lie below the surface.</figcaption>
+    <figcaption id="capBound"></figcaption>
   </figure>
 </div>
-
-<div class="kpis" id="sfKpis"></div>
 
 <section class="panel pad">
   <h2>Derived composition</h2>
@@ -331,7 +341,7 @@
     <thead><tr><th>Quantity</th><th class="k2">Value</th></tr></thead>
     <tbody id="sfDerived"></tbody>
   </table></div>
-  <div class="note"><b>What this does not say.</b> The oxygen that is not on the
+  <div class="note calm"><b>Scope.</b> The oxygen that is not on the
     surface is not assigned here among subsurface point defects, bulk point
     defects and extended defects. No measurement in this work resolves depth, and
     a partition computed from literature vacancy formation energies would be a
@@ -345,6 +355,12 @@
 
 <!-- ========================================== defect-kinetics -->
 <div id="ws-population" class="ws" style="display:none">
+
+<div class="wshead">
+  <h2>Isolated-vacancy population</h2>
+  <p class="sub">Fit the isolated surface-vacancy population that sets the CO formation
+  rate across the reduction series.</p>
+</div>
 
 <div class="wsgrid">
 <aside class="controls">
@@ -374,28 +390,37 @@
   </div>
 </aside>
 <div class="wsmain">
+<div class="kvrow">
+  <div class="kvblock">
+    <h3>Operating basis</h3>
+    <table class="kv" id="pnBasis"></table>
+  </div>
+  <div class="kvblock">
+    <h3>Population result</h3>
+    <div id="pnVerdict"></div>
+    <table class="kv" id="pnKpis"></table>
+  </div>
+</div>
 
 <div class="figgrid">
   <figure class="pubfig">
-    <h3>Where the measured inventory goes</h3>
+    <h3>Partition of the measured inventory</h3>
     <div class="figbox" id="figPopulation"></div>
-    <figcaption>Each sample&rsquo;s total oxygen removal on the horizontal axis and
-    what the model assigns it to on the vertical: isolated vacancies in the
-    active region, associated or reconstructed deficiency there, and everything
-    below it. Both axes logarithmic; the isolated population turns over near
+    <figcaption>Each sample&rsquo;s total oxygen removal on the horizontal axis and the
+    model assignment on the vertical: isolated vacancies in the active region,
+    associated deficiency in the same region, and inventory below it. Both axes
+    are logarithmic. The isolated population turns over near
     100&nbsp;&micro;mol&nbsp;g&#8315;&sup1; while the total keeps rising.</figcaption>
   </figure>
   <figure class="pubfig">
-    <h3>Measured rate against fitted rate</h3>
+    <h3>Measured and fitted CO formation rate</h3>
     <div class="figbox" id="figRates"></div>
     <figcaption>Initial CO formation rate at a common 600&nbsp;&deg;C reaction
-    temperature, measured and fitted, against the reduction treatment. Rates are
-    proportional to the isolated population with one coefficient for every
-    sample, normalised to R600. Five rates, three parameters.</figcaption>
+    temperature against the reduction treatment. The fitted rate is proportional
+    to the isolated population with one coefficient for all samples, normalised
+    to R600. Five rates, three parameters.</figcaption>
   </figure>
 </div>
-
-<div class="kpis" id="pnKpis"></div>
 
 <section class="panel pad">
   <h2>Populations</h2>
@@ -410,12 +435,12 @@
 </section>
 
 <section class="panel pad">
-  <h2>What the fit can and cannot resolve</h2>
+  <h2>Numerical fit</h2>
   <div class="tablewrap"><table>
     <thead><tr><th>Quantity</th><th class="k2">Value</th></tr></thead>
     <tbody id="pnIdent"></tbody>
   </table></div>
-  <div class="note"><b>What this does not claim.</b> The measured rates are used to
+  <div class="note calm"><b>Scope.</b> The measured rates are used to
     infer n<sub>iso</sub>, so the model does not predict them independently and
     n<sub>iso</sub> must not be reused as a turnover-frequency denominator. The rates
     constrain n<sub>iso</sub> but do not separate n<sub>assoc</sub> from
