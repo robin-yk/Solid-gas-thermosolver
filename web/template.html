@@ -66,7 +66,8 @@
 <!-- ========================================== Sol-gas-thermo -->
 <div id="ws-thermo" class="ws" style="display:none">
 
-<section class="controls">
+<div class="wsgrid">
+<aside class="controls">
   <div class="crow">
     <div class="c c-wide"><label for="solid0">Initial Ti oxide</label><select id="solid0"></select></div>
     <div class="c"><label for="mass">Oxide mass</label><input type="number" id="mass" value="100" min="0.001" step="10"><div class="readout">mg</div></div>
@@ -99,21 +100,22 @@
   <div class="crow crow-gas">
     <div class="c c-gas"><label>Initial gas composition <span style="text-transform:none">(relative moles)</span></label>
       <div class="gasgrid" id="gasInputs"></div></div>
-    <div class="c"><label>&nbsp;</label>
+    <div class="c c-wide">
       <div class="minirow">
         <button type="button" class="mini" id="normBtn">Normalize</button>
         <input type="number" id="o2ppm" placeholder="O2 ppm" step="any" min="0" style="width:110px">
         <button type="button" class="mini" id="o2ppmSet">set</button>
       </div>
       <div class="readout" id="normRead"></div></div>
-    <div class="c"><label for="chargeAtT">Gas charge</label>
+    <div class="c c-wide"><label for="chargeAtT">Gas charge</label>
       <div class="check"><input type="checkbox" id="chargeAtT" checked>
         <span>n<sub>g</sub> = PV/RT at reaction T (sealed vessel)</span></div>
       <div id="chargeTWrap" style="display:none;margin-top:6px">
         <input type="number" id="Tcharge" value="25" step="5"><div class="readout">charge temperature, &deg;C</div></div>
       <div class="readout" id="status"></div></div>
   </div>
-</section>
+</aside>
+<div class="wsmain">
 
 <div class="figgrid">
   <figure class="pubfig" id="figOptimality">
@@ -264,11 +266,14 @@
   <div id="valBody"></div>
 </div>
 </div>
+</div>
+</div>
 
 <!-- ========================================== defect-location -->
 <div id="ws-surface" class="ws" style="display:none">
 
-<section class="controls">
+<div class="wsgrid">
+<aside class="controls">
   <div class="crow">
     <div class="c"><label for="sfD">Particle diameter</label>
       <input type="number" id="sfD" value="0.9" min="0.01" step="0.1">
@@ -285,7 +290,8 @@
         exposed area, and nothing else. The (1×2) added-row deficiency of half a
         bridging monolayer is the only structural literature value used.</div></div>
   </div>
-</section>
+</aside>
+<div class="wsmain">
 
 <div class="figgrid">
   <figure class="pubfig">
@@ -323,11 +329,14 @@
     <code>data/literature_dft.json</code> and are not used here.</div>
 </section>
 </div>
+</div>
+</div>
 
 <!-- ========================================== defect-kinetics -->
 <div id="ws-population" class="ws" style="display:none">
 
-<section class="controls">
+<div class="wsgrid">
+<aside class="controls">
   <div class="crow">
     <div class="c"><label for="pnNs">Active-region capacity n<sub>s</sub></label>
       <input type="number" id="pnNs" value="15.334" min="1" step="0.1">
@@ -345,14 +354,15 @@
         <option value="raw">raw — fitted − measured</option>
       </select>
       <div class="readout">the rates span 86-fold, so this choice moves the fit</div></div>
-    <div class="c"><label>&nbsp;</label>
+    <div class="c c-wide">
       <div class="minirow">
         <button type="button" class="mini" id="pnFit">Fit all three</button>
         <button type="button" class="mini" id="pnReset">Reported values</button>
       </div>
       <div class="readout" id="pnStatus"></div></div>
   </div>
-</section>
+</aside>
+<div class="wsmain">
 
 <div class="figgrid">
   <figure class="pubfig">
@@ -405,6 +415,8 @@
     E<sub>loss</sub> and log ν<sub>eff</sub> are an effective temperature dependence
     for the net loss of isolated vacancies, not an elementary barrier.</div>
 </section>
+</div>
+</div>
 </div>
 
 </main>

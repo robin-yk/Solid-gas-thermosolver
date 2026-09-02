@@ -43,20 +43,20 @@ h3{margin:20px 0 8px;color:var(--navy);font-size:17px;line-height:1.25}
 .card .cname{padding:6px 22px 0;color:var(--navy);font-size:20px;font-weight:700;letter-spacing:-.01em}
 .card .cdesc{padding:0 22px;color:var(--muted);font-size:14px;line-height:1.5}
 
-/* ---- workspace: one control strip on top, figures, then the KPI row */
-.controls{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 22px 6px;margin-bottom:26px}
-.crow{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-start}
+/* ---- workspace: a fixed control column on the left, figures then the
+   KPI row then the tables on the right */
+.wsgrid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:28px;align-items:start}
+.wsgrid>aside{position:sticky;top:66px;max-height:calc(100vh - 80px);overflow-y:auto}
+.controls{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px 6px}
+.crow{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
 .crow+.crow{border-top:1px solid var(--line);margin-top:8px;padding-top:14px}
-.c{flex:1 1 120px;min-width:120px;margin-bottom:12px}
-.c-wide{flex:2 1 220px}
-.c-act{flex:0 0 190px;align-self:flex-end}
-.c-gas{flex:0 0 auto}
-.c-status{flex:3 1 320px}
-label,.flabel{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;white-space:nowrap}
+.c{min-width:0;margin-bottom:12px}
+.c-wide,.c-act,.c-gas,.c-status{grid-column:1/-1}
+label,.flabel{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 input,select,button{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid #ccd9e3;border-radius:9px;padding:10px 12px;width:100%}
 input:focus,select:focus,button:focus-visible{outline:3px solid #087bd826;outline-offset:1px;border-color:var(--blue)}
-.gasgrid{display:grid;grid-template-columns:repeat(6,auto);gap:10px}
-.gasgrid .g{display:grid;grid-template-columns:auto 84px;gap:6px;align-items:center}
+.gasgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gasgrid .g{display:grid;grid-template-columns:40px minmax(0,1fr);gap:6px;align-items:center}
 .gasgrid .g span{font-size:12px;font-weight:700;color:var(--navy)}
 .readout{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}
 .check{display:flex;gap:8px;align-items:center;font-size:12px;padding-top:8px}
@@ -68,7 +68,7 @@ button.mini{width:auto;padding:8px 12px;font-size:12px;cursor:pointer}
 .minirow input{width:auto}
 
 /* figures: square SVGs two abreast, the SVG itself untouched */
-.figgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 40px;margin:0 0 26px}
+.figgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 32px;margin:0 0 26px}
 .pubfig{margin:0;padding:0}
 .pubfig h3{margin:0 0 10px}
 .pubfig h3 .mini{margin-left:12px;vertical-align:middle;font-weight:400}
@@ -82,7 +82,7 @@ button.mini{width:auto;padding:8px 12px;font-size:12px;cursor:pointer}
 .figdl button{margin:6px 8px 0 0}
 
 /* the KPI row under the figures */
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:26px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:26px}
 .kpi{min-height:112px;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
 /* No text-transform: these labels carry formulae, and uppercasing turns
    mu into Mu and Ti into TI. */
@@ -127,10 +127,10 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 
 @media (max-width:1120px){.figgrid{gap:22px}}
 @media (max-width:980px){.cards{grid-template-columns:1fr}.figgrid{grid-template-columns:1fr}
-  .gasgrid{grid-template-columns:repeat(3,auto)}.pad{padding:22px}}
+  .wsgrid{grid-template-columns:1fr}.wsgrid>aside{position:static;max-height:none}.pad{padding:22px}}
 @media (max-width:620px){.topbar{gap:12px}.wstab{padding:7px 9px;font-size:12px}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{min-height:96px;padding:14px}
-  .gasgrid{grid-template-columns:repeat(2,auto)}.c-act{flex-basis:100%}}
+  .crow{grid-template-columns:1fr}}
 
 </style>
 <body>
@@ -194,7 +194,8 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 <!-- ========================================== Sol-gas-thermo -->
 <div id="ws-thermo" class="ws" style="display:none">
 
-<section class="controls">
+<div class="wsgrid">
+<aside class="controls">
   <div class="crow">
     <div class="c c-wide"><label for="solid0">Initial Ti oxide</label><select id="solid0"></select></div>
     <div class="c"><label for="mass">Oxide mass</label><input type="number" id="mass" value="100" min="0.001" step="10"><div class="readout">mg</div></div>
@@ -227,21 +228,22 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   <div class="crow crow-gas">
     <div class="c c-gas"><label>Initial gas composition <span style="text-transform:none">(relative moles)</span></label>
       <div class="gasgrid" id="gasInputs"></div></div>
-    <div class="c"><label>&nbsp;</label>
+    <div class="c c-wide">
       <div class="minirow">
         <button type="button" class="mini" id="normBtn">Normalize</button>
         <input type="number" id="o2ppm" placeholder="O2 ppm" step="any" min="0" style="width:110px">
         <button type="button" class="mini" id="o2ppmSet">set</button>
       </div>
       <div class="readout" id="normRead"></div></div>
-    <div class="c"><label for="chargeAtT">Gas charge</label>
+    <div class="c c-wide"><label for="chargeAtT">Gas charge</label>
       <div class="check"><input type="checkbox" id="chargeAtT" checked>
         <span>n<sub>g</sub> = PV/RT at reaction T (sealed vessel)</span></div>
       <div id="chargeTWrap" style="display:none;margin-top:6px">
         <input type="number" id="Tcharge" value="25" step="5"><div class="readout">charge temperature, &deg;C</div></div>
       <div class="readout" id="status"></div></div>
   </div>
-</section>
+</aside>
+<div class="wsmain">
 
 <div class="figgrid">
   <figure class="pubfig" id="figOptimality">
@@ -392,11 +394,14 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   <div id="valBody"></div>
 </div>
 </div>
+</div>
+</div>
 
 <!-- ========================================== defect-location -->
 <div id="ws-surface" class="ws" style="display:none">
 
-<section class="controls">
+<div class="wsgrid">
+<aside class="controls">
   <div class="crow">
     <div class="c"><label for="sfD">Particle diameter</label>
       <input type="number" id="sfD" value="0.9" min="0.01" step="0.1">
@@ -413,7 +418,8 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
         exposed area, and nothing else. The (1×2) added-row deficiency of half a
         bridging monolayer is the only structural literature value used.</div></div>
   </div>
-</section>
+</aside>
+<div class="wsmain">
 
 <div class="figgrid">
   <figure class="pubfig">
@@ -451,11 +457,14 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
     <code>data/literature_dft.json</code> and are not used here.</div>
 </section>
 </div>
+</div>
+</div>
 
 <!-- ========================================== defect-kinetics -->
 <div id="ws-population" class="ws" style="display:none">
 
-<section class="controls">
+<div class="wsgrid">
+<aside class="controls">
   <div class="crow">
     <div class="c"><label for="pnNs">Active-region capacity n<sub>s</sub></label>
       <input type="number" id="pnNs" value="15.334" min="1" step="0.1">
@@ -473,14 +482,15 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
         <option value="raw">raw — fitted − measured</option>
       </select>
       <div class="readout">the rates span 86-fold, so this choice moves the fit</div></div>
-    <div class="c"><label>&nbsp;</label>
+    <div class="c c-wide">
       <div class="minirow">
         <button type="button" class="mini" id="pnFit">Fit all three</button>
         <button type="button" class="mini" id="pnReset">Reported values</button>
       </div>
       <div class="readout" id="pnStatus"></div></div>
   </div>
-</section>
+</aside>
+<div class="wsmain">
 
 <div class="figgrid">
   <figure class="pubfig">
@@ -533,6 +543,8 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
     E<sub>loss</sub> and log ν<sub>eff</sub> are an effective temperature dependence
     for the net loss of isolated vacancies, not an elementary barrier.</div>
 </section>
+</div>
+</div>
 </div>
 
 </main>
