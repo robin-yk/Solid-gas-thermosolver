@@ -29,11 +29,12 @@
   var FONT = 'Arial, Helvetica, sans-serif';
   /* Two type scales, both in points at print size. A plate is a column
      of a printed page and sits at the journal floor; a workspace figure
-     is the 5 in square preset: axis label 18, tick label 15, legend 14,
-     annotation 11. Offsets below are derived from these, so a figure
-     never needs a hand-placed label. */
+     is a 5 in square with the panel filling four fifths of it, and the
+     type measured off the reference figure: axis label 15, tick label
+     12, legend 11, annotation 10. Offsets below are derived from these,
+     so a figure never needs a hand-placed label. */
   var TYPE = { panel: 8, body: 7, tick: 6.5, small: 5.5, note: 5.5 };
-  var FIGTYPE = { panel: 18, body: 18, tick: 15, small: 14, note: 11 };
+  var FIGTYPE = { panel: 15, body: 15, tick: 12, small: 11, note: 10 };
   /* Print style, in points - the plate coordinate system is points, so
      these are the numbers that reach the page. Spines and major ticks
      carry one weight, minor ticks a lighter one, data curves another,
@@ -180,7 +181,7 @@
       return r0 + (log10(Math.max(v, d0 * 1e-12)) - l0) / (l1 - l0)
         * (r1 - r0);
     };
-    f.d0 = d0; f.d1 = d1; f.r0 = r0; f.r1 = r1;
+    f.d0 = d0; f.d1 = d1; f.r0 = r0; f.r1 = r1; f.log = true;
     f.clamp = function (v) { return f(Math.max(d0, Math.min(d1, v))); };
     return f;
   }
@@ -256,11 +257,24 @@
   /* Minor ticks at the pixel midpoint of each major interval: the
      arithmetic midpoint on a linear axis, the geometric one on a log
      axis, which is where a minor tick belongs on either. */
-  function minorsOf(px, lo, hi) {
+  function minorsOf(px, lo, hi, sc) {
+    var out = [], i, m;
+    if (sc && sc.log) {
+      /* 2..9 in every decade the axis spans, not only between labelled
+         decades, so a thinned axis still carries the full log ruling */
+      var e0 = Math.floor(log10(Math.min(sc.d0, sc.d1))) - 1;
+      var e1 = Math.ceil(log10(Math.max(sc.d0, sc.d1))) + 1;
+      for (var e = e0; e <= e1; e++) {
+        for (var k = 2; k <= 9; k++) {
+          m = sc(k * Math.pow(10, e));
+          if (m > lo + 0.5 && m < hi - 0.5) out.push(m);
+        }
+      }
+      return out;
+    }
     var s = px.slice().sort(function (a, b) { return a - b; });
-    var out = [];
-    for (var i = 1; i < s.length; i++) {
-      var m = 0.5 * (s[i - 1] + s[i]);
+    for (i = 1; i < s.length; i++) {
+      m = 0.5 * (s[i - 1] + s[i]);
       if (m > lo + 0.5 && m < hi - 0.5) out.push(m);
     }
     return out;
@@ -295,7 +309,7 @@
       var tx = Math.min(Math.max(x, half + 1), p.W - half - 1);
       p.text(tx, y + T.tick + 3, s, { size: T.tick, anchor: 'middle' });
     });
-    minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1)
+    minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1, sc)
       .forEach(function (x) {
         p.line(x, y, x, y - TICK.minor, C.ink, LW.minor);
         if (top != null) {
@@ -325,7 +339,7 @@
       p.text(x - 5, y + T.tick / 2 - 0.95, fmt ? fmt(t) : String(t),
         { size: T.tick, anchor: 'end' });
     });
-    minorsOf(px, bx ? bx.y0 : sc.r1, bx ? bx.y1 : sc.r0)
+    minorsOf(px, bx ? bx.y0 : sc.r1, bx ? bx.y1 : sc.r0, sc)
       .forEach(function (y) {
         p.line(x, y, x + TICK.minor, y, C.ink, LW.minor);
         if (right != null) {
@@ -333,7 +347,7 @@
         }
       });
     if (label) {
-      p.text(x - (2 * T.tick + T.body + 6), (sc.r0 + sc.r1) / 2, label,
+      p.text(x - (2.4 * T.tick + 0.5 * T.body + 7), (sc.r0 + sc.r1) / 2, label,
         { size: T.body, anchor: 'middle', rotate: -90 });
     }
     return p;
@@ -395,8 +409,8 @@
   function legend(p, x, y, items, gap) {
     var T = p.type || TYPE;
     var s = T.small;
-    gap = gap || s + 6;
-    var key = 1.6 * s, mid = -0.36 * s;    /* key length, key centre line */
+    gap = gap || 1.35 * s;
+    var key = 1.8 * s, mid = -0.36 * s;    /* key length, key centre line */
     var r = p.type === FIGTYPE ? MARK : MARK + 0.5;
     items.forEach(function (it, i) {
       var yy = y + i * gap;
@@ -428,7 +442,7 @@
   /* a header band of two lines above the frame: a bold statement in body
      type and a note under it; figures that carry one start their panel
      at HEAD */
-  var HEAD = 56;
+  var HEAD = 46;
 
   function square(o) {
     o = o || {};
@@ -441,7 +455,7 @@
     /* the plotting panel is square and the margins are what is left:
        the left one holds a rotated label of body type past the tick
        labels, the bottom one the same the other way */
-    f.pane = { x0: 74, y0: 16, x1: 74 + 268, y1: 16 + 268 };
+    f.pane = { x0: 58, y0: 14, x1: 58 + 290, y1: 14 + 290 };
     f.head = HEAD;
     f.header = function (title, note, col) {
       f.text(8, 8 + FIGTYPE.body * 0.78, title,

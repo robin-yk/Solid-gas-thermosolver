@@ -64,9 +64,7 @@
      and a stacked bar would hide the smallest of them entirely. */
   function population(D) {
     var f = K.square();
-    /* three populations fill every corner of the scatter between them,
-       so the legend takes a band above the frame */
-    var p = { x0: f.pane.x0 + 6, y0: f.pane.y0 + 66, x1: f.pane.x1, y1: f.pane.y1 };
+    var p = { x0: f.pane.x0, y0: f.pane.y0, x1: f.pane.x1, y1: f.pane.y1 };
     if (!D || !D.points.length) return f.done();
 
     var xs = D.points.map(function (q) { return q.total; })
@@ -108,7 +106,7 @@
           K.powLabel);
     axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1), 'Assigned Vₒ (µmol g⁻¹)',
           K.powLabel);
-    K.legend(f, p.x0 + 2, f.pane.y0 + 12, SERIES.map(function (S) {
+    K.legend(f, p.x0 + 10, p.y0 + 17, SERIES.map(function (S) {
       return { col: S.col, marker: S.shape, text: S.text };
     }));
     return f.done();
@@ -116,9 +114,7 @@
 
   function rates(D) {
     var f = K.square();
-    /* the legend sits in a band above the frame: the tallest bars reach
-       the top of the panel and would run under it inside */
-    var p = { x0: f.pane.x0 + 6, y0: f.pane.y0 + 46, x1: f.pane.x1, y1: f.pane.y1 };
+    var p = { x0: f.pane.x0, y0: f.pane.y0, x1: f.pane.x1, y1: f.pane.y1 };
     if (!D || !D.points.length) return f.done();
 
     /* the rates span 86-fold and the collapse at the last sample is the
@@ -148,7 +144,7 @@
           'reduction treatment', function (i) { return D.points[i].sample; });
     axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1),
           'initial CO rate (µmol g⁻¹ s⁻¹)', K.powLabel);
-    K.legend(f, p.x0 + 2, f.pane.y0 + 12, [
+    K.legend(f, p.x0 + 10, p.y0 + 17, [
       { col: tint(C.ink, 0.18), edge: C.ink, swatch: true, text: 'measured' },
       { col: ISO, swatch: true, text: 'fitted, ∝ n(isolated)' }
     ]);

@@ -1004,11 +1004,12 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   var FONT = 'Arial, Helvetica, sans-serif';
   /* Two type scales, both in points at print size. A plate is a column
      of a printed page and sits at the journal floor; a workspace figure
-     is the 5 in square preset: axis label 18, tick label 15, legend 14,
-     annotation 11. Offsets below are derived from these, so a figure
-     never needs a hand-placed label. */
+     is a 5 in square with the panel filling four fifths of it, and the
+     type measured off the reference figure: axis label 15, tick label
+     12, legend 11, annotation 10. Offsets below are derived from these,
+     so a figure never needs a hand-placed label. */
   var TYPE = { panel: 8, body: 7, tick: 6.5, small: 5.5, note: 5.5 };
-  var FIGTYPE = { panel: 18, body: 18, tick: 15, small: 14, note: 11 };
+  var FIGTYPE = { panel: 15, body: 15, tick: 12, small: 11, note: 10 };
   /* Print style, in points - the plate coordinate system is points, so
      these are the numbers that reach the page. Spines and major ticks
      carry one weight, minor ticks a lighter one, data curves another,
@@ -1155,7 +1156,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
       return r0 + (log10(Math.max(v, d0 * 1e-12)) - l0) / (l1 - l0)
         * (r1 - r0);
     };
-    f.d0 = d0; f.d1 = d1; f.r0 = r0; f.r1 = r1;
+    f.d0 = d0; f.d1 = d1; f.r0 = r0; f.r1 = r1; f.log = true;
     f.clamp = function (v) { return f(Math.max(d0, Math.min(d1, v))); };
     return f;
   }
@@ -1231,11 +1232,24 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   /* Minor ticks at the pixel midpoint of each major interval: the
      arithmetic midpoint on a linear axis, the geometric one on a log
      axis, which is where a minor tick belongs on either. */
-  function minorsOf(px, lo, hi) {
+  function minorsOf(px, lo, hi, sc) {
+    var out = [], i, m;
+    if (sc && sc.log) {
+      /* 2..9 in every decade the axis spans, not only between labelled
+         decades, so a thinned axis still carries the full log ruling */
+      var e0 = Math.floor(log10(Math.min(sc.d0, sc.d1))) - 1;
+      var e1 = Math.ceil(log10(Math.max(sc.d0, sc.d1))) + 1;
+      for (var e = e0; e <= e1; e++) {
+        for (var k = 2; k <= 9; k++) {
+          m = sc(k * Math.pow(10, e));
+          if (m > lo + 0.5 && m < hi - 0.5) out.push(m);
+        }
+      }
+      return out;
+    }
     var s = px.slice().sort(function (a, b) { return a - b; });
-    var out = [];
-    for (var i = 1; i < s.length; i++) {
-      var m = 0.5 * (s[i - 1] + s[i]);
+    for (i = 1; i < s.length; i++) {
+      m = 0.5 * (s[i - 1] + s[i]);
       if (m > lo + 0.5 && m < hi - 0.5) out.push(m);
     }
     return out;
@@ -1270,7 +1284,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
       var tx = Math.min(Math.max(x, half + 1), p.W - half - 1);
       p.text(tx, y + T.tick + 3, s, { size: T.tick, anchor: 'middle' });
     });
-    minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1)
+    minorsOf(px, bx ? bx.x0 : sc.r0, bx ? bx.x1 : sc.r1, sc)
       .forEach(function (x) {
         p.line(x, y, x, y - TICK.minor, C.ink, LW.minor);
         if (top != null) {
@@ -1300,7 +1314,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
       p.text(x - 5, y + T.tick / 2 - 0.95, fmt ? fmt(t) : String(t),
         { size: T.tick, anchor: 'end' });
     });
-    minorsOf(px, bx ? bx.y0 : sc.r1, bx ? bx.y1 : sc.r0)
+    minorsOf(px, bx ? bx.y0 : sc.r1, bx ? bx.y1 : sc.r0, sc)
       .forEach(function (y) {
         p.line(x, y, x + TICK.minor, y, C.ink, LW.minor);
         if (right != null) {
@@ -1308,7 +1322,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
         }
       });
     if (label) {
-      p.text(x - (2 * T.tick + T.body + 6), (sc.r0 + sc.r1) / 2, label,
+      p.text(x - (2.4 * T.tick + 0.5 * T.body + 7), (sc.r0 + sc.r1) / 2, label,
         { size: T.body, anchor: 'middle', rotate: -90 });
     }
     return p;
@@ -1370,8 +1384,8 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   function legend(p, x, y, items, gap) {
     var T = p.type || TYPE;
     var s = T.small;
-    gap = gap || s + 6;
-    var key = 1.6 * s, mid = -0.36 * s;    /* key length, key centre line */
+    gap = gap || 1.35 * s;
+    var key = 1.8 * s, mid = -0.36 * s;    /* key length, key centre line */
     var r = p.type === FIGTYPE ? MARK : MARK + 0.5;
     items.forEach(function (it, i) {
       var yy = y + i * gap;
@@ -1403,7 +1417,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   /* a header band of two lines above the frame: a bold statement in body
      type and a note under it; figures that carry one start their panel
      at HEAD */
-  var HEAD = 56;
+  var HEAD = 46;
 
   function square(o) {
     o = o || {};
@@ -1416,7 +1430,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
     /* the plotting panel is square and the margins are what is left:
        the left one holds a rotated label of body type past the tick
        labels, the bottom one the same the other way */
-    f.pane = { x0: 74, y0: 16, x1: 74 + 268, y1: 16 + 268 };
+    f.pane = { x0: 58, y0: 14, x1: 58 + 290, y1: 14 + 290 };
     f.head = HEAD;
     f.header = function (title, note, col) {
       f.text(8, 8 + FIGTYPE.body * 0.78, title,
@@ -2405,7 +2419,7 @@ root.Solver = Solver;
        the kit's default and there is no y axis to carry a label. Bars
        fill the box top to bottom, so the condition goes in a header band
        above the frame. */
-    var p = { x0: f.pane.x0 + 34, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
+    var p = { x0: f.pane.x0 + 24, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
     var n = d.costs.length;
     if (!n) {
       f.text(f.W / 2, f.H / 2, 'no excluded phase has a finite reduced cost',
@@ -3091,9 +3105,7 @@ root.Solver = Solver;
      and a stacked bar would hide the smallest of them entirely. */
   function population(D) {
     var f = K.square();
-    /* three populations fill every corner of the scatter between them,
-       so the legend takes a band above the frame */
-    var p = { x0: f.pane.x0 + 6, y0: f.pane.y0 + 66, x1: f.pane.x1, y1: f.pane.y1 };
+    var p = { x0: f.pane.x0, y0: f.pane.y0, x1: f.pane.x1, y1: f.pane.y1 };
     if (!D || !D.points.length) return f.done();
 
     var xs = D.points.map(function (q) { return q.total; })
@@ -3135,7 +3147,7 @@ root.Solver = Solver;
           K.powLabel);
     axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1), 'Assigned Vₒ (µmol g⁻¹)',
           K.powLabel);
-    K.legend(f, p.x0 + 2, f.pane.y0 + 12, SERIES.map(function (S) {
+    K.legend(f, p.x0 + 10, p.y0 + 17, SERIES.map(function (S) {
       return { col: S.col, marker: S.shape, text: S.text };
     }));
     return f.done();
@@ -3143,9 +3155,7 @@ root.Solver = Solver;
 
   function rates(D) {
     var f = K.square();
-    /* the legend sits in a band above the frame: the tallest bars reach
-       the top of the panel and would run under it inside */
-    var p = { x0: f.pane.x0 + 6, y0: f.pane.y0 + 46, x1: f.pane.x1, y1: f.pane.y1 };
+    var p = { x0: f.pane.x0, y0: f.pane.y0, x1: f.pane.x1, y1: f.pane.y1 };
     if (!D || !D.points.length) return f.done();
 
     /* the rates span 86-fold and the collapse at the last sample is the
@@ -3175,7 +3185,7 @@ root.Solver = Solver;
           'reduction treatment', function (i) { return D.points[i].sample; });
     axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1),
           'initial CO rate (µmol g⁻¹ s⁻¹)', K.powLabel);
-    K.legend(f, p.x0 + 2, f.pane.y0 + 12, [
+    K.legend(f, p.x0 + 10, p.y0 + 17, [
       { col: tint(C.ink, 0.18), edge: C.ink, swatch: true, text: 'measured' },
       { col: ISO, swatch: true, text: 'fitted, ∝ n(isolated)' }
     ]);

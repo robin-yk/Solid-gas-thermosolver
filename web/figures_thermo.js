@@ -135,7 +135,7 @@
        the kit's default and there is no y axis to carry a label. Bars
        fill the box top to bottom, so the condition goes in a header band
        above the frame. */
-    var p = { x0: f.pane.x0 + 34, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
+    var p = { x0: f.pane.x0 + 24, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
     var n = d.costs.length;
     if (!n) {
       f.text(f.W / 2, f.H / 2, 'no excluded phase has a finite reduced cost',
