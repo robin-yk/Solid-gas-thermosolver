@@ -25,6 +25,20 @@
     }).join('') + '</tbody>';
   }
   function row(label, value) { return [label, value]; }
+  function scientific(v, digits) {
+    var parts = Number(v).toExponential(digits).split('e');
+    return parts[0] + '×10<sup>' + Number(parts[1]) + '</sup>';
+  }
+  function weightingName(kind) {
+    if (kind === 'raw') return 'absolute rate error';
+    if (kind === 'relative') return 'relative error';
+    return 'equal relative weight';
+  }
+  function weightingCopy(kind) {
+    if (kind === 'raw') return 'Absolute error gives the highest-rate samples the strongest pull on the fit.';
+    if (kind === 'relative') return 'Relative error compares each rate error with its measured value.';
+    return 'Log ratio gives equal weight to relative error across the 86-fold rate range.';
+  }
 
   /* Three workspaces behind three hashes; no hash is the home screen. */
   var HASH = { equilibrium: 'ws-thermo', population: 'ws-population' };
@@ -76,10 +90,14 @@
     var p = popParams(), st = $('pnStatus');
     var series = D.population.series;
     if (!(p.ns > 0) || !(p.E >= 0) || !isFinite(p.lognu)) {
-      st.textContent = 'give a positive capacity, a non-negative barrier and a finite log prefactor';
+      st.textContent = 'Enter a positive capacity, a non-negative loss energy and a finite rate prefactor.';
       return;
     }
     var nu = Math.pow(10, p.lognu);
+    if ($('pnNuReadout')) {
+      $('pnNuReadout').innerHTML = 'ν<sub>eff</sub> = ' + scientific(nu, 2) + ' s⁻¹';
+    }
+    if ($('pnKindHelp')) $('pnKindHelp').textContent = weightingCopy(popKind());
     var rows = PM.partition(series, p.ns, p.E, nu);
     $('figPopulation').innerHTML = PF.population(PF.partitionData(rows));
     $('figRates').innerHTML = PF.rates(PF.ratesData(rows));
@@ -94,18 +112,18 @@
 
     var lo = D.population.ns_bounds[0], hi = D.population.ns_bounds[1];
     st.textContent = (p.ns < lo || p.ns > hi)
-      ? 'n_s is outside the geometric bounds ' + lo + '–' + hi + ' µmol-O g⁻¹'
-      : 'n_s sits between the bridging row and the bridging plus first subsurface layer';
+      ? 'The fitted capacity is outside the geometric range ' + lo + '–' + hi + ' µmol-O g⁻¹.'
+      : 'The fitted capacity lies between one bridging row and the bridging-plus-subsurface capacity.';
 
     var hiRow = rows.filter(function (q) { return q.n_iso_umol_g === isoMax; })[0];
     var loRow = rows.filter(function (q) { return q.n_iso_umol_g === isoMin; })[0];
     var rise = series[series.length - 1].nV_total_umol_g / series[0].nV_total_umol_g;
     $('pnBasis').innerHTML = kv([
       row('Active-region capacity n<sub>s</sub>', n(p.ns, 3) + ' µmol-O g⁻¹'),
-      row('E<sub>loss</sub>', n(p.E, 4) + ' eV'),
-      row('ν<sub>eff</sub>', nu.toExponential(2) + ' s⁻¹'),
-      row('Residual', popKind() + ' ratio'),
-      row('Samples', series.length + ' (' + series[0].sample + ' to '
+      row('Loss energy E<sub>loss</sub>', n(p.E, 4) + ' eV'),
+      row('Rate prefactor ν<sub>eff</sub>', scientific(nu, 2) + ' s⁻¹'),
+      row('Fit weighting', weightingName(popKind())),
+      row('Reduction conditions', series.length + ' (' + series[0].sample + ' to '
           + series[series.length - 1].sample + ')')
     ]);
     $('pnVerdict').innerHTML = '<div class="verdict">The isolated population peaks at <b>'
@@ -130,7 +148,7 @@
 
     var below = rows.every(function (q) { return q.below_fraction > 0.5; });
     $('pnIdent').innerHTML = kv([
-      row('Objective (' + popKind() + ' residual)', ssq.toExponential(3)),
+      row('Weighted fit error (' + weightingName(popKind()) + ')', ssq.toExponential(3)),
       row('Mass balance', closure === 0 ? 'closes exactly, by construction'
           : 'closes to ' + n(closure, 9) + ' µmol-O g⁻¹'),
       row('Parameters fitted', '3 (n<sub>s</sub>, E<sub>loss</sub>, ν<sub>eff</sub>)'),
@@ -141,7 +159,7 @@
 
   function fitPopulation() {
     var st = $('pnStatus');
-    st.textContent = 'fitting…';
+    st.textContent = 'Fitting the five measured CO rates…';
     setTimeout(function () {
       var f = PM.fit(D.population.series, popKind(),
                      D.population.ns_bounds);

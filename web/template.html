@@ -278,30 +278,45 @@
 </div>
 
 <div class="wsgrid">
-<aside class="controls">
-  <div class="crow">
-    <div class="c"><label for="pnNs">Active-region capacity n<sub>s</sub></label>
+<aside class="population-sheet" aria-labelledby="population-controls-title">
+  <header class="population-sheet-head">
+    <h3 id="population-controls-title">Vacancy-loss model</h3>
+    <p>Fit three physical parameters to the measured CO formation rates.</p>
+  </header>
+  <div class="population-parameters">
+    <div class="population-field">
+      <label for="pnNs">Active-region capacity <i>n</i><sub>s</sub></label>
       <input type="number" id="pnNs" value="15.334" min="1" step="0.1">
-      <div class="readout">µmol-O g⁻¹ · bounded 13.6&ndash;67.8</div></div>
-    <div class="c"><label for="pnE">E<sub>loss</sub></label>
+      <div class="readout">µmol-O g⁻¹ · geometric range 13.6&ndash;67.8</div>
+    </div>
+    <div class="population-field">
+      <label for="pnE">Loss energy <i>E</i><sub>loss</sub></label>
       <input type="number" id="pnE" value="2.1845" min="0" step="0.05">
-      <div class="readout">eV · effective, not elementary</div></div>
-    <div class="c"><label for="pnNu">log<sub>10</sub> ν<sub>eff</sub></label>
+      <div class="readout">eV · effective model parameter</div>
+    </div>
+    <div class="population-field">
+      <label for="pnNu">Rate prefactor log<sub>10</sub> ν<sub>eff</sub></label>
       <input type="number" id="pnNu" value="6.7433" step="0.1">
-      <div class="readout">s⁻¹ · 6.7433 is 5.54×10⁶, 13 is an attempt frequency</div></div>
-    <div class="c c-wide"><label for="pnKind">Residual</label>
-      <select id="pnKind">
-        <option value="log" selected>log ratio — ln(fitted / measured)</option>
-        <option value="relative">relative — (fitted − measured) / measured</option>
-        <option value="raw">raw — fitted − measured</option>
-      </select>
-      <div class="readout">the rates span 86-fold, so this choice moves the fit</div></div>
-    <div class="c c-wide">
-      <div class="minirow">
-        <button type="button" class="mini" id="pnFit">Fit all three</button>
-        <button type="button" class="mini" id="pnReset">Reported values</button>
-      </div>
-      <div class="readout" id="pnStatus"></div></div>
+      <div class="readout" id="pnNuReadout">ν<sub>eff</sub> = 5.54×10⁶ s⁻¹</div>
+    </div>
+  </div>
+  <div class="population-weighting">
+    <div>
+      <label for="pnKind">Fit weighting</label>
+      <p id="pnKindHelp">Log ratio gives equal weight to relative error across the 86-fold rate range.</p>
+    </div>
+    <select id="pnKind" aria-describedby="pnKindHelp">
+      <option value="log" selected>Equal relative weight (log ratio)</option>
+      <option value="relative">Relative error</option>
+      <option value="raw">Absolute rate error</option>
+    </select>
+  </div>
+  <div class="population-sheet-foot">
+    <div class="population-status" id="pnStatus" aria-live="polite"></div>
+    <div class="population-actions">
+      <button type="button" class="population-reset" id="pnReset">Use reported values</button>
+      <button type="button" class="population-fit" id="pnFit">Fit parameters</button>
+    </div>
   </div>
 </aside>
 <div class="wsmain">

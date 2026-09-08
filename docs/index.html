@@ -3,14 +3,14 @@
 <title>Solid&ndash;gas thermosolver</title>
 <meta name="description" content="Active-set Gibbs energy minimisation for a CO2/H2/CO/H2O/N2/O2 gas in contact with titanium oxides, and the isolated surface-vacancy population that sets the CO rate. Self-contained, no external requests.">
 <style>
-:root{--blue:#087bd8;--navy:#12334d;--ink:#1c2b36;--muted:#657482;--line:#dbe5ed;
+:root{--blue:#2f8f83;--navy:#183735;--ink:#1c2b36;--muted:#657482;--line:#dbe5ed;
       --bg:#ffffff;--panel:#ffffff;--orange:#d66b13;--green:#16844b;--red:#c0392b;
       --code:#f4f7fa;--soft:#f6f9fb;color-scheme:light;
       /* The three site-class hues are the figure kit's roles, so a KPI
          swatch and the bar it labels are the same colour. */
       --cSurf:#0072B2;--cSub:#D55E00;--cBulk:#6A51A3}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Helvetica,Arial,sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Arial,Helvetica,sans-serif}
 a{color:var(--blue)}
 main{max-width:1480px;margin:auto;padding:26px clamp(18px,3vw,36px) 80px}
 h1{margin:0;color:var(--navy);font-size:clamp(34px,4vw,52px);line-height:1.05;letter-spacing:-.04em}
@@ -54,7 +54,7 @@ h3{margin:20px 0 8px;color:var(--navy);font-size:17px;line-height:1.25}
 .c-wide,.c-act,.c-gas,.c-status{grid-column:1/-1}
 label,.flabel{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 input,select,button{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid #ccd9e3;border-radius:9px;padding:10px 12px;width:100%}
-input:focus,select:focus,button:focus-visible{outline:3px solid #087bd826;outline-offset:1px;border-color:var(--blue)}
+input:focus,select:focus,button:focus-visible{outline:3px solid #2f8f8326;outline-offset:1px;border-color:var(--blue)}
 .gasgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .gasgrid .g{display:grid;grid-template-columns:40px minmax(0,1fr);gap:6px;align-items:center}
 .gasgrid .g span{font-size:12px;font-weight:700;color:var(--navy)}
@@ -62,7 +62,7 @@ input:focus,select:focus,button:focus-visible{outline:3px solid #087bd826;outlin
 .check{display:flex;gap:8px;align-items:center;font-size:12px;padding-top:8px}
 .check input{width:auto}
 button.act{background:var(--blue);color:#fff;border-color:var(--blue);font-size:15px;font-weight:700;cursor:pointer;padding:11px 15px}
-button.act:hover{background:#056fc5}
+button.act:hover{background:#26766d}
 button.mini{width:auto;padding:8px 12px;font-size:12px;cursor:pointer}
 .minirow{display:flex;flex-wrap:wrap;gap:8px}
 .minirow input{width:auto}
@@ -133,6 +133,51 @@ ul{margin:8px 0;padding-left:20px} li{margin:5px 0;font-size:14px}
 .swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
 p.warn{color:var(--orange)}
 footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+
+/* Population controls are one laboratory worksheet. The parameters are
+   the primary objects; weighting and actions sit on quieter ruled rows. */
+#ws-population{max-width:1180px;margin:0 auto}
+#ws-population .wsgrid{display:block}
+#ws-population .wsgrid>aside{position:static;max-height:none;overflow:visible}
+#ws-population .wsmain{margin-top:42px}
+.population-sheet{border:0;border-top:2px solid var(--navy);border-bottom:1px solid var(--line);
+                  border-radius:0;padding:20px 0 0;background:#fff}
+.population-sheet-head{display:flex;align-items:baseline;justify-content:space-between;
+                       gap:28px;margin-bottom:26px}
+.population-sheet-head h3{margin:0;font-size:17px;letter-spacing:-.01em}
+.population-sheet-head p{margin:0;color:var(--muted);font-size:13px}
+.population-parameters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+                       gap:34px;margin-bottom:28px}
+.population-field label,.population-weighting label{color:var(--navy);font-size:13px;
+  font-weight:700;letter-spacing:0;text-transform:none;margin-bottom:7px}
+.population-field input{height:45px;border-radius:2px;border-color:#bdcbd2;background:#fff;
+  padding:9px 11px;font-size:17px;font-variant-numeric:tabular-nums}
+.population-field .readout{margin-top:6px;font-size:12px}
+.population-weighting{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:34px;
+  align-items:center;border-top:1px solid var(--line);padding:18px 0}
+.population-weighting label{margin:0 0 3px}
+.population-weighting p{margin:0;color:var(--muted);font-size:12.5px}
+.population-weighting select{height:41px;border-radius:2px;background:#fff;font-size:13px;padding:8px 10px}
+.population-sheet-foot{display:flex;align-items:center;justify-content:space-between;gap:24px;
+  border-top:1px solid var(--line);padding:16px 0}
+.population-status{color:var(--muted);font-size:12.5px;line-height:1.45}
+.population-actions{display:flex;gap:9px;flex:0 0 auto}
+.population-actions button{width:auto;border-radius:2px;padding:9px 14px;font-size:13px;
+                           font-weight:700;cursor:pointer}
+.population-reset{background:#fff;color:var(--navy)}
+.population-fit{background:var(--blue);color:#fff;border-color:var(--blue)}
+.population-fit:hover{background:#26766d}
+
+@media (max-width:820px){
+  .population-sheet-head{display:block}.population-sheet-head p{margin-top:5px}
+  .population-parameters{grid-template-columns:1fr;gap:18px}
+  .population-weighting{grid-template-columns:1fr;gap:10px}
+}
+@media (max-width:520px){
+  .population-sheet-foot{align-items:stretch;flex-direction:column}
+  .population-actions{display:grid;grid-template-columns:1fr 1fr}
+  .population-actions button{width:100%}
+}
 
 @media (max-width:1120px){.figgrid{gap:22px}}
 @media (max-width:980px){.cards{grid-template-columns:1fr}.figgrid{grid-template-columns:1fr}
@@ -415,30 +460,45 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 </div>
 
 <div class="wsgrid">
-<aside class="controls">
-  <div class="crow">
-    <div class="c"><label for="pnNs">Active-region capacity n<sub>s</sub></label>
+<aside class="population-sheet" aria-labelledby="population-controls-title">
+  <header class="population-sheet-head">
+    <h3 id="population-controls-title">Vacancy-loss model</h3>
+    <p>Fit three physical parameters to the measured CO formation rates.</p>
+  </header>
+  <div class="population-parameters">
+    <div class="population-field">
+      <label for="pnNs">Active-region capacity <i>n</i><sub>s</sub></label>
       <input type="number" id="pnNs" value="15.334" min="1" step="0.1">
-      <div class="readout">µmol-O g⁻¹ · bounded 13.6&ndash;67.8</div></div>
-    <div class="c"><label for="pnE">E<sub>loss</sub></label>
+      <div class="readout">µmol-O g⁻¹ · geometric range 13.6&ndash;67.8</div>
+    </div>
+    <div class="population-field">
+      <label for="pnE">Loss energy <i>E</i><sub>loss</sub></label>
       <input type="number" id="pnE" value="2.1845" min="0" step="0.05">
-      <div class="readout">eV · effective, not elementary</div></div>
-    <div class="c"><label for="pnNu">log<sub>10</sub> ν<sub>eff</sub></label>
+      <div class="readout">eV · effective model parameter</div>
+    </div>
+    <div class="population-field">
+      <label for="pnNu">Rate prefactor log<sub>10</sub> ν<sub>eff</sub></label>
       <input type="number" id="pnNu" value="6.7433" step="0.1">
-      <div class="readout">s⁻¹ · 6.7433 is 5.54×10⁶, 13 is an attempt frequency</div></div>
-    <div class="c c-wide"><label for="pnKind">Residual</label>
-      <select id="pnKind">
-        <option value="log" selected>log ratio — ln(fitted / measured)</option>
-        <option value="relative">relative — (fitted − measured) / measured</option>
-        <option value="raw">raw — fitted − measured</option>
-      </select>
-      <div class="readout">the rates span 86-fold, so this choice moves the fit</div></div>
-    <div class="c c-wide">
-      <div class="minirow">
-        <button type="button" class="mini" id="pnFit">Fit all three</button>
-        <button type="button" class="mini" id="pnReset">Reported values</button>
-      </div>
-      <div class="readout" id="pnStatus"></div></div>
+      <div class="readout" id="pnNuReadout">ν<sub>eff</sub> = 5.54×10⁶ s⁻¹</div>
+    </div>
+  </div>
+  <div class="population-weighting">
+    <div>
+      <label for="pnKind">Fit weighting</label>
+      <p id="pnKindHelp">Log ratio gives equal weight to relative error across the 86-fold rate range.</p>
+    </div>
+    <select id="pnKind" aria-describedby="pnKindHelp">
+      <option value="log" selected>Equal relative weight (log ratio)</option>
+      <option value="relative">Relative error</option>
+      <option value="raw">Absolute rate error</option>
+    </select>
+  </div>
+  <div class="population-sheet-foot">
+    <div class="population-status" id="pnStatus" aria-live="polite"></div>
+    <div class="population-actions">
+      <button type="button" class="population-reset" id="pnReset">Use reported values</button>
+      <button type="button" class="population-fit" id="pnFit">Fit parameters</button>
+    </div>
   </div>
 </aside>
 <div class="wsmain">
@@ -3989,6 +4049,20 @@ root.Solver = Solver;
     }).join('') + '</tbody>';
   }
   function row(label, value) { return [label, value]; }
+  function scientific(v, digits) {
+    var parts = Number(v).toExponential(digits).split('e');
+    return parts[0] + '×10<sup>' + Number(parts[1]) + '</sup>';
+  }
+  function weightingName(kind) {
+    if (kind === 'raw') return 'absolute rate error';
+    if (kind === 'relative') return 'relative error';
+    return 'equal relative weight';
+  }
+  function weightingCopy(kind) {
+    if (kind === 'raw') return 'Absolute error gives the highest-rate samples the strongest pull on the fit.';
+    if (kind === 'relative') return 'Relative error compares each rate error with its measured value.';
+    return 'Log ratio gives equal weight to relative error across the 86-fold rate range.';
+  }
 
   /* Three workspaces behind three hashes; no hash is the home screen. */
   var HASH = { equilibrium: 'ws-thermo', population: 'ws-population' };
@@ -4040,10 +4114,14 @@ root.Solver = Solver;
     var p = popParams(), st = $('pnStatus');
     var series = D.population.series;
     if (!(p.ns > 0) || !(p.E >= 0) || !isFinite(p.lognu)) {
-      st.textContent = 'give a positive capacity, a non-negative barrier and a finite log prefactor';
+      st.textContent = 'Enter a positive capacity, a non-negative loss energy and a finite rate prefactor.';
       return;
     }
     var nu = Math.pow(10, p.lognu);
+    if ($('pnNuReadout')) {
+      $('pnNuReadout').innerHTML = 'ν<sub>eff</sub> = ' + scientific(nu, 2) + ' s⁻¹';
+    }
+    if ($('pnKindHelp')) $('pnKindHelp').textContent = weightingCopy(popKind());
     var rows = PM.partition(series, p.ns, p.E, nu);
     $('figPopulation').innerHTML = PF.population(PF.partitionData(rows));
     $('figRates').innerHTML = PF.rates(PF.ratesData(rows));
@@ -4058,18 +4136,18 @@ root.Solver = Solver;
 
     var lo = D.population.ns_bounds[0], hi = D.population.ns_bounds[1];
     st.textContent = (p.ns < lo || p.ns > hi)
-      ? 'n_s is outside the geometric bounds ' + lo + '–' + hi + ' µmol-O g⁻¹'
-      : 'n_s sits between the bridging row and the bridging plus first subsurface layer';
+      ? 'The fitted capacity is outside the geometric range ' + lo + '–' + hi + ' µmol-O g⁻¹.'
+      : 'The fitted capacity lies between one bridging row and the bridging-plus-subsurface capacity.';
 
     var hiRow = rows.filter(function (q) { return q.n_iso_umol_g === isoMax; })[0];
     var loRow = rows.filter(function (q) { return q.n_iso_umol_g === isoMin; })[0];
     var rise = series[series.length - 1].nV_total_umol_g / series[0].nV_total_umol_g;
     $('pnBasis').innerHTML = kv([
       row('Active-region capacity n<sub>s</sub>', n(p.ns, 3) + ' µmol-O g⁻¹'),
-      row('E<sub>loss</sub>', n(p.E, 4) + ' eV'),
-      row('ν<sub>eff</sub>', nu.toExponential(2) + ' s⁻¹'),
-      row('Residual', popKind() + ' ratio'),
-      row('Samples', series.length + ' (' + series[0].sample + ' to '
+      row('Loss energy E<sub>loss</sub>', n(p.E, 4) + ' eV'),
+      row('Rate prefactor ν<sub>eff</sub>', scientific(nu, 2) + ' s⁻¹'),
+      row('Fit weighting', weightingName(popKind())),
+      row('Reduction conditions', series.length + ' (' + series[0].sample + ' to '
           + series[series.length - 1].sample + ')')
     ]);
     $('pnVerdict').innerHTML = '<div class="verdict">The isolated population peaks at <b>'
@@ -4094,7 +4172,7 @@ root.Solver = Solver;
 
     var below = rows.every(function (q) { return q.below_fraction > 0.5; });
     $('pnIdent').innerHTML = kv([
-      row('Objective (' + popKind() + ' residual)', ssq.toExponential(3)),
+      row('Weighted fit error (' + weightingName(popKind()) + ')', ssq.toExponential(3)),
       row('Mass balance', closure === 0 ? 'closes exactly, by construction'
           : 'closes to ' + n(closure, 9) + ' µmol-O g⁻¹'),
       row('Parameters fitted', '3 (n<sub>s</sub>, E<sub>loss</sub>, ν<sub>eff</sub>)'),
@@ -4105,7 +4183,7 @@ root.Solver = Solver;
 
   function fitPopulation() {
     var st = $('pnStatus');
-    st.textContent = 'fitting…';
+    st.textContent = 'Fitting the five measured CO rates…';
     setTimeout(function () {
       var f = PM.fit(D.population.series, popKind(),
                      D.population.ns_bounds);
