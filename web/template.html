@@ -10,7 +10,7 @@
 <header class="topbar" id="topbar" style="display:none">
   <a class="back" href="#home">&larr; Home</a>
   <nav class="switch" aria-label="workspace">
-    <button class="wstab" data-ws="ws-thermo" type="button">Gas&ndash;solid equilibrium</button>
+    <button class="wstab" data-ws="ws-thermo" type="button">Thermodynamic equilibrium</button>
     <button class="wstab" data-ws="ws-population" type="button">Vacancy population model</button>
   </nav>
 </header>
@@ -31,8 +31,8 @@
         <path d="M14 66 L106 66 L106 60 C86 58 60 50 40 45 C30 43 20 45 14 48 Z" fill="#087bd8" fill-opacity=".12"/>
         <rect x="70" y="42" width="6" height="6" fill="#d66b13"/>
       </svg>
-      <span class="cname">Gas&ndash;solid equilibrium</span>
-      <span class="cdesc">Calculate the equilibrium phase, gas composition, and reduction margin for a closed gas&ndash;solid contact.</span>
+      <span class="cname">Thermodynamic equilibrium</span>
+      <span class="cdesc">Compare the gas-phase RWGS limit with phase stability and oxygen exchange in a finite gas&ndash;solid contact.</span>
     </button>
     <button class="card" data-ws="ws-population" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -55,13 +55,14 @@
 <div id="ws-thermo" class="ws" style="display:none">
 
 <div class="wshead">
-  <h2>Gas&ndash;solid equilibrium</h2>
-  <p class="sub">Calculate the equilibrium phase, gas composition, and reduction margin
-  for a closed gas&ndash;solid contact.</p>
+  <h2>Thermodynamic equilibrium</h2>
+  <p class="sub">Compare the gas-phase RWGS limit with the phase and composition reached
+  after a finite gas charge contacts a titanium oxide.</p>
 </div>
 
 <div class="wsgrid">
 <aside class="controls">
+  <p class="controls-kicker">Finite gas&ndash;solid contact</p>
   <div class="crow">
     <div class="c c-wide"><label for="solid0">Initial Ti oxide</label><select id="solid0"></select></div>
     <div class="c"><label for="mass">Oxide mass</label><input type="number" id="mass" value="100" min="0.001" step="10"><div class="readout">mg</div></div>
@@ -121,6 +122,57 @@
     <table class="kv" id="kpis"></table>
   </div>
 </div>
+
+<section class="thermo-atlas" aria-labelledby="atlasTitle">
+  <div class="atlas-head">
+    <div>
+      <p class="atlas-kicker">Thermodynamic operating atlas</p>
+      <h2 id="atlasTitle">Where RWGS conversion and TiO<sub>2</sub> stability coexist</h2>
+      <p class="sub">The gas-phase calculation gives the equilibrium ceiling. The
+      gas&ndash;solid calculation then shows what changes when that gas contacts the finite
+      oxide charge specified on the left.</p>
+    </div>
+    <button type="button" class="atlas-run" id="atlasRun">Generate atlas</button>
+  </div>
+  <div class="atlas-readout" id="atlasNote">Gas phase and gas&ndash;solid contact are calculated separately.</div>
+  <div class="atlasfiggrid">
+    <figure class="pubfig wide" id="figOperatingMap">
+      <h3>Gas-phase conversion ceiling with the TiO<sub>2</sub> reduction boundary</h3>
+      <div class="figbox" role="img" aria-label="RWGS equilibrium conversion across temperature and hydrogen to carbon dioxide feed ratio, with the titanium dioxide reduction boundary"></div>
+      <details class="figdl"><summary>Download figure</summary>
+        <button type="button" data-fmt="svg">SVG</button>
+        <button type="button" data-fmt="png">PNG, 600 dpi</button>
+        <button type="button" data-fmt="csv">CSV data</button>
+      </details>
+      <figcaption>Colour is the gas-only RWGS equilibrium limit. The orange line is where
+      rutile first gives way to a reduced Ti&ndash;O phase. It is a thermodynamic operating
+      window, not a kinetic reactor prediction.</figcaption>
+    </figure>
+    <figure class="pubfig" id="figRatioTradeoff">
+      <h3>What excess H<sub>2</sub> buys&mdash;and costs</h3>
+      <div class="figbox" role="img" aria-label="Carbon dioxide conversion, hydrogen utilisation, and carbon monoxide yield across feed ratio"></div>
+      <details class="figdl"><summary>Download figure</summary>
+        <button type="button" data-fmt="svg">SVG</button>
+        <button type="button" data-fmt="png">PNG, 600 dpi</button>
+        <button type="button" data-fmt="csv">CSV data</button>
+      </details>
+      <figcaption>More H<sub>2</sub> raises CO<sub>2</sub> conversion but lowers H<sub>2</sub>
+      utilisation. CO yield is reported per mole of total fresh gas, so dilution cannot hide.</figcaption>
+    </figure>
+    <figure class="pubfig" id="figSolidCoupling">
+      <h3>When the solid starts to participate</h3>
+      <div class="figbox" role="img" aria-label="Gas-only and gas-solid carbon dioxide conversion across feed ratio"></div>
+      <details class="figdl"><summary>Download figure</summary>
+        <button type="button" data-fmt="svg">SVG</button>
+        <button type="button" data-fmt="png">PNG, 600 dpi</button>
+        <button type="button" data-fmt="csv">CSV data</button>
+      </details>
+      <figcaption>The grey curve is gas-only RWGS. The blue curve includes the finite
+      oxide charge. Their separation begins when oxygen exchange with the solid becomes
+      part of the equilibrium answer.</figcaption>
+    </figure>
+  </div>
+</section>
 
 <div class="figgrid">
   <figure class="pubfig" id="figOptimality">
@@ -214,6 +266,16 @@
     a closed, finite-inventory equilibrium between one gas charge and one solid charge, not a
     flow-reactor steady state. Every reported value is <code>gibbs_min</code>.
   </div>
+  <h3>Gas-phase RWGS atlas</h3>
+  <p>The atlas first removes the solid from the question. For a fresh
+  H<sub>2</sub>/CO<sub>2</sub> feed it solves the single equilibrium</p>
+  <div class="eq">CO<sub>2</sub> + H<sub>2</sub> &harr; CO + H<sub>2</sub>O</div>
+  <p>on a one-mole fresh-gas basis. Because the reaction has no net change in
+  gas moles, this ideal-gas conversion ceiling is independent of total pressure.
+  The separate gas&ndash;solid curve then uses the oxide mass, gas charge, pressure,
+  and volume from the input panel. A difference between the two curves means
+  oxygen exchange with the solid has entered the equilibrium result.</p>
+  <h3>Finite gas&ndash;solid contact</h3>
   <p>The solver computes the minimum of the total Gibbs energy</p>
   <div class="eq">G = &Sigma;<sub>gas</sub> n<sub>i</sub> [&mu;&deg;<sub>i</sub>(T) + RT ln(y<sub>i</sub>P/P&deg;)] + &Sigma;<sub>solid</sub> m<sub>j</sub> &mu;&deg;<sub>j</sub>(T)</div>
   <p>subject to the elemental balance <code>A&middot;n = b</code> and <code>n &ge; 0</code>.
@@ -260,7 +322,8 @@
   <p class="sub">This engine against an independent 80-digit reference implementation
   (<code>oracle_tio.py</code>, element-potential root solve, no shared solver code).
   Reference values are embedded below; the same conditions can be re-run in the
-  browser.</p>
+  browser. The gas-only RWGS calculation is checked separately against
+  <code>oracle_rwgs.py</code>.</p>
   <p><button type="button" class="mini" id="valRun">Run all reference points in this browser</button></p>
   <div id="valBody"></div>
 </div>

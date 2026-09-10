@@ -22,6 +22,13 @@ closed form.
 Gas data are NIST-JANAF; the titanium oxides through Ti2O3 are the Waldner and
 Eriksson CALPHAD assessment.
 
+The equilibrium workspace also carries a thermodynamic operating atlas.  It
+first solves fresh-feed RWGS without a solid to show the gas-phase conversion
+ceiling across temperature and H2:CO2 ratio.  It then overlays the TiO2
+reduction boundary and repeats a ratio sweep with the finite oxide charge.  The
+two calculations are kept separate so gas reaction equilibrium is not confused
+with oxygen supplied by the solid.
+
 ### Vacancy population model
 
 Titration gives the total oxygen removed per sample; it rises eightfold across
@@ -57,6 +64,10 @@ original: `web/activeset.js` to 4 ulp (the difference between glibc's `exp` and
 V8's), `web/population.js` to a relative 1e-6, the difference between two
 integrators of the same equation.
 
+The fresh-feed gas-only RWGS relation has its own smaller 80-digit oracle in
+`scripts/oracle_rwgs.py`.  Its temperature-ratio map is evaluated in the browser
+from the live coefficient tables; it is not a baked image or lookup grid.
+
 The values the manuscript quotes are not recomputed in the page. They ride along
 as committed JSON, so what a reader types and what the paper says cannot drift.
 
@@ -68,7 +79,7 @@ number it displays against a fresh calculation.
 ```
 solidgas/       activeset · vacancy_population · species · shomate · waldner
 analysis/       dielectric_correlation — an empirical regression, not thermodynamics
-scripts/        reproduce_paper · build_site · oracle_tio · check_page
+scripts/        reproduce_paper · build_site · oracle_tio · oracle_rwgs · check_page
 data/           thermodynamic tables, the reduction series, the 80-digit reference
 paper_outputs/  every computed number in the manuscript, as committed CSV
 web/            the browser mirrors, a drawing kit, figure modules, one page

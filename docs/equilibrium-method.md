@@ -6,6 +6,27 @@ The production solver calculates closed, finite-inventory equilibrium for a CO2/
 
 Hydrocarbons, graphite, nitrides, and a rutile TiO2-x solution phase are outside the production registry.
 
+## Gas-only RWGS baseline
+
+The operating atlas first solves fresh-feed RWGS without a solid:
+
+```text
+CO2 + H2 <=> CO + H2O
+```
+
+On a basis of one initial mole of gas, the feed contains `a` mol CO2 and
+`b` mol H2. The reaction extent is the physical root of
+
+```text
+Kp = xi^2 / ((a - xi)(b - xi))
+```
+
+and gives CO2 conversion, H2 utilisation, and CO formed per mole of total
+fresh gas. The reaction has zero net change in gas moles, so the ideal-gas
+baseline is independent of total pressure. This calculation is separate from
+the finite gas-solid contact below. Their difference measures when oxygen
+exchange with the solid has become part of the equilibrium result.
+
 ## Active-set formulation
 
 `solidgas/activeset.py` solves the gas in logarithmic element-potential coordinates and enumerates feasible active sets of condensed phases. Every single phase and every phase pair is tested. Three-phase sets are used only to detect degeneracy because a binary Ti-O condensed system admits two generic line compounds at fixed temperature and pressure.
@@ -98,9 +119,14 @@ The browser workspace reports:
 
 ## In the browser
 
-`docs/index.html` displays the result; it does not compute it. Three figures on
-the equilibrium workspace draw the record the Python package wrote: the
-equilibrium CO2 conversion against temperature, the margin to the nearest
-reduced phase, and the CO2 fraction at which rutile stops surviving. Changing
-the temperature selects a different row of that record. There is no solver in
-the browser.
+`docs/index.html` runs the JavaScript mirror of the production solver. The
+operating atlas evaluates 1,584 fresh-feed gas states for the temperature-ratio
+map and 49 full gas-solid equilibria for the selected-temperature comparison.
+The calculations use the same coefficient tables as Python and are held to it
+by parity gates; the page does not display a baked lookup grid.
+
+The workspace also retains the single-condition phase result, the reduction
+margin for every excluded phase, the temperature sweep, and the closed-form
+feed boundary. The atlas adds the gas-only conversion ceiling, the feed-ratio
+conversion/utilisation trade-off, and the point where the finite oxide charge
+changes the gas result.

@@ -519,6 +519,16 @@
       opts.T_K = T_C + 273.15;
       return solver.solve(opts);
     },
+    gasOnlyAt: function (T_C, ratio) {
+      return solver.rwgsGasOnly(T_C + 273.15, ratio);
+    },
+    solveFeedAt: function (T_C, feed) {
+      var opts = currentOpts();
+      if (!opts) return null;
+      opts.T_K = T_C + 273.15;
+      opts.feed = feed;
+      return solver.solve(opts);
+    },
     host: function () { return $('solid0').value; },
     /* The temperature at which the host on the panel starts to give way,
        expressed as the H2/CO2 feed that would sit exactly on it. Closed

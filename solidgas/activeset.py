@@ -95,6 +95,57 @@ def mu0_solid(name, T):
     return waldner.mu0(name, T)
 
 
+def rwgs_gas_only(T_K, h2_co2_ratio):
+    """Ideal-gas RWGS equilibrium for a fresh H2/CO2 feed.
+
+    The basis is one initial mole of gas and the only reaction is
+
+        CO2 + H2 <=> CO + H2O.
+
+    Its stoichiometric mole-number change is zero, so this gas-only result
+    is independent of total pressure.  The full gas-solid solver remains a
+    separate calculation: this function is the gas-phase ceiling against
+    which oxygen exchange with a finite Ti-O charge can be seen.
+    """
+    ratio = float(h2_co2_ratio)
+    if not math.isfinite(ratio) or ratio <= 0.0:
+        raise ValueError('H2/CO2 ratio must be finite and positive')
+    if not math.isfinite(T_K) or T_K <= 0.0:
+        raise ValueError('temperature must be finite and positive')
+
+    co2_0 = 1.0 / (1.0 + ratio)
+    h2_0 = ratio / (1.0 + ratio)
+    dg0 = (mu0_gas('CO', T_K) + mu0_gas('H2O', T_K)
+           - mu0_gas('CO2', T_K) - mu0_gas('H2', T_K))
+    kp = math.exp(-dg0 / (R_KJ * T_K))
+
+    # Kp = xi^2 / ((co2_0-xi)(h2_0-xi)).  Bisection on the
+    # cross-multiplied expression stays well-conditioned for very lean and
+    # very rich feeds and never steps outside the physical interval.
+    lo, hi = 0.0, min(co2_0, h2_0)
+    for _ in range(180):
+        xi = 0.5 * (lo + hi)
+        f = xi * xi - kp * (co2_0 - xi) * (h2_0 - xi)
+        if f < 0.0:
+            lo = xi
+        else:
+            hi = xi
+    xi = 0.5 * (lo + hi)
+    gas = {'CO2': co2_0 - xi, 'H2': h2_0 - xi,
+           'CO': xi, 'H2O': xi}
+    return {
+        'method': 'rwgs_ideal_gas_equilibrium',
+        'T_C': T_K - 273.15, 'T_K': T_K,
+        'H2_CO2_ratio': ratio, 'Kp': kp,
+        'extent_per_mol_feed': xi,
+        'CO2_conversion_pct': 100.0 * xi / co2_0,
+        'H2_utilization_pct': 100.0 * xi / h2_0,
+        'CO_yield_per_mol_feed_pct': 100.0 * xi,
+        'gas_fractions': gas,
+        'pressure_independent': True,
+    }
+
+
 def mole_weight(solid):
     t, o = STOICH[solid]
     return t * ATOMIC_WEIGHT['Ti'] + o * ATOMIC_WEIGHT['O']

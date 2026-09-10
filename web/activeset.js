@@ -77,6 +77,41 @@ Solver.prototype.moleWeight = function (solid) {
   return st[0] * this.D.atomic_weight.Ti + st[1] * this.D.atomic_weight.O;
 };
 
+/* Ideal-gas RWGS equilibrium for one initial mole of fresh H2/CO2 gas.
+   This is deliberately separate from solve(): it is the gas-phase ceiling,
+   while solve() includes oxygen exchange with a finite Ti-O charge. */
+Solver.prototype.rwgsGasOnly = function (T_K, h2Co2Ratio) {
+  var ratio = Number(h2Co2Ratio);
+  if (!(ratio > 0) || !isFinite(ratio)) {
+    throw new Error('H2/CO2 ratio must be finite and positive');
+  }
+  if (!(T_K > 0) || !isFinite(T_K)) {
+    throw new Error('temperature must be finite and positive');
+  }
+  var co20 = 1 / (1 + ratio), h20 = ratio / (1 + ratio);
+  var dg0 = this.mu0Gas('CO', T_K) + this.mu0Gas('H2O', T_K)
+          - this.mu0Gas('CO2', T_K) - this.mu0Gas('H2', T_K);
+  var kp = Math.exp(-dg0 / (this.R * T_K));
+  var lo = 0, hi = Math.min(co20, h20), xi = 0, i, f;
+  for (i = 0; i < 180; i++) {
+    xi = 0.5 * (lo + hi);
+    f = xi * xi - kp * (co20 - xi) * (h20 - xi);
+    if (f < 0) lo = xi; else hi = xi;
+  }
+  xi = 0.5 * (lo + hi);
+  return {
+    method: 'rwgs_ideal_gas_equilibrium',
+    T_C: T_K - 273.15, T_K: T_K, H2_CO2_ratio: ratio, Kp: kp,
+    extent_per_mol_feed: xi,
+    CO2_conversion_pct: 100 * xi / co20,
+    H2_utilization_pct: 100 * xi / h20,
+    CO_yield_per_mol_feed_pct: 100 * xi,
+    gas_fractions: { CO2: co20 - xi, H2: h20 - xi,
+                     CO: xi, H2O: xi },
+    pressure_independent: true,
+  };
+};
+
 /* -------------------------------------------------------------- the charge */
 
 Solver.prototype.buildCharge = function (feedRel, T_K, P, V, massG, initialSolid, TchargeK) {

@@ -1,4 +1,4 @@
-/* The two figures the equilibrium workspace exists to produce.
+/* Publication-style figures for the thermodynamic-equilibrium workspace.
 
    optimality  why this assemblage and not one of the others, at the
                condition on the panel: one bar per excluded phase, the
@@ -6,11 +6,10 @@
    margin      how far that answer is from a different one across
                temperature, with the assemblage ladder underneath it.
 
-   Both draw from the record the Python package produced, and are drawn
-   on the same kit at the workspace's square size. Neither evaluates a
-   free energy: solidgas/activeset.py and its port do that, and the two
-   data builders below only reshape what the solver already returned, so
-   a figure cannot disagree with the engine it never calls.
+   Every figure draws solver records handed to it; thermodynamic evaluation
+   stays in solidgas/activeset.py and its browser mirror. The operating atlas
+   adds a wide gas-only RWGS map, a feed-ratio trade-off, and a gas-solid
+   comparison without putting thermodynamic equations in the drawing layer.
 
    One deliberate difference from the plate. e2 plots the reduced cost
    per mol of oxygen, which is the comparable quantity at the single
@@ -559,10 +558,151 @@
     return r.toFixed(1) + '×';
   }
 
+  /* --------------------------------------------- operating-window atlas */
+
+  function mixWhite(hex, f) {
+    var n = parseInt(hex.slice(1), 16);
+    var a = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    return '#' + a.map(function (v) {
+      var q = Math.round(255 + (v - 255) * Math.max(0, Math.min(1, f)));
+      return ('0' + q.toString(16)).slice(-2);
+    }).join('');
+  }
+
+  function operatingMap(D) {
+    var d = D.operatingMap;
+    var f = K.square({ wide: true });
+    var p = { x0: 62, y0: f.head + 4, x1: f.W - 82, y1: f.pane.y1 };
+    var X = lin(d.T_lo, d.T_hi, p.x0, p.x1);
+    var Y = K.lg(d.ratio_lo, d.ratio_hi, p.y1, p.y0);
+    var dx = (p.x1 - p.x0) / d.nT;
+    var dlog = (Math.log(d.ratio_hi) - Math.log(d.ratio_lo)) / d.nR;
+
+    d.cells.forEach(function (q) {
+      var y0 = Y(q.ratio * Math.exp(-dlog / 2));
+      var y1 = Y(q.ratio * Math.exp(dlog / 2));
+      f.rect(X(q.T_C) - dx / 2, Math.min(y0, y1), dx + 0.45,
+             Math.abs(y1 - y0) + 0.45,
+             mixWhite(C.gas, 0.08 + 0.92 * q.conv_pct / 100));
+    });
+
+    series(f, d.boundary.map(function (q) { return [q.T_C, q.ratio]; }),
+           X, Y, C.subsurface, LW.curve);
+    frame(f, X, Y);
+    axisX(f, X, p.y1, K.niceTicks(d.T_lo, d.T_hi, 5), 'temperature (°C)',
+          function (v) { return String(Math.round(v)); });
+    axisY(f, Y, p.x0, K.decades(d.ratio_lo, d.ratio_hi),
+          'H₂:CO₂ feed ratio', K.powLabel);
+
+    var bx = f.W - 52, by = p.y0, bh = p.y1 - p.y0, steps = 24;
+    for (var i = 0; i < steps; i++) {
+      f.rect(bx, by + bh * (steps - 1 - i) / steps, 12, bh / steps + 0.5,
+             mixWhite(C.gas, 0.08 + 0.92 * i / (steps - 1)));
+    }
+    f.rect(bx, by, 12, bh, 'none', C.ink, LW.axis);
+    f.text(bx + 6, by - 8, 'XCO₂', { size: T.note, anchor: 'middle' });
+    f.text(bx + 18, by + 4, '100%', { size: T.note });
+    f.text(bx + 18, by + bh, '0%', { size: T.note });
+
+    if (d.current) {
+      var cx = X(Math.min(Math.max(d.current.T_C, d.T_lo), d.T_hi));
+      var cy = Y(Math.min(Math.max(d.current.ratio, d.ratio_lo), d.ratio_hi));
+      f.dot(cx, cy, 6, C.paper, C.ink);
+      f.dot(cx, cy, 2.2, C.ink);
+      f.header('Gas-only XCO₂ = ' + d.current.conv_pct.toFixed(1) + '% at '
+               + Math.round(d.current.T_C) + ' °C',
+               'orange: ' + chem(d.host) + ' reduction begins · point: '
+               + (d.current.literal ? 'current feed' : 'equivalent reducing feed'));
+    }
+    var mid = d.boundary[Math.floor(d.boundary.length * 0.66)];
+    if (mid) {
+      var mx = X(mid.T_C), my = Y(mid.ratio);
+      f.text(mx + 10, my - 9, chem(d.host) + ' reduces',
+             { size: T.note, fill: C.subsurface });
+      f.text(mx + 10, my + 16, chem(d.host) + ' stable',
+             { size: T.note, fill: C.ink });
+    }
+    return f.done();
+  }
+
+  function ratioTradeoff(D) {
+    var d = D.ratioTradeoff;
+    var f = K.square();
+    var p = { x0: f.pane.x0, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
+    var X = K.lg(d.ratio_lo, d.ratio_hi, p.x0, p.x1);
+    var Y = lin(0, 100, p.y1, p.y0);
+    series(f, d.rows.map(function (q) { return [q.ratio, q.co2]; }),
+           X, Y, C.gas, LW.curve);
+    series(f, d.rows.map(function (q) { return [q.ratio, q.h2]; }),
+           X, Y, C.surface, LW.curve);
+    series(f, d.rows.map(function (q) { return [q.ratio, q.co]; }),
+           X, Y, C.subsurface, LW.curve);
+    frame(f, X, Y);
+    axisX(f, X, p.y1, K.decades(d.ratio_lo, d.ratio_hi),
+          'H₂:CO₂ feed ratio', K.expLabel);
+    axisY(f, Y, p.x0, [0, 20, 40, 60, 80, 100], 'equilibrium result (%)',
+          function (v) { return String(v); });
+    K.legend(f, p.x0 + 10, p.y0 + 18, [
+      { text: 'CO₂ conversion', col: C.gas },
+      { text: 'H₂ utilisation', col: C.surface },
+      { text: 'CO / total fresh gas', col: C.subsurface }
+    ]);
+    if (d.current) {
+      var cx = X(Math.min(Math.max(d.current.ratio, d.ratio_lo), d.ratio_hi));
+      f.line(cx, p.y0, cx, p.y1, C.structure, LW.hair, '3 3');
+      f.header('At ' + d.current.ratio.toPrecision(3) + ':1, XCO₂ = '
+               + d.current.co2.toFixed(1) + '%',
+               'gas phase only · ' + Math.round(d.T_C) + ' °C');
+    } else {
+      f.header('RWGS feed-ratio trade-off',
+               'gas phase only · ' + Math.round(d.T_C) + ' °C');
+    }
+    return f.done();
+  }
+
+  function solidCoupling(D) {
+    var d = D.solidCoupling;
+    var f = K.square();
+    var p = { x0: f.pane.x0, y0: f.head, x1: f.pane.x1, y1: f.pane.y1 };
+    var X = K.lg(d.ratio_lo, d.ratio_hi, p.x0, p.x1);
+    var Y = lin(0, 100, p.y1, p.y0);
+    if (d.boundary_ratio > d.ratio_lo && d.boundary_ratio < d.ratio_hi) {
+      f.rect(X(d.boundary_ratio), p.y0, p.x1 - X(d.boundary_ratio),
+             p.y1 - p.y0, tint(C.subsurface, 0.13));
+      f.line(X(d.boundary_ratio), p.y0, X(d.boundary_ratio), p.y1,
+             C.subsurface, LW.guide, '5 4');
+    }
+    series(f, d.rows.map(function (q) { return [q.ratio, q.gas_only]; }),
+           X, Y, C.structure, LW.guide, '6 4');
+    series(f, d.rows.map(function (q) { return [q.ratio, q.gas_solid]; }),
+           X, Y, C.surface, LW.curve);
+    frame(f, X, Y);
+    axisX(f, X, p.y1, K.decades(d.ratio_lo, d.ratio_hi),
+          'H₂:CO₂ feed ratio', K.powLabel);
+    axisY(f, Y, p.x0, [0, 20, 40, 60, 80, 100], 'CO₂ converted (%)',
+          function (v) { return String(v); });
+    K.legend(f, p.x0 + 10, p.y0 + 18, [
+      { text: 'gas phase only', col: C.structure, dash: '6 4' },
+      { text: 'gas + finite Ti–O charge', col: C.surface }
+    ]);
+    var tail = d.rows[d.rows.length - 1];
+    var gap = tail ? tail.gas_only - tail.gas_solid : 0;
+    f.header(chem(d.host) + ' begins to participate above '
+             + fmtTimes(d.boundary_ratio).replace(/×$/, '') + ':1',
+             'at ' + Math.round(d.T_C) + ' °C · high-ratio conversion gap '
+             + Math.max(0, gap).toFixed(1) + ' points');
+    return f.done();
+  }
+
   return { optimality: optimality, margin: margin,
            conversion: conversion, boundary: boundary,
+           operatingMap: operatingMap, ratioTradeoff: ratioTradeoff,
+           solidCoupling: solidCoupling,
            optimalityData: optimalityData, marginData: marginData,
            conversionData: conversionData, boundaryData: boundaryData,
            FIGURES: { optimality: optimality, margin: margin,
-                      conversion: conversion, boundary: boundary } };
+                      conversion: conversion, boundary: boundary,
+                      operatingMap: operatingMap,
+                      ratioTradeoff: ratioTradeoff,
+                      solidCoupling: solidCoupling } };
 });
