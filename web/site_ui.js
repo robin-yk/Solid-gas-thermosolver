@@ -41,8 +41,8 @@
   }
 
   /* Three workspaces behind three hashes; no hash is the home screen. */
-  var HASH = { equilibrium: 'ws-thermo', population: 'ws-population' };
-  var WS = ['ws-thermo', 'ws-population'];
+  var HASH = { equilibrium: 'ws-thermo', distribution: 'ws-distribution', population: 'ws-population' };
+  var WS = ['ws-thermo', 'ws-distribution', 'ws-population'];
 
   function hashOf(id) {
     for (var k in HASH) if (HASH[k] === id) return k;
@@ -67,7 +67,7 @@
 
   function route() {
     var h = location.hash.replace(/^#/, '');
-    showWorkspace(HASH[h] || 'home');
+    showWorkspace(HASH[h] || (WS.indexOf(h) >= 0 ? h : 'home'));
   }
 
   /* ------------------------------------------------------ population */

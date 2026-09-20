@@ -31,6 +31,8 @@ CASES_FEEDS = {
 }
 
 PARTS = [
+    ('/*DISTENGINE*/', os.path.join(WEB, 'distribution.js')),
+    ('/*DISTUI*/', os.path.join(WEB, 'distribution_ui.js')),
     ('/*CSS*/', os.path.join(WEB, 'site.css')),
     ('/*FIGKIT*/', os.path.join(WEB, 'figkit.js')),
     ('/*ENGINE*/', os.path.join(WEB, 'activeset.js')),

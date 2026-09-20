@@ -10,8 +10,9 @@
 <header class="topbar" id="topbar" style="display:none">
   <a class="back" href="#home">&larr; Home</a>
   <nav class="switch" aria-label="workspace">
-    <button class="wstab" data-ws="ws-thermo" type="button">Thermodynamic equilibrium</button>
-    <button class="wstab" data-ws="ws-population" type="button">Vacancy population model</button>
+    <button class="wstab" data-ws="ws-thermo" type="button">Gas&ndash;solid equilibrium</button>
+    <button class="wstab" data-ws="ws-distribution" type="button">Vacancy distribution</button>
+    <button class="wstab" data-ws="ws-population" type="button">Vacancy kinetics</button>
   </nav>
 </header>
 
@@ -21,8 +22,7 @@
 <section id="home">
   <p class="eyebrow">Vlachos Group</p>
   <h1>Ti&ndash;O solid&ndash;gas thermodynamics</h1>
-  <p class="lede">Gas&ndash;solid equilibrium and the isolated-vacancy population of reduced
-  titanium oxides. Both calculations run in the browser.</p>
+  <p class="lede">Calculate oxide phase stability, vacancy distribution within a particle, and isolated-vacancy loss during pretreatment.</p>
   <div class="cards">
     <button class="card" data-ws="ws-thermo" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -31,8 +31,13 @@
         <path d="M14 66 L106 66 L106 60 C86 58 60 50 40 45 C30 43 20 45 14 48 Z" fill="#087bd8" fill-opacity=".12"/>
         <rect x="70" y="42" width="6" height="6" fill="#d66b13"/>
       </svg>
-      <span class="cname">Thermodynamic equilibrium</span>
+      <span class="cname">Gas&ndash;solid equilibrium</span>
       <span class="cdesc">Compare the gas-phase RWGS limit with phase stability and oxygen exchange in a finite gas&ndash;solid contact.</span>
+    </button>
+    <button class="card" data-ws="ws-distribution" type="button">
+      <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true"><path d="M10 8 V68 H110" fill="none" stroke="#777"/><path d="M12 12 C20 12 22 60 45 62 L108 62" fill="none" stroke="#0072B2" stroke-width="2"/></svg>
+      <span class="cname">Vacancy distribution</span>
+      <span class="cdesc">Distribute a measured vacancy inventory between the surface and particle interior at equilibrium.</span>
     </button>
     <button class="card" data-ws="ws-population" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -45,9 +50,43 @@
         <circle cx="98" cy="18" r="3.5" fill="#fff" stroke="#0072B2" stroke-width="1.5"/>
         <path d="M18 58 L38 48 L58 42 L78 38 L98 35" stroke="#777777" stroke-width="1.2" fill="none"/>
       </svg>
-      <span class="cname">Vacancy population model</span>
+      <span class="cname">Vacancy kinetics</span>
       <span class="cdesc">Fit the isolated surface-vacancy population that sets the CO formation rate across the reduction series.</span>
     </button>
+  </div>
+</section>
+
+<section id="ws-distribution" class="ws" style="display:none">
+  <div class="wshead"><h2>Vacancy distribution</h2><p class="sub">Calculate the surface enrichment of a measured oxygen-vacancy inventory in a rutile particle.</p></div>
+  <div class="wsgrid">
+    <aside class="vd-inputs">
+      <label for="vdSample">Measured inventory</label><select id="vdSample"><option value="">Custom</option><option value="13.45">A600</option><option value="36.85">R500</option><option value="94" selected>R600</option><option value="193.1">R800</option><option value="781.2">R1000</option></select>
+      <label for="vdInventory">Oxygen removed (µmol O g⁻¹)</label><input id="vdInventory" type="number" value="94" min="0" step="any">
+      <label for="vdRadius">Particle radius (nm)</label><input id="vdRadius" type="number" value="450" min="0" step="any">
+      <label for="vdTemperature">Distribution temperature (°C)</label><input id="vdTemperature" type="number" value="600" min="-273.14" step="any">
+      <p class="readout">Sample presets change the measured inventory only. All samples start at the same reference temperature of 600 °C.</p>
+      <details><summary>Surface-energy assumptions</summary>
+        <label for="vdA">Surface stabilization (eV)</label><input id="vdA" type="number" value="1.31" min="0" step="any">
+        <label for="vdXi">Decay length (nm)</label><input id="vdXi" type="number" value="0.5" min="0" step="any">
+        <p class="readout">The 1.31 eV stabilization is the difference between bulk and bridging-surface vacancy energies (5.70 and 4.39 eV). The 0.5 nm decay length is assumed.</p>
+      </details>
+      <p id="vdError" role="alert"></p>
+    </aside>
+    <div>
+      <div id="vdFigure" class="vd-figure"></div>
+      <button id="vdSvg" class="mini" type="button">Download SVG</button>
+      <p id="vdResults" aria-live="polite"></p>
+      <p class="sub">The dashed line distributes the same inventory uniformly. The profile resolves the near-surface region; the interior value is evaluated at the particle centre. Here x is the fraction of oxygen sites vacant; the oxygen deficit in TiO₂₋δ is δ = 2x.</p>
+      <details><summary>Model and inventory check</summary>
+        <p>Supplementary Note 2b fixes the total vacancy inventory and minimizes the free energy of a spherical particle. Local charge compensation gives a Ti³⁺ fraction y = 4x.</p>
+        <p>Gₙ(r) = −A exp[−(R − r)/ξ]</p>
+        <p>f(r) = Gₙ(r)x + kBT [h(x) + ½h(4x)], with h(u) = u ln u + (1 − u) ln(1 − u)</p>
+        <p>Gₙ(r) + kBT [ln(x/(1 − x)) + 2 ln(4x/(1 − 4x))] = λ</p>
+        <p>The calculation adjusts λ to conserve the measured inventory. R is particle radius, r is radial position, T is absolute temperature and kB is Boltzmann’s constant. The mean vacancy fraction is the oxygen removal in µmol O g⁻¹ multiplied by 79.866 × 10⁻⁶ / 2.</p>
+        <p>Ideal mixing and local charge compensation limit x to 0.25. The model extrapolates dilute-defect energies at dense surface occupations and omits vacancy interactions and reconstruction. The measured inventory is supplied independently of the gas–solid equilibrium and kinetic models.</p>
+        <p id="vdCheck"></p>
+      </details>
+    </div>
   </div>
 </section>
 
@@ -335,7 +374,7 @@
 <div id="ws-population" class="ws" style="display:none">
 
 <div class="wshead">
-  <h2>Vacancy population model</h2>
+  <h2>Vacancy kinetics</h2>
   <p class="sub">Fit the isolated surface-vacancy population that sets the CO formation
   rate across the reduction series.</p>
 </div>
@@ -509,3 +548,5 @@
 <script>/*PAGE*/</script>
 <script>/*THERMOUI*/</script>
 <script>/*UI*/</script>
+<script>/*DISTENGINE*/</script>
+<script>/*DISTUI*/</script>
