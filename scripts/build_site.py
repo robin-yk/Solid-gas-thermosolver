@@ -15,6 +15,7 @@ site_data.json so the figures and the paper cannot drift.
 import json
 import os
 import base64
+import xml.etree.ElementTree as ET
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(ROOT, 'web')
@@ -79,6 +80,17 @@ def build():
     html = read(os.path.join(WEB, 'template.html'))
     for name in ('gas-solid-equilibrium', 'vacancy-distribution', 'vacancy-kinetics'):
         svg = read(os.path.join(WEB, 'schemes', name + '.svg'))
+        root = ET.fromstring(svg)
+        ns = {'s': 'http://www.w3.org/2000/svg'}
+        # Workspace headings already identify the model. Remove the plate label,
+        # repeated title and subtitle, retaining the physical drawing and labels.
+        for parent in root.iter():
+            for child in list(parent):
+                if child.get('id') in ('text_1', 'text_2', 'text_3'):
+                    parent.remove(child)
+        root.set('viewBox', '0 55 360 225')
+        root.set('height', '225pt')
+        svg = ET.tostring(root, encoding='unicode')
         html = html.replace('SCHEME:' + name,
                             'data:image/svg+xml;base64,' + base64.b64encode(svg.encode()).decode())
     html = html.replace('/*ASDATA*/',

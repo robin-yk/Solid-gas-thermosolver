@@ -80,9 +80,17 @@
       <p class="sub">The dashed line distributes the same inventory uniformly. The profile resolves the near-surface region; the interior value is evaluated at the particle centre. Here x is the fraction of oxygen sites vacant; the oxygen deficit in TiO₂₋δ is δ = 2x.</p>
       <details><summary>Model and inventory check</summary>
         <p>Supplementary Note 2b fixes the total vacancy inventory and minimizes the free energy of a spherical particle. Local charge compensation gives a Ti³⁺ fraction y = 4x.</p>
-        <p>Gₙ(r) = −A exp[−(R − r)/ξ]</p>
-        <p>f(r) = Gₙ(r)x + kBT [h(x) + ½h(4x)], with h(u) = u ln u + (1 − u) ln(1 − u)</p>
-        <p>Gₙ(r) + kBT [ln(x/(1 − x)) + 2 ln(4x/(1 − 4x))] = λ</p>
+        <h3>Surface stabilization</h3>
+        <div class="eq">Gₙ(r) = −A exp[−(R − r)/ξ]</div>
+        <p>A is the surface stabilization energy and ξ is its decay length. The vacancy energy approaches its bulk reference with increasing depth R − r.</p>
+        <h3>Free energy per oxygen site</h3>
+        <div class="eq">f(r) = Gₙ(r)x + kBT [h(x) + ½h(4x)]<br>h(u) = u ln u + (1 − u) ln(1 − u)</div>
+        <p>x is the fraction of vacant oxygen sites. The two mixing terms count vacancies and compensating Ti³⁺; there is one titanium site for every two oxygen sites.</p>
+        <h3>Fixed inventory</h3>
+        <div class="eq">x̄ = (3/R³) ∫₀ᴿ x(r) r² dr = nᵥ M / 2 × 10⁻⁶</div>
+        <p>nᵥ is the measured oxygen removal in µmol O g⁻¹ of initial oxide and M = 79.866 g mol⁻¹. This constraint keeps the total number of vacancies fixed while their spatial distribution changes.</p>
+        <h3>Equilibrium profile</h3>
+        <div class="eq">Gₙ(r) + kBT [ln(x/(1 − x)) + 2 ln(4x/(1 − 4x))] = λ</div>
         <p>The calculation adjusts λ to conserve the measured inventory. R is particle radius, r is radial position, T is absolute temperature and kB is Boltzmann’s constant. The mean vacancy fraction is the oxygen removal in µmol O g⁻¹ multiplied by 79.866 × 10⁻⁶ / 2.</p>
         <p>Ideal mixing and local charge compensation limit x to 0.25. The model extrapolates dilute-defect energies at dense surface occupations and omits vacancy interactions and reconstruction. The measured inventory is supplied independently of the gas–solid equilibrium and kinetic models.</p>
         <p id="vdCheck"></p>
@@ -95,7 +103,7 @@
 <div id="ws-thermo" class="ws" style="display:none">
 
 <div class="wshead">
-  <h2>Thermodynamic equilibrium</h2>
+  <h2>Gas&ndash;solid equilibrium</h2>
   <p class="sub">Compare the gas-phase RWGS limit with the phase and composition reached
   after a finite gas charge contacts a titanium oxide.</p>
 </div>
@@ -351,9 +359,9 @@
   level is sufficient to suppress reduction, with a positive margin.</p>
   <div class="note calm">The oxygen-potential margin used by earlier versions of this site
   equals the reduced cost per mole of oxygen (the dual of the same minimisation); it is
-  reported on the Active set &amp; KKT tab. Independent verification is provided by an
+  reported in the phase-stability checks below. Independent verification is provided by an
   80-digit reference implementation and by the NIST&ndash;Waldner data comparison
-  (Validation tab).</div>
+  in the validation section below.</div>
 </div>
 <div class="panel pad page" id="p-val">
   <h2>Validation</h2>

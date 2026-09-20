@@ -4,6 +4,53 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
+  /* Build the same Results / Model structure before binding tab events.
+     Existing result and diagnostic IDs remain intact for the solvers. */
+  function modelChecks(model, ids) {
+    ids.forEach(function (id) {
+      var panel = $(id), section = document.createElement('details');
+      var summary = document.createElement('summary');
+      var heading = panel.querySelector('h2');
+      summary.textContent = heading.textContent;
+      heading.remove();
+      panel.className = 'model-check';
+      section.appendChild(summary); section.appendChild(panel); model.appendChild(section);
+    });
+  }
+  function organize(ws, resultId, modelId, checks) {
+    var root = $(ws), main = root.querySelector('.wsmain');
+    var bar = main.querySelector('.tabs'), result = $(resultId), model = $(modelId);
+    var lead = [];
+    for (var child = main.firstChild; child && child !== bar; child = child.nextSibling) lead.push(child);
+    var prefix = document.createDocumentFragment();
+    lead.forEach(function (node) { prefix.appendChild(node); });
+    result.insertBefore(prefix, result.firstChild);
+    modelChecks(model, checks);
+    bar.innerHTML = '<button class="tab active" data-page="'+resultId+'" type="button">Results</button>'
+      + '<button class="tab" data-page="'+modelId+'" type="button">Model</button>';
+    main.insertBefore(bar, result);
+    model.querySelector('h2').textContent = 'Model';
+    result.className = 'page active workspace-results';
+    model.className = 'page workspace-model';
+  }
+  organize('ws-thermo', 'p-res', 'p-how', ['p-kkt','p-bal','p-val']);
+  organize('ws-population', 'pp-res', 'pp-how', ['pp-val']);
+  var dm = document.querySelector('#ws-distribution .wsgrid > div');
+  dm.className = 'wsmain';
+  var explanation = dm.querySelector('details'), model = document.createElement('div');
+  model.id = 'vd-model'; model.className = 'page workspace-model';
+  explanation.querySelector('summary').remove();
+  model.innerHTML = '<h2>Model</h2>';
+  while (explanation.firstChild) model.appendChild(explanation.firstChild);
+  explanation.remove();
+  var check = document.createElement('details');
+  check.innerHTML = '<summary>Inventory check</summary>'; check.appendChild(model.querySelector('#vdCheck')); model.appendChild(check);
+  var dr = document.createElement('div'); dr.id = 'vd-res'; dr.className = 'page active workspace-results';
+  while(dm.firstChild) dr.appendChild(dm.firstChild);
+  dr.insertBefore(dr.querySelector('#vdResults'), dr.firstChild);
+  var db = document.createElement('div'); db.className = 'tabs';
+  db.innerHTML = '<button class="tab active" data-page="vd-res" type="button">Results</button><button class="tab" data-page="vd-model" type="button">Model</button>';
+  dm.appendChild(db); dm.appendChild(dr); dm.appendChild(model);
   var D = JSON.parse($('activeset-data').textContent);
   var REF = JSON.parse($('reference-data').textContent);
   var solver = new ActiveSet.Solver(D);
