@@ -60,6 +60,7 @@
   <div class="wshead"><h2>Vacancy distribution</h2><p class="sub">Calculate the surface enrichment of a measured oxygen-vacancy inventory in a rutile particle.</p></div>
   <div class="wsgrid">
     <aside class="vd-inputs">
+      <img class="workspace-scheme" src="SCHEME:vacancy-distribution" alt="A particle section with vacancies enriched near the surface and fewer in the interior. Total vacancy inventory is fixed. Conceptual geometry, not to scale.">
       <label for="vdSample">Measured inventory</label><select id="vdSample"><option value="">Custom</option><option value="13.45">A600</option><option value="36.85">R500</option><option value="94" selected>R600</option><option value="193.1">R800</option><option value="781.2">R1000</option></select>
       <label for="vdInventory">Oxygen removed (µmol O g⁻¹)</label><input id="vdInventory" type="number" value="94" min="0" step="any">
       <label for="vdRadius">Particle radius (nm)</label><input id="vdRadius" type="number" value="450" min="0" step="any">
@@ -101,6 +102,7 @@
 
 <div class="wsgrid">
 <aside class="controls">
+  <img class="workspace-scheme" src="SCHEME:gas-solid-equilibrium" alt="A closed gas charge exchanges oxygen with titanium oxide solids while CO2, H2, CO and water equilibrate. Element totals are conserved. Conceptual geometry, not to scale.">
   <p class="controls-kicker">Finite gas&ndash;solid contact</p>
   <div class="crow">
     <div class="c c-wide"><label for="solid0">Initial Ti oxide</label><select id="solid0"></select></div>
@@ -381,6 +383,7 @@
 
 <div class="wsgrid">
 <aside class="population-sheet" aria-labelledby="population-controls-title">
+  <img class="workspace-scheme" src="SCHEME:vacancy-kinetics" alt="Vacancy supply feeds isolated accessible sites and the region below. Isolated vacancies associate near the surface. Blue, orange and gray distinguish the three populations. Counts and geometry are illustrative.">
   <header class="population-sheet-head">
     <h3 id="population-controls-title">Vacancy-loss model</h3>
     <p>Fit three physical parameters to the measured CO formation rates.</p>
@@ -531,10 +534,7 @@
 </main>
 
 <footer>
-  <p>The equilibrium solves in the browser from the same coefficient tables the Python
-    package uses, and a parity gate holds the two to the last place; the population model
-    integrates one rate equation the same way. Regenerate the committed manuscript values with <code>python3 scripts/reproduce_paper.py</code>.
-    <a href="https://github.com/robin-yk/Solid-gas-thermosolver">Source</a>.</p>
+  <a href="https://github.com/robin-yk/Solid-gas-thermosolver">Source Code</a>
 </footer>
 
 <script id="activeset-data" type="application/json">/*ASDATA*/</script>

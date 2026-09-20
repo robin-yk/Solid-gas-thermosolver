@@ -14,6 +14,7 @@ site_data.json so the figures and the paper cannot drift.
 
 import json
 import os
+import base64
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(ROOT, 'web')
@@ -76,6 +77,10 @@ def build():
     if not os.path.exists(SITE):
         raise SystemExit('run scripts/reproduce_paper.py first')
     html = read(os.path.join(WEB, 'template.html'))
+    for name in ('gas-solid-equilibrium', 'vacancy-distribution', 'vacancy-kinetics'):
+        svg = read(os.path.join(WEB, 'schemes', name + '.svg'))
+        html = html.replace('SCHEME:' + name,
+                            'data:image/svg+xml;base64,' + base64.b64encode(svg.encode()).decode())
     html = html.replace('/*ASDATA*/',
                         read(os.path.join(DATA, 'activeset_data.json')).strip())
     html = html.replace('/*REFDATA*/',
