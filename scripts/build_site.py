@@ -16,6 +16,7 @@ import json
 import os
 import base64
 import xml.etree.ElementTree as ET
+from site_math import typeset
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(ROOT, 'web')
@@ -77,7 +78,7 @@ def slim_reference():
 def build():
     if not os.path.exists(SITE):
         raise SystemExit('run scripts/reproduce_paper.py first')
-    html = read(os.path.join(WEB, 'template.html'))
+    html = typeset(read(os.path.join(WEB, 'template.html')))
     for name in ('gas-solid-equilibrium', 'vacancy-distribution', 'vacancy-kinetics'):
         svg = read(os.path.join(WEB, 'schemes', name + '.svg'))
         root = ET.fromstring(svg)
