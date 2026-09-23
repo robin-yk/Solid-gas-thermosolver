@@ -1,11 +1,13 @@
-# Solid–gas thermosolver
+# TitaniaModels
+
+Gas–solid equilibrium and oxygen-vacancy models for reduced titania.
 
 Two calculations used in the accompanying manuscript: gas–solid equilibrium for
 the C–H–O–N / Ti–O system, and the isolated surface-vacancy population that sets
 the CO formation rate across the reduction series.
 
 The interactive version is at
-[robin-yk.github.io/Solid-gas-thermosolver](https://robin-yk.github.io/Solid-gas-thermosolver/).
+[robin-yk.github.io/TitaniaModels](https://robin-yk.github.io/TitaniaModels/).
 
 ## What it computes
 
