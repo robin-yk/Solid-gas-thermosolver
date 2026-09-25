@@ -126,9 +126,10 @@
     tip.innerHTML = '<b>' + name.charAt(0).toUpperCase() + name.slice(1) + ', calculated</b>'
       + sig(v) + ' µmol O g⁻¹ (' + pct(v / inv) + ' of ' + current.sample + ' inventory)<br>' + what;
     var r = $('vdParticleStage').getBoundingClientRect();
-    tip.style.left = Math.min(ev.clientX - r.left + 14, r.width - 270) + 'px';
-    tip.style.top = (ev.clientY - r.top + 14) + 'px';
     tip.hidden = false;
+    var x = ev.clientX - r.left + 14, y = ev.clientY - r.top + 14;
+    tip.style.left = Math.max(4, Math.min(x, r.width - tip.offsetWidth - 4)) + 'px';
+    tip.style.top = Math.max(4, Math.min(y, r.height - tip.offsetHeight - 4)) + 'px';
   }
   $('vdParticleStage').addEventListener('mousemove', function (ev) { showLayer(layerAt(ev), ev); });
   $('vdParticleStage').addEventListener('mouseleave', function () { showLayer(null); });

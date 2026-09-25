@@ -116,11 +116,17 @@ const P = require(process.env.PW + '/node_modules/playwright');
     const im = document.getElementById(id); return im && im.complete ? im.naturalWidth : 0; }));
   out.hover = await pg.evaluate(() => {
     const st = document.getElementById('vdParticleStage').getBoundingClientRect();
-    const found = {};
-    for (let fy = 0.3; fy < 0.8; fy += 0.02) for (let fx = 0.3; fx < 0.8; fx += 0.02) {
+    const hits = {};
+    for (let fy = 0.3; fy < 0.8; fy += 0.01) for (let fx = 0.3; fx < 0.8; fx += 0.01) {
       const ev = { clientX: st.left + fx * st.width, clientY: st.top + fy * st.height };
       const L = window.VacancyDistribution.layerAt(ev);
-      if (L && !found[L]) found[L] = [fx, fy];
+      if (L) (hits[L] = hits[L] || []).push([fx, fy]);
+    }
+    /* the centroid of each region, well inside it */
+    const found = {};
+    for (const L in hits) {
+      const h = hits[L], n = h.length;
+      found[L] = [h.reduce((a, q) => a + q[0], 0) / n, h.reduce((a, q) => a + q[1], 0) / n];
     }
     return found;
   });
