@@ -222,11 +222,24 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{min-height:96px;padding:14px}
   .crow{grid-template-columns:1fr}}
 
-/* the two 3D figures of the distribution workspace: a square canvas the
-   width of the figure column, turned by dragging */
-.pubfig .figbox.v3d{max-width:520px;aspect-ratio:1/1;background:#fff}
-.v3d-canvas{display:block;width:100%!important;height:auto!important;cursor:grab;touch-action:none}
-.v3d-canvas:active{cursor:grabbing}
+/* distribution workspace: two rendered panels first, the particle and the
+   (110) surface it zooms into; controls and figures follow below */
+.vd-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 64px;margin:4px 0 40px}
+.vd-panel{margin:0;min-width:0}
+.vd-stage{position:relative;aspect-ratio:1/1;background:#fff;overflow:hidden}
+.vd-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:opacity .45s ease}
+.vd-frame{border:1px solid var(--line)}
+#vdSlabNext{opacity:0}
+#vdParticleStage{cursor:crosshair}
+.vd-panel figcaption{margin-top:10px;font-size:12.5px;line-height:1.5;color:var(--muted);max-width:620px}
+.vd-panel figcaption b{color:var(--navy)}
+.vd-zoom{position:absolute;left:0;top:0;width:100%;height:calc(100% - 90px);pointer-events:none;overflow:visible}
+.vd-zoom line{stroke:#c8d2da;stroke-width:1.2;vector-effect:non-scaling-stroke}
+.vd-ring{position:absolute;left:68%;top:40%;width:11%;aspect-ratio:1/1;border:2px solid #0072B2;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
+.vd-tip{position:absolute;z-index:2;pointer-events:none;background:#fff;border:1px solid var(--line);border-radius:8px;
+  padding:8px 11px;font-size:12.5px;line-height:1.45;color:var(--ink);box-shadow:0 6px 18px #12334d14;max-width:260px}
+.vd-tip b{display:block;font-size:13px}
+@media (max-width:980px){.vd-hero{grid-template-columns:1fr;gap:28px}.vd-zoom{display:none}}
 #vdTable tr.hl td{background:var(--soft);font-weight:700}
 .vdt{border-collapse:collapse;font-size:13px}
 .vdt th{font-size:11px;color:var(--muted);font-weight:700;text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}

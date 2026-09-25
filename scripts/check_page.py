@@ -27,12 +27,9 @@ FEED = {'CO2': 10, 'H2': 10, 'N2': 80}
 SCRIPT = r'''
 const P = require(process.env.PW + '/node_modules/playwright');
 (async () => {
-  const b = await P.chromium.launch({ args: ['--use-angle=swiftshader',
-    '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const b = await P.chromium.launch();
   const pg = await b.newPage();
-  /* the 3D figures render once per change instead of every frame, so a
-     software renderer keeps up */
-  await pg.addInitScript(() => { window.V3D_STILL = 1; });
+
   const errs = [];
   pg.on('pageerror', e => errs.push(String(e)));
   pg.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
@@ -102,7 +99,7 @@ const P = require(process.env.PW + '/node_modules/playwright');
   out.popKpis = await txt('pnKpis');
   out.popFit = await txt('pnIdent');
 
-  /* the distribution workspace: the figure, the two 3D canvases, and the
+  /* the distribution workspace: the TOF figure, the rendered panels, and the
      numbers it prints for the starting scenario and after a change */
   await pg.click('.wstab[data-ws="ws-distribution"]');
   await pg.waitForTimeout(6000);
@@ -113,14 +110,26 @@ const P = require(process.env.PW + '/node_modules/playwright');
     return { fixed: s.querySelectorAll('rect[stroke="#777777"]').length,
              chosen: s.querySelectorAll('circle[stroke="#0072B2"]').length };
   });
-  out.canvasInk = await pg.evaluate(() =>
-    Array.from(document.querySelectorAll('#ws-distribution canvas.v3d-canvas')).map(c => {
-      const t = document.createElement('canvas'); t.width = c.width; t.height = c.height;
-      const g = t.getContext('2d'); g.drawImage(c, 0, 0);
-      const d = g.getImageData(0, 0, t.width, t.height).data; let n = 0;
-      for (let i = 0; i < d.length; i += 4) if (d[i] < 235 || d[i + 1] < 235 || d[i + 2] < 235) n++;
-      return n;
-    }));
+  /* the rendered panels: both images decoded, and a hover over the cut
+     face finds a layer in the mask and shows its amount */
+  out.renders = await pg.evaluate(() => ['vdParticleImg', 'vdSlabImg'].map(id => {
+    const im = document.getElementById(id); return im && im.complete ? im.naturalWidth : 0; }));
+  out.hover = await pg.evaluate(() => {
+    const st = document.getElementById('vdParticleStage').getBoundingClientRect();
+    const found = {};
+    for (let fy = 0.3; fy < 0.8; fy += 0.02) for (let fx = 0.3; fx < 0.8; fx += 0.02) {
+      const ev = { clientX: st.left + fx * st.width, clientY: st.top + fy * st.height };
+      const L = window.VacancyDistribution.layerAt(ev);
+      if (L && !found[L]) found[L] = [fx, fy];
+    }
+    return found;
+  });
+  if (out.hover.bulk) {
+    const box = await pg.locator('#vdParticleStage').boundingBox();
+    await pg.mouse.move(box.x + out.hover.bulk[0] * box.width, box.y + out.hover.bulk[1] * box.height);
+    await pg.waitForTimeout(200);
+    out.tip = await txt('vdTip');
+  }
   out.vdKpis = await txt('vdKpis');
   out.vdState = await pg.evaluate(() => window.VacancyDistribution.state());
   await pg.selectOption('#vdSample', 'R1000');
@@ -128,7 +137,7 @@ const P = require(process.env.PW + '/node_modules/playwright');
   await pg.waitForTimeout(3000);
   out.vdKpis2 = await txt('vdKpis');
   out.vdState2 = await pg.evaluate(() => window.VacancyDistribution.state());
-  out.slabCounts = await pg.evaluate(() => window.VacancyDistribution.three().slab.counts);
+  out.slabShown = await pg.evaluate(() => window.VacancyDistribution.slabShown());
 
   out.scope = await pg.evaluate(() =>
     document.body.textContent.replace(/\s+/g, ' ').indexOf('is inferred from the measured rates') >= 0);
@@ -196,8 +205,11 @@ def check(out):
     ok('the TOF figure marks every sample twice',
        out['tofMarks'] == {'fixed': n, 'chosen': n},
        out['tofMarks'])
-    ok('both 3D figures drew', len(out['canvasInk']) == 2
-       and min(out['canvasInk']) > 5000, out['canvasInk'])
+    ok('both rendered panels decoded', min(out['renders']) >= 1000, out['renders'])
+    ok('hover finds all three layers in the mask',
+       set(out['hover']) == {'surface', 'subsurface', 'bulk'}, out['hover'])
+    ok('hover on the bulk shows its calculated amount',
+       'Bulk, calculated' in (out.get('tip') or ''), out.get('tip'))
     for key, state in (('vdKpis', out['vdState']), ('vdKpis2', out['vdState2'])):
         ax = tof['axes']
         i = ax['energy_map'].index(state['map'])
@@ -210,9 +222,7 @@ def check(out):
         want = float('%.3g' % (smp['rate_co_umol_g_s'] / n))
         ok('%s %s: the page prints the stored TOF' % (state['sample'], state['reactive']),
            ('%g' % want) in out[key], (want, out[key]))
-    ok('the surface patch removes sites for the new scenario',
-       sum(out['slabCounts'][k] for k in ('BRI', 'IPL', 'SBR', 'L24')) >= 0
-       and out['slabCounts']['reactive'] <= out['slabCounts']['BRI'], out['slabCounts'])
+    ok('the surface panel follows the sample', out['slabShown'] == 'R1000', out['slabShown'])
 
     return fails
 

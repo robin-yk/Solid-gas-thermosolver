@@ -1,10 +1,9 @@
 """The vacancy-distribution workspace reads paper_outputs/tof_range.json
 and draws it. The gates: that file is what the one-model run wrote, it is
-current, the page carries exactly it, and the 3D bundle is built from the
-sources committed next to it."""
+current, the page carries exactly it, and the rendered panels were made
+from its current values."""
 
 import csv
-import hashlib
 import json
 import pathlib
 import subprocess
@@ -16,7 +15,6 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 TOF = ROOT / 'paper_outputs' / 'tof_range.json'
 PILOT = ROOT / 'pilot' / 'titania-super-multiscale' / 'outputs'
 PAGE = ROOT / 'docs' / 'index.html'
-SRC = ROOT / 'web' / '3d'
 
 
 @pytest.fixture(scope='module')
@@ -65,21 +63,43 @@ def test_the_page_carries_the_json_unchanged(doc):
         'the page is stale - run scripts/build_site.py'
 
 
-def test_the_3d_bundle_is_built_from_the_committed_sources():
-    """Same hash as web/3d/build.mjs: file name, a NUL, the bytes."""
-    names = ['common.js', 'main.js', 'particle.js', 'slab.js', 'assets/studio.jpg', 'package-lock.json']
-    assert f"'{names[0]}'" in (SRC / 'build.mjs').read_text()
-    h = hashlib.sha256()
-    for n in names:
-        h.update(n.encode() + b'\0' + (SRC / n).read_bytes())
-    head = (ROOT / 'web' / 'vacancy3d.js').read_text().split('\n', 1)[0]
-    assert h.hexdigest() in head, 'run npm run build in web/3d and commit web/vacancy3d.js'
+RENDER = ROOT / 'web' / 'render'
 
 
-def test_the_3d_figures_draw_counts_and_fractions_only():
-    """The 3D code gets pool sizes and site fractions from the page and
-    must not carry a physical number of its own beyond the rutile cell."""
-    src = (SRC / 'slab.js').read_text() + (SRC / 'particle.js').read_text()
-    assert 'const A = 4.594, C = 2.959, U = 0.305' in src
-    for word in ('TOF', 'rate_co', 'inventory'):
-        assert word not in src
+def test_the_surface_renders_use_the_current_site_fractions(doc):
+    """slab_sites.json records the fractions each slab image was rendered
+    at; they must be the starting-parameter fractions in tof_range.json."""
+    meta = json.loads((RENDER / 'slab_sites.json').read_text())
+    st, ax = meta['start'], doc['axes']
+    i = ax['energy_map'].index(st['energy_map'])
+    i = i * len(ax['cutoff_nm']) + ax['cutoff_nm'].index(st['cutoff_nm'])
+    i = i * len(ax['dG_eV']) + ax['dG_eV'].index(st['dG_eV'])
+    i = i * len(ax['f110']) + ax['f110'].index(st['f110'])
+    i = i * len(ax['eps']) + [e['key'] for e in ax['eps']].index(st['eps'])
+    assert meta['point'] == i
+    cap = doc['capacity_umol_g']['%g' % st['f110']]
+    for s in doc['samples']:
+        pools = dict(zip(doc['pools'], s['cases']['pools'][i]))
+        want = dict(BRI=s['cases']['theta'][i], IPL=pools['basal_L1'] / cap['basal_L1'],
+                    SBR=pools['L1_subbridging'] / cap['L1_subbridging'],
+                    L24=pools['subsurface_L2_4'] / cap['subsurface_L2_4'])
+        assert meta['fractions'][s['sample']] == pytest.approx(want, rel=1e-12), s['sample']
+        assert (RENDER / ('slab_%s.webp' % s['sample'])).exists()
+
+
+def test_the_slab_keeps_each_vacancy_as_the_inventory_rises(doc):
+    """Fixed site ranks: a sample with larger fractions keeps every vacancy
+    of a smaller one, so the vacant counts never fall along the series."""
+    meta = json.loads((RENDER / 'slab_sites.json').read_text())
+    order = sorted(doc['samples'], key=lambda s: meta['fractions'][s['sample']]['BRI'])
+    counts = [meta['vacant'][s['sample']]['BRI'] for s in order]
+    assert counts == sorted(counts)
+    assert all(0 <= meta['vacant'][k]['BRI'] <= meta['sites']['BRI'] for k in meta['vacant'])
+
+
+def test_the_page_carries_the_renders():
+    html = PAGE.read_text()
+    assert 'RENDER:' not in html and '/*RENDERDATA*/' not in html
+    for name in ('particle_default.webp', 'slab_R600.webp', 'particle_mask.png'):
+        assert (RENDER / name).exists(), name
+    assert html.count('data:image/webp;base64,') >= 10

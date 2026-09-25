@@ -58,9 +58,28 @@
 
 <section id="ws-distribution" class="ws" style="display:none">
   <div class="wshead"><h2>Vacancy distribution</h2><p class="sub">Equilibrium distribution of the measured oxygen-vacancy inventory over surface, subsurface and bulk sites of rutile at 600&nbsp;&deg;C, and the apparent CO turnover frequency per reactive site.</p></div>
+  <div class="vd-hero">
+    <figure class="vd-panel" id="vdParticle">
+      <div class="vd-stage" id="vdParticleStage">
+        <img id="vdParticleImg" src="RENDER:particle_default.webp" alt="Rounded rutile grains; one grain cut open to show the surface band, subsurface band and bulk">
+        <div class="vd-ring" aria-hidden="true"></div>
+        <div class="vd-tip" id="vdTip" hidden></div>
+      </div>
+      <figcaption><b>Rutile grains, cross-section.</b> Shape after TEM (Fig. S10d). Blue: surface
+      band, four (110) trilayers, 1.30&nbsp;nm; orange: subsurface; purple: bulk. Band
+      thickness not to scale. Hover a layer for its calculated vacancy amount.</figcaption>
+    </figure>
+    <svg class="vd-zoom" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="34" y1="36" x2="52" y2="0"/><line x1="34" y1="44" x2="52" y2="100"/></svg>
+    <figure class="vd-panel" id="vdSurface">
+      <div class="vd-stage vd-frame" id="vdSlabStage">
+        <img id="vdSlabImg" src="RENDER:slab_R600.webp" alt="Rutile (110) surface, four trilayers, with vacant bridging oxygen sites ringed">
+        <img id="vdSlabNext" alt="" aria-hidden="true">
+      </div>
+      <figcaption id="vdSlabCaption"></figcaption>
+    </figure>
+  </div>
   <div class="wsgrid">
     <aside class="population-sheet" aria-labelledby="vd-controls-title">
-      <img class="workspace-scheme" src="SCHEME:vacancy-distribution" alt="Rutile particle cross-section: bulk vacancies in the interior, a (110) surface band with bridging-oxygen and subsurface vacancies. Surface band not to scale.">
       <header class="population-sheet-head">
         <h3 id="vd-controls-title">Model parameters</h3>
         <p>All 720 combinations are precomputed; the inputs select one.</p>
@@ -103,22 +122,6 @@
 </div>
 
 <div class="figgrid">
-  <figure class="pubfig" id="figParticle">
-    <h3>Particle cross-section</h3>
-    <div class="figbox v3d" role="img" aria-label="Rutile particle with one octant removed; beads mark bulk, subsurface and surface oxygen vacancies"></div>
-    <details class="figdl"><summary>Download figure</summary>
-      <button type="button" data-fmt="png">PNG</button>
-    </details>
-    <figcaption id="vdParticleCaption"></figcaption>
-  </figure>
-  <figure class="pubfig" id="figSlab">
-    <h3>Rutile (110) surface, four trilayers</h3>
-    <div class="figbox v3d" role="img" aria-label="Rutile (110) slab with vacant oxygen sites marked"></div>
-    <details class="figdl"><summary>Download figure</summary>
-      <button type="button" data-fmt="png">PNG</button>
-    </details>
-    <figcaption id="vdSlabCaption"></figcaption>
-  </figure>
   <figure class="pubfig wide" id="figTofRange">
     <h3>Apparent CO TOF by sample</h3>
     <div class="figbox" role="img" aria-label="Apparent CO turnover frequency per reactive site for each sample: range over parameter points, value with 2.31 umol per gram sites, and the selected parameters"></div>
@@ -670,6 +673,6 @@
 <script>/*THERMOUI*/</script>
 <script>/*UI*/</script>
 <script id="tof-data" type="application/json">/*TOFDATA*/</script>
-<script>/*V3D*/</script>
+<script id="render-data" type="application/json">/*RENDERDATA*/</script>
 <script>/*DISTFIG*/</script>
 <script>/*DISTUI*/</script>

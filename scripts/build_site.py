@@ -13,6 +13,7 @@ site_data.json so the figures and the paper cannot drift.
 """
 
 import json
+import re
 import os
 import base64
 import xml.etree.ElementTree as ET
@@ -35,7 +36,6 @@ CASES_FEEDS = {
 }
 
 PARTS = [
-    ('/*V3D*/', os.path.join(WEB, 'vacancy3d.js')),
     ('/*DISTFIG*/', os.path.join(WEB, 'figures_distribution.js')),
     ('/*DISTUI*/', os.path.join(WEB, 'distribution_ui.js')),
     ('/*CSS*/', os.path.join(WEB, 'site.css')),
@@ -77,11 +77,34 @@ def slim_reference():
             'h2_h2o_boundary': doc['boundary_validation']['h2_h2o_boundary']}
 
 
+RENDER = os.path.join(WEB, 'render')
+
+
+def data_uri(name):
+    kind = 'image/webp' if name.endswith('.webp') else 'image/png'
+    with open(os.path.join(RENDER, name), 'rb') as fh:
+        return 'data:%s;base64,%s' % (kind, base64.b64encode(fh.read()).decode())
+
+
+def inline_renders(html):
+    """Blender renders of the vacancy-distribution workspace. The images the
+    page opens on go straight into <img src>; the hover states, the other
+    samples and the hover mask go into one JSON block the script reads."""
+    for name in re.findall(r'RENDER:([\w.]+)', html):
+        html = html.replace('RENDER:' + name, data_uri(name))
+    sites = json.loads(read(os.path.join(RENDER, 'slab_sites.json')))
+    doc = dict(sites=sites, mask=data_uri('particle_mask.png'),
+               particle={k: data_uri('particle_%s.webp' % k)
+                         for k in ('surface', 'subsurface', 'bulk')},
+               slab={k: data_uri('slab_%s.webp' % k) for k in sorted(sites['vacant'])})
+    return html.replace('/*RENDERDATA*/', json.dumps(doc, separators=(',', ':')))
+
+
 def build():
     if not os.path.exists(SITE):
         raise SystemExit('run scripts/reproduce_paper.py first')
     html = typeset(read(os.path.join(WEB, 'template.html')))
-    for name in ('gas-solid-equilibrium', 'vacancy-distribution', 'vacancy-kinetics'):
+    for name in ('gas-solid-equilibrium', 'vacancy-kinetics'):
         svg = read(os.path.join(WEB, 'schemes', name + '.svg'))
         root = ET.fromstring(svg)
         ns = {'s': 'http://www.w3.org/2000/svg'}
@@ -103,12 +126,14 @@ def build():
     html = html.replace('/*DATA*/',
                         json.dumps(json.loads(read(SITE)),
                                    separators=(',', ':')))
+    html = inline_renders(html)
     html = html.replace('/*TOFDATA*/',
                         json.dumps(json.loads(read(TOF)), separators=(',', ':')))
     for token, path in PARTS:
         html = html.replace(token, read(path))
     for token, _ in PARTS + [('/*DATA*/', None), ('/*ASDATA*/', None),
-                             ('/*REFDATA*/', None), ('/*TOFDATA*/', None)]:
+                             ('/*REFDATA*/', None), ('/*TOFDATA*/', None),
+                             ('/*RENDERDATA*/', None)]:
         if token in html:
             raise SystemExit('unsubstituted token left in the page: ' + token)
     if '<script src=' in html or 'href="http' in html.replace(

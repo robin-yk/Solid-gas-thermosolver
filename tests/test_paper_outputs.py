@@ -123,7 +123,7 @@ def test_the_browser_engines_are_mirrors_under_a_parity_gate():
     assert inlined == ['activeset.js', 'distribution_ui.js', 'figkit.js',
                        'figures_distribution.js', 'figures_population.js',
                        'figures_thermo.js', 'population.js', 'site_ui.js',
-                       'thermo_ui.js', 'ti_solver_page.js', 'vacancy3d.js'], inlined
+                       'thermo_ui.js', 'ti_solver_page.js'], inlined
 
 
 def test_the_manuscript_values_are_read_not_recomputed(site):

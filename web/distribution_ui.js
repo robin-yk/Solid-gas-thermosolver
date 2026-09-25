@@ -8,7 +8,7 @@
   var el = $('tof-data');
   if (!el || !$('ws-distribution')) return;
   var D = JSON.parse(el.textContent);
-  var K = window.FigKit, F = window.DistributionFigures, V = window.Vacancy3D;
+  var K = window.FigKit, F = window.DistributionFigures;
   var AX = D.axes, SAMPLES = D.samples;
   var NPTS = AX.energy_map.length * AX.cutoff_nm.length * AX.dG_eV.length * AX.f110.length * AX.eps.length;
   var START = { sample: 'R600', map: 'PAB', cutoff: 0.34, dG: 0, f110: 0.75, eps: 'a_axis', reactive: 'BRI' };
@@ -81,22 +81,69 @@
              below: !!c.below[p][j], tof: n > 0 ? smp.rate_co_umol_g_s / n : Infinity };
   }
 
-  /* ------------------------------------------------------------ 3D */
-  var P3 = null, S3 = null, tried = false;
-  function mount3d() {
-    if (tried) return;
-    var hp = $('figParticle').querySelector('.figbox'), hs = $('figSlab').querySelector('.figbox');
-    if (!hp.clientWidth) return;
-    tried = true;
-    if (!V || !V.available()) {
-      hp.textContent = hs.textContent = 'This figure needs WebGL, which this browser does not provide.';
-      return;
-    }
-    P3 = V.particle(hp);
-    S3 = V.slab(hs);
-    draw(false);
+  /* ----------------------------------------------- rendered panels */
+  /* Blender renders: the grains (four hover states and a mask whose red,
+     green and blue pixels are the surface, subsurface and bulk sections)
+     and one (110) surface per sample at the starting parameters. */
+  var RD = JSON.parse($('render-data').textContent);
+  var LAYER = { 1: 'surface', 2: 'subsurface', 3: 'bulk' };
+  var mask = null;
+  (function () {
+    var im = new Image();
+    im.onload = function () {
+      var c = document.createElement('canvas');
+      c.width = im.width; c.height = im.height;
+      var g = c.getContext('2d');
+      g.drawImage(im, 0, 0);
+      mask = { w: im.width, h: im.height, d: g.getImageData(0, 0, im.width, im.height).data };
+    };
+    im.src = RD.mask;
+  })();
+  var defaultParticle = $('vdParticleImg').src;
+  function layerAt(ev) {
+    if (!mask) return null;
+    var r = $('vdParticleImg').getBoundingClientRect();
+    var x = Math.floor((ev.clientX - r.left) / r.width * mask.w);
+    var y = Math.floor((ev.clientY - r.top) / r.height * mask.h);
+    if (x < 0 || y < 0 || x >= mask.w || y >= mask.h) return null;
+    var i = 4 * (y * mask.w + x), d = mask.d;
+    if (d[i + 3] < 128) return null;
+    var k = d[i] > 128 ? 1 : d[i + 1] > 128 ? 2 : d[i + 2] > 128 ? 3 : 0;
+    return LAYER[k] || null;
   }
-  (function wait() { if (!tried) { mount3d(); requestAnimationFrame(wait); } })();
+  var shownLayer = null, current = null;
+  function showLayer(name, ev) {
+    var tip = $('vdTip');
+    if (name !== shownLayer) {
+      $('vdParticleImg').src = name ? RD.particle[name] : defaultParticle;
+      shownLayer = name;
+    }
+    if (!name || !current) { tip.hidden = true; return; }
+    var p = current.pools, inv = current.inv, v, what;
+    if (name === 'surface') { v = p.bridging + p.reconstructed_row + p.basal_L1; what = 'BRI, reconstructed and layer-1 IPL sites'; }
+    else if (name === 'subsurface') { v = p.L1_subbridging + p.subsurface_L2_4; what = 'layer-1 SBR and layers 2–4'; }
+    else { v = p.bulk; what = 'below 1.30 nm'; }
+    tip.innerHTML = '<b>' + name.charAt(0).toUpperCase() + name.slice(1) + ', calculated</b>'
+      + sig(v) + ' µmol O g⁻¹ (' + pct(v / inv) + ' of ' + current.sample + ' inventory)<br>' + what;
+    var r = $('vdParticleStage').getBoundingClientRect();
+    tip.style.left = Math.min(ev.clientX - r.left + 14, r.width - 270) + 'px';
+    tip.style.top = (ev.clientY - r.top + 14) + 'px';
+    tip.hidden = false;
+  }
+  $('vdParticleStage').addEventListener('mousemove', function (ev) { showLayer(layerAt(ev), ev); });
+  $('vdParticleStage').addEventListener('mouseleave', function () { showLayer(null); });
+  $('vdParticleStage').addEventListener('click', function (ev) { showLayer(layerAt(ev), ev); });
+
+  var slabShown = 'R600';
+  function showSlab(name) {
+    if (!RD.slab[name] || name === slabShown) return;
+    var next = $('vdSlabNext'), cur = $('vdSlabImg');
+    next.src = RD.slab[name];
+    next.style.opacity = 1;
+    cur.style.opacity = 0;
+    next.id = 'vdSlabImg'; cur.id = 'vdSlabNext';
+    slabShown = name;
+  }
 
   /* ------------------------------------------------------- figures */
   var figState = {};
@@ -108,9 +155,7 @@
       var fmt = ev.target && ev.target.getAttribute('data-fmt');
       var st = figState[hostId];
       if (!fmt || !st) return;
-      if (st.canvas) {
-        st.canvas().toBlob(function (b) { K.saveBlob(b, st.name + '.png'); }, 'image/png');
-      } else if (fmt === 'svg') {
+      if (fmt === 'svg') {
         K.downloadSVG(st.svg, st.name);
       } else if (fmt === 'png') {
         K.downloadPNG(st.svg, st.name);
@@ -120,9 +165,7 @@
       dl.open = false;
     });
   }
-  ['figParticle', 'figSlab', 'figTofRange'].forEach(wireDownload);
-  figState.figParticle = { name: 'vacancy-particle', canvas: function () { return P3.stage.renderer.domElement; } };
-  figState.figSlab = { name: 'vacancy-surface', canvas: function () { return S3.stage.renderer.domElement; } };
+  wireDownload('figTofRange');
 
   function num(x) { return +x; }
   function draw(animate) {
@@ -185,32 +228,18 @@
         + ' of ' + m.n_cases + '</td></tr>';
     }).join('');
 
-    /* the 3D figures */
-    if (P3) {
-      P3.set({ f110: s.f110, pools: pools, animate: animate });
-      var shown = P3.want;
-      var r = D.explicit_depth_nm, d = D.diameters_nm;
-      $('vdParticleCaption').innerHTML = '1 bead = ' + P3.dotUmol + ' µmol O g⁻¹ (calculated). Purple: bulk, '
-        + Math.round(shown.bulk) + ' beads; orange: subsurface, ' + Math.round(shown.subsurface)
-        + '; blue: surface, ' + Math.round(shown.surface) + '; beads in the removed octant not drawn. '
-        + 'Blue tiles: (110), ' + Math.round(100 * s.f110) + '% of the area. Surface band ('
-        + r + ' nm) drawn ' + Math.round(0.05 / (2 * r / d[0])) + '–'
-        + Math.round(0.05 / (2 * r / d[d.length - 1])) + '× thicker than scale for '
-        + d[0] + '–' + d[d.length - 1] + ' nm particles.';
-    }
-    if (S3) {
-      S3.set({ theta: c.theta, f_rec: c.f_rec, reactive: s.reactive,
-               x_basal: pools.basal_L1 / cap.basal_L1, x_sbr: pools.L1_subbridging / cap.L1_subbridging,
-               x_l24: pools.subsurface_L2_4 / cap.subsurface_L2_4 });
-      var n = S3.counts, P = V.PATCH;
-      $('vdSlabCaption').innerHTML = P.NX + ' × ' + P.NY + ' (1×1) cells, ' + (P.NX * 0.6497).toFixed(1)
-        + ' × ' + (P.NY * 0.2959).toFixed(1) + ' nm; unrelaxed bulk positions (a = 0.4594 nm, c = 0.2959 nm, '
-        + 'u = 0.305). Vacant sites at the calculated site fractions: BRI ' + n.BRI + ' (θ = ' + sig(c.theta)
-        + '), IPL layer 1 ' + n.IPL + ', SBR layer 1 ' + n.SBR + ', layers 2–4 ' + n.L24
-        + '. Blue: surface vacancy; orange: subsurface vacancy; pulsing: counted in N<sub>react</sub> ('
-        + (REACT[s.reactive] || s.reactive) + '), ' + n.reactive + '. Light blue: (1×2) added rows, '
-        + n.cells + ' of ' + (P.NX / 2 * P.NY) + ' cells, schematic positions.';
-    }
+    /* the rendered panels */
+    current = { pools: pools, inv: inv, sample: s.sample };
+    showSlab(s.sample);
+    var n = RD.sites.vacant[s.sample], cells = RD.sites.cells;
+    var atStart = s.map === START.map && s.cutoff === START.cutoff && s.dG === START.dG
+      && s.f110 === START.f110 && s.eps === START.eps;
+    $('vdSlabCaption').innerHTML = '<b>Rutile (110), ' + s.sample + '.</b> ' + cells[0] + ' × ' + cells[1]
+      + ' cells, four trilayers; atoms from the rutile CIF (P4₂/mnm, a = 0.4594 nm, c = 0.2959 nm, '
+      + 'x(O) = 0.3048), unrelaxed. Vacant sites at the calculated site fractions for the starting '
+      + 'parameters' + (atStart ? '' : ' (image unchanged by the parameters above)') + ': '
+      + n.BRI + ' BRI (blue rings), ' + (n.SBR + n.L24 + n.IPL) + ' below the top O row (orange). '
+      + 'Pink: Ti³⁺ on the two Ti nearest each vacancy; the model resolves Ti³⁺ by layer.';
   }
 
   ['vdSample', 'vdMap', 'vdCutoff', 'vdDG', 'vdF110', 'vdEps', 'vdReactive'].forEach(function (id) {
@@ -256,5 +285,5 @@
   setState(START);
   draw(false);
   window.VacancyDistribution = { draw: draw, state: state, setState: setState, caseOf: caseOf, point: point,
-    three: function () { return { particle: P3, slab: S3 }; } };
+    renders: RD, layerAt: layerAt, slabShown: function () { return slabShown; } };
 })();
