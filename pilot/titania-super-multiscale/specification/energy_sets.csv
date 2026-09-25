@@ -1,0 +1,25 @@
+scenario,layer,site,relative_E_eV,role,source
+PABISIAK_2007_GGA,1,BRI,-0.81,explicit,Layer energy sets
+PABISIAK_2007_GGA,1,IPL,0.33,explicit,Layer energy sets
+PABISIAK_2007_GGA,1,SBR,-0.67,explicit,Layer energy sets
+PABISIAK_2007_GGA,2,BRI,0.61,explicit,Layer energy sets
+PABISIAK_2007_GGA,2,IPL,-0.03,explicit,Layer energy sets
+PABISIAK_2007_GGA,2,SBR,0.30,explicit,Layer energy sets
+PABISIAK_2007_GGA,3,BRI,-0.23,explicit,Layer energy sets
+PABISIAK_2007_GGA,3,IPL,-0.10,explicit,Layer energy sets
+PABISIAK_2007_GGA,3,SBR,-0.31,explicit,Layer energy sets
+PABISIAK_2007_GGA,4,BRI,0.01,bulk connection,Layer energy sets
+PABISIAK_2007_GGA,4,IPL,-0.04,bulk connection,Layer energy sets
+PABISIAK_2007_GGA,4,SBR,0.01,bulk connection,Layer energy sets
+HAMEEUW_2006_LDA,1,BRI,-1.21,explicit,Layer energy sets
+HAMEEUW_2006_LDA,1,IPL,0.21,explicit,Layer energy sets
+HAMEEUW_2006_LDA,1,SBR,-0.82,explicit,Layer energy sets
+HAMEEUW_2006_LDA,2,BRI,0.20,explicit,Layer energy sets
+HAMEEUW_2006_LDA,2,IPL,-0.09,explicit,Layer energy sets
+HAMEEUW_2006_LDA,2,SBR,0.30,explicit,Layer energy sets
+HAMEEUW_2006_LDA,3,BRI,-0.26,explicit,Layer energy sets
+HAMEEUW_2006_LDA,3,IPL,-0.16,explicit,Layer energy sets
+HAMEEUW_2006_LDA,3,SBR,-0.26,explicit,Layer energy sets
+LI_2015_SX,SURFACE,GENERIC,-1.31,coarse surface,Layer energy sets; Model-ready sets 4.39 vs 5.70 eV
+LI_2015_SX,SUBSURFACE,GENERIC,-0.72,coarse subsurface (needs capacity mapping),Layer energy sets; Model-ready sets 4.98 vs 5.70 eV
+LI_2015_SX,BULK,GENERIC,0.0,reference,Layer energy sets

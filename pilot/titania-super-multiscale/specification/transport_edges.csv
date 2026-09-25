@@ -1,0 +1,13 @@
+network,from_atomic_O_layer,to_atomic_O_layer,barrier_eV,prefactor_reported,source,role
+WU_2023,2,1,0.50,not recorded,Model assumptions Q5 (Wu 2023 SCAN),shallow vertical exchange
+WU_2023,3,1,0.25,not recorded,Model assumptions Q5 (Wu 2023 SCAN),shallow vertical exchange
+WU_2023,5,3,0.71,not recorded,Model assumptions Q5 (Wu 2023 SCAN),deeper shallow exchange
+WU_2023,1,1,1.50,not recorded,Model assumptions Q5 (Wu 2023 SCAN),surface lateral migration
+JUG_2005,1,3,1.3577239985489973,kT/h,Direct surface-bulk exchange (Jug 2005 MSINDO),surface to subsurface
+JUG_2005,3,1,0.5804010986163652,kT/h,Direct surface-bulk exchange (Jug 2005 MSINDO),subsurface to surface
+JUG_2005,3,5,1.875939265170752,kT/h,Direct surface-bulk exchange (Jug 2005 MSINDO),deeper penetration
+JUG_2005,5,3,0.54930818261906,kT/h,Direct surface-bulk exchange (Jug 2005 MSINDO),deeper to subsurface
+IDDIR_2007,0,0,1.10,not recorded,Primary bulk migration (Iddir 2007 VO2+ C step),bulk 3D network rate-limiting step
+IDDIR_2007_B,0,0,0.69,not recorded,Primary bulk migration (Iddir 2007 VO2+ B step),fast directional step; needs C for 3D transport
+WANG_2010_001,1,1,1.19,14.16e12,Transport parameter sets (Wang 2010 PW91),surface bridging hop [001]
+WANG_2010_1-10,1,1,0.91,7.08e12,Transport parameter sets (Wang 2010 PW91),surface bridging concerted [1-10]

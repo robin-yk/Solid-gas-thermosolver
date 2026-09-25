@@ -1,0 +1,36 @@
+id,value,unit,role,source
+rutile_a_nm,0.4594,nm,lattice constant,Model assumptions Q6 (v12 workbook)
+rutile_c_nm,0.2958,nm,lattice constant,Model assumptions Q6 (v12 workbook)
+rutile_u,0.30479,1,oxygen internal coordinate of rutile,standard rutile structure (not in the v12 workbook)
+rutile_density_g_cm3,4.2487,g/cm3,mass to geometry,Sample inputs v12
+rutile_molar_mass_g_mol,79.8658,g/mol,total oxygen capacity,M10 configuration (manuscript Note 2b uses 79.866)
+avogadro,6.02214076e23,1/mol,constant,CODATA
+boltzmann_eV_K,8.617333262e-5,eV/K,constant,CODATA
+planck_eV_s,4.135667696e-15,eV s,kT/h prefactor,CODATA
+diameter_baseline_nm,900,nm,particle size,Model assumptions Q1
+diameter_sensitivity_nm,300;600,nm,particle size sensitivity,Model assumptions Q1
+equilibrium_T_K,873.15,K,common equilibrium temperature,Sample inputs v12
+alpha_basal_baseline,0,1,basal reactivity factor,Sample inputs v12
+alpha_basal_sensitivity,0.5;1.0,1,basal reactivity sensitivity,Sample inputs v12 (sensitivity may span 0-1)
+matsunaga_basal_minus_bridging_eV,0.11,eV,direct branch,Layer energy sets (Matsunaga 2014 PBE+U)
+matsunaga_sensitivity_eV,0.0;-0.10,eV,sensitivity branches,M10 boundary rules 5
+li_continuum_A_eV,1.31,eV,Note 2b surface stabilization,manuscript Note 2b (Li 2015 sX 5.70 - 4.39)
+li_continuum_xi_nm,0.5,nm,Note 2b decay length,manuscript Note 2b
+li_continuum_xi_sensitivity_nm,0.25;1.0,nm,decay length sensitivity,manuscript Note 2b
+continuum_A_scan_eV,0.81;1.21;1.43,eV,continuity with the saved continuous range,Sample comparison (saved 12-scenario range)
+denominator_absolute_threshold_umol_g,0.01,umol/g,INVALID rule,M10 boundary rules 2
+denominator_capacity_fraction_threshold,0.01,1,INVALID rule,M10 boundary rules 2
+aggregate_inventory_fraction_boundary,0.95,1,BOUNDARY rule,M10 boundary rules 4
+aggregate_capable_fraction_sensitivity,0.1;0.5,1,aggregate capacity as fraction of bulk O,M10 scenario convention (no literature value)
+aggregate_capable_fraction_boundary,1.0,1,full aggregate capacity,M10 boundary rules 3
+divacancy_eV_per_vacancy,-0.271,eV,aggregate stabilization,manuscript Note 2c (Lee 2022/2023 pairing 0.271 eV per vacancy)
+v8_eV_per_vacancy,-0.665,eV,aggregate stabilization,M10 code only; source value not located in the v12 workbook
+reconstruction_onset_ML,0.17,ML,reconstruction onset coverage,manuscript Note 2a (Birschitzky 2024; Reticciolli 2017)
+strong_reduction_T_C,900,C,Yuan strong-reduction regime,Reconstruction limits (Yuan 2024 Fig. 1)
+prefactor_fixed_s,1e12;1e13,1/s,attempt frequency scenarios,Transport parameter sets (1e13); 1e12 lower bound assumed
+observation_time_grid_s,1;10;60;600,s,initial-rate observation time,assumed grid (observation time not recorded)
+cooling_rate_grid_K_s,0.1;1;10,K/s,freeze-in sensitivity,assumed grid (cooling rate not recorded)
+zhang_A_eV_A,0.753,eV A,pair potential,ZHA2017 pair potential
+zhang_B_eV_A2,11.83,eV A^2,pair potential,ZHA2017 pair potential
+zhang_C_eV_A6,-383.45,eV A^6,pair potential,ZHA2017 pair potential (equation uses -C/r^6)
+bet_unmatched_m2_g,85.0121;65.9391;99.20,m2/g,fresh / RWGS-CH / RWGS-MW BET,Model assumptions Q2 (not matched to A600-R1100)

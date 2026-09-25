@@ -1,0 +1,7 @@
+sample,inventory_umol_g,inventory_alt_umol_g,inventory_status,rate_co_umol_g_s,inventory_source,rate_source,note
+A600,13.45,,SELECTED,2.26,Sample inputs v12 (existing Note 2 record),Sample inputs v12,
+R500,36.85,,SELECTED,3.77,Sample inputs v12 (existing Note 2 record),Sample inputs v12,
+R600,94.0,94.6,SELECTED,3.92,Sample inputs v12 (Table S1 selected; Origin alternative retained),Sample inputs v12,alternative runs as experimental sensitivity
+R800,193.1,,SELECTED,2.01,Sample inputs v12 (existing Note 2 record),Sample inputs v12,
+R1000,781.2,,SELECTED,0.0454,Sample inputs v12 (existing Note 2 record),Sample inputs v12,
+R1100,,,MISSING,0.02433,Sample inputs v12 marks inventory BLOCKED,Sample inputs v12,M10 code used 1343.0 with no recorded provenance; not used here

@@ -1,0 +1,5 @@
+configuration,description,E_PBEU_eV,E_HSE06_eV,role,source
+44-45,two preferred subsurface Ti sites,0,0,ground-state reference,SHI2012 Table 2
+44-46,adjacent polarons in same subsurface Ti row,0.28,0.28,same-row penalty,SHI2012 Table 2
+38-44,one below vacancy plus one preferred subsurface,0.23,0.27,alternative subsurface state,SHI2012 Table 2
+38-52,surface/subsurface metastable state,,0.9,high-energy metastable state,SHI2012 Table 2
