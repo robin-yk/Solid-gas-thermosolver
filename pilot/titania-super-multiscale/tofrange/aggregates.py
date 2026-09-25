@@ -48,7 +48,7 @@ def _lib():
 def lattice(box=BOX, cutoff_nm=1.0):
     """O and Ti positions of a periodic rutile box; O-O pairs within the cutoff
     with their pair energy; the three Ti of every O."""
-    from .build import zha2017
+    from .model import zha2017
     nx, ny, nz = box
     L = np.array([nx * pt.A_NM, ny * pt.A_NM, nz * pt.C_NM])
     if cutoff_nm > 0.5 * L.min():

@@ -32,6 +32,11 @@ infinity. The dual Hessian is therefore tridiagonal plus a rank-two border, and
 each damped Newton step costs O(shells). It starts from the LOCAL solution on
 the same regions, which is the eps -> 0 limit of GLOBAL.
 
+A domain may put its electrons on a second, adjacent shell (shell2): its
+vacancy charge 2v sits on shell, its electron charge -e on shell2. The two
+shells are neighbours in the radial order, so the dual Hessian stays
+tridiagonal plus the border.
+
 Frozen populations (fixed=...) enter as a vacancy count and fixed charges per
 region or shell; they are not optimised.
 """
@@ -64,6 +69,10 @@ class Model:
         if np.any(self.C <= 0):
             raise ValueError('every domain needs positive capacity')
         self.z = 2 * self.v - self.e
+        # Charge on the domain's own shell (zA) and on its electron shell (zB).
+        split = np.array([d.get('shell2') is not None for d in domains])
+        self.zA = np.where(split[:, None], 2 * self.v, self.z)
+        self.zB = np.where(split[:, None], -self.e, 0.0)
         region = [d.get('region', -1) for d in domains]
         # Outside any region the electrons are implicit and carry no charge.
         self.q = np.where(np.array(region)[:, None] < 0, 0.0, self.z)
@@ -87,9 +96,12 @@ class Model:
             raise ValueError('electrostatic shells need distinct radii')
         pos = {s: k for k, s in enumerate(order)}
         self.shell = np.array([pos[d['shell']] for d in domains])
+        self.shell2 = np.array([pos[d.get('shell2', d['shell'])] for d in domains])
+        if np.any(np.abs(self.shell2 - self.shell) > 1):
+            raise ValueError('a split domain needs adjacent shells')
         reg_of_shell = {}
-        for i, s in enumerate(self.shell):
-            if reg_of_shell.setdefault(s, self.region[i]) != self.region[i]:
+        for i, s in enumerate(np.r_[self.shell, self.shell2]):
+            if reg_of_shell.setdefault(s, self.region[i % len(self.shell)]) != self.region[i % len(self.shell)]:
                 raise ValueError('a shell must lie inside one region')
         s_inv = 1.0 / r
         c = 1.0 / np.diff(np.r_[0.0, s_inv])                     # capacitances
@@ -184,7 +196,7 @@ class Model:
     def _global_eval(self, y, u, beta, Nf, Ef, qfix, need_hess=True):
         es = self.es
         L = (self.logg - beta * self.E + y[0] * self.v + y[1] * self.e
-             - u[self.shell][:, None] * self.z)
+             - u[self.shell][:, None] * self.zA - u[self.shell2][:, None] * self.zB)
         Lmax = L.max(axis=1)
         w = np.exp(L - Lmax[:, None]); Zs = w.sum(axis=1); p = w / Zs[:, None]
         kT = 1.0 / beta
@@ -192,20 +204,26 @@ class Model:
         psi = float(self.C @ (Lmax + np.log(Zs))) - Nf * y[0] - Ef * y[1] + 0.5 * u @ Pu - u @ qfix
         if not need_hess:
             return psi, p
-        C, sh, Lsh = self.C, self.shell, es['L']
-        mv = (p * self.v).sum(1); me = (p * self.e).sum(1); mz = (p * self.z).sum(1)
+        C, sh, sh2, Lsh = self.C, self.shell, self.shell2, es['L']
+        zA, zB = self.zA, self.zB
+        mv = (p * self.v).sum(1); me = (p * self.e).sum(1)
+        mA = (p * zA).sum(1); mB = (p * zB).sum(1)
         g = np.empty(2 + Lsh)
         g[0] = C @ mv - Nf
         g[1] = C @ me - Ef
-        g[2:] = -np.bincount(sh, C * mz, Lsh) + Pu - qfix
+        g[2:] = -np.bincount(sh, C * mA, Lsh) - np.bincount(sh2, C * mB, Lsh) + Pu - qfix
         cov = lambda a, b, ma, mb: C * ((p * a * b).sum(1) - ma * mb)   # noqa: E731
         Hyy = np.array([[np.sum(cov(self.v, self.v, mv, mv)), np.sum(cov(self.v, self.e, mv, me))],
                         [0.0, np.sum(cov(self.e, self.e, me, me))]])
         Hyy[1, 0] = Hyy[0, 1]
-        B = np.stack([-np.bincount(sh, cov(self.v, self.z, mv, mz), Lsh),
-                      -np.bincount(sh, cov(self.e, self.z, me, mz), Lsh)], axis=1)
-        diag = np.bincount(sh, cov(self.z, self.z, mz, mz), Lsh) + kT / es['K'] * es['main']
-        off = kT / es['K'] * es['off']
+        B = np.stack([-np.bincount(sh, cov(self.v, zA, mv, mA), Lsh) - np.bincount(sh2, cov(self.v, zB, mv, mB), Lsh),
+                      -np.bincount(sh, cov(self.e, zA, me, mA), Lsh) - np.bincount(sh2, cov(self.e, zB, me, mB), Lsh)],
+                     axis=1)
+        AB = cov(zA, zB, mA, mB)
+        same = sh == sh2
+        diag = (np.bincount(sh, cov(zA, zA, mA, mA), Lsh) + np.bincount(sh2, cov(zB, zB, mB, mB), Lsh)
+                + 2 * np.bincount(sh[same], AB[same], Lsh) + kT / es['K'] * es['main'])
+        off = kT / es['K'] * es['off'] + np.bincount(np.minimum(sh, sh2)[~same], AB[~same], Lsh)[:-1]
         return psi, p, g, Hyy, B, diag, off
 
     def _solve_global(self, N, T, tol, fixed):
@@ -249,7 +267,8 @@ class Model:
         else:
             raise RuntimeError('GLOBAL equilibrium did not converge')
         x = self.C[:, None] * p
-        q = np.bincount(self.shell, (x * self.z).sum(1), es['L']) + qfix
+        q = (np.bincount(self.shell, (x * self.zA).sum(1), es['L'])
+             + np.bincount(self.shell2, (x * self.zB).sum(1), es['L']) + qfix)
         poisson = float(np.abs(self.potentials(q) - u / beta).max())
         return x, y, u, it, float((x * self.v).sum() - Nf), float((x * self.e).sum() - Ef), q, poisson
 

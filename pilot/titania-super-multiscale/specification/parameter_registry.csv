@@ -18,8 +18,8 @@ li_continuum_A_eV,1.31,eV,Note 2b surface stabilization,manuscript Note 2b (Li 2
 li_continuum_xi_nm,0.5,nm,Note 2b decay length,manuscript Note 2b
 li_continuum_xi_sensitivity_nm,0.25;1.0,nm,decay length sensitivity,manuscript Note 2b
 continuum_A_scan_eV,0.81;1.21;1.43,eV,continuity with the saved continuous range,Sample comparison (saved 12-scenario range)
-denominator_absolute_threshold_umol_g,0.01,umol/g,INVALID rule,M10 boundary rules 2
-denominator_capacity_fraction_threshold,0.01,1,INVALID rule,M10 boundary rules 2
+denominator_absolute_threshold_umol_g,0.01,umol/g,site threshold (cases below are kept and reported apart),M10 boundary rules 2
+denominator_capacity_fraction_threshold,0.01,1,site threshold (cases below are kept and reported apart),M10 boundary rules 2
 aggregate_inventory_fraction_boundary,0.95,1,BOUNDARY rule,M10 boundary rules 4
 aggregate_capable_fraction_sensitivity,0.1;0.5,1,aggregate capacity as fraction of bulk O,M10 scenario convention (no literature value)
 aggregate_capable_fraction_boundary,1.0,1,full aggregate capacity,M10 boundary rules 3
@@ -39,10 +39,10 @@ permittivity_873K_c_axis,107,1,GLOBAL permittivity sensitivity,Parker 1961 Phys.
 s0_polaron_penalty_eV,0.2,eV,surface-trilayer Ti3+ above the subsurface optimum (GLOBAL),RET2018 Sec. 3 (Numeric clipping; about 200 meV)
 zha2017_range_nm,1.0,nm,bulk pair interaction range,ZHA2017 abstract/conclusion (Numeric clipping; about 10 A)
 pair_dilute_boundary,0.5,1,BOUNDARY when more than this share of eligible bulk vacancies is paired,declared (second-virial truncation; B2*theta of order 1)
-size_mixture_nm,900;1600;8,nm,"equal-mass diameters, min;max;count",declared (shape of the 900-1600 nm distribution not given)
+size_mixture_nm,900;1600;4,nm,"equal-mass diameters, min;max;count",declared (shape of the 900-1600 nm distribution not given)
 recon_fixed_fraction,0.25;0.5;0.75,1,fixed Ti2O3-(1x2) area fraction,declared grid (user chose fixed-area and state-energy reconstruction)
 recon_row_vacancies_per_1x1,0.5,1,vacancy equivalents held by the reconstructed surface,Ti2O3 stoichiometry of the (1x2) row named in Yuan 2024 (one O short per 1x2 cell)
 recon_dG_scan_eV,-0.4;-0.2;0;0.2;0.4,eV,reconstructed 1x2 cell energy relative to one bridging vacancy,declared scan (no sourced reconstruction energy)
 mc_box_cells,5;5;7,1,aggregate Monte Carlo box (700 O sites),declared (smallest box with half-width above the 1 nm cutoff)
 mc_cutoff_nm,0.28;0.34;0.40;0.45;0.6;1.0,nm,pairwise-additive aggregate energy cutoff,1.0: ZHA2017 interaction range; shorter cutoffs: declared scan (surface empties above 0.40 nm)
-facet_110_fraction,0.75;0.5,1,(110) share of the surface; the rest has no explicit sites,declared (powder facet fractions not measured; v12 Q3)
+facet_110_fraction,1.0;0.75;0.5,1,(110) share of the surface; the rest is bulk-like with no reactive sites,declared (powder facet fractions not measured; v12 Q3)
