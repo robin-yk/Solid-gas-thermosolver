@@ -1,6 +1,0 @@
-scenario,temperature_C,pO2_Pa,structure,model_treatment,source
-oxidizing ETEM,700,2.53e-3,unreconstructed (1x1),vacancy/polaron lattice model,Yuan 2024 main/SI
-reduced ETEM,700,6.00e-4,(1x2) emerges,switch to reconstructed branch,Yuan 2024 main/SI
-reoxidation,700,6.00e-2,(1x2) unstable,return toward unreconstructed,Yuan 2024 Fig. 4
-strong vacuum reduction,900,1e-5,asymmetric Ti2O3-(1x2),exclude bridging-vacancy-only model,Yuan 2024 Fig. 1
-Ti-interstitial line oxidation,25,5.3e-5,TiOx strands,surface Ti-interstitial branch,Park 2007

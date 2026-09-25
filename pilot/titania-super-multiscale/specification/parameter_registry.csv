@@ -3,7 +3,7 @@ rutile_a_nm,0.4594,nm,lattice constant,Model assumptions Q6 (v12 workbook)
 rutile_c_nm,0.2958,nm,lattice constant,Model assumptions Q6 (v12 workbook)
 rutile_u,0.30479,1,oxygen internal coordinate of rutile,standard rutile structure (not in the v12 workbook)
 rutile_density_g_cm3,4.2487,g/cm3,mass to geometry,Sample inputs v12
-rutile_molar_mass_g_mol,79.8658,g/mol,total oxygen capacity,M10 configuration (manuscript Note 2b uses 79.866)
+rutile_molar_mass_g_mol,79.866,g/mol,total oxygen capacity,manuscript Note 2b (M10 configuration uses 79.8658)
 avogadro,6.02214076e23,1/mol,constant,CODATA
 boltzmann_eV_K,8.617333262e-5,eV/K,constant,CODATA
 planck_eV_s,4.135667696e-15,eV s,kT/h prefactor,CODATA

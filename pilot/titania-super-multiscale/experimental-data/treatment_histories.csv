@@ -1,7 +1,0 @@
-sample,atmosphere,treatment_T_C,treatment_time_s,cooling_rate_K_s,reaction_T_C,initial_rate_observation_time_s,source
-A600,He,600,600,,600,,data/reduction_series.csv (repository); cooling rate and observation time not recorded
-R500,H2,500,1800,,600,,data/reduction_series.csv (repository); cooling rate and observation time not recorded
-R600,H2,600,1800,,600,,data/reduction_series.csv (repository); cooling rate and observation time not recorded
-R800,H2,800,1800,,600,,data/reduction_series.csv (repository); cooling rate and observation time not recorded
-R1000,H2,1000,3600,,600,,data/reduction_series.csv (repository); cooling rate and observation time not recorded
-R1100,,1100,,,600,,treatment temperature from the sample name only; atmosphere and time not recorded
