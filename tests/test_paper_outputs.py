@@ -133,10 +133,10 @@ def test_the_manuscript_values_are_read_not_recomputed(site):
     assert json.dumps(site, separators=(',', ':')) in html
 
 
-def test_the_page_states_what_it_does_not_claim():
-    html = PAGE.read_text()
-    assert 'must not be reused as a turnover-frequency denominator' in html
-    assert 'not an elementary barrier' in html
+def test_the_page_states_its_inputs_and_limits():
+    text = ' '.join(PAGE.read_text().split())
+    assert 'n<sub>iso</sub> is inferred from the measured rates' in text
+    assert 'effective parameters of the net isolated-vacancy loss rate' in text
 
 
 def test_the_site_data_and_the_tables_agree(site):

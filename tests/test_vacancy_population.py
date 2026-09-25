@@ -267,10 +267,10 @@ def test_the_linear_partition_is_needed_and_a_step_rule_fails(series):
 
 # ------------------------------------------------------ the standing caveat
 
-def test_the_module_says_what_it_must_not_be_used_for():
+def test_the_module_states_its_inputs_and_limits():
     src = ' '.join((ROOT / 'solidgas' / 'vacancy_population.py')
                    .read_text().split())
-    for phrase in ('turnover-frequency denominator', 'does not predict',
-                   'not an elementary barrier',
-                   'say nothing that separates n_assoc from n_below'):
+    for phrase in ('n_iso is inferred from the measured rates',
+                   'n_assoc and n_below follow from the assumed second-order loss law',
+                   'effective parameters of the net isolated-vacancy loss rate constant'):
         assert phrase in src, phrase

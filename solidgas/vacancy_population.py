@@ -34,15 +34,14 @@ scalar equation goes to an implicit solver, so the same code answers at the
 fitted point and out where the optimiser wanders.
 
 The initial CO rate is taken proportional to n_iso with one per-site
-coefficient for every sample, so rates are predicted as ratios normalised
-to R600 and no absolute turnover number is claimed.
+coefficient for every sample; rates are compared as ratios normalised to
+R600.
 
-What this is not. The measured rates are used to infer n_iso, so the model
-does not predict them independently, and n_iso must not be reused as a
-turnover-frequency denominator. The rates constrain n_iso but say nothing
-that separates n_assoc from n_below. E_loss and nu_eff are an effective
-temperature dependence for the net loss of isolated vacancies, not an
-elementary barrier.
+Inputs and limits. n_iso is inferred from the measured rates. The rates
+constrain n_iso; n_assoc and n_below follow from the assumed second-order
+loss law, uniform generation and constant capacity n_s. E_loss and nu_eff
+are effective parameters of the net isolated-vacancy loss rate constant
+k_loss.
 """
 
 import csv

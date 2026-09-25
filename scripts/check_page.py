@@ -131,7 +131,7 @@ const P = require(process.env.PW + '/node_modules/playwright');
   out.slabCounts = await pg.evaluate(() => window.VacancyDistribution.three().slab.counts);
 
   out.scope = await pg.evaluate(() =>
-    document.body.textContent.indexOf('must not be reused as a turnover-frequency denominator') >= 0);
+    document.body.textContent.replace(/\s+/g, ' ').indexOf('is inferred from the measured rates') >= 0);
   console.log(JSON.stringify(out));
   await b.close();
 })();
@@ -162,7 +162,7 @@ def check(out):
     ok('the workspace switch works',
        out['tabSwitch']['population'] == '' and out['tabSwitch']['equilibrium'] == 'none',
        out['tabSwitch'])
-    ok('the page states what it does not claim', out['scope'])
+    ok('the page states its inputs and limits', out['scope'])
 
     n = len(VP.load_series())
     ok('the population scatter plots all three assignments',

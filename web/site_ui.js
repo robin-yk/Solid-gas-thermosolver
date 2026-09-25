@@ -126,9 +126,10 @@
       row('Reduction conditions', series.length + ' (' + series[0].sample + ' to '
           + series[series.length - 1].sample + ')')
     ]);
-    $('pnVerdict').innerHTML = '<div class="verdict">The isolated population peaks at <b>'
-      + hiRow.sample + '</b> and falls to ' + n(isoMin / isoMax * 100, 1) + '% of that at '
-      + loRow.sample + ', while the total inventory rises ' + n(rise, 0) + '×.</div>';
+    $('pnVerdict').innerHTML = '<div class="verdict">Calculated n<sub>iso</sub>: maximum at <b>'
+      + hiRow.sample + '</b>; ' + loRow.sample + ' ' + n(isoMin / isoMax * 100, 1)
+      + '% of the maximum. Measured total inventory, ' + series[series.length - 1].sample + '/'
+      + series[0].sample + ': ' + n(rise, 0) + '×.</div>';
     $('pnKpis').innerHTML = kv([
       row('Isolated, highest', n(isoMax, 2) + ' µmol-O g⁻¹ (' + hiRow.sample + ')'),
       row('Isolated, lowest', n(isoMin, 3) + ' µmol-O g⁻¹ (' + loRow.sample + ')'),

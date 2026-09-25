@@ -855,24 +855,21 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   package, Strang splitting in the browser), which stays stable wherever a parameter
   search tries a small E<sub>loss</sub> with a large &nu;<sub>eff</sub>.</p>
   <p><b>Rate.</b> The initial CO formation rate is taken proportional to n<sub>iso</sub> with
-  one coefficient for every sample, so rates are predicted as ratios normalised to R600
-  and no absolute turnover number is claimed.</p>
+  one coefficient for every sample; rates are compared as ratios normalised to R600.</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mfrac><mrow><msub><mi>r</mi><mrow><mrow><mi mathvariant="normal">C</mi><mi mathvariant="normal">O</mi></mrow></mrow></msub><mo stretchy="false">&#x00028;</mo><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>r</mi><mrow><mrow><mi mathvariant="normal">C</mi><mi mathvariant="normal">O</mi></mrow></mrow></msub><mo stretchy="false">&#x00028;</mo><mrow><mi mathvariant="normal">R</mi><mn>600</mn></mrow><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>n</mi><mrow><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">o</mi></mrow></mrow></msub><mo stretchy="false">&#x00028;</mo><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow><mo stretchy="false">&#x00029;</mo></mrow><mrow><msub><mi>n</mi><mrow><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">o</mi></mrow></mrow></msub><mo stretchy="false">&#x00028;</mo><mrow><mi mathvariant="normal">R</mi><mn>600</mn></mrow><mo stretchy="false">&#x00029;</mo></mrow></mfrac></mrow></math></div>
   <p><b>Fit.</b> Three parameters, n<sub>s</sub> (bounded between the bridging row and the
   bridging row plus the first subsurface oxygen layer, 13.6 to 67.8 µmol-O g⁻¹),
   E<sub>loss</sub> and log<sub>10</sub> &nu;<sub>eff</sub>, against five rates. The rates span
   86-fold, so the residual definition moves the fit: a log or relative residual
   recovers the reported parameters, a raw residual is dominated by one sample.</p>
-  <div class="note calm"><b>Scope.</b> The measured rates are used to
-    infer n<sub>iso</sub>, so the model does not predict them independently and
-    n<sub>iso</sub> must not be reused as a turnover-frequency denominator. The rates
-    constrain n<sub>iso</sub> but do not separate n<sub>assoc</sub> from
-    n<sub>below</sub>; those two columns are conditional on the second-order loss law,
-    uniform generation and a constant capacity. Surface area is taken as unchanged by
-    the 1000&nbsp;&deg;C treatment because sample-specific BET values were not
-    available. No reconstruction, cluster geometry or shear structure is identified.
-    E<sub>loss</sub> and log &nu;<sub>eff</sub> are an effective temperature dependence
-    for the net loss of isolated vacancies, not an elementary barrier.</div>
+  <div class="note calm"><b>Inputs and limits.</b> n<sub>iso</sub> is inferred from the
+    measured rates. The rates constrain n<sub>iso</sub>; n<sub>assoc</sub> and
+    n<sub>below</sub> follow from the assumed second-order loss law, uniform generation and
+    constant capacity n<sub>s</sub>. Surface area is held constant through the
+    1000&nbsp;&deg;C treatment (sample BET values unavailable). The model contains no
+    reconstruction, cluster geometry or shear structure. E<sub>loss</sub> and
+    log&nbsp;&nu;<sub>eff</sub> are effective parameters of the net isolated-vacancy loss rate
+    constant k<sub>loss</sub>.</div>
 </div>
 
 <div class="panel pad page" id="pp-val">
@@ -4808,9 +4805,10 @@ root.Solver = Solver;
       row('Reduction conditions', series.length + ' (' + series[0].sample + ' to '
           + series[series.length - 1].sample + ')')
     ]);
-    $('pnVerdict').innerHTML = '<div class="verdict">The isolated population peaks at <b>'
-      + hiRow.sample + '</b> and falls to ' + n(isoMin / isoMax * 100, 1) + '% of that at '
-      + loRow.sample + ', while the total inventory rises ' + n(rise, 0) + '×.</div>';
+    $('pnVerdict').innerHTML = '<div class="verdict">Calculated n<sub>iso</sub>: maximum at <b>'
+      + hiRow.sample + '</b>; ' + loRow.sample + ' ' + n(isoMin / isoMax * 100, 1)
+      + '% of the maximum. Measured total inventory, ' + series[series.length - 1].sample + '/'
+      + series[0].sample + ': ' + n(rise, 0) + '×.</div>';
     $('pnKpis').innerHTML = kv([
       row('Isolated, highest', n(isoMax, 2) + ' µmol-O g⁻¹ (' + hiRow.sample + ')'),
       row('Isolated, lowest', n(isoMin, 3) + ' µmol-O g⁻¹ (' + loRow.sample + ')'),

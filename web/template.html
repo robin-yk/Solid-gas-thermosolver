@@ -620,24 +620,21 @@
   package, Strang splitting in the browser), which stays stable wherever a parameter
   search tries a small E<sub>loss</sub> with a large &nu;<sub>eff</sub>.</p>
   <p><b>Rate.</b> The initial CO formation rate is taken proportional to n<sub>iso</sub> with
-  one coefficient for every sample, so rates are predicted as ratios normalised to R600
-  and no absolute turnover number is claimed.</p>
+  one coefficient for every sample; rates are compared as ratios normalised to R600.</p>
   <div class="eq">r<sub>CO</sub>(sample) / r<sub>CO</sub>(R600) = n<sub>iso</sub>(sample) / n<sub>iso</sub>(R600)</div>
   <p><b>Fit.</b> Three parameters, n<sub>s</sub> (bounded between the bridging row and the
   bridging row plus the first subsurface oxygen layer, 13.6 to 67.8 µmol-O g⁻¹),
   E<sub>loss</sub> and log<sub>10</sub> &nu;<sub>eff</sub>, against five rates. The rates span
   86-fold, so the residual definition moves the fit: a log or relative residual
   recovers the reported parameters, a raw residual is dominated by one sample.</p>
-  <div class="note calm"><b>Scope.</b> The measured rates are used to
-    infer n<sub>iso</sub>, so the model does not predict them independently and
-    n<sub>iso</sub> must not be reused as a turnover-frequency denominator. The rates
-    constrain n<sub>iso</sub> but do not separate n<sub>assoc</sub> from
-    n<sub>below</sub>; those two columns are conditional on the second-order loss law,
-    uniform generation and a constant capacity. Surface area is taken as unchanged by
-    the 1000&nbsp;&deg;C treatment because sample-specific BET values were not
-    available. No reconstruction, cluster geometry or shear structure is identified.
-    E<sub>loss</sub> and log &nu;<sub>eff</sub> are an effective temperature dependence
-    for the net loss of isolated vacancies, not an elementary barrier.</div>
+  <div class="note calm"><b>Inputs and limits.</b> n<sub>iso</sub> is inferred from the
+    measured rates. The rates constrain n<sub>iso</sub>; n<sub>assoc</sub> and
+    n<sub>below</sub> follow from the assumed second-order loss law, uniform generation and
+    constant capacity n<sub>s</sub>. Surface area is held constant through the
+    1000&nbsp;&deg;C treatment (sample BET values unavailable). The model contains no
+    reconstruction, cluster geometry or shear structure. E<sub>loss</sub> and
+    log&nbsp;&nu;<sub>eff</sub> are effective parameters of the net isolated-vacancy loss rate
+    constant k<sub>loss</sub>.</div>
 </div>
 
 <div class="panel pad page" id="pp-val">
