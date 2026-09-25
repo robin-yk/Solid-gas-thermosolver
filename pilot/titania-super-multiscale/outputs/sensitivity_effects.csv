@@ -1,4 +1,8 @@
 sample,family,variant,n,invalid,median_log10_change,min_log10_change,max_log10_change
+A600,aggregates,MC cutoff 0.28 nm,40,0,+0.000,-0.049,+0.226
+A600,aggregates,MC cutoff 0.34 nm,36,4,+0.000,-0.036,+0.480
+A600,aggregates,MC cutoff 0.4 nm,36,4,+0.180,+0.000,+0.857
+A600,aggregates,MC cutoff 0.45 nm,0,40,,,
 A600,aggregates,MC cutoff 0.6 nm,0,40,,,
 A600,aggregates,MC cutoff 1 nm,0,40,,,
 A600,basal,alpha 1,8,0,-0.000,-0.000,+0.000
@@ -6,8 +10,11 @@ A600,decay_length,xi 0.25 nm,8,0,-0.001,-0.025,+0.000
 A600,decay_length,xi 1 nm,8,0,+0.004,+0.000,+0.048
 A600,diameter,1250 nm,40,0,+0.143,+0.129,+0.143
 A600,diameter,1600 nm,40,0,+0.250,+0.228,+0.250
+A600,facet,f110 0.5,40,0,+0.301,+0.291,+0.301
+A600,facet,f110 0.75,40,0,+0.125,+0.120,+0.125
 A600,global,eps 107 (c_axis),20,0,+0.000,-0.225,+0.051
 A600,global,eps 64 (a_axis),20,0,-0.006,-0.225,+0.156
+A600,matsunaga,basal +0.11 eV,20,0,+0.000,-0.556,+0.000
 A600,pairs_eq,ZHA2017 at 600 C,40,0,+0.000,-0.033,+0.149
 A600,recon_fixed,f_rec 0.25,26,14,+0.111,-0.643,+0.395
 A600,recon_fixed,f_rec 0.5,24,16,+0.259,-0.468,+0.608
@@ -18,6 +25,10 @@ A600,recon_state,dG +0.4 eV,21,11,-0.006,-0.759,+0.206
 A600,recon_state,dG -0.2 eV,21,11,+0.001,-0.718,+0.948
 A600,recon_state,dG -0.4 eV,18,14,+0.097,-0.594,+0.907
 A600,size_mix,"equal mass, 900-1600 nm",40,0,+0.127,+0.116,+0.127
+R1000,aggregates,MC cutoff 0.28 nm,40,0,+0.000,+0.000,+0.000
+R1000,aggregates,MC cutoff 0.34 nm,40,0,+0.000,-0.035,+0.073
+R1000,aggregates,MC cutoff 0.4 nm,40,0,+0.000,-0.052,+0.238
+R1000,aggregates,MC cutoff 0.45 nm,16,24,+0.402,+0.043,+0.903
 R1000,aggregates,MC cutoff 0.6 nm,0,40,,,
 R1000,aggregates,MC cutoff 1 nm,0,40,,,
 R1000,basal,alpha 1,8,0,-0.001,-0.132,+0.000
@@ -25,8 +36,11 @@ R1000,decay_length,xi 0.25 nm,8,0,+0.000,+0.000,+0.000
 R1000,decay_length,xi 1 nm,8,0,+0.000,+0.000,+0.000
 R1000,diameter,1250 nm,40,0,+0.143,+0.143,+0.143
 R1000,diameter,1600 nm,40,0,+0.250,+0.250,+0.250
+R1000,facet,f110 0.5,40,0,+0.301,+0.301,+0.301
+R1000,facet,f110 0.75,40,0,+0.125,+0.125,+0.125
 R1000,global,eps 107 (c_axis),20,0,+0.000,+0.000,+0.000
 R1000,global,eps 64 (a_axis),20,0,+0.000,+0.000,+0.000
+R1000,matsunaga,basal +0.11 eV,20,0,+0.000,-1.106,+0.000
 R1000,pairs_eq,ZHA2017 at 600 C,40,0,+0.000,+0.000,+0.000
 R1000,pairs_frozen,ZHA2017 frozen at 1000 C,40,0,+0.000,+0.000,+0.000
 R1000,recon_fixed,f_rec 0.25,14,26,-0.639,-0.645,+0.382
@@ -38,6 +52,10 @@ R1000,recon_state,dG +0.4 eV,10,22,-0.744,-0.770,+0.803
 R1000,recon_state,dG -0.2 eV,8,24,-0.722,-0.770,+0.121
 R1000,recon_state,dG -0.4 eV,8,24,-0.669,-0.769,+0.962
 R1000,size_mix,"equal mass, 900-1600 nm",40,0,+0.127,+0.127,+0.127
+R500,aggregates,MC cutoff 0.28 nm,40,0,+0.000,-0.051,+0.314
+R500,aggregates,MC cutoff 0.34 nm,40,0,+0.000,-0.053,+0.735
+R500,aggregates,MC cutoff 0.4 nm,36,4,+0.022,-0.032,+0.813
+R500,aggregates,MC cutoff 0.45 nm,0,40,,,
 R500,aggregates,MC cutoff 0.6 nm,0,40,,,
 R500,aggregates,MC cutoff 1 nm,0,40,,,
 R500,basal,alpha 1,8,0,-0.000,-0.002,+0.000
@@ -45,8 +63,11 @@ R500,decay_length,xi 0.25 nm,8,0,+0.000,+0.000,+0.000
 R500,decay_length,xi 1 nm,8,0,+0.000,-0.006,+0.009
 R500,diameter,1250 nm,40,0,+0.143,+0.138,+0.143
 R500,diameter,1600 nm,40,0,+0.250,+0.242,+0.250
+R500,facet,f110 0.5,40,0,+0.301,+0.292,+0.301
+R500,facet,f110 0.75,40,0,+0.125,+0.121,+0.125
 R500,global,eps 107 (c_axis),20,0,+0.000,+0.000,+0.052
 R500,global,eps 64 (a_axis),20,0,+0.000,+0.000,+0.185
+R500,matsunaga,basal +0.11 eV,20,0,+0.000,-1.050,+0.000
 R500,pairs_eq,ZHA2017 at 600 C,40,0,+0.000,-0.036,+0.195
 R500,pairs_frozen,ZHA2017 frozen at 500 C,40,0,+0.000,-0.039,+0.232
 R500,recon_fixed,f_rec 0.25,22,18,+0.092,-0.645,+0.817
@@ -60,6 +81,10 @@ R500,recon_state,dG -0.4 eV,12,20,-0.000,-0.764,+1.007
 R500,size_mix,"equal mass, 900-1600 nm",40,0,+0.127,+0.123,+0.127
 R500,transport,"JUG UBERUAGA_2011 from 500 C, t 1 s",8,0,+0.000,+0.000,+0.000
 R500,transport,"WU UBERUAGA_2011 from 500 C, t 1 s",8,0,+0.000,+0.000,+0.000
+R600,aggregates,MC cutoff 0.28 nm,40,0,+0.000,-0.049,+0.245
+R600,aggregates,MC cutoff 0.34 nm,40,0,+0.000,-0.051,+0.682
+R600,aggregates,MC cutoff 0.4 nm,40,0,+0.015,-0.051,+1.000
+R600,aggregates,MC cutoff 0.45 nm,8,32,+0.905,+0.528,+1.131
 R600,aggregates,MC cutoff 0.6 nm,0,40,,,
 R600,aggregates,MC cutoff 1 nm,0,40,,,
 R600,basal,alpha 1,8,0,-0.000,-0.014,+0.000
@@ -67,9 +92,12 @@ R600,decay_length,xi 0.25 nm,8,0,+0.000,+0.000,+0.000
 R600,decay_length,xi 1 nm,8,0,+0.000,+0.000,+0.000
 R600,diameter,1250 nm,40,0,+0.143,+0.143,+0.143
 R600,diameter,1600 nm,40,0,+0.250,+0.250,+0.250
+R600,facet,f110 0.5,40,0,+0.301,+0.301,+0.301
+R600,facet,f110 0.75,40,0,+0.125,+0.125,+0.125
 R600,global,eps 107 (c_axis),20,0,+0.000,-0.048,+0.122
 R600,global,eps 64 (a_axis),20,0,+0.000,-0.047,+0.260
 R600,inventory,R600 94.6,40,0,+0.000,+0.000,+0.000
+R600,matsunaga,basal +0.11 eV,20,0,+0.000,-1.106,+0.000
 R600,pairs_eq,ZHA2017 at 600 C,40,0,+0.000,-0.044,+0.105
 R600,recon_fixed,f_rec 0.25,19,21,+0.005,-0.645,+0.995
 R600,recon_fixed,f_rec 0.5,15,25,-0.412,-0.469,+0.414
@@ -80,6 +108,10 @@ R600,recon_state,dG +0.4 eV,15,17,-0.115,-0.770,+0.888
 R600,recon_state,dG -0.2 eV,11,21,-0.483,-0.769,+0.294
 R600,recon_state,dG -0.4 eV,10,22,-0.352,-0.769,+0.698
 R600,size_mix,"equal mass, 900-1600 nm",40,0,+0.127,+0.127,+0.127
+R800,aggregates,MC cutoff 0.28 nm,40,0,+0.000,-0.013,+0.022
+R800,aggregates,MC cutoff 0.34 nm,40,0,+0.000,-0.042,+0.475
+R800,aggregates,MC cutoff 0.4 nm,40,0,+0.000,-0.039,+0.778
+R800,aggregates,MC cutoff 0.45 nm,12,28,+0.776,+0.344,+1.110
 R800,aggregates,MC cutoff 0.6 nm,0,40,,,
 R800,aggregates,MC cutoff 1 nm,0,40,,,
 R800,basal,alpha 1,8,0,-0.000,-0.033,+0.000
@@ -87,8 +119,11 @@ R800,decay_length,xi 0.25 nm,8,0,+0.000,+0.000,+0.000
 R800,decay_length,xi 1 nm,8,0,+0.000,+0.000,+0.000
 R800,diameter,1250 nm,40,0,+0.143,+0.143,+0.143
 R800,diameter,1600 nm,40,0,+0.250,+0.250,+0.250
+R800,facet,f110 0.5,40,0,+0.301,+0.301,+0.301
+R800,facet,f110 0.75,40,0,+0.125,+0.125,+0.125
 R800,global,eps 107 (c_axis),20,0,+0.000,-0.008,+0.013
 R800,global,eps 64 (a_axis),20,0,+0.000,-0.051,+0.146
+R800,matsunaga,basal +0.11 eV,20,0,+0.000,-1.106,+0.000
 R800,pairs_eq,ZHA2017 at 600 C,40,0,+0.000,+0.000,+0.000
 R800,pairs_frozen,ZHA2017 frozen at 800 C,40,0,+0.000,+0.000,+0.000
 R800,recon_fixed,f_rec 0.25,15,25,-0.599,-0.645,+0.339

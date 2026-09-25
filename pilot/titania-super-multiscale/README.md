@@ -55,7 +55,13 @@ capacity, are reactive; its TOF is then undefined.
 | Equal mass, 900–1600 nm | 1.31–7.65 | 2.19–9.74 | 2.28–10.1 | 1.17–5.19 | 0.0264–0.117 |
 | Reconstruction, fixed area 0.25/0.5/0.75 | 0.223–16.0 (71/120) | 0.371–27.2 (56/120) | 0.386–24.4 (48/120) | 0.198–11.2 (43/120) | 0.00446–0.266 (40/120) |
 | Reconstruction, (1×2) state, dG −0.4…+0.4 eV | 0.171–12.6 (102/160) | 0.278–24.1 (78/160) | 0.289–27.9 (64/160) | 0.148–14.7 (54/160) | 0.00335–0.264 (44/160) |
-| Aggregates, MC, cutoff 1 or 0.6 nm | none (0/80) | none (0/80) | none (0/80) | none (0/80) | none (0/80) |
+| Aggregates, MC, cutoff 0.28 nm | 0.981–8.45 | 1.64–8.40 | 1.70–7.55 | 0.872–3.87 | 0.0197–0.0875 |
+| Aggregates, MC, cutoff 0.34 nm | 0.981–6.53 (36/40) | 1.64–17.2 | 1.70–10.9 | 0.872–4.16 | 0.0197–0.0875 |
+| Aggregates, MC, cutoff 0.40 nm | 0.981–11.6 (36/40) | 1.64–13.2 (36/40) | 1.70–19.5 | 0.872–6.58 | 0.0197–0.0875 |
+| Aggregates, MC, cutoff 0.45 nm | none (0/40) | none (0/40) | 23.0–25.5 (8/40) | 7.25–12.5 (12/40) | 0.0619–0.187 (16/40) |
+| Aggregates, MC, cutoff 0.6 or 1 nm | none (0/80) | none (0/80) | none (0/80) | none (0/80) | none (0/80) |
+| (110) share 0.75 / 0.5 | 1.31–11.3 | 2.18–14.5 | 2.27–15.1 | 1.16–7.74 | 0.0263–0.175 |
+| Li maps, Matsunaga basal +0.11 eV | 0.273–4.35 | 0.146–7.26 | 0.133–7.55 | 0.0684–3.87 | 0.00154–0.0875 |
 | GLOBAL, eps 64 / 107 | 0.981–5.37 | 1.64–7.26 | 1.70–7.55 | 0.872–3.87 | 0.0197–0.0875 |
 | Bulk pairs (dilute), 600 °C or frozen | 0.981–7.35 | 1.64–7.60 | 1.70–7.55 | 0.872–3.87 | 0.0197–0.0875 |
 
@@ -68,13 +74,24 @@ capacity, are reactive; its TOF is then undefined.
   - The computed reconstructed fraction at R600 (LOCAL, discrete maps) is
     0.02–0.27 at dG = 0 and 0.60–0.73 at dG = −0.4 eV. At R1000 it is
     0.12–0.55 at dG = 0.
-- **Aggregates.** With pairwise-additive ZHA2017 energies, a vacancy in a
-  dense bulk aggregate has a free energy of −4.3 eV (cutoff 1 nm) or −2.3 eV
-  (0.6 nm), relative to an isolated bulk vacancy. Surface sites sit at −0.8
-  to −1.3 eV. The aggregates therefore take nearly every vacancy: bridging
-  coverage falls below 0.0014, and all 400 aggregate cases are INVALID.
-  - Under this assumption the reactive-site count, and so the CO rate, would
-    be about zero. The measured rates are not zero.
+- **Aggregates.** With pairwise-additive ZHA2017 energies, the free energy of
+  a vacancy in a dense bulk aggregate, relative to an isolated bulk vacancy,
+  depends on the cutoff:
+
+  | Cutoff (nm) | 0.28 | 0.34 | 0.40 | 0.45 | 0.6 | 1.0 |
+  |---|---:|---:|---:|---:|---:|---:|
+  | eV per vacancy | −0.54 | −0.75 | −0.86 | −1.46 | −2.3 | −4.3 |
+
+  - Up to 0.40 nm this stays above the surface site energies (−0.8 to
+    −1.3 eV). Aggregates then share the inventory and the surface keeps
+    vacancies.
+  - From 0.45 nm the aggregates take nearly every vacancy. The reactive count,
+    and so the CO rate, would be about zero; the measured rates are not.
+- **Q (Note 11.2).** Every case also carries Q = TOF / TOF(R600) in the same
+  scenario (`Q_vs_R600`).
+  - Core Q for R1000 is 0.0116, the rate ratio itself, because every core
+    case sits at the 17% cap.
+  - Across all families Q(R1000) spans 0.0019–0.10.
 
 ## What is solved
 
@@ -152,7 +169,7 @@ coverage is above the cap, so the TOF does not change. The 600 °C equilibrium i
 therefore the state at the rate measurement for every hop-connected
 population.
 
-## Checks (`python3 -m pytest tests -q`, 33 tests)
+## Checks (`python3 -m pytest tests -q`, 35 tests)
 
 - Every O and Ti site is counted once.
 - NEUTRAL agrees with an independent bisection. LOCAL satisfies its
@@ -177,6 +194,8 @@ population.
   falls monotonically with dG and vanishes as dG → ∞, recovering the
   unreconstructed result.
 - The size mixture equals the mass average of its diameters.
+- A (110) share of 1 reproduces the base model. Q equals the TOF ratio to
+  R600 in the same scenario.
 - Regenerating the outputs is byte-identical.
 
 ## Assumptions that stand in for missing values
@@ -185,19 +204,20 @@ Each is an explicit input in `specification/parameter_registry.csv`.
 
 | Item | Assumption | Why |
 |---|---|---|
-| Aggregates of 3+ | Pair energies add (no many-body term); cutoff 1 nm (ZHA2017 range) or 0.6 nm | only pair energies are sourced |
+| Aggregates of 3+ | Pair energies add (no many-body term); cutoff scanned 0.28–1.0 nm (1.0 = ZHA2017 range) | only pair energies are sourced |
 | Aggregate Ti3+ | two Ti3+ per vacancy on its own three Ti; one electron per Ti | caps local vacancy fraction at 1/4 |
 | Aggregate box | 700 O sites, boxes independent | smallest box wider than twice the cutoff |
 | Reconstruction, fixed | area fraction 0.25, 0.5, 0.75; 0.5 vacancy per 1×1 cell; no reactive sites; own Ti3+ | Ti2O3 row stoichiometry |
 | Reconstruction, state | 1×2 cell energy eps_BRI + dG, dG from −0.4 to +0.4 eV | no sourced energy; the fraction is an output |
 | Size | 900–1600 nm (user); equal mass at 8 diameters; same inventory per gram | distribution shape not given |
-| Surface pairs | none | no sourced surface energy (ZHA2017 is bulk) |
+| Surface pairs | none | no sourced surface energy; v12 forbids reusing bulk values |
+| Facets | (110) share 0.75 or 0.5; the rest has no explicit sites | no energies for other facets |
 | Observation time | 1–600 s grid | not recorded |
 
-Registry rows kept as evidence but unused: Matsunaga, V8 (−0.665, M10 code
+Registry rows kept as evidence but unused: Matsunaga sensitivity branches (M10), V8 (−0.665, M10 code
 only), the 0.271 eV pairing (Note 2c, bulk, no geometry), aggregate capacity
 fractions (M10 convention), cooling-rate grid, unmatched BET areas.
 
 ```
-python3 run.py      # about 3 minutes; aggregate Monte Carlo is cached in outputs/mc
+python3 run.py      # about 5 minutes; aggregate Monte Carlo is cached in outputs/mc
 ```

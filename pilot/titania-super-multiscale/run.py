@@ -62,6 +62,10 @@ def summary(S, rows):
             rec[f'{tag}_TOF_min_s_1'] = fmt(v[0])
             rec[f'{tag}_TOF_median_s_1'] = fmt(statistics.median(v))
             rec[f'{tag}_TOF_max_s_1'] = fmt(v[-1])
+            q = sorted(float(r['Q_vs_R600']) for r in sel if r['Q_vs_R600'])
+            if q:
+                rec[f'{tag}_Q_min'] = fmt(q[0])
+                rec[f'{tag}_Q_max'] = fmt(q[-1])
             rec[f'{tag}_at_min'] = label(sel[0])
             rec[f'{tag}_at_max'] = label(sel[-1])
             flags = {}
@@ -144,10 +148,21 @@ def transport_gate(S):
     return gate, rows
 
 
+def add_q(rows):
+    """Q = TOF / TOF(R600) within the same scenario (Note 11.2), R600 at 94.0."""
+    key = lambda r: (r['family'], r['variant'], r['diameter_nm'], r['energy_map'], r['closure'], r['reactive'])  # noqa: E731
+    ref = {key(r): float(r['TOF_s_1']) for r in rows
+           if r['sample'] == 'R600' and r['cls'] != 'INVALID' and r['variant'] != 'R600 94.6'}
+    for r in rows:
+        k = key(r)
+        r['Q_vs_R600'] = fmt(float(r['TOF_s_1']) / ref[k]) if r['cls'] != 'INVALID' and k in ref else ''
+
+
 def main():
     S, rows = run_all()
     gate, lagging = transport_gate(S)
     rows += lagging
+    add_q(rows)
     write('cases.csv', rows)
     write('sample_tof_range.csv', summary(S, rows))
     write('sensitivity_effects.csv', effects(rows))

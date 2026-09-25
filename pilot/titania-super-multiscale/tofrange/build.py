@@ -118,9 +118,13 @@ class Layout:
 
 def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
           n_cont=N_CONT, n_bulk=N_BULK, z0_cont=Z0_CONT, s0=None, amp=A_LI,
-          aggregates=None, recon=None):
+          aggregates=None, recon=None, f110=1.0, basal_shift=None):
     """aggregates: MC cutoff in nm (bulk boxes replace bulk O sites), or None.
-    recon: None, ('fixed', f) or ('state', dG_eV); see the module docstring."""
+    recon: None, ('fixed', f) or ('state', dG_eV); see the module docstring.
+    f110: (110) share of the surface. The rest carries no explicit surface
+        sites or surface energy (other facets have no sourced energies).
+    basal_shift: layer-1 in-plane (basal) O energy = bridging energy + shift
+        (Matsunaga 2014: +0.11 eV); used for the Li maps, which give no basal value."""
     if closure not in ('NEUTRAL', 'LOCAL', 'GLOBAL'):
         raise ValueError(closure)
     if (closure == 'GLOBAL') != (eps_r is not None):
@@ -175,7 +179,9 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
             zc = 0.5 * (lo + hi)
             C = pt.O_TOTAL * pt.shell_fraction(R, lo, hi)
             E = -amp * math.exp(-zc / xi)
-            add(o_domain(C, E, 'shell', j, j, lo), zc, eps=E)
+            add(o_domain(C * f110, E, 'shell', j, j, lo), zc, eps=E)
+            if f110 < 1.0:
+                add(o_domain(C * (1 - f110), 0.0, 'other_facet', j, j, lo), zc, eps=0.0)
             if charged:
                 eT = s0 if zc < pt.D110 else 0.0
                 i = add(_two_state(C / 2, eT, 'Ti', j, j, electron=True), zc)
@@ -183,8 +189,12 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
             add_pairs(C, E, j, j, zc, lo)
         lay = dict(kind='continuum', xi=xi, edges=edges)
     else:
-        emap = discrete_maps()[name]
+        emap = dict(discrete_maps()[name])
+        if basal_shift is not None:
+            emap[(1, 'IPL')] = emap[(1, 'BRI')] + basal_shift
         o_sites, ti_layers = pt.layer_sites(d_nm, K_EXPL)
+        o_sites = [(k, site, C * f110, z) for k, site, C, z in o_sites]
+        ti_layers = [C * f110 for C in ti_layers]
         bri = basal = None
         for k, site, C, z in o_sites:
             E = emap.get((k, site), 0.0)
@@ -227,7 +237,7 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
     if closure == 'GLOBAL':
         es = dict(radii=radii, eps=eps_r, mass_g=pt.particle_mass(d_nm))
     model = Model(doms, electrostatics=es)
-    c_bri = pt.bridging_capacity(d_nm)
+    c_bri = pt.bridging_capacity(d_nm) * f110
     f_fix = recon[1] if recon and recon[0] == 'fixed' else 0.0
     return model, Layout(name=name, closure=closure, d_nm=d_nm, R=R, T=T, pairs=pairs,
                          c_bri=c_bri, o=o_list, ti=ti_cap, pair_idx=pair_idx, recon=recon,

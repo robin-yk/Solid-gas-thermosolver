@@ -64,6 +64,8 @@ def test_constants_match_the_registry():
     from tofrange import aggregates as ag
     assert ag.BOX == tuple(int(x) for x in floats(r['mc_box_cells']))
     assert sc.MC_CUTOFFS == floats(r['mc_cutoff_nm'])
+    assert sc.FACET_110 == floats(r['facet_110_fraction'])
+    assert sc.MATSUNAGA == float(r['matsunaga_basal_minus_bridging_eV'])
 
 
 def test_transport_edges_come_from_the_table():
@@ -383,6 +385,25 @@ def test_size_mixture_is_the_mass_average():
         m, lay = bd.build('HAM', 'LOCAL', d)
         n.append(sc.site_counts(m.solve(94.0, T), lay, 'size_mix')[0]['BRI'][0])
     assert float(mix['N_react_umol_g']) == pytest.approx(np.mean(n), rel=1e-5)
+
+
+def test_facet_share_scales_the_surface_only():
+    m1, l1 = bd.build('PAB', 'LOCAL', 900.0)
+    mf, lf = bd.build('PAB', 'LOCAL', 900.0, f110=1.0)
+    assert np.array_equal(m1.C, mf.C)
+    m5, l5 = bd.build('PAB', 'LOCAL', 900.0, f110=0.5)
+    assert l5.c_bri == pytest.approx(0.5 * l1.c_bri)
+    assert sum(o['C'] for o in l5.o) == pytest.approx(pt.O_TOTAL, rel=1e-12)
+
+
+def test_q_is_the_ratio_to_r600_in_the_same_scenario():
+    rows = cases()
+    key = lambda r: (r['family'], r['variant'], r['diameter_nm'], r['energy_map'], r['closure'], r['reactive'])  # noqa: E731
+    ref = {key(r): float(r['TOF_s_1']) for r in rows if r['sample'] == 'R600' and r['cls'] != 'INVALID'
+           and r['variant'] != 'R600 94.6'}
+    for r in rows:
+        if r['Q_vs_R600']:
+            assert float(r['Q_vs_R600']) == pytest.approx(float(r['TOF_s_1']) / ref[key(r)], rel=1e-5)
 
 
 def test_outputs_regenerate_byte_for_byte(tmp_path):

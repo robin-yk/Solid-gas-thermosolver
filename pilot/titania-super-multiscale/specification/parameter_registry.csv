@@ -44,4 +44,5 @@ recon_fixed_fraction,0.25;0.5;0.75,1,fixed Ti2O3-(1x2) area fraction,declared gr
 recon_row_vacancies_per_1x1,0.5,1,vacancy equivalents held by the reconstructed surface,Ti2O3 stoichiometry of the (1x2) row named in Yuan 2024 (one O short per 1x2 cell)
 recon_dG_scan_eV,-0.4;-0.2;0;0.2;0.4,eV,reconstructed 1x2 cell energy relative to one bridging vacancy,declared scan (no sourced reconstruction energy)
 mc_box_cells,5;5;7,1,aggregate Monte Carlo box (700 O sites),declared (smallest box with half-width above the 1 nm cutoff)
-mc_cutoff_nm,1.0;0.6,nm,pairwise-additive aggregate energy cutoff,1.0: ZHA2017 interaction range; 0.6: declared sensitivity
+mc_cutoff_nm,0.28;0.34;0.40;0.45;0.6;1.0,nm,pairwise-additive aggregate energy cutoff,1.0: ZHA2017 interaction range; shorter cutoffs: declared scan (surface empties above 0.40 nm)
+facet_110_fraction,0.75;0.5,1,(110) share of the surface; the rest has no explicit sites,declared (powder facet fractions not measured; v12 Q3)

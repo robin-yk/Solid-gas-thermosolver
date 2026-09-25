@@ -12,7 +12,11 @@ SENSITIVITY families change one thing at a time on every PRIMARY model:
     recon_state   explicit (1x2) state with relative energy dG = -0.4 ... +0.4 eV;
                   the reconstructed fraction is an output (discrete maps)
     aggregates    bulk aggregates of every size from Monte Carlo, pairwise-
-                  additive ZHA2017 energy, cutoff 1 nm or 0.6 nm
+                  additive ZHA2017 energy, cutoff scanned 0.28-1.0 nm
+    facet         (110) share of the surface 0.75, 0.5; the rest has no
+                  explicit sites (no sourced energies for other facets)
+    matsunaga     Li maps with a basal site 0.11 eV above bridging
+                  (Matsunaga 2014); basal vacancies also counted
     decay_length  LI_CONT xi 0.25, 1 nm (manuscript Note 2b scan)
     global        GLOBAL closure, eps 64 (a axis, fields normal to (110)) or 107
                   (c axis), Parker 1961 Fig. 1 at 873 K; S0 penalty 0.2 eV
@@ -57,7 +61,9 @@ SIZES = (1250.0, 1600.0)
 SIZE_MIX = tuple(np.linspace(900.0, 1600.0, 8))
 RECON_F = (0.25, 0.5, 0.75)
 RECON_DG = (-0.4, -0.2, 0.0, 0.2, 0.4)
-MC_CUTOFFS = (1.0, 0.6)
+MC_CUTOFFS = (0.28, 0.34, 0.40, 0.45, 0.6, 1.0)
+FACET_110 = (0.75, 0.5)
+MATSUNAGA = 0.11
 EXPLICIT_RECON = ('recon_fixed', 'recon_state')
 
 
@@ -81,6 +87,10 @@ def model_specs():
     for dG in RECON_DG:
         out += [('recon_state', f'dG {dG:+g} eV', dict(b, recon=('state', dG)))
                 for b in base if b['name'] != 'LI_CONT']
+    for f in FACET_110:
+        out += [('facet', f'f110 {f:g}', dict(b, f110=f)) for b in base]
+    out += [('matsunaga', 'basal +0.11 eV', dict(b, basal_shift=MATSUNAGA))
+            for b in base if b['name'] in ('LI_SBR1', 'LI_L2')]
     for cut in MC_CUTOFFS:
         out += [('aggregates', f'MC cutoff {cut:g} nm', dict(b, aggregates=cut)) for b in base]
     for xi in (0.25, 1.0):
@@ -113,12 +123,14 @@ def site_counts(sol, lay, family, theta=None):
     if theta is not None:
         th = theta
     cap = family not in EXPLICIT_RECON
-    defs = {'BRI+BASAL': None} if family == 'basal' else REACTIVE
+    defs = {'BRI+BASAL': None} if family == 'basal' else dict(REACTIVE)
+    if family == 'matsunaga':
+        defs['BRI+BASAL'] = None
     out = {}
     for rname, z in defs.items():
         n = reactive_sites(th, c_react, z, cap)
         n_raw = reactive_sites(th, c_react, z, False)
-        if family == 'basal':
+        if rname == 'BRI+BASAL':
             basal = sol.occupancy(lay.basal) * sol.model.C[lay.basal]
             n, n_raw = n + basal, n_raw + basal
         out[rname] = (n, n_raw)
