@@ -30,7 +30,12 @@ strong_reduction_T_C,900,C,Yuan strong-reduction regime,Reconstruction limits (Y
 prefactor_fixed_s,1e12;1e13,1/s,attempt frequency scenarios,Transport parameter sets (1e13); 1e12 lower bound assumed
 observation_time_grid_s,1;10;60;600,s,initial-rate observation time,assumed grid (observation time not recorded)
 cooling_rate_grid_K_s,0.1;1;10,K/s,freeze-in sensitivity,assumed grid (cooling rate not recorded)
-zhang_A_eV_A,0.753,eV A,pair potential,ZHA2017 pair potential
-zhang_B_eV_A2,11.83,eV A^2,pair potential,ZHA2017 pair potential
-zhang_C_eV_A6,-383.45,eV A^6,pair potential,ZHA2017 pair potential (equation uses -C/r^6)
+zha2017_A_eV_A,0.753,eV A,pair potential,ZHA2017 pair potential
+zha2017_B_eV_A2,11.83,eV A^2,pair potential,ZHA2017 pair potential
+zha2017_C_eV_A6,-383.45,eV A^6,pair potential,ZHA2017 pair potential (equation uses -C/r^6)
 bet_unmatched_m2_g,85.0121;65.9391;99.20,m2/g,fresh / RWGS-CH / RWGS-MW BET,Model assumptions Q2 (not matched to A600-R1100)
+permittivity_873K_a_axis,64,1,GLOBAL permittivity (fields normal to (110) lie along a),Parker 1961 Phys. Rev. 124 1719 Fig. 1 read at 873 K (paper values 86 at 300 K and 58 at 1000 K)
+permittivity_873K_c_axis,107,1,GLOBAL permittivity sensitivity,Parker 1961 Phys. Rev. 124 1719 Fig. 1 read at 873 K (paper values 170 at 300 K and 97 at 1000 K)
+s0_polaron_penalty_eV,0.2,eV,surface-trilayer Ti3+ above the subsurface optimum (GLOBAL),RET2018 Sec. 3 (Numeric clipping; about 200 meV)
+zha2017_range_nm,1.0,nm,bulk pair interaction range,ZHA2017 abstract/conclusion (Numeric clipping; about 10 A)
+pair_dilute_boundary,0.5,1,BOUNDARY when more than this share of eligible bulk vacancies is paired,declared (second-virial truncation; B2*theta of order 1)

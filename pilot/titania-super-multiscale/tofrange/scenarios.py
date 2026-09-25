@@ -1,121 +1,175 @@
-"""Build one equilibrium model per (energy map, closure, particle diameter).
+"""Every case, its reactive-site count, its apparent TOF and its class.
 
-Energy maps
-  PAB, HAM   Pabisiak 2007 GGA (layers 1-4) and Hameeuw 2006 LDA (layers 1-3),
-             per site class BRI / IPL / SBR, relative to bulk.
-  LI_SBR1    Li 2015 sX surface -1.31 on layer-1 BRI, subsurface -0.72 on
-             layer-1 SBR. Other explicit sites 0 (assumed).
-  LI_L2      Li 2015 sX surface -1.31 on layer-1 BRI, subsurface -0.72 on all
-             four layer-2 O sites. Other explicit sites 0 (assumed).
-  LI_CONT    Manuscript Note 2b: G(z) = -A exp(-z/xi), A = 1.31 eV, continuum
-             O sites; bridging coverage taken as x(z = 0). xi = 0.25, 0.5, 1 nm.
-Closures
-  NEUTRAL    electrons implicit; one constraint (inventory).
-  LOCAL      every trilayer (or continuum shell) neutral: 2 N_V = N_Ti3+, with
-             ideal Ti3+ configurational entropy (manuscript Note 2b form).
+PRIMARY cases use sourced inputs only:
+    900 nm sphere; energy maps PAB, HAM, LI_SBR1, LI_L2, LI_CONT (xi 0.5 nm);
+    NEUTRAL and LOCAL closures; no bulk pairs; 600 C equilibrium;
+    reactive sites BRI, ISO_z2, ISO_z4, ISO_z8.
+SENSITIVITY families change one thing at a time on every PRIMARY model:
+    diameter      600, 300 nm (v12 Q1 scan; no measured size distribution)
+    decay_length  LI_CONT xi 0.25, 1 nm (manuscript Note 2b scan)
+    global        GLOBAL closure, eps 64 (a axis, fields normal to (110)) or 107
+                  (c axis), Parker 1961 Fig. 1 at 873 K; S0 penalty 0.2 eV
+    pairs_eq      ZHA2017 bulk pairs, equilibrated at 600 C
+    pairs_frozen  ZHA2017 bulk pairs formed at the treatment temperature and
+                  frozen; everything else re-equilibrates at 600 C
+    basal         alpha = 1: layer-1 in-plane vacancies also count (discrete maps)
+    inventory     R600 at the Origin alternative, 94.6 umol/g
+Surface limit (every case)
+    An unreconstructed (110) surface holds at most 17 % bridging vacancies
+    (BIR2024; manuscript Note 2a, 0.17 ML). Above it the coverage used for
+    reactive sites is capped at 0.17 and the case is flagged RECON_CAP: the
+    TOF is then a lower bound, because reconstruction can only remove sites.
+Boundary flags (class BOUNDARY, value is a lower bound on TOF)
+    YUAN_STRONG_REDUCTION  treatment at or above 900 C (Yuan 2024: Ti2O3-(1x2),
+                           kinetically trapped)
+    PAIRS_BEYOND_DILUTE    more than half the eligible bulk vacancies paired:
+                           larger clusters expected, which only lower the
+                           surface population further
+INVALID: fewer than 0.01 umol/g or 1 % of the bridging capacity reactive.
 """
 import csv
-import math
 from pathlib import Path
 
-import numpy as np
-
-from . import particle as pt
-from .engine import Model
+from .build import build, surface_coverage, pair_fraction
 
 HERE = Path(__file__).resolve().parent.parent
-A_LI, CONT_XI = 1.31, (0.25, 0.5, 1.0)
-DIAMETERS = (900.0, 600.0, 300.0)
+T_EQ = 873.15
+THETA_C = 0.17
+MIN_SITES, MIN_FRACTION = 0.01, 0.01
+STRONG_REDUCTION_C = 900.0
+PAIR_BOUNDARY = 0.5
+MAPS = ('PAB', 'HAM', 'LI_SBR1', 'LI_L2', 'LI_CONT')
 CLOSURES = ('NEUTRAL', 'LOCAL')
+REACTIVE = {'BRI': None, 'ISO_z2': 2, 'ISO_z4': 4, 'ISO_z8': 8}
+EPS = {'a_axis': 64.0, 'c_axis': 107.0}
 
 
-def energy_sets():
-    sets = {}
-    with open(HERE / 'specification' / 'energy_sets.csv') as f:
+def samples():
+    with open(HERE / 'experimental-data' / 'samples.csv') as f:
+        rows = {r['sample']: r for r in csv.DictReader(f)}
+    with open(HERE / 'experimental-data' / 'treatment_histories.csv') as f:
         for r in csv.DictReader(f):
-            sets.setdefault(r['scenario'], {})[(r['layer'], r['site'])] = float(r['relative_E_eV'])
-    return sets
+            rows[r['sample']]['treatment_T_C'] = r['treatment_T_C']
+    return list(rows.values())
 
 
-def discrete_maps():
-    s = energy_sets()
-    pab = {(int(k), site): e for (k, site), e in s['PABISIAK_2007_GGA'].items()}
-    ham = {(int(k), site): e for (k, site), e in s['HAMEEUW_2006_LDA'].items()}
-    li = s['LI_2015_SX']
-    surf, sub = li[('SURFACE', 'GENERIC')], li[('SUBSURFACE', 'GENERIC')]
-    return {
-        'PAB': (4, pab),
-        'HAM': (3, ham),
-        'LI_SBR1': (1, {(1, 'BRI'): surf, (1, 'SBR'): sub}),
-        'LI_L2': (2, {(1, 'BRI'): surf, **{(2, x): sub for x in ('BRI', 'IPL', 'SBR')}}),
-    }
+def model_specs():
+    """(family, label, kwargs for build) for every equilibrium model."""
+    base = [dict(name=m, closure=c, d_nm=900.0) for m in MAPS for c in CLOSURES]
+    out = [('PRIMARY', '', b) for b in base]
+    for d in (600.0, 300.0):
+        out += [('diameter', f'{d:g} nm', dict(b, d_nm=d)) for b in base]
+    for xi in (0.25, 1.0):
+        out += [('decay_length', f'xi {xi:g} nm', dict(b, xi=xi)) for b in base if b['name'] == 'LI_CONT']
+    for axis, eps in EPS.items():
+        out += [('global', f'eps {eps:g} ({axis})', dict(name=m, closure='GLOBAL', d_nm=900.0, eps_r=eps))
+                for m in MAPS]
+    out += [('pairs_eq', 'ZHA2017 at 600 C', dict(b, pairs=True)) for b in base]
+    return out
 
 
-def _two_state(C, E, tag, region, electron=False):
-    d = dict(C=C, E=[0.0, E], tag=tag, region=region)
-    d.update(v=[0, 0], e=[0, 1]) if electron else d.update(v=[0, 1])
-    return d
+def reactive_sites(theta, c_bri, z):
+    th = min(theta, THETA_C)
+    return c_bri * th * (1.0 if z is None else (1.0 - th) ** z)
 
 
-def build_discrete(n_layers, emap, closure, d_nm):
-    local = closure == 'LOCAL'
-    o, ti = pt.layer_sites(d_nm, n_layers)
-    doms = []
-    for k, site, C, _z in o:
-        doms.append(_two_state(C, emap.get((k, site), 0.0), (k, site), k if local else -1))
-    bulk_o = pt.O_TOTAL - sum(c for _, _, c, _ in o)
-    doms.append(_two_state(bulk_o, 0.0, 'bulk', 0 if local else -1))
-    if local:
-        for k, C in enumerate(ti, 1):
-            doms.append(_two_state(C, 0.0, 'Ti', k, electron=True))
-        doms.append(_two_state(pt.TI_TOTAL - sum(ti), 0.0, 'Ti', 0, electron=True))
-    return Model(doms)
+def valid_count(n, c_bri):
+    return n >= MIN_SITES and n >= MIN_FRACTION * c_bri
 
 
-def continuum_edges(R, n=3000, z0=1e-4):
-    return np.concatenate([[0.0], np.geomspace(z0, R, n)])
+def evaluate(sol, lay, sample, family, label, spec, pf=0.0, theta=None):
+    """Cases (one per reactive definition) for one solved sample.
+
+    theta overrides the equilibrium coverage (transport cases pass the
+    coverage reached at the observation time).
+    """
+    if theta is None:
+        theta = surface_coverage(sol, lay)
+    rate = float(sample['rate_co_umol_g_s'])
+    T_treat = float(sample['treatment_T_C'])
+    rows = []
+    defs = dict(REACTIVE)
+    if family == 'basal':
+        defs = {'BRI+BASAL': None}
+    for rname, z in defs.items():
+        n = reactive_sites(theta, lay.c_bri, z)
+        n_raw = lay.c_bri * theta * (1.0 if z is None else (1.0 - theta) ** z)
+        if family == 'basal':
+            basal = sol.occupancy(lay.basal) * sol.model.C[lay.basal]
+            n, n_raw = n + basal, n_raw + basal
+        flags = []
+        if theta > THETA_C:
+            flags.append('RECON_CAP')
+        if T_treat >= STRONG_REDUCTION_C:
+            flags.append('YUAN_STRONG_REDUCTION')
+        if pf > PAIR_BOUNDARY:
+            flags.append('PAIRS_BEYOND_DILUTE')
+        if not valid_count(n, lay.c_bri):
+            cls = 'INVALID'
+        elif 'YUAN_STRONG_REDUCTION' in flags or 'PAIRS_BEYOND_DILUTE' in flags:
+            cls = 'BOUNDARY'
+        else:
+            cls = 'PRIMARY' if family == 'PRIMARY' else 'SENSITIVITY'
+        rows.append(dict(
+            sample=sample['sample'], family=family, variant=label,
+            diameter_nm=f"{spec['d_nm']:g}", energy_map=spec['name']
+            + (f" xi {spec.get('xi', 0.5):g}" if spec['name'] == 'LI_CONT' else ''),
+            closure=spec['closure'] + (f" eps {spec['eps_r']:g}" if spec.get('eps_r') else ''),
+            reactive=rname, cls=cls, flags=' '.join(flags),
+            theta_bri=f'{theta:.6g}', bridging_capacity_umol_g=f'{lay.c_bri:.6g}',
+            N_react_umol_g=f'{n:.6g}', TOF_s_1=f'{rate / n:.6g}',
+            N_react_uncapped_umol_g=f'{n_raw:.6g}',
+            TOF_uncapped_s_1=f'{rate / n_raw:.6g}' if valid_count(n_raw, lay.c_bri) else '',
+            pair_fraction=f'{pf:.4g}', iterations=sol.iterations if sol is not None else '',
+            inventory_residual=f'{sol.inventory_residual:.1e}' if sol is not None else ''))
+    return rows
 
 
-def build_continuum(xi, closure, d_nm, n=3000):
-    """Note 2b as a finite-volume model: each spherical shell is one O domain
-    (and, for LOCAL, one Ti domain with half its sites) and one region."""
-    local = closure == 'LOCAL'
-    R = d_nm / 2
-    z = continuum_edges(R, n)
-    doms = []
-    for j in range(n):
-        C = pt.O_TOTAL * pt.shell_fraction(R, z[j], z[j + 1])
-        E = -A_LI * math.exp(-0.5 * (z[j] + z[j + 1]) / xi)
-        doms.append(_two_state(C, E, 'shell', j if local else -1))
-        if local:
-            doms.append(_two_state(C / 2, 0.0, 'Ti', j, electron=True))
-    return Model(doms)
+def run_all(progress=None):
+    S = samples()
+    measured = [s for s in S if s['inventory_status'] == 'SELECTED']
+    rows = []
+    for family, label, spec in model_specs():
+        model, lay = build(**spec)
+        sols = {s['sample']: model.solve(float(s['inventory_umol_g']), T_EQ) for s in measured}
+        for s in measured:
+            rows += evaluate(sols[s['sample']], lay, s, family, label, spec,
+                             pair_fraction(sols[s['sample']], lay))
+        if spec.get('pairs'):
+            rows += frozen_pairs(spec, measured)
+        if family == 'PRIMARY':
+            r600 = next(s for s in measured if s['sample'] == 'R600')
+            alt = dict(r600, inventory_umol_g=r600['inventory_alt_umol_g'])
+            rows += evaluate(model.solve(float(alt['inventory_umol_g']), T_EQ), lay, alt,
+                             'inventory', 'R600 94.6', spec)
+            if lay.kind == 'discrete':
+                for s in measured:
+                    rows += evaluate(sols[s['sample']], lay, s, 'basal', 'alpha 1', spec)
+        if progress:
+            progress(family, label, spec)
+    return S, rows
 
 
-def continuum_surface_x(mu_eV, T, local):
-    """Site fraction at z = 0 from the stationarity condition
-    -A + kT[ln x/(1-x) + 2 ln 4x/(1-4x)] = mu (LOCAL) or the Fermi form."""
-    kT = pt.KB * T
-    if not local:
-        return 1.0 / (1.0 + math.exp((-A_LI - mu_eV) / kT))
-    lo, hi = 0.0, 0.25
-    for _ in range(200):
-        x = 0.5 * (lo + hi)
-        f = -A_LI + kT * (math.log(x / (1 - x)) + 2 * math.log(4 * x / (1 - 4 * x))) - mu_eV
-        lo, hi = (lo, x) if f > 0 else (x, hi)
-    return 0.5 * (lo + hi)
-
-
-def scenarios():
-    """Yield (energy_map, closure, diameter, builder, theta_bri(sol, T))."""
-    for d_nm in DIAMETERS:
-        for closure in CLOSURES:
-            for name, (nl, emap) in discrete_maps().items():
-                def theta(sol, T, d_nm=d_nm):
-                    C = pt.layer_sites(d_nm, 1)[0][0][2]
-                    return sol.vacancies((1, 'BRI')) / C
-                yield name, closure, d_nm, (lambda nl=nl, e=emap, c=closure, d=d_nm: build_discrete(nl, e, c, d)), theta
-            for xi in CONT_XI:
-                def theta(sol, T, c=closure):
-                    return continuum_surface_x(sol.mu_eV, T, c == 'LOCAL')
-                yield f'LI_CONT_xi{xi:g}', closure, d_nm, (lambda xi=xi, c=closure, d=d_nm: build_continuum(xi, c, d)), theta
+def frozen_pairs(spec, measured):
+    """Pairs formed at the treatment temperature stay; the rest re-equilibrates."""
+    rows = []
+    plain, lay0 = build(**dict(spec, pairs=False))
+    eligible = [o for o in lay0.o if o.get('eligible')]
+    for s in measured:
+        T_treat = float(s['treatment_T_C']) + 273.15
+        if abs(T_treat - T_EQ) < 1e-9:
+            continue
+        m_t, lay_t = build(**dict(spec, T=T_treat))
+        sol_t = m_t.solve(float(s['inventory_umol_g']), T_treat)
+        v_fix, q_reg = 0.0, {}
+        for i in lay_t.pair_idx:
+            n_pairs = float(sol_t.x[i][1:].sum())
+            v_fix += 2 * n_pairs
+            if m_t.region[i] >= 0:
+                r = m_t.region_ids[m_t.region[i]]
+                q_reg[r] = q_reg.get(r, 0.0) + 4 * n_pairs
+        sol = plain.solve(float(s['inventory_umol_g']), T_EQ, fixed=dict(v=v_fix, q_region=q_reg))
+        mono = sum(sol.occupancy(o['idx']) * o['C'] for o in eligible)
+        rows += evaluate(sol, lay0, s, 'pairs_frozen', f"ZHA2017 frozen at {s['treatment_T_C']} C",
+                         spec, v_fix / (v_fix + mono))
+    return rows

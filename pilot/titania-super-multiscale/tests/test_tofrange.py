@@ -1,4 +1,5 @@
-"""Gates for the fixed-inventory equilibrium TOF range."""
+"""Gates for the fixed-inventory TOF range: thermodynamics, electrostatics,
+pairs, transport, classification and byte-stable outputs."""
 import csv
 import filecmp
 import itertools
@@ -14,9 +15,11 @@ import pytest
 HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
 
+from tofrange import build as bd                          # noqa: E402
+from tofrange import kinetics as kin                      # noqa: E402
 from tofrange import particle as pt                       # noqa: E402
 from tofrange import scenarios as sc                      # noqa: E402
-from tofrange.engine import Model                         # noqa: E402
+from tofrange.engine import COULOMB, Model                # noqa: E402
 
 T = 873.15
 KT = pt.KB * T
@@ -27,36 +30,59 @@ def registry():
         return {r['id']: r['value'] for r in csv.DictReader(f)}
 
 
+def floats(v):
+    return tuple(float(x) for x in v.split(';'))
+
+
+# ------------------------------------------------------------------ inputs
 def test_constants_match_the_registry():
     r = registry()
     assert (pt.A_NM, pt.C_NM, pt.U) == (float(r['rutile_a_nm']), float(r['rutile_c_nm']), float(r['rutile_u']))
     assert (pt.RHO, pt.M) == (float(r['rutile_density_g_cm3']), float(r['rutile_molar_mass_g_mol']))
-    assert (pt.NA, pt.KB) == (float(r['avogadro']), float(r['boltzmann_eV_K']))
-    assert T == float(r['equilibrium_T_K'])
-    assert sc.CONT_XI == (0.25, 0.5, 1.0) and sc.A_LI == float(r['li_continuum_A_eV'])
-    assert sc.DIAMETERS == (900.0,) + tuple(float(d) for d in r['diameter_sensitivity_nm'].split(';'))[::-1]
+    assert (pt.NA, pt.KB, kin.H_PLANCK) == (float(r['avogadro']), float(r['boltzmann_eV_K']), float(r['planck_eV_s']))
+    assert sc.T_EQ == float(r['equilibrium_T_K'])
+    assert bd.A_LI == float(r['li_continuum_A_eV'])
+    assert (0.25, 1.0) == floats(r['li_continuum_xi_sensitivity_nm'])
+    assert bd.ZHA == (float(r['zha2017_A_eV_A']), float(r['zha2017_B_eV_A2']), float(r['zha2017_C_eV_A6']))
+    assert bd.PAIR_RMAX == float(r['zha2017_range_nm'])
+    assert bd.S0_PENALTY == float(r['s0_polaron_penalty_eV'])
+    assert sc.EPS == {'a_axis': float(r['permittivity_873K_a_axis']), 'c_axis': float(r['permittivity_873K_c_axis'])}
+    assert sc.THETA_C == float(r['reconstruction_onset_ML'])
+    assert sc.STRONG_REDUCTION_C == float(r['strong_reduction_T_C'])
+    assert sc.PAIR_BOUNDARY == float(r['pair_dilute_boundary'])
+    assert (sc.MIN_SITES, sc.MIN_FRACTION) == (float(r['denominator_absolute_threshold_umol_g']),
+                                               float(r['denominator_capacity_fraction_threshold']))
+    import run
+    assert run.T_OBS == floats(r['observation_time_grid_s'])
+    diam = sorted({s[2]['d_nm'] for s in sc.model_specs()}, reverse=True)
+    assert diam == [float(r['diameter_baseline_nm'])] + sorted(floats(r['diameter_sensitivity_nm']), reverse=True)
+
+
+def test_transport_edges_come_from_the_table():
+    # Atomic O layer 5 is the in-plane O of trilayer 2; Jug keeps the lower
+    # (downhill) barrier of each pair it reports in both directions.
+    assert ((1, 'SBR'), (2, 'IPL'), 0.71) in kin.SURFACE_SETS['WU']
+    assert dict(((a, b), B) for a, b, B in kin.SURFACE_SETS['JUG'])[((1, 'BRI'), (1, 'SBR'))] == pytest.approx(0.5804, abs=1e-4)
+    assert kin.BULK_BARRIERS == {'IDDIR_2007': 1.10, 'UBERUAGA_2011': 1.5}
 
 
 def test_capacities_partition_every_site_once():
-    assert pt.bridging_capacity(900) == pytest.approx(13.558, abs=5e-4)     # manuscript Note 2a: ~13.6
-    for nl, emap in sc.discrete_maps().values():
-        m = sc.build_discrete(nl, emap, 'LOCAL', 900.0)
-        o = sum(m.C[i] for i, t in enumerate(m.tags) if t != 'Ti')
+    assert pt.bridging_capacity(900) == pytest.approx(13.558, abs=5e-4)      # Note 2a: ~13.6
+    for name in sc.MAPS:
+        m, lay = bd.build(name, 'LOCAL', 900.0)
         ti = sum(m.C[i] for i, t in enumerate(m.tags) if t == 'Ti')
-        assert o == pytest.approx(pt.O_TOTAL, rel=1e-14) and ti == pytest.approx(pt.TI_TOTAL, rel=1e-14)
-    m = sc.build_continuum(0.5, 'LOCAL', 900.0)
-    assert m.C[0::2].sum() == pytest.approx(pt.O_TOTAL, rel=1e-13)
+        o = sum(r['C'] for r in lay.o)
+        assert o == pytest.approx(pt.O_TOTAL, rel=1e-12) and ti == pytest.approx(pt.TI_TOTAL, rel=1e-12)
 
 
+# ------------------------------------------------------------ equilibrium
 def test_neutral_solution_matches_an_independent_bisection():
-    nl, emap = sc.discrete_maps()['PAB']
-    m = sc.build_discrete(nl, emap, 'NEUTRAL', 900.0)
+    m, lay = bd.build('PAB', 'NEUTRAL', 900.0)
     E, C = m.E[:, 1], m.C
     lo, hi = -5.0, 5.0
     for _ in range(200):
         mu = 0.5 * (lo + hi)
-        n = float(np.sum(C / (1 + np.exp((E - mu) / KT))))
-        lo, hi = (lo, mu) if n > 94.0 else (mu, hi)
+        lo, hi = (lo, mu) if np.sum(C / (1 + np.exp((E - mu) / KT))) > 94.0 else (mu, hi)
     sol = m.solve(94.0, T)
     assert sol.mu_eV == pytest.approx(mu, abs=1e-12)
     assert sol.x[:, 1] == pytest.approx(C / (1 + np.exp((E - mu) / KT)), rel=1e-9)
@@ -65,33 +91,31 @@ def test_neutral_solution_matches_an_independent_bisection():
 @pytest.mark.parametrize('name', ['PAB', 'HAM', 'LI_SBR1', 'LI_L2'])
 def test_local_solution_satisfies_the_stationarity_condition(name):
     """eps + kT ln theta/(1-theta) + 2 kT ln y/(1-y) = mu at every O site."""
-    nl, emap = sc.discrete_maps()[name]
-    m = sc.build_discrete(nl, emap, 'LOCAL', 900.0)
+    m, lay = bd.build(name, 'LOCAL', 900.0)
     sol = m.solve(193.1, T)
-    frac = sol.x[:, 1] / m.C
-    y = {m.region[i]: frac[i] for i, t in enumerate(m.tags) if t == 'Ti'}
-    for i, t in enumerate(m.tags):
-        if t == 'Ti':
-            continue
-        th, yy = frac[i], y[m.region[i]]
-        lhs = m.E[i, 1] + KT * math.log(th / (1 - th)) + 2 * KT * math.log(yy / (1 - yy))
+    for o in lay.o:
+        th = sol.occupancy(o['idx'])
+        i_ti, c_ti = lay.ti[o['region']]
+        y = float(sol.x[i_ti] @ m.e[i_ti]) / c_ti
+        lhs = o['eps'] + KT * math.log(th / (1 - th)) + 2 * KT * math.log(y / (1 - y))
         assert lhs == pytest.approx(sol.mu_eV, abs=1e-9)
     assert abs(sol.inventory_residual) < 1e-9 and sol.charge_residual < 1e-8
 
 
 def test_note_2b_is_reproduced():
     """Manuscript SI Note 2b: x(R), R600 interior and top-2-nm share, xi scan."""
-    m = sc.build_continuum(0.5, 'LOCAL', 900.0)
-    x = [sc.continuum_surface_x(m.solve(n, T).mu_eV, T, True) for n in (13.45, 36.85, 94.0, 193.1, 781.2)]
+    m, lay = bd.build('LI_CONT', 'LOCAL', 900.0)
+    x = [bd.surface_coverage(m.solve(n, T), lay) for n in (13.45, 36.85, 94.0, 193.1, 781.2)]
     assert [round(100 * v, 2) for v in x[:3]] == [10.13, 17.59, 22.49]
     assert [round(100 * v, 1) for v in x[3:]] == [24.1, 24.9]
+
+    def top2(xi):
+        mm, ll = bd.build('LI_CONT', 'LOCAL', 900.0, xi=xi)
+        s = mm.solve(94.0, T)
+        return sum(s.occupancy(o['idx']) * o['C'] for k, o in enumerate(ll.o) if ll.edges[k + 1] <= 2.0) / 94.0
     sol = m.solve(94.0, T)
-    assert round(sol.x[-2, 1] / m.C[-2], 5) == 0.00338
-    z = sc.continuum_edges(450.0)
-    top = lambda s: s.x[0::2, 1][z[1:] <= 2.0].sum() / 94.0   # noqa: E731
-    assert round(top(sol), 3) == 0.111
-    for xi, ms in ((0.25, 0.064), (1.0, 0.193)):
-        assert round(top(sc.build_continuum(xi, 'LOCAL', 900.0).solve(94.0, T)), 3) == ms
+    assert round(sol.occupancy(lay.o[-1]['idx']), 5) == 0.00338
+    assert (round(top2(0.25), 3), round(top2(0.5), 3), round(top2(1.0), 3)) == (0.064, 0.111, 0.193)
     ratio = [x[4] * (1 - x[4]) ** k / (x[2] * (1 - x[2]) ** k) for k in (2, 4, 8)]
     assert (round(min(ratio), 2), round(max(ratio), 2)) == (0.86, 1.04)
 
@@ -107,17 +131,15 @@ def _chain(n, periodic):
 
 
 def test_isolated_count_is_exact_for_independent_sites():
-    """A periodic row of 12 sites, enumerated as 4096 states, gives exactly
-    theta(1-theta)^2 isolated vacancies per site; a 4-site open chain (the
-    coupled_v1 surface cell) counts end sites with one neighbour and gives
+    """A periodic 12-site row (4096 states) gives theta(1-theta)^2 isolated
+    vacancies per site; the coupled_v1 4-site open chain gives
     (2-theta)/(2(1-theta)) times more."""
     for n, periodic in ((12, True), (4, False)):
         dom, iso = _chain(n, periodic)
         sol = Model([dom]).solve(0.3 * n, T)
         th = 0.3
-        per_site = float(sol.x[0] @ iso) / n
         expect = th * (1 - th) ** 2 * (1 if periodic else (2 - th) / (2 * (1 - th)))
-        assert per_site == pytest.approx(expect, rel=1e-10)
+        assert float(sol.x[0] @ iso) / n == pytest.approx(expect, rel=1e-10)
 
 
 def test_coupled_v1_neutral_r600_is_reproduced():
@@ -132,10 +154,163 @@ def test_coupled_v1_neutral_r600_is_reproduced():
     assert got == pytest.approx([13.557923761144504, 13.215478361519827, 67.2265978773728], rel=1e-9)
 
 
+# ---------------------------------------------------------- electrostatics
+def test_capacitance_matrix_is_the_exact_inverse():
+    rng = np.random.default_rng(1)
+    r = np.sort(rng.uniform(1, 450, 12))[::-1]
+    doms = [dict(C=1.0, E=[0, 0], v=[0, 1], region=k, shell=k) for k in range(12)]
+    m = Model(doms, electrostatics=dict(radii=dict(enumerate(r)), eps=64, mass_g=1.62e-12))
+    H = m.es['K'] / np.maximum.outer(m.es['r'], m.es['r'])
+    q = rng.normal(size=12)
+    assert m.potentials(q) == pytest.approx(H @ q, rel=1e-13)
+    P = np.diag(m.es['main']) + np.diag(m.es['off'], 1) + np.diag(m.es['off'], -1)
+    exact = KT * np.linalg.inv(H)
+    assert np.abs(KT / m.es['K'] * P - exact).max() <= 1e-10 * np.abs(exact).max()
+
+
+def test_global_converges_to_poisson_and_neutrality():
+    for name in ('PAB', 'LI_CONT'):
+        m, lay = bd.build(name, 'GLOBAL', 900.0, eps_r=64.0)
+        for N in (13.45, 781.2):
+            s = m.solve(N, T)
+            assert abs(s.inventory_residual) < 1e-9 * N and abs(s.charge_residual) < 1e-9 * N
+            assert s.poisson_residual < 1e-8 and abs(s.shell_charge.sum()) < 1e-8
+
+
+def test_global_tends_to_local_as_eps_vanishes():
+    mg, _ = bd.build('LI_CONT', 'GLOBAL', 900.0, eps_r=1e-5, s0=0.0)
+    ml, _ = bd.build('LI_CONT', 'LOCAL', 900.0)
+    for N in (13.45, 94.0):
+        assert np.abs(mg.solve(N, T).x - ml.solve(N, T).x).max() < 1e-5
+
+
+def test_global_screening_length_is_debye_huckel():
+    """A small surface perturbation decays over the Debye-Huckel length
+    computed from the bulk site statistics."""
+    R, eps = 450.0, 64.0
+    edges = np.concatenate([[0.0], np.geomspace(1e-3, R, 2500)])
+    doms, radii = [], {}
+    for j in range(len(edges) - 1):
+        C = pt.O_TOTAL * pt.shell_fraction(R, edges[j], edges[j + 1])
+        doms.append(dict(C=C, E=[0, -0.05 if j == 0 else 0.0], v=[0, 1], region=j, shell=j))
+        doms.append(dict(C=C / 2, E=[0, 0], v=[0, 0], e=[0, 1], region=j, shell=j))
+        radii[j] = R - 0.5 * (edges[j] + edges[j + 1])
+    m = Model(doms, electrostatics=dict(radii=radii, eps=eps, mass_g=pt.particle_mass(900)))
+    s = m.solve(94.0, T)
+    th = s.occupancy(4000)
+    y = float(s.x[4001] @ m.e[4001]) / m.C[4001]
+    n_o = 2 * pt.RHO / pt.M * pt.NA * 1e-21
+    lam = 1 / math.sqrt(4 * math.pi * COULOMB * (n_o * 4 * th * (1 - th) + n_o / 2 * y * (1 - y)) / (eps * KT))
+    z = R - m.es['r']
+    sel = (z > 1.0) & (z < 3.0)
+    fit = -1 / np.polyfit(z[sel], np.log(np.abs(s.phi[sel] - s.phi[-1])), 1)[0]
+    assert fit == pytest.approx(lam, rel=3e-3)
+
+
+# ------------------------------------------------------------------ pairs
+@pytest.mark.parametrize('closure', ['NEUTRAL', 'LOCAL'])
+def test_pairs_only_lower_the_surface_population(closure):
+    for name in sc.MAPS:
+        m0, l0 = bd.build(name, closure, 900.0)
+        m1, l1 = bd.build(name, closure, 900.0, pairs=True)
+        for N in (13.45, 193.1):
+            assert bd.surface_coverage(m1.solve(N, T), l1) <= bd.surface_coverage(m0.solve(N, T), l0) + 1e-12
+
+
+def test_pair_weights_are_the_mayer_second_virial():
+    ps = bd.pair_states(0.0, T)
+    for (r, n), E, g in zip(pt.oxygen_shells(1.0), ps['E'][1:], ps['g'][1:]):
+        assert g * math.exp(-E / KT) == pytest.approx(0.5 * n * (math.exp(-bd.zha2017(r) / KT) - 1), rel=1e-12)
+
+
+def test_frozen_pairs_at_the_same_temperature_reproduce_equilibrium():
+    spec = dict(name='PAB', closure='LOCAL', d_nm=900.0)
+    m1, l1 = bd.build(**spec, pairs=True)
+    s1 = m1.solve(193.1, T)
+    v_fix, q = 0.0, {}
+    for i in l1.pair_idx:
+        n = float(s1.x[i][1:].sum())
+        v_fix += 2 * n
+        r = m1.region_ids[m1.region[i]]
+        q[r] = q.get(r, 0.0) + 4 * n
+    m0, l0 = bd.build(**spec)
+    s0 = m0.solve(193.1, T, fixed=dict(v=v_fix, q_region=q))
+    for a, b in zip(l0.o, l1.o):
+        assert s0.occupancy(a['idx']) == pytest.approx(s1.occupancy(b['idx']), rel=1e-8)
+
+
+# -------------------------------------------------------------- transport
+@pytest.mark.parametrize('name,closure', [('PAB', 'LOCAL'), ('LI_CONT', 'LOCAL'), ('HAM', 'NEUTRAL')])
+def test_relaxation_ends_at_the_equilibrium_solver(name, closure):
+    kw = dict(n_cont=600, z0_cont=1e-2) if name == 'LI_CONT' else {}
+    m, lay = bd.build(name, closure, 900.0, **kw)
+    r = kin.relax(m, lay, 781.2, 1273.15, T, 1.5, t_obs=(1.0, 1e5))
+    assert np.abs(r['theta_end'] - r['theta_eq']).max() < 1e-9
+    assert r['mass_drift'] < 1e-9
+
+
+@pytest.mark.parametrize('closure', ['NEUTRAL', 'LOCAL'])
+def test_transport_reproduces_sphere_diffusion(closure):
+    """Flat energies: the slowest radial mode decays at D k1^2 (tan k1 R = k1 R).
+    LOCAL adds the ambipolar factor 1 + 2(1 - theta)/(1 - y)."""
+    B, R = 1.5, 450.0
+    lam, zc = pt.bulk_hop()
+    D = zc * lam ** 2 / 6 * KT / kin.H_PLANCK * math.exp(-B / KT)
+    k1 = 4.493409457909064 / R
+    m, lay = bd.build('LI_CONT', closure, 900.0, n_cont=800, z0_cont=1e-1, amp=0.0)
+    o = sorted(lay.o, key=lambda r: r['z'])
+    z = np.array([r['z'] for r in o]); C = np.array([r['C'] for r in o])
+    th = 94.0 / pt.O_TOTAL * (1 + 0.02 * np.cos(np.pi * z / R))
+    th *= 94.0 / (C @ th)
+    factor = 1.0
+    if closure == 'LOCAL':
+        tb = 94.0 / pt.O_TOTAL
+        factor = 1 + 2 * (1 - tb) / (1 - 4 * tb)
+    tau = 1 / (factor * D * k1 ** 2)
+    r = kin.relax(m, lay, 94.0, T, T, B, t_obs=(3 * tau, 6 * tau), theta0=th, rtol=1e-10)
+    dev = lambda k: math.sqrt(C @ (r['theta'][:, k] - r['theta_eq']) ** 2)      # noqa: E731
+    i1, i2 = np.searchsorted(r['t'], 3 * tau), np.searchsorted(r['t'], 6 * tau)
+    rate = math.log(dev(i1) / dev(i2)) / (r['t'][i2] - r['t'][i1])
+    assert rate == pytest.approx(factor * D * k1 ** 2, rel=2e-3)
+
+
+def test_free_energy_falls_along_the_trajectory():
+    m, lay = bd.build('PAB', 'LOCAL', 900.0)
+    r = kin.relax(m, lay, 781.2, 1273.15, T, 1.5, t_obs=(1.0, 10.0))
+    o = sorted(lay.o, key=lambda q: q['z'])
+    eps = np.array([q['eps'] for q in o]); C = np.array([q['C'] for q in o])
+    reg = np.array([q['region'] for q in o])
+    h = lambda u: u * np.log(u) + (1 - u) * np.log1p(-u)                        # noqa: E731
+    F = []
+    for k in range(r['theta'].shape[1]):
+        th = r['theta'][:, k]
+        f = C @ (th * eps) + KT * (C @ h(th))
+        for g, (i_ti, c_ti) in lay.ti.items():
+            y = 2 * (C[reg == g] @ th[reg == g]) / c_ti
+            f += KT * c_ti * h(y)
+        F.append(f)
+    assert np.all(np.diff(F) <= 1e-9 * abs(F[0]))
+
+
+# ---------------------------------------------------------- classification
+def test_classification_and_bounds():
+    _, rows = sc.run_all()
+    by = lambda **k: [r for r in rows if all(r[a] == b for a, b in k.items())]           # noqa: E731
+    core = by(sample='R600', family='PRIMARY')
+    assert len(core) == 40 and all('RECON_CAP' in r['flags'] for r in core)
+    # At the cap, the bridging definition gives the SI 2a denominator on this sphere.
+    bri = by(sample='R600', family='PRIMARY', reactive='BRI')
+    assert [float(r['N_react_umol_g']) for r in bri] == pytest.approx([0.17 * pt.bridging_capacity(900)] * len(bri), rel=1e-5)
+    a600 = by(sample='A600', family='PRIMARY', energy_map='LI_CONT xi 0.5', closure='LOCAL', reactive='BRI')[0]
+    assert a600['flags'] == '' and float(a600['theta_bri']) == pytest.approx(0.1013, abs=1e-4)
+    assert all(r['cls'] == 'BOUNDARY' for r in by(sample='R1000'))
+    assert not by(sample='R1100')
+
+
 def test_outputs_regenerate_byte_for_byte(tmp_path):
     work = tmp_path / 'p'
     shutil.copytree(HERE, work, ignore=shutil.ignore_patterns('outputs', '__pycache__', '.pytest_cache'))
     (work / 'outputs').mkdir()
     subprocess.run([sys.executable, 'run.py'], cwd=work, check=True)
-    for name in ('scenario_tof.csv', 'sample_tof_range.csv'):
+    for name in ('cases.csv', 'sample_tof_range.csv', 'sensitivity_effects.csv', 'transport_gate.csv'):
         assert filecmp.cmp(work / 'outputs' / name, HERE / 'outputs' / name, shallow=False), name

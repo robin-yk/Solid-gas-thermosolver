@@ -49,3 +49,34 @@ def layer_sites(d_nm, n_layers):
 def shell_fraction(R, z_lo, z_hi):
     """Volume fraction of the sphere between depths z_lo and z_hi."""
     return (1 - z_lo / R) ** 3 - (1 - z_hi / R) ** 3
+
+
+def particle_mass(d_nm):
+    """Mass of one smooth sphere, g."""
+    return RHO * (math.pi / 6) * d_nm ** 3 * 1e-21
+
+
+def oxygen_shells(rmax_nm=1.0):
+    """O-O neighbour shells of rutile out to rmax: [(r_nm, count per O)].
+
+    Rutile has one oxygen Wyckoff site (4f), so every O sees the same shells.
+    """
+    import numpy as np
+    cell = np.diag([A_NM, A_NM, C_NM])
+    basis = np.array([[U, U, 0], [-U, -U, 0], [.5 + U, .5 - U, .5], [.5 - U, .5 + U, .5]])
+    n = int(rmax_nm / min(A_NM, C_NM)) + 2
+    g = np.arange(-n, n + 1)
+    shifts = np.array(np.meshgrid(g, g, g, indexing='ij')).reshape(3, -1).T
+    vec = ((basis[None, :, :] + shifts[:, None, :]).reshape(-1, 3) - basis[0]) @ cell
+    r = np.sqrt((vec ** 2).sum(1))
+    r = np.round(r[(r > 1e-9) & (r <= rmax_nm + 1e-12)], 9)
+    vals, counts = np.unique(r, return_counts=True)
+    return [(float(v), int(c)) for v, c in zip(vals, counts)]
+
+
+# Bulk vacancy hop: Iddir 2007 step C (equatorial to apical O) is the
+# octahedron edge between an apical and an equatorial O, the second O-O shell
+# (8 neighbours). D = z lambda^2 Gamma / 6 on that network.
+def bulk_hop():
+    r, z = oxygen_shells(0.3)[1]
+    return r, z
