@@ -117,6 +117,7 @@
     if (name !== shownLayer) {
       $('vdParticleImg').src = name ? RD.particle[name] : defaultParticle;
       shownLayer = name;
+      slab.highlight(name);
     }
     if (!name || !current) { tip.hidden = true; return; }
     var p = current.pools, inv = current.inv, v, what;
@@ -135,16 +136,15 @@
   $('vdParticleStage').addEventListener('mouseleave', function () { showLayer(null); });
   $('vdParticleStage').addEventListener('click', function (ev) { showLayer(layerAt(ev), ev); });
 
-  var slabShown = 'R600';
-  function showSlab(name) {
-    if (!RD.slab[name] || name === slabShown) return;
-    var next = $('vdSlabNext'), cur = $('vdSlabImg');
-    next.src = RD.slab[name];
-    next.style.opacity = 1;
-    cur.style.opacity = 0;
-    next.id = 'vdSlabImg'; cur.id = 'vdSlabNext';
-    slabShown = name;
-  }
+  /* The (110) surface, drawn live from the CIF atom list at the site
+     fractions of the case shown. */
+  var SC = window.SlabCanvas, slab = SC.mount($('vdSlabCanvas'), RD.slab), slabShown = null;
+  $('vdSlabPause').hidden = slab.reduced;
+  $('vdSlabPause').addEventListener('click', function () {
+    var p = slab.pause(!slab.paused());
+    this.textContent = p ? 'Play' : 'Pause';
+    this.setAttribute('aria-pressed', String(p));
+  });
 
   /* ------------------------------------------------------- figures */
   var figState = {};
@@ -202,7 +202,7 @@
       ['TOF/TOF(R600), same parameters', ref.below ? '— (R600 below threshold)' : sig(c.tof / ref.tof)],
       ['TOF range, ' + sm.n_ok + ' of ' + sm.n_cases + ' cases', sig(num(sm.TOF_min_s_1)) + ' to ' + sig(num(sm.TOF_max_s_1)) + ' s⁻¹'],
       ['TOF, N<sub>react</sub> = 2.31 µmol g⁻¹', sig(num(sm.fixed_TOF_SI2a_s_1)) + ' s⁻¹']
-    ].concat(strong ? [['Treatment ≥ ' + D.strong_reduction_C + ' °C', 'Ti₂O₃-(1×2) regime (Yuan 2024)']] : []));
+    ].concat(strong ? [['Treatment ≥ ' + D.strong_reduction_C + ' °C', 'Ti₂O₃-(1×2) regime (Yuan et al. 2024)']] : []));
     $('vdStatus').textContent = 'Parameter point ' + (p + 1) + ' of ' + NPTS;
 
     /* figure 3 */
@@ -231,16 +231,14 @@
 
     /* the rendered panels */
     current = { pools: pools, inv: inv, sample: s.sample };
-    showSlab(s.sample);
-    var n = RD.sites.vacant[s.sample], cells = RD.sites.cells;
-    var atStart = s.map === START.map && s.cutoff === START.cutoff && s.dG === START.dG
-      && s.f110 === START.f110 && s.eps === START.eps;
-    $('vdSlabCaption').innerHTML = '<b>Rutile (110), ' + s.sample + '.</b> ' + cells[0] + ' × ' + cells[1]
-      + ' cells, four trilayers; atoms from the rutile CIF (P4₂/mnm, a = 0.4594 nm, c = 0.2959 nm, '
-      + 'x(O) = 0.3048), unrelaxed. Vacant sites at the calculated site fractions for the starting '
-      + 'parameters' + (atStart ? '' : ' (image unchanged by the parameters above)') + ': '
-      + n.BRI + ' BRI (blue rings), ' + (n.SBR + n.L24 + n.IPL) + ' below the top O row (orange). '
-      + 'Pink: Ti³⁺ on the two Ti nearest each vacancy; the model resolves Ti³⁺ by layer.';
+    var nv = slab.set(SC.fractions(D, smp, p, s.f110)), cells = RD.slab.cells;
+    slabShown = s.sample;
+    $('vdSlabCaption').innerHTML = '<b>Rutile (110), ' + s.sample + ', selected parameters.</b> ' + cells[0]
+      + ' × ' + cells[1] + ' cells, four trilayers; atoms from the rutile CIF (P4₂/mnm, a = 0.4594 nm, '
+      + 'c = 0.2959 nm, x(O) = 0.3048), unrelaxed. O sites vacant at the calculated site fractions: '
+      + (nv.BRI + nv.IPL) + ' in the top layer (blue rings), ' + (nv.SBR + nv.L24) + ' below it (orange). '
+      + 'Pink: Ti³⁺ on the two Ti nearest each vacancy; the model resolves Ti³⁺ by layer. '
+      + 'View sway and atomic vibration are for display; amplitude not to scale.';
   }
 
   ['vdSample', 'vdMap', 'vdCutoff', 'vdDG', 'vdF110', 'vdEps', 'vdReactive'].forEach(function (id) {
@@ -286,5 +284,5 @@
   setState(START);
   draw(false);
   window.VacancyDistribution = { draw: draw, state: state, setState: setState, caseOf: caseOf, point: point,
-    renders: RD, layerAt: layerAt, slabShown: function () { return slabShown; } };
+    renders: RD, layerAt: layerAt, slab: slab, slabShown: function () { return slabShown; } };
 })();

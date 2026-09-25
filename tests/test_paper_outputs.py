@@ -104,7 +104,9 @@ def test_the_page_makes_no_external_request():
     html = PAGE.read_text()
     assert '<script src=' not in html
     assert '<link ' not in html
-    assert 'href="http' not in html.replace('href="https://github.com', '')
+    # links out to the repository and to reference DOIs are not requests
+    assert 'href="http' not in html.replace('href="https://github.com', '').replace(
+        'href="https://doi.org/', '')
 
 
 def test_the_browser_engines_are_mirrors_under_a_parity_gate():
@@ -113,7 +115,8 @@ def test_the_browser_engines_are_mirrors_under_a_parity_gate():
     every browser engine has to be paired with a gate that holds it to the
     Python module it mirrors."""
     engines = {'activeset.js': 'test_activeset_port.py',
-               'population.js': 'test_population_port.py'}
+               'population.js': 'test_population_port.py',
+               'slab_canvas.js': 'test_distribution_page.py'}
     for js, gate in engines.items():
         assert (ROOT / 'web' / js).exists(), js
         assert (ROOT / 'tests' / gate).exists(), \
@@ -123,7 +126,7 @@ def test_the_browser_engines_are_mirrors_under_a_parity_gate():
     assert inlined == ['activeset.js', 'distribution_ui.js', 'figkit.js',
                        'figures_distribution.js', 'figures_population.js',
                        'figures_thermo.js', 'population.js', 'site_ui.js',
-                       'thermo_ui.js', 'ti_solver_page.js'], inlined
+                       'slab_canvas.js', 'thermo_ui.js', 'ti_solver_page.js'], inlined
 
 
 def test_the_manuscript_values_are_read_not_recomputed(site):

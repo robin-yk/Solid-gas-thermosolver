@@ -1,7 +1,7 @@
 """The vacancy-distribution workspace reads paper_outputs/tof_range.json
 and draws it. The gates: that file is what the one-model run wrote, it is
-current, the page carries exactly it, and the rendered panels were made
-from its current values."""
+current, the page carries exactly it, and the surface panel places
+vacancies from its values by the same rule in Python and in the browser."""
 
 import csv
 import json
@@ -64,42 +64,86 @@ def test_the_page_carries_the_json_unchanged(doc):
 
 
 RENDER = ROOT / 'web' / 'render'
+HARNESS = ROOT / 'tests' / 'js' / 'slab_harness.js'
+sys.path.insert(0, str(ROOT / 'scripts'))
+import slab_atoms  # noqa: E402
 
 
-def test_the_surface_renders_use_the_current_site_fractions(doc):
-    """slab_sites.json records the fractions each slab image was rendered
-    at; they must be the starting-parameter fractions in tof_range.json."""
-    meta = json.loads((RENDER / 'slab_sites.json').read_text())
-    st, ax = meta['start'], doc['axes']
-    i = ax['energy_map'].index(st['energy_map'])
-    i = i * len(ax['cutoff_nm']) + ax['cutoff_nm'].index(st['cutoff_nm'])
-    i = i * len(ax['dG_eV']) + ax['dG_eV'].index(st['dG_eV'])
-    i = i * len(ax['f110']) + ax['f110'].index(st['f110'])
-    i = i * len(ax['eps']) + [e['key'] for e in ax['eps']].index(st['eps'])
-    assert meta['point'] == i
-    cap = doc['capacity_umol_g']['%g' % st['f110']]
+def _fractions(doc, s, i, f110):
+    cap = doc['capacity_umol_g']['%g' % f110]
+    pools = dict(zip(doc['pools'], s['cases']['pools'][i]))
+    return dict(BRI=s['cases']['theta'][i], IPL=pools['basal_L1'] / cap['basal_L1'],
+                SBR=pools['L1_subbridging'] / cap['L1_subbridging'],
+                L24=pools['subsurface_L2_4'] / cap['subsurface_L2_4'])
+
+
+def _f110(doc, i):
+    ax = doc['axes']
+    return ax['f110'][(i // len(ax['eps'])) % len(ax['f110'])]
+
+
+def test_the_atom_list_regenerates_from_the_cif():
+    before = (RENDER / 'slab_atoms.json').read_bytes()
+    r = subprocess.run([sys.executable, 'scripts/slab_atoms.py'], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert (RENDER / 'slab_atoms.json').read_bytes() == before, 'run scripts/slab_atoms.py and commit'
+
+
+def test_every_o_and_ti_site_of_the_slab_is_counted_once():
+    at = json.loads((RENDER / 'slab_atoms.json').read_text())
+    nx, ny = at['cells']
+    per = nx * ny * at['trilayers']
+    from collections import Counter
+    c = Counter(at['site'])
+    assert c == {'BRI': nx * ny, 'IPL': 2 * nx * ny, 'SBR': nx * ny,
+                 'L24': 4 * nx * ny * (at['trilayers'] - 1), 'Ti': 2 * per}
+    assert len({tuple(x) for x in at['xyz']}) == len(at['xyz'])
+
+
+def test_the_browser_places_the_same_vacancies(doc):
+    """web/slab_canvas.js against scripts/slab_atoms.py: fractions from the
+    stored case and the vacant sites, for every sample on a spread of
+    parameter points."""
+    import shutil
+    assert shutil.which('node') is not None, 'node is required for this gate'
+    npts = len(doc['samples'][0]['cases']['theta'])
+    points = list(range(0, npts, 37)) + [npts - 1]
+    r = subprocess.run(['node', str(HARNESS), str(ROOT), json.dumps(points)],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    js = json.loads(r.stdout)
+    at = json.loads((RENDER / 'slab_atoms.json').read_text())
+    n = 0
     for s in doc['samples']:
-        pools = dict(zip(doc['pools'], s['cases']['pools'][i]))
-        want = dict(BRI=s['cases']['theta'][i], IPL=pools['basal_L1'] / cap['basal_L1'],
-                    SBR=pools['L1_subbridging'] / cap['L1_subbridging'],
-                    L24=pools['subsurface_L2_4'] / cap['subsurface_L2_4'])
-        assert meta['fractions'][s['sample']] == pytest.approx(want, rel=1e-12), s['sample']
-        assert (RENDER / ('slab_%s.webp' % s['sample'])).exists()
+        for i in points:
+            f = _fractions(doc, s, i, _f110(doc, i))
+            got = js['%s:%d' % (s['sample'], i)]
+            assert got['fractions'] == pytest.approx(f, rel=1e-15), (s['sample'], i)
+            assert got['vacant'] == slab_atoms.vacant(at, f), (s['sample'], i)
+            n += len(got['vacant'])
+    assert n > 0
 
 
-def test_the_slab_keeps_each_vacancy_as_the_inventory_rises(doc):
-    """Fixed site ranks: a sample with larger fractions keeps every vacancy
-    of a smaller one, so the vacant counts never fall along the series."""
-    meta = json.loads((RENDER / 'slab_sites.json').read_text())
-    order = sorted(doc['samples'], key=lambda s: meta['fractions'][s['sample']]['BRI'])
-    counts = [meta['vacant'][s['sample']]['BRI'] for s in order]
-    assert counts == sorted(counts)
-    assert all(0 <= meta['vacant'][k]['BRI'] <= meta['sites']['BRI'] for k in meta['vacant'])
+def test_a_larger_fraction_keeps_every_vacancy_of_a_smaller_one(doc):
+    """Fixed site ranks: when every class fraction of one case is at most
+    that of another, its vacant sites are a subset of the other's."""
+    at = json.loads((RENDER / 'slab_atoms.json').read_text())
+    pairs = 0
+    for i in (0, 123, 400):
+        fr = [_fractions(doc, s, i, _f110(doc, i)) for s in doc['samples']]
+        for f in fr:
+            for g in fr:
+                if f is not g and all(f[c] <= g[c] for c in f):
+                    assert set(slab_atoms.vacant(at, f)) <= set(slab_atoms.vacant(at, g))
+                    pairs += 1
+    assert pairs > 0
 
 
 def test_the_page_carries_the_renders():
     html = PAGE.read_text()
-    assert 'RENDER:' not in html and '/*RENDERDATA*/' not in html
-    for name in ('particle_default.webp', 'slab_R600.webp', 'particle_mask.png'):
+    assert 'RENDER:' not in html and '/*RENDERDATA*/' not in html and '/*SLAB*/' not in html
+    for name in ('particle_default.webp', 'particle_mask.png', 'slab_atoms.json'):
         assert (RENDER / name).exists(), name
-    assert html.count('data:image/webp;base64,') >= 10
+    assert html.count('data:image/webp;base64,') >= 4
+    at = json.loads((RENDER / 'slab_atoms.json').read_text())
+    assert json.dumps(at, separators=(',', ':')) in html

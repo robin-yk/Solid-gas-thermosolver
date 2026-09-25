@@ -37,6 +37,7 @@ CASES_FEEDS = {
 
 PARTS = [
     ('/*DISTFIG*/', os.path.join(WEB, 'figures_distribution.js')),
+    ('/*SLAB*/', os.path.join(WEB, 'slab_canvas.js')),
     ('/*DISTUI*/', os.path.join(WEB, 'distribution_ui.js')),
     ('/*CSS*/', os.path.join(WEB, 'site.css')),
     ('/*FIGKIT*/', os.path.join(WEB, 'figkit.js')),
@@ -87,16 +88,15 @@ def data_uri(name):
 
 
 def inline_renders(html):
-    """Blender renders of the vacancy-distribution workspace. The images the
-    page opens on go straight into <img src>; the hover states, the other
-    samples and the hover mask go into one JSON block the script reads."""
+    """Renders of the vacancy-distribution workspace. The grain image the
+    page opens on goes straight into <img src>; the hover states, the hover
+    mask and the (110) atom list go into one JSON block the script reads."""
     for name in re.findall(r'RENDER:([\w.]+)', html):
         html = html.replace('RENDER:' + name, data_uri(name))
-    sites = json.loads(read(os.path.join(RENDER, 'slab_sites.json')))
-    doc = dict(sites=sites, mask=data_uri('particle_mask.png'),
+    doc = dict(mask=data_uri('particle_mask.png'),
                particle={k: data_uri('particle_%s.webp' % k)
                          for k in ('surface', 'subsurface', 'bulk')},
-               slab={k: data_uri('slab_%s.webp' % k) for k in sorted(sites['vacant'])})
+               slab=json.loads(read(os.path.join(RENDER, 'slab_atoms.json'))))
     return html.replace('/*RENDERDATA*/', json.dumps(doc, separators=(',', ':')))
 
 
@@ -136,8 +136,10 @@ def build():
                              ('/*RENDERDATA*/', None)]:
         if token in html:
             raise SystemExit('unsubstituted token left in the page: ' + token)
+    # Links out (the repository, reference DOIs) are allowed; loading
+    # anything from outside is not.
     if '<script src=' in html or 'href="http' in html.replace(
-            'href="https://github.com', ''):
+            'href="https://github.com', '').replace('href="https://doi.org/', ''):
         raise SystemExit('the page must not reach outside itself')
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, 'w') as fh:

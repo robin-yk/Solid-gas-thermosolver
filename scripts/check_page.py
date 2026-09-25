@@ -112,8 +112,22 @@ const P = require(process.env.PW + '/node_modules/playwright');
   });
   /* the rendered panels: both images decoded, and a hover over the cut
      face finds a layer in the mask and shows its amount */
-  out.renders = await pg.evaluate(() => ['vdParticleImg', 'vdSlabImg'].map(id => {
-    const im = document.getElementById(id); return im && im.complete ? im.naturalWidth : 0; }));
+  out.renders = await pg.evaluate(() => {
+    const im = document.getElementById('vdParticleImg');
+    return im && im.complete ? im.naturalWidth : 0; });
+  /* the surface canvas: painted, and moving (two frames differ) */
+  const snap = () => pg.evaluate(() => {
+    const c = document.getElementById('vdSlabCanvas'), g = c.getContext('2d');
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    let ink = 0, h = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 0) { ink += 1; h = (h * 31 + d[i - 1] + d[i - 2]) % 1000000007; }
+    return { ink: ink / (c.width * c.height), h };
+  });
+  out.slab1 = await snap();
+  await pg.waitForTimeout(700);
+  out.slab2 = await snap();
+  out.slabVacant = await pg.evaluate(() => window.VacancyDistribution.slab.vacant().length);
+  out.slabCaption = await txt('vdSlabCaption');
   out.hover = await pg.evaluate(() => {
     const st = document.getElementById('vdParticleStage').getBoundingClientRect();
     const hits = {};
@@ -211,7 +225,11 @@ def check(out):
     ok('the TOF figure marks every sample twice',
        out['tofMarks'] == {'fixed': n, 'chosen': n},
        out['tofMarks'])
-    ok('both rendered panels decoded', min(out['renders']) >= 1000, out['renders'])
+    ok('the grain render decoded', out['renders'] >= 1000, out['renders'])
+    ok('the surface canvas is drawn', out['slab1']['ink'] > 0.15, out['slab1'])
+    ok('the surface canvas moves', out['slab1']['h'] != out['slab2']['h'], (out['slab1'], out['slab2']))
+    ok('the surface caption counts the vacancies drawn',
+       out['slabVacant'] > 0 and 'vacant' in out['slabCaption'], (out['slabVacant'], out['slabCaption']))
     ok('hover finds all three layers in the mask',
        set(out['hover']) == {'surface', 'subsurface', 'bulk'}, out['hover'])
     ok('hover on the bulk shows its calculated amount',

@@ -229,8 +229,6 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 .vd-stage{position:relative;aspect-ratio:1/1;background:#fff;overflow:hidden}
 .vd-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:opacity .45s ease}
 .vd-frame{border:1px solid var(--line)}
-#vdSlabNext{opacity:0}
-.vd-frame img{transform:scale(1.2);transform-origin:50% 80%}
 #vdParticleStage{cursor:crosshair}
 .vd-panel figcaption{margin-top:10px;font-size:12.5px;line-height:1.5;color:var(--muted);max-width:620px}
 .vd-panel figcaption b{color:var(--navy)}
@@ -249,3 +247,9 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 .figgrid .wide{grid-column:1/-1}
 .figgrid .wide .figbox svg{max-width:1040px}
 .figgrid .wide figcaption,.figgrid .wide .figdl{max-width:1040px}
+.refs{padding-left:22px;font-size:13px;line-height:1.55;color:var(--ink,#1a2a33)}
+.refs li{margin:0 0 6px}
+.refs a{word-break:break-all}
+.vd-frame canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.vd-play{position:absolute;right:10px;bottom:10px;left:auto;width:auto;display:inline-block;margin:0;font-size:12px;line-height:1;padding:6px 12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.85);color:var(--navy);cursor:pointer}
+.vd-play:hover{background:#fff}

@@ -72,8 +72,8 @@
     <svg class="vd-zoom" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="34" y1="36" x2="52" y2="0"/><line x1="34" y1="44" x2="52" y2="100"/></svg>
     <figure class="vd-panel" id="vdSurface">
       <div class="vd-stage vd-frame" id="vdSlabStage">
-        <img id="vdSlabImg" src="RENDER:slab_R600.webp" alt="Rutile (110) surface, four trilayers, with vacant bridging oxygen sites ringed">
-        <img id="vdSlabNext" alt="" aria-hidden="true">
+        <canvas id="vdSlabCanvas" role="img" aria-label="Rutile (110) surface, four trilayers, with the vacant oxygen sites of the selected case ringed"></canvas>
+        <button type="button" class="vd-play" id="vdSlabPause" aria-pressed="false">Pause</button>
       </div>
       <figcaption id="vdSlabCaption"></figcaption>
     </figure>
@@ -90,7 +90,7 @@
         <div class="population-field"><label for="vdMap">Vacancy formation-energy set</label><select id="vdMap"></select>
           <div class="readout">Layer-resolved O-vacancy formation energies.</div></div>
         <div class="population-field"><label for="vdCutoff">Aggregate cutoff distance</label><select id="vdCutoff"></select>
-          <div class="readout">nm · bulk vacancy pairs within this distance interact (ZHA2017 pair energy).</div></div>
+          <div class="readout">nm · bulk vacancy pairs within this distance interact (Zhao et al. 2017 pair energy).</div></div>
         <div class="population-field"><label for="vdDG">(1&times;2) reconstruction free energy &Delta;G</label><select id="vdDG"></select>
           <div class="readout">eV per (1&times;2) cell, relative to the cell with one bridging O vacant.</div></div>
         <div class="population-field"><label for="vdF110">(110) area fraction</label><select id="vdF110"></select>
@@ -182,15 +182,15 @@
 
   <h3>Site energies</h3>
   <p>Single-vacancy energies relative to bulk, &epsilon;<sub>k,i</sub> = E<sub>f,k,i</sub> &minus;
-  E<sub>f,bulk</sub>, from one energy map (PAB, HAM, LI_SBR1, LI_L2). Sites a map does not name
+  E<sub>f,bulk</sub>, from one energy map: PAB<sup>1</sup>, HAM<sup>2</sup>, LI_SBR1 or LI_L2<sup>3</sup>. Sites a map does not name
   are at 0. For the Li maps, &epsilon;<sub>1,IPL</sub> = &epsilon;<sub>1,BRI</sub> + 0.11&nbsp;eV
-  (Matsunaga). Plain sites have two states:</p>
+  <sup>4</sup>. Plain sites have two states:</p>
   \[E\in\{0,\;\varepsilon_{k,i}\},\qquad v\in\{0,1\}\]
 
   <h3>(1&times;2) cell and reconstruction</h3>
   <p>Two bridging O and the four layer-1 Ti under them form one cell, C<sub>cell</sub> =
   C<sub>Ti,1</sub>/4. O states with n Ti<sup>3+</sup> on the free Ti, each at s<sub>0</sub> =
-  0.2&nbsp;eV (RET2018):</p>
+  0.2&nbsp;eV<sup>5</sup>:</p>
   \[E=E_o+n\,s_0,\qquad g=g_o\binom{n_{\mathrm{free}}}{n},\qquad e=e_o+n;;\begin{array}{lcccc}o&E_o&v&e_o&g_o\ (n_{\mathrm{free}})\\ \mathrm{intact}&0&0&0&1\ (4)\\ \mathrm{one\ vacant}&\varepsilon_{1,\mathrm{BRI}}&1&0&2\ (4)\\ \mathrm{both\ vacant}&2\varepsilon_{1,\mathrm{BRI}}&2&0&1\ (4)\\ \mathrm{reconstructed}&\varepsilon_{1,\mathrm{BRI}}+\Delta G&1&2&1\ (2)\end{array}\]
   <p>&Delta;G is relative to the one-vacancy state. Reconstructed fraction of bridging sites
   and vacant fraction of the unreconstructed ones:</p>
@@ -200,9 +200,9 @@
   <p>Below 1.30&nbsp;nm, O sits in periodic boxes of 700 sites (5&times;5&times;7 cells). A box
   with N vacancies is one state:</p>
   \[E_N=-k_{\mathrm B}T\ln Q(N),\qquad v_N=N,\qquad 0\le N\le 175;;Q(N)=\sum_{\sigma\in\Omega_N}\exp\!\left(-\frac{1}{k_{\mathrm B}T}\sum_{i<j,\;r_{ij}\le r_c}J(r_{ij})\,\sigma_i\sigma_j\right);;J(r)=\frac{A}{r}-\frac{B}{r^2}-\frac{C}{r^6},\qquad A=0.753,\;B=11.83,\;C=-383.45\]
-  <p>J: ZHA2017 bulk pair energy (r in &Aring;, J in eV). r<sub>c</sub>: cutoff. Clusters of any size are pair
+  <p>J: bulk pair energy<sup>6</sup> (r in &Aring;, J in eV). r<sub>c</sub>: cutoff. Clusters of any size are pair
   sums. &Omega;<sub>N</sub>: vacancy sets with N vacancies in which every vacancy holds two
-  Ti<sup>3+</sup> among its three Ti neighbours, one electron per Ti. Q(N) is computed by Monte Carlo with Widom insertion summed over all empty sites:</p>
+  Ti<sup>3+</sup> among its three Ti neighbours, one electron per Ti<sup>7</sup>. Q(N) is computed by Monte Carlo with Widom insertion summed over all empty sites:</p>
   \[\frac{Q(N+1)}{Q(N)}=\frac{\langle W\rangle_N}{N+1},\qquad W=\sum_{i\ \mathrm{empty}}\exp\!\left(-\frac{h_i}{k_{\mathrm B}T}\right)\]
   <p>h<sub>i</sub>: pair energy of site i with the present vacancies. Boxes do not interact.</p>
 
@@ -210,7 +210,7 @@
   <p>State charge z = 2v &minus; e (elementary charges). Each atomic plane is a spherical
   shell &ell; of radius r<sub>&ell;</sub> with charge q<sub>&ell;</sub>; only the particle is neutral.</p>
   \[q_\ell=\sum_{(d,a)\in\ell}z_{da}x_{da},\qquad\sum_\ell q_\ell=0;;\phi_\ell=\sum_m H_{\ell m}q_m,\qquad H_{\ell m}=\frac{\kappa}{\varepsilon_r\max(r_\ell,r_m)}\,m_pN_{\mathrm A}10^{-6},\qquad\kappa=1.43996\ \mathrm{eV\,nm}\]
-  <p>&epsilon;<sub>r</sub> = 64 (a axis) or 107 (c axis), rutile at 873&nbsp;K (Parker 1961).
+  <p>&epsilon;<sub>r</sub> = 64 (a axis) or 107 (c axis), rutile at 873&nbsp;K<sup>8</sup>.
   m<sub>p</sub>: particle mass (g).</p>
 
   <h3>Equilibrium populations</h3>
@@ -243,9 +243,21 @@
   <h3>Limits</h3>
   <p>Equilibrium at 600&nbsp;&deg;C with complete transport; pretreatment kinetics and
   cooling are not modelled. Samples treated at &ge; 900&nbsp;&deg;C (R1000, R1100) are in the
-  regime where Ti<sub>2</sub>O<sub>3</sub>-(1&times;2) is reported (Yuan 2024). Aggregates of
+  regime where Ti<sub>2</sub>O<sub>3</sub>-(1&times;2) is reported<sup>9</sup>. Aggregates of
   three or more vacancies use additive pair energies. Surface render: unrelaxed bulk
   positions from the rutile CIF; Ti<sup>3+</sup> drawn on the two Ti nearest each vacancy.</p>
+  <h3>References</h3>
+  <ol class="refs">
+    <li>Pabisiak, T. &amp; Kiejna, A. Energetics of oxygen vacancies at rutile TiO<sub>2</sub>(110) surface. <i>Solid State Commun.</i> <b>144</b>, 324&ndash;328 (2007). <a href="https://doi.org/10.1016/j.ssc.2007.08.043">https://doi.org/10.1016/j.ssc.2007.08.043</a></li>
+    <li>Hameeuw, K., Cantele, G., Ninno, D., Trani, F. &amp; Iadonisi, G. Influence of surface and subsurface defects on the behavior of the rutile TiO<sub>2</sub>(110) surface. <i>Phys. Status Solidi A</i> <b>203</b>, 2219&ndash;2222 (2006). <a href="https://doi.org/10.1002/pssa.200566015">https://doi.org/10.1002/pssa.200566015</a></li>
+    <li>Li, H., Guo, Y. &amp; Robertson, J. Calculation of TiO<sub>2</sub> surface and subsurface oxygen vacancy by the screened exchange functional. <i>J. Phys. Chem. C</i> <b>119</b>, 18160&ndash;18166 (2015). <a href="https://doi.org/10.1021/acs.jpcc.5b02430">https://doi.org/10.1021/acs.jpcc.5b02430</a></li>
+    <li>Matsunaga, K. et al. Existence of basal oxygen vacancies on the rutile TiO<sub>2</sub>(110) surface. <i>Phys. Rev. B</i> <b>90</b>, 195303 (2014). <a href="https://doi.org/10.1103/PhysRevB.90.195303">https://doi.org/10.1103/PhysRevB.90.195303</a></li>
+    <li>Reticcioli, M., Setvin, M., Schmid, M., Diebold, U. &amp; Franchini, C. Formation and dynamics of small polarons on the rutile TiO<sub>2</sub>(110) surface. <i>Phys. Rev. B</i> <b>98</b>, 045306 (2018). <a href="https://doi.org/10.1103/PhysRevB.98.045306">https://doi.org/10.1103/PhysRevB.98.045306</a></li>
+    <li>Zhao, L., Magyari-K&ouml;pe, B. &amp; Nishi, Y. Polaronic interactions between oxygen vacancies in rutile TiO<sub>2</sub>. <i>Phys. Rev. B</i> <b>95</b>, 054104 (2017). <a href="https://doi.org/10.1103/PhysRevB.95.054104">https://doi.org/10.1103/PhysRevB.95.054104</a></li>
+    <li>Shibuya, T., Yasuoka, K., Mirbt, S. &amp; Sanyal, B. A systematic study of polarons due to oxygen vacancy formation at the rutile TiO<sub>2</sub>(110) surface by GGA+U and HSE06 methods. <i>J. Phys.: Condens. Matter</i> <b>24</b>, 435504 (2012). <a href="https://doi.org/10.1088/0953-8984/24/43/435504">https://doi.org/10.1088/0953-8984/24/43/435504</a></li>
+    <li>Parker, R. A. Static dielectric constant of rutile (TiO<sub>2</sub>), 1.6&ndash;1060&deg;K. <i>Phys. Rev.</i> <b>124</b>, 1719&ndash;1722 (1961). <a href="https://doi.org/10.1103/PhysRev.124.1719">https://doi.org/10.1103/PhysRev.124.1719</a></li>
+    <li>Yuan, W. et al. Direct in-situ insights into the asymmetric surface reconstruction of rutile TiO<sub>2</sub>(110). <i>Nat. Commun.</i> <b>15</b>, 1616 (2024). <a href="https://doi.org/10.1038/s41467-024-46011-6">https://doi.org/10.1038/s41467-024-46011-6</a></li>
+  </ol>
 </div>
 
 <div class="panel pad page" id="vd-val">
@@ -724,4 +736,5 @@
 <script id="tof-data" type="application/json">/*TOFDATA*/</script>
 <script id="render-data" type="application/json">/*RENDERDATA*/</script>
 <script>/*DISTFIG*/</script>
+<script>/*SLAB*/</script>
 <script>/*DISTUI*/</script>

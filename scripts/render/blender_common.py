@@ -1,5 +1,5 @@
-"""Scene, material, light and camera helpers shared by the two renders of
-the vacancy-distribution workspace. Needs the bpy module (Blender 5)."""
+"""Scene, material, light and camera helpers for the grain render of the
+vacancy-distribution workspace. Needs the bpy module (Blender 5)."""
 import os
 
 import bpy
