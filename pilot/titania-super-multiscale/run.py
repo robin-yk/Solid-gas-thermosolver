@@ -63,10 +63,13 @@ def summary(S, rows):
             rec[f'{tag}_TOF_min_s_1'] = fmt(v[0])
             rec[f'{tag}_TOF_median_s_1'] = fmt(statistics.median(v))
             rec[f'{tag}_TOF_max_s_1'] = fmt(v[-1])
-            q = sorted(float(r['Q_vs_R600']) for r in sel if r['Q_vs_R600'] and not r['Q_ref_below_threshold'])
-            if q:
-                rec[f'{tag}_Q_min'] = fmt(q[0])
-                rec[f'{tag}_Q_max'] = fmt(q[-1])
+            qs = sorted((r for r in sel if r['Q_vs_R600'] and not r['Q_ref_below_threshold']),
+                        key=lambda r: float(r['Q_vs_R600']))
+            if qs:
+                rec[f'{tag}_Q_min'] = qs[0]['Q_vs_R600']
+                rec[f'{tag}_Q_max'] = qs[-1]['Q_vs_R600']
+                rec[f'{tag}_Q_at_min'] = label(qs[0])
+                rec[f'{tag}_Q_at_max'] = label(qs[-1])
             rec[f'{tag}_at_min'] = label(sel[0])
             rec[f'{tag}_at_max'] = label(sel[-1])
             flags = {}
@@ -78,6 +81,9 @@ def summary(S, rows):
         raw = sorted(float(r['TOF_uncapped_s_1']) for r in core if r['TOF_uncapped_s_1'])
         rec['core_uncapped_TOF_min_s_1'] = fmt(raw[0])
         rec['core_uncapped_TOF_max_s_1'] = fmt(raw[-1])
+        qu = sorted(float(r['Q_uncapped_vs_R600']) for r in core if r['Q_uncapped_vs_R600'])
+        if qu:
+            rec['core_uncapped_Q_min'], rec['core_uncapped_Q_max'] = fmt(qu[0]), fmt(qu[-1])
         below = [r for r in mine if r['cls'] == 'BELOW_SITE_THRESHOLD']
         rec['below_threshold_n'] = len(below)
         v = sorted(float(r['TOF_s_1']) for r in below if r['TOF_s_1'] != 'inf')
@@ -162,10 +168,14 @@ def add_q(rows):
     R600 = [r for r in rows if r['sample'] == 'R600' and ok(r) and r['variant'] != 'R600 94.6']
     ref = {key(r): float(r['TOF_s_1']) for r in R600}
     ref_below = {key(r) for r in R600 if r['cls'] == 'BELOW_SITE_THRESHOLD'}
+    # Without the 17 % cap (the core then reflects each map's own coverage).
+    ref_raw = {key(r): float(r['TOF_uncapped_s_1']) for r in R600 if r['TOF_uncapped_s_1']}
     for r in rows:
         k = key(r)
         r['Q_vs_R600'] = fmt(float(r['TOF_s_1']) / ref[k]) if ok(r) and k in ref else ''
         r['Q_ref_below_threshold'] = 'yes' if r['Q_vs_R600'] and k in ref_below else ''
+        r['Q_uncapped_vs_R600'] = (fmt(float(r['TOF_uncapped_s_1']) / ref_raw[k])
+                                   if r['TOF_uncapped_s_1'] and k in ref_raw else '')
 
 
 def main():

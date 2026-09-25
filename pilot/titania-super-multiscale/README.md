@@ -103,9 +103,12 @@ distribution needs a very large rate per site to give the measured rate.
   |---|---:|---:|---:|---:|---:|---:|
   | eV per vacancy | −0.54 | −0.75 | −0.86 | −1.46 | −2.3 | −4.3 |
 
-  - Up to 0.40 nm this stays above the surface site energies (−0.8 to
-    −1.3 eV). Aggregates then share the inventory and the surface keeps
-    vacancies.
+  - The surface bridging energies are −0.81 (PAB), −1.21 (HAM) and −1.31 eV
+    (Li). At 0.28 and 0.34 nm the aggregate value lies above all three; at
+    0.40 nm (−0.86 eV) it lies below PAB. Even so, at 0.40 nm 36 to 40 of the
+    40 cases per sample stay above the site threshold. The split is set by
+    each state's full partition function and capacity, not by the mean
+    energy per vacancy.
   - From 0.45 nm the aggregates take nearly every vacancy, and most cases
     fall below the site threshold. Dividing the measured rate by that small
     count needs a rate per site many decades above the core values.
@@ -252,7 +255,7 @@ Each is an explicit input in `specification/parameter_registry.csv`.
 | Site threshold | 0.01 umol/g and 1% of bridging capacity | reporting rule; cases below are kept and reported apart |
 | Size | 900–1600 nm (user); equal mass at 8 diameters; same inventory per gram | distribution shape not given |
 | Surface pairs | none | no sourced surface energy; v12 forbids reusing bulk values |
-| Facets | (110) share 0.75 or 0.5; the rest has no explicit sites | no energies for other facets |
+| Facets | (110) share 0.75 or 0.5; the rest is bulk-like (energy 0) and has no reactive sites | no energies or reactivity for other facets |
 | Observation time | 1–600 s grid | not recorded |
 | R1100 rate | 0.02433 umol/g/s (v12) | not in manuscript 092426 Fig. 2a or Table S1 |
 

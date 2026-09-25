@@ -280,7 +280,7 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
     f_fix = recon[1] if recon and recon[0] == 'fixed' else 0.0
     return model, Layout(name=name, closure=closure, d_nm=d_nm, R=R, T=T, pairs=pairs,
                          c_bri=c_bri, o=o_list, ti=ti_cap, pair_idx=pair_idx, recon=recon,
-                         aggregates=aggregates, f_fixed=f_fix,
+                         aggregates=aggregates, f_fixed=f_fix, f110=f110,
                          fixed=dict(v=RECON_ROW_VACANCIES * f_fix * c_bri) if f_fix else {}, **lay)
 
 
@@ -299,12 +299,19 @@ def surface_coverage(sol, lay):
     if lay.closure == 'GLOBAL':
         # The potential is continuous at the surface; shell 0 is the outermost.
         return 1.0 / (1.0 + math.exp((G0 + 2 * sol.phi[0] - sol.mu_eV) / kT))
-    lo, hi = 0.0, 0.25
+    # LOCAL: the (110) share f and the rest (energy 0) of the outer shell share
+    # one Ti pool, so y = 4 [f theta_110 + (1 - f) theta_other]; each O kind is
+    # stationary at the same mu and y. Solve for y (h falls with y).
+    f = lay.f110
+    sig = lambda a: 0.5 * (1.0 + math.tanh(0.5 * a))                       # noqa: E731
+    lo, hi = 0.0, 1.0
     for _ in range(200):
-        x = 0.5 * (lo + hi)
-        f = G0 + kT * (math.log(x / (1 - x)) + 2 * math.log(4 * x / (1 - 4 * x))) - sol.mu_eV
-        lo, hi = (lo, x) if f > 0 else (x, hi)
-    return 0.5 * (lo + hi)
+        y = 0.5 * (lo + hi)
+        L = 2 * math.log(y / (1 - y))
+        h = 4 * (f * sig((sol.mu_eV - G0) / kT - L) + (1 - f) * sig(sol.mu_eV / kT - L)) - y
+        lo, hi = (y, hi) if h > 0 else (lo, y)
+    y = 0.5 * (lo + hi)
+    return sig((sol.mu_eV - G0) / kT - 2 * math.log(y / (1 - y)))
 
 
 def surface_state(sol, lay):

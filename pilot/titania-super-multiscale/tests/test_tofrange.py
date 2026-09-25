@@ -409,6 +409,17 @@ def test_size_mixture_is_the_mass_average():
     assert float(mix['N_react_umol_g']) == pytest.approx(np.mean(n), rel=1e-5)
 
 
+@pytest.mark.parametrize('f', [1.0, 0.75, 0.5])
+def test_continuum_boundary_matches_the_outer_shell_for_any_facet_share(f):
+    """LOCAL: the outer-shell (110) occupancy of the solved profile equals the
+    z = 0 boundary value, with the rest of the shell sharing the Ti pool."""
+    m, lay = bd.build('LI_CONT', 'LOCAL', 900.0, f110=f)
+    for N in (13.45, 94.0):
+        s = m.solve(N, T)
+        outer = min((q for q in lay.o if q['eps'] != 0.0), key=lambda q: q['z'])
+        assert bd.surface_coverage(s, lay) == pytest.approx(s.occupancy(outer['idx']), rel=1e-3)
+
+
 def test_facet_share_scales_the_surface_only():
     m1, l1 = bd.build('PAB', 'LOCAL', 900.0)
     mf, lf = bd.build('PAB', 'LOCAL', 900.0, f110=1.0)
