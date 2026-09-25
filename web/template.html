@@ -11,7 +11,8 @@
   <a class="back" href="#home">&larr; Home</a>
   <nav class="switch" aria-label="workspace">
     <button class="wstab" data-ws="ws-thermo" type="button">Gas&ndash;solid equilibrium</button>
-    <button class="wstab" data-ws="ws-population" type="button">Vacancy population model</button>
+    <button class="wstab" data-ws="ws-distribution" type="button">Vacancy distribution</button>
+    <button class="wstab" data-ws="ws-population" type="button">Vacancy kinetics</button>
   </nav>
 </header>
 
@@ -21,8 +22,7 @@
 <section id="home">
   <p class="eyebrow">Vlachos Group</p>
   <h1>Ti&ndash;O solid&ndash;gas thermodynamics</h1>
-  <p class="lede">Gas&ndash;solid equilibrium and the isolated-vacancy population of reduced
-  titanium oxides. Both calculations run in the browser.</p>
+  <p class="lede">Calculate oxide phase stability, vacancy distribution within a particle, and isolated-vacancy loss during pretreatment.</p>
   <div class="cards">
     <button class="card" data-ws="ws-thermo" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -32,7 +32,12 @@
         <rect x="70" y="42" width="6" height="6" fill="#d66b13"/>
       </svg>
       <span class="cname">Gas&ndash;solid equilibrium</span>
-      <span class="cdesc">Calculate the equilibrium phase, gas composition, and reduction margin for a closed gas&ndash;solid contact.</span>
+      <span class="cdesc">Compare the gas-phase RWGS limit with phase stability and oxygen exchange in a finite gas&ndash;solid contact.</span>
+    </button>
+    <button class="card" data-ws="ws-distribution" type="button">
+      <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true"><path d="M10 8 V68 H110" fill="none" stroke="#777"/><path d="M12 12 C20 12 22 60 45 62 L108 62" fill="none" stroke="#0072B2" stroke-width="2"/></svg>
+      <span class="cname">Vacancy distribution</span>
+      <span class="cdesc">Distribute a measured vacancy inventory between the surface and particle interior at equilibrium.</span>
     </button>
     <button class="card" data-ws="ws-population" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -45,9 +50,59 @@
         <circle cx="98" cy="18" r="3.5" fill="#fff" stroke="#0072B2" stroke-width="1.5"/>
         <path d="M18 58 L38 48 L58 42 L78 38 L98 35" stroke="#777777" stroke-width="1.2" fill="none"/>
       </svg>
-      <span class="cname">Vacancy population model</span>
+      <span class="cname">Vacancy kinetics</span>
       <span class="cdesc">Fit the isolated surface-vacancy population that sets the CO formation rate across the reduction series.</span>
     </button>
+  </div>
+</section>
+
+<section id="ws-distribution" class="ws" style="display:none">
+  <div class="wshead"><h2>Vacancy distribution</h2><p class="sub">Calculate the surface enrichment of a measured oxygen-vacancy inventory in a rutile particle.</p></div>
+  <div class="wsgrid">
+    <aside class="vd-inputs">
+      <img class="workspace-scheme" src="SCHEME:vacancy-distribution" alt="A particle section with vacancies enriched near the surface and fewer in the interior. Total vacancy inventory is fixed. Conceptual geometry, not to scale.">
+      <label for="vdSample">Measured inventory</label><select id="vdSample"><option value="">Custom</option><option value="13.45">A600</option><option value="36.85">R500</option><option value="94" selected>R600</option><option value="193.1">R800</option><option value="781.2">R1000</option></select>
+      <label for="vdInventory">Oxygen removed (µmol O g⁻¹)</label><input id="vdInventory" type="number" value="94" min="0" step="any">
+      <label for="vdRadius">Particle radius (nm)</label><input id="vdRadius" type="number" value="450" min="0" step="any">
+      <label for="vdTemperature">Distribution temperature (°C)</label><input id="vdTemperature" type="number" value="600" min="-273.14" step="any">
+      <p class="readout">Sample presets change the measured inventory only. All samples start at the same reference temperature of 600 °C.</p>
+      <details><summary>Surface-energy assumptions</summary>
+        <label for="vdA">Surface stabilization (eV)</label><input id="vdA" type="number" value="1.31" min="0" step="any">
+        <label for="vdXi">Decay length (nm)</label><input id="vdXi" type="number" value="0.5" min="0" step="any">
+        <p class="readout">The 1.31 eV stabilization is the difference between bulk and bridging-surface vacancy energies (5.70 and 4.39 eV). The 0.5 nm decay length is assumed.</p>
+      </details>
+      <p id="vdError" role="alert"></p>
+    </aside>
+    <div>
+      <div id="vdFigure" class="vd-figure"></div>
+      <button id="vdSvg" class="mini" type="button">Download SVG</button>
+      <p id="vdResults" aria-live="polite"></p>
+      <p class="sub">The dashed line distributes the same inventory uniformly. The profile resolves the near-surface region; the interior value is evaluated at the particle centre. Here x is the fraction of oxygen sites vacant; the oxygen deficit in TiO₂₋δ is δ = 2x.</p>
+      <details><summary>Model and inventory check</summary>
+        <p>Supplementary Note 2b fixes the total vacancy inventory and minimizes the free energy of a spherical particle. Local charge compensation gives a Ti³⁺ fraction \(y=4x\); the oxygen deficit in TiO₂₋δ is \(\delta=2x\).</p>
+        <h3>Surface stabilization</h3>
+        <div class="eq">Gₙ(r) = −A exp[−(R − r)/ξ]</div>
+        <p>A is the surface stabilization energy and ξ is its decay length. The vacancy energy approaches its bulk reference with increasing depth R − r.</p>
+        <h3>Free energy per oxygen site</h3>
+        <div class="eq">f(r) = Gₙ(r)x + kBT [h(x) + ½h(4x)]<br>h(u) = u ln u + (1 − u) ln(1 − u)</div>
+        <p>x is the fraction of vacant oxygen sites. The two mixing terms count vacancies and compensating Ti³⁺; there is one titanium site for every two oxygen sites.</p>
+        <h3>Fixed inventory</h3>
+        <div class="eq">x̄ = (3/R³) ∫₀ᴿ x(r) r² dr = nᵥ M / 2 × 10⁻⁶</div>
+        <p>nᵥ is the measured oxygen removal in µmol O g⁻¹ of initial oxide and M = 79.866 g mol⁻¹. This constraint keeps the total number of vacancies fixed while their spatial distribution changes.</p>
+        <h3>Equilibrium profile</h3>
+        <p>For a uniform density of oxygen sites, minimizing the volume-averaged free energy at fixed inventory is equivalent to making the following functional stationary:</p>
+        \[\mathcal{L}=\frac{3}{R^3}\int_0^R[f(r)-\lambda x(r)]r^2\,dr+\lambda\bar{x};;h'(u)=\ln\frac{u}{1-u};;\frac{\partial f}{\partial x}=\lambda\]
+        <div class="eq">Gₙ(r) + kBT [ln(x/(1 − x)) + 2 ln(4x/(1 − 4x))] = λ</div>
+        <p>The calculation adjusts λ to conserve the measured inventory. R is particle radius, r is radial position, T is absolute temperature and kB is Boltzmann’s constant. The mean vacancy fraction is the oxygen removal in µmol O g⁻¹ multiplied by 79.866 × 10⁻⁶ / 2.</p>
+        <p>At each radial position the left-hand side increases monotonically with vacancy fraction. This gives a unique local occupation for each trial chemical potential:</p>
+        \[\frac{\partial^2 f}{\partial x^2}=k_{\mathrm B}T\left[\frac{3}{x}+\frac{1}{1-x}+\frac{8}{1-4x}\right]>0,\quad 0<x<\frac14\]
+        <p>The outer-shell fraction counts vacancies within a depth \(d\), relative to all vacancies in the particle:</p>
+        \[F_d=\frac{\int_{\max(0,R-d)}^R x(r)r^2\,dr}{\int_0^R x(r)r^2\,dr}\]
+        <p>Lengths use nm; energies use eV per oxygen site; \(k_{\mathrm B}=8.617333262\times10^{-5}\,\mathrm{eV\,K^{-1}}\). Temperature is in K. The displayed shell fraction uses \(d=2\,\mathrm{nm}\).</p>
+        <p>Ideal mixing and local charge compensation limit x to 0.25. The model extrapolates dilute-defect energies at dense surface occupations and omits vacancy interactions and reconstruction. The measured inventory is supplied independently of the gas–solid equilibrium and kinetic models.</p>
+        <p id="vdCheck"></p>
+      </details>
+    </div>
   </div>
 </section>
 
@@ -56,12 +111,14 @@
 
 <div class="wshead">
   <h2>Gas&ndash;solid equilibrium</h2>
-  <p class="sub">Calculate the equilibrium phase, gas composition, and reduction margin
-  for a closed gas&ndash;solid contact.</p>
+  <p class="sub">Compare the gas-phase RWGS limit with the phase and composition reached
+  after a finite gas charge contacts a titanium oxide.</p>
 </div>
 
 <div class="wsgrid">
 <aside class="controls">
+  <img class="workspace-scheme" src="SCHEME:gas-solid-equilibrium" alt="A closed gas charge exchanges oxygen with titanium oxide solids while CO2, H2, CO and water equilibrate. Element totals are conserved. Conceptual geometry, not to scale.">
+  <p class="controls-kicker">Finite gas&ndash;solid contact</p>
   <div class="crow">
     <div class="c c-wide"><label for="solid0">Initial Ti oxide</label><select id="solid0"></select></div>
     <div class="c"><label for="mass">Oxide mass</label><input type="number" id="mass" value="100" min="0.001" step="10"><div class="readout">mg</div></div>
@@ -121,6 +178,56 @@
     <table class="kv" id="kpis"></table>
   </div>
 </div>
+
+<section class="thermo-atlas" aria-labelledby="atlasTitle">
+  <div class="atlas-head">
+    <div>
+      <h2 id="atlasTitle">RWGS equilibrium and TiO<sub>2</sub> stability</h2>
+      <p class="sub">The gas-phase calculation gives the equilibrium ceiling. The
+      gas&ndash;solid calculation then shows what changes when that gas contacts the finite
+      oxide charge specified on the left.</p>
+    </div>
+    <button type="button" class="atlas-run" id="atlasRun">Generate atlas</button>
+  </div>
+  <div class="atlas-readout" id="atlasNote">Gas phase and gas&ndash;solid contact are calculated separately.</div>
+  <div class="atlasfiggrid">
+    <figure class="pubfig wide" id="figOperatingMap">
+      <h3>Gas-phase conversion ceiling with the TiO<sub>2</sub> reduction boundary</h3>
+      <div class="figbox" role="img" aria-label="RWGS equilibrium conversion across temperature and hydrogen to carbon dioxide feed ratio, with the titanium dioxide reduction boundary"></div>
+      <details class="figdl"><summary>Download figure</summary>
+        <button type="button" data-fmt="svg">SVG</button>
+        <button type="button" data-fmt="png">PNG, 600 dpi</button>
+        <button type="button" data-fmt="csv">CSV data</button>
+      </details>
+      <figcaption>Colour is the gas-only RWGS equilibrium limit. The orange line is where
+      rutile first gives way to a reduced Ti&ndash;O phase. It is a thermodynamic operating
+      window, not a kinetic reactor prediction.</figcaption>
+    </figure>
+    <figure class="pubfig" id="figRatioTradeoff">
+      <h3>CO<sub>2</sub> conversion and H<sub>2</sub> utilisation</h3>
+      <div class="figbox" role="img" aria-label="Carbon dioxide conversion, hydrogen utilisation, and carbon monoxide yield across feed ratio"></div>
+      <details class="figdl"><summary>Download figure</summary>
+        <button type="button" data-fmt="svg">SVG</button>
+        <button type="button" data-fmt="png">PNG, 600 dpi</button>
+        <button type="button" data-fmt="csv">CSV data</button>
+      </details>
+      <figcaption>More H<sub>2</sub> raises CO<sub>2</sub> conversion but lowers H<sub>2</sub>
+      utilisation. CO yield is reported per mole of total fresh gas.</figcaption>
+    </figure>
+    <figure class="pubfig" id="figSolidCoupling">
+      <h3>Gas&ndash;solid equilibrium CO<sub>2</sub> conversion</h3>
+      <div class="figbox" role="img" aria-label="Gas-only and gas-solid carbon dioxide conversion across feed ratio"></div>
+      <details class="figdl"><summary>Download figure</summary>
+        <button type="button" data-fmt="svg">SVG</button>
+        <button type="button" data-fmt="png">PNG, 600 dpi</button>
+        <button type="button" data-fmt="csv">CSV data</button>
+      </details>
+      <figcaption>The grey curve is gas-only RWGS. The blue curve includes the finite
+      oxide charge. Their separation begins when oxygen exchange with the solid becomes
+      part of the equilibrium answer.</figcaption>
+    </figure>
+  </div>
+</section>
 
 <div class="figgrid">
   <figure class="pubfig" id="figOptimality">
@@ -214,13 +321,25 @@
     a closed, finite-inventory equilibrium between one gas charge and one solid charge, not a
     flow-reactor steady state. Every reported value is <code>gibbs_min</code>.
   </div>
+  <h3>Gas-phase RWGS atlas</h3>
+  <p>The atlas first removes the solid from the question. For a fresh
+  H<sub>2</sub>/CO<sub>2</sub> feed it solves the single equilibrium</p>
+  <div class="eq">CO<sub>2</sub> + H<sub>2</sub> &harr; CO + H<sub>2</sub>O</div>
+  <p>on a one-mole fresh-gas basis. Because the reaction has no net change in
+  gas moles, this ideal-gas conversion ceiling is independent of total pressure.
+  The separate gas&ndash;solid curve then uses the oxide mass, gas charge, pressure,
+  and volume from the input panel. A difference between the two curves means
+  oxygen exchange with the solid has entered the equilibrium result.</p>
+  <h3>Finite gas&ndash;solid contact</h3>
   <p>The solver computes the minimum of the total Gibbs energy</p>
   <div class="eq">G = &Sigma;<sub>gas</sub> n<sub>i</sub> [&mu;&deg;<sub>i</sub>(T) + RT ln(y<sub>i</sub>P/P&deg;)] + &Sigma;<sub>solid</sub> m<sub>j</sub> &mu;&deg;<sub>j</sub>(T)</div>
-  <p>subject to the elemental balance <code>A&middot;n = b</code> and <code>n &ge; 0</code>.
+  <p>subject to the elemental balance \(\mathbf{A}\mathbf{z}=\mathbf{b}\) and \(\mathbf{z}\ge0\), where \(\mathbf{z}\) collects all gas and solid amounts.
   Gases form an ideal mixture; each condensed phase is a pure line compound at unit
   activity. The inputs defining <code>b</code> are the initial gas composition, the gas
-  charge n<sub>g,0</sub> = PV/RT<sub>charge</sub>, and the initial solid phase and mass.
+  charge \(n_{\mathrm{g},0}=PV/(RT_{\mathrm{charge}})\), and the initial solid phase and mass.
   The equilibrium phase split is an output.</p>
+  \[\min_{\mathbf{z}\ge0}G(\mathbf{z};T,P),\quad\mathbf{A}\mathbf{z}=\mathbf{b};;y_i=\frac{n_i}{\sum_{k\in\mathrm{gas}}n_k};;b_e=\sum_{i\in\mathrm{gas}}a_{ie}n_i+\sum_{j\in\mathrm{solid}}a_{je}m_j\]
+  <p>Amounts are in mol; standard chemical potentials are per mole of the species or solid formula unit. \(a_{ie}\) is the number of atoms of element \(e\) in species \(i\). The gas constant and chemical potentials must use the same energy unit, and \(P/P^\circ\) is dimensionless.</p>
   <p><b>Active set.</b> Condensed phases are enumerated as candidates: every single phase
   and every phase pair (the phase rule allows two line compounds in an M&ndash;O system at
   fixed T and P; N<sub>2</sub> adds no solid component). For each candidate the equilibrium
@@ -240,6 +359,14 @@
   Candidates are not ranked by total Gibbs energy, whose differences can fall below
   double-precision resolution. Reduced costs at zero within tolerance are reported as
   phase coexistence.</p>
+  <h3>Phase stability and iteration</h3>
+  <p>Element potentials enforce atom conservation. Differentiating the constrained Gibbs energy gives the gas equilibrium conditions above and the solid-phase reduced costs:</p>
+  \[\mathcal{L}=G-\boldsymbol{\lambda}^{\mathsf T}(\mathbf{A}\mathbf{z}-\mathbf{b});;r_j=\mu_j^\circ-t_j\lambda_{\mathrm{Ti}}-o_j\lambda_{\mathrm O};;m_j\ge0,\quad r_j\ge0,\quad m_jr_j=0\]
+  <p>A phase present at equilibrium has zero reduced cost. A positive reduced cost means that adding an infinitesimal amount of that phase raises the constrained Gibbs energy. For reduced titanium oxides, the plotted oxygen-normalized value is</p>
+  \[\Delta_j=2t_j-o_j,\qquad r_{j,\mathrm O}=\frac{r_j}{\Delta_j}\quad(\Delta_j>0)\]
+  <p>Each candidate phase set is solved iteratively. With the balance and equilibrium equations collected in \(\mathbf{F}\), the Newton correction satisfies</p>
+  \[\mathbf{J}(\mathbf{u}_k)\Delta\mathbf{u}_k=-\mathbf{F}(\mathbf{u}_k);;\mathbf{u}_{k+1}=\mathbf{u}_k+\alpha_k\Delta\mathbf{u}_k,\quad0<\alpha_k\le1\]
+  <p>Here \(\mathbf{J}\) is the Jacobian, \(\mathbf{u}\) contains the solver coordinates, and \(\alpha_k\) controls the step length. The iteration stops when the equilibrium equations and atom balances meet the numerical tolerance; the remaining phases are then checked for stability.</p>
   <p><b>Oxygen-free feeds.</b> Under pure H<sub>2</sub> or N<sub>2</sub> the single-phase
   candidate leaves the gas with zero oxygen inventory, and the derivative of G toward
   forming a trace of O-bearing gas together with a reduced phase diverges. The solver
@@ -248,9 +375,9 @@
   level is sufficient to suppress reduction, with a positive margin.</p>
   <div class="note calm">The oxygen-potential margin used by earlier versions of this site
   equals the reduced cost per mole of oxygen (the dual of the same minimisation); it is
-  reported on the Active set &amp; KKT tab. Independent verification is provided by an
+  reported in the phase-stability checks below. Independent verification is provided by an
   80-digit reference implementation and by the NIST&ndash;Waldner data comparison
-  (Validation tab).</div>
+  in the validation section below.</div>
 </div>
 <div class="panel pad page" id="p-val">
   <h2>Validation</h2>
@@ -260,7 +387,8 @@
   <p class="sub">This engine against an independent 80-digit reference implementation
   (<code>oracle_tio.py</code>, element-potential root solve, no shared solver code).
   Reference values are embedded below; the same conditions can be re-run in the
-  browser.</p>
+  browser. The gas-only RWGS calculation is checked separately against
+  <code>oracle_rwgs.py</code>.</p>
   <p><button type="button" class="mini" id="valRun">Run all reference points in this browser</button></p>
   <div id="valBody"></div>
 </div>
@@ -272,36 +400,52 @@
 <div id="ws-population" class="ws" style="display:none">
 
 <div class="wshead">
-  <h2>Vacancy population model</h2>
+  <h2>Vacancy kinetics</h2>
   <p class="sub">Fit the isolated surface-vacancy population that sets the CO formation
   rate across the reduction series.</p>
 </div>
 
 <div class="wsgrid">
-<aside class="controls">
-  <div class="crow">
-    <div class="c"><label for="pnNs">Active-region capacity n<sub>s</sub></label>
+<aside class="population-sheet" aria-labelledby="population-controls-title">
+  <img class="workspace-scheme" src="SCHEME:vacancy-kinetics" alt="Vacancy supply feeds isolated accessible sites and the region below. Isolated vacancies associate near the surface. Blue, orange and gray distinguish the three populations. Counts and geometry are illustrative.">
+  <header class="population-sheet-head">
+    <h3 id="population-controls-title">Vacancy-loss model</h3>
+    <p>Fit three physical parameters to the measured CO formation rates.</p>
+  </header>
+  <div class="population-parameters">
+    <div class="population-field">
+      <label for="pnNs">Active-region capacity <i>n</i><sub>s</sub></label>
       <input type="number" id="pnNs" value="15.334" min="1" step="0.1">
-      <div class="readout">µmol-O g⁻¹ · bounded 13.6&ndash;67.8</div></div>
-    <div class="c"><label for="pnE">E<sub>loss</sub></label>
+      <div class="readout">µmol-O g⁻¹ · geometric range 13.6&ndash;67.8</div>
+    </div>
+    <div class="population-field">
+      <label for="pnE">Loss energy <i>E</i><sub>loss</sub></label>
       <input type="number" id="pnE" value="2.1845" min="0" step="0.05">
-      <div class="readout">eV · effective, not elementary</div></div>
-    <div class="c"><label for="pnNu">log<sub>10</sub> ν<sub>eff</sub></label>
+      <div class="readout">eV · effective model parameter</div>
+    </div>
+    <div class="population-field">
+      <label for="pnNu">Rate prefactor log<sub>10</sub> ν<sub>eff</sub></label>
       <input type="number" id="pnNu" value="6.7433" step="0.1">
-      <div class="readout">s⁻¹ · 6.7433 is 5.54×10⁶, 13 is an attempt frequency</div></div>
-    <div class="c c-wide"><label for="pnKind">Residual</label>
-      <select id="pnKind">
-        <option value="log" selected>log ratio — ln(fitted / measured)</option>
-        <option value="relative">relative — (fitted − measured) / measured</option>
-        <option value="raw">raw — fitted − measured</option>
-      </select>
-      <div class="readout">the rates span 86-fold, so this choice moves the fit</div></div>
-    <div class="c c-wide">
-      <div class="minirow">
-        <button type="button" class="mini" id="pnFit">Fit all three</button>
-        <button type="button" class="mini" id="pnReset">Reported values</button>
-      </div>
-      <div class="readout" id="pnStatus"></div></div>
+      <div class="readout" id="pnNuReadout">ν<sub>eff</sub> = 5.54×10⁶ s⁻¹</div>
+    </div>
+  </div>
+  <div class="population-weighting">
+    <div>
+      <label for="pnKind">Fit weighting</label>
+      <p id="pnKindHelp">Log ratio gives equal weight to relative error across the 86-fold rate range.</p>
+    </div>
+    <select id="pnKind" aria-describedby="pnKindHelp">
+      <option value="log" selected>Equal relative weight (log ratio)</option>
+      <option value="relative">Relative error</option>
+      <option value="raw">Absolute rate error</option>
+    </select>
+  </div>
+  <div class="population-sheet-foot">
+    <div class="population-status" id="pnStatus" aria-live="polite"></div>
+    <div class="population-actions">
+      <button type="button" class="population-reset" id="pnReset">Use reported values</button>
+      <button type="button" class="population-fit" id="pnFit">Fit parameters</button>
+    </div>
   </div>
 </aside>
 <div class="wsmain">
@@ -360,19 +504,24 @@
   <p>The titration gives the total oxygen removed per sample. The model splits it
   into three populations,</p>
   <div class="eq">n<sub>V,tot</sub> = n<sub>iso</sub> + n<sub>assoc</sub> + n<sub>below</sub></div>
-  <p>Removal is generated uniformly over the reduction time, g = n<sub>V,tot</sub> / t<sub>red</sub>.
+  <p>Removal is generated uniformly over the reduction time, \(g=n_{\mathrm{V,tot}}/t_{\mathrm{red}}\).
   A new vacancy joins the surface active region of capacity n<sub>s</sub> with probability
-  f<sub>free</sub> = 1 &minus; (n<sub>iso</sub> + n<sub>assoc</sub>) / n<sub>s</sub> and otherwise
+  \(f_{\mathrm{free}}=1-(n_{\mathrm{iso}}+n_{\mathrm{assoc}})/n_s\) and otherwise
   goes below it. Two isolated vacancies associate at second order.</p>
-  <p><b>Reduction to one equation.</b> With q = n<sub>iso</sub> + n<sub>assoc</sub> the loss
+  \[g=\frac{n_{\mathrm{V,tot}}}{t_{\mathrm{red}}},\qquad q=n_{\mathrm{iso}}+n_{\mathrm{assoc}};;f_{\mathrm{free}}=1-\frac{q}{n_s}\]
+  <h3>Population balances</h3>
+  \[\frac{dn_{\mathrm{iso}}}{dt}=gf_{\mathrm{free}}-\frac{2k_{\mathrm{loss}}}{n_s}n_{\mathrm{iso}}^2;;\frac{dn_{\mathrm{assoc}}}{dt}=\frac{2k_{\mathrm{loss}}}{n_s}n_{\mathrm{iso}}^2;;\frac{dn_{\mathrm{below}}}{dt}=g(1-f_{\mathrm{free}})\]
+  <p>All three populations start at zero. Associated vacancies are counted as vacancies, rather than as pairs, so association transfers equal amounts between the first two populations. Summing the balances gives</p>
+  \[\frac{d}{dt}(n_{\mathrm{iso}}+n_{\mathrm{assoc}}+n_{\mathrm{below}})=g;;n_{\mathrm{iso}}(t)+n_{\mathrm{assoc}}(t)+n_{\mathrm{below}}(t)=gt\]
+  <p><b>Reduction to one equation.</b> With \(q=n_{\mathrm{iso}}+n_{\mathrm{assoc}}\) the loss
   term cancels from the sum:</p>
   <div class="eq">dq/dt = g (1 &minus; q/n<sub>s</sub>)&nbsp;&nbsp;&rArr;&nbsp;&nbsp;q(t) = n<sub>s</sub> [1 &minus; exp(&minus;g t / n<sub>s</sub>)],&nbsp;&nbsp;n<sub>below</sub>(t) = g t &minus; q(t)</div>
-  <p>so f<sub>free</sub> = exp(&minus;g t / n<sub>s</sub>) in closed form and a single scalar equation remains:</p>
+  <p>Thus \(f_{\mathrm{free}}=\exp(-gt/n_s)\), and a single scalar equation remains:</p>
   <div class="eq">dn<sub>iso</sub>/dt = g exp(&minus;g t / n<sub>s</sub>) &minus; (2 k<sub>loss</sub> / n<sub>s</sub>) n<sub>iso</sub>&sup2;,&nbsp;&nbsp;n<sub>iso</sub>(0) = 0<br>
   k<sub>loss</sub> = &nu;<sub>eff</sub> exp(&minus;E<sub>loss</sub> / k<sub>B</sub> T)<br>
   n<sub>assoc</sub> = q &minus; n<sub>iso</sub></div>
-  <p>The mass balance n<sub>iso</sub> + n<sub>assoc</sub> + n<sub>below</sub> = n<sub>V,tot</sub> is
-  then an identity. The scalar equation goes to an implicit integrator (Radau in the
+  <p>At \(t=t_{\mathrm{red}}\), the sum of the three populations equals the measured total inventory. Populations and capacity use µmol O g⁻¹, time uses s, \(g\) uses µmol O g⁻¹ s⁻¹, and \(k_{\mathrm{loss}}\) and \(\nu_{\mathrm{eff}}\) use s⁻¹. \(E_{\mathrm{loss}}\) and \(k_{\mathrm B}T\) use eV.
+  The scalar equation goes to an implicit integrator (Radau in the
   package, Strang splitting in the browser), which stays stable wherever a parameter
   search tries a small E<sub>loss</sub> with a large &nu;<sub>eff</sub>.</p>
   <p><b>Rate.</b> The initial CO formation rate is taken proportional to n<sub>iso</sub> with
@@ -414,10 +563,7 @@
 </main>
 
 <footer>
-  <p>The equilibrium solves in the browser from the same coefficient tables the Python
-    package uses, and a parity gate holds the two to the last place; the population model
-    integrates one rate equation the same way. Regenerate the committed manuscript values with <code>python3 scripts/reproduce_paper.py</code>.
-    <a href="https://github.com/robin-yk/Solid-gas-thermosolver">Source</a>.</p>
+  <a href="https://github.com/robin-yk/Solid-gas-thermosolver">Source Code</a>
 </footer>
 
 <script id="activeset-data" type="application/json">/*ASDATA*/</script>
@@ -431,3 +577,5 @@
 <script>/*PAGE*/</script>
 <script>/*THERMOUI*/</script>
 <script>/*UI*/</script>
+<script>/*DISTENGINE*/</script>
+<script>/*DISTUI*/</script>

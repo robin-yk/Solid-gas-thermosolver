@@ -14,6 +14,9 @@ site_data.json so the figures and the paper cannot drift.
 
 import json
 import os
+import base64
+import xml.etree.ElementTree as ET
+from site_math import typeset
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(ROOT, 'web')
@@ -31,6 +34,8 @@ CASES_FEEDS = {
 }
 
 PARTS = [
+    ('/*DISTENGINE*/', os.path.join(WEB, 'distribution.js')),
+    ('/*DISTUI*/', os.path.join(WEB, 'distribution_ui.js')),
     ('/*CSS*/', os.path.join(WEB, 'site.css')),
     ('/*FIGKIT*/', os.path.join(WEB, 'figkit.js')),
     ('/*ENGINE*/', os.path.join(WEB, 'activeset.js')),
@@ -73,7 +78,22 @@ def slim_reference():
 def build():
     if not os.path.exists(SITE):
         raise SystemExit('run scripts/reproduce_paper.py first')
-    html = read(os.path.join(WEB, 'template.html'))
+    html = typeset(read(os.path.join(WEB, 'template.html')))
+    for name in ('gas-solid-equilibrium', 'vacancy-distribution', 'vacancy-kinetics'):
+        svg = read(os.path.join(WEB, 'schemes', name + '.svg'))
+        root = ET.fromstring(svg)
+        ns = {'s': 'http://www.w3.org/2000/svg'}
+        # Workspace headings already identify the model. Remove the plate label,
+        # repeated title and subtitle, retaining the physical drawing and labels.
+        for parent in root.iter():
+            for child in list(parent):
+                if child.get('id') in ('text_1', 'text_2', 'text_3'):
+                    parent.remove(child)
+        root.set('viewBox', '0 55 360 225')
+        root.set('height', '225pt')
+        svg = ET.tostring(root, encoding='unicode')
+        html = html.replace('SCHEME:' + name,
+                            'data:image/svg+xml;base64,' + base64.b64encode(svg.encode()).decode())
     html = html.replace('/*ASDATA*/',
                         read(os.path.join(DATA, 'activeset_data.json')).strip())
     html = html.replace('/*REFDATA*/',

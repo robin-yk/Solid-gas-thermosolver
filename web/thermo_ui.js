@@ -1,4 +1,4 @@
-/* The four figures on the equilibrium workspace.
+/* The seven figures on the thermodynamic-equilibrium workspace.
 
    None of them solves anything of its own. The bar and the reduction
    line come off the result already on screen; the two curves ask
@@ -7,11 +7,10 @@
    so a figure here cannot report a condition the workspace was never
    set to.
 
-   Two cost nothing and draw on every run: the bar, and the reduction
-   line, whose curve is closed form. Two need the temperature sweep and
-   sit behind its button, because that is 121 solves, about half a
-   second. Once the sweep has been run they follow every later solve on
-   their own. */
+   Two cost nothing and draw on every run: the bar and the reduction line.
+   Two share the optional 121-point temperature sweep. The operating atlas
+   adds a browser-computed gas-only map, a feed-ratio trade-off, and a
+   49-point finite gas-solid comparison. */
 
 (function () {
   'use strict';
@@ -24,12 +23,15 @@
   var btn = $('sweepBtn'), note = $('sweepNote');
   if (!$('figOptimality') || !$('figMargin') || !btn) return;
   var hasNew = $('figBoundary') && $('figConversion');
+  var atlasBtn = $('atlasRun'), atlasNote = $('atlasNote');
+  var hasAtlas = atlasBtn && $('figOperatingMap') && $('figRatioTradeoff')
+    && $('figSolidCoupling');
 
   var figState = {};
-  function mountFigure(hostId, name, svg) {
+  function mountFigure(hostId, name, svg, csv) {
     var host = $(hostId);
     if (!host) return;
-    figState[hostId] = { svg: svg, name: name };
+    figState[hostId] = { svg: svg, name: name, csv: csv || null };
     host.querySelector('.figbox').innerHTML = svg;
     var dl = host.querySelector('.figdl');
     if (dl && !dl.dataset.wired) {
@@ -41,11 +43,14 @@
         if (!st) return;
         if (fmt === 'svg') {
           KIT.downloadSVG(st.svg, st.name);
-        } else {
+        } else if (fmt === 'png') {
           ev.target.disabled = true;
           KIT.downloadPNG(st.svg, st.name).catch(function (e) {
             window.alert('PNG export failed: ' + e.message);
           }).then(function () { ev.target.disabled = false; });
+        } else if (fmt === 'csv' && st.csv) {
+          KIT.saveBlob(new Blob([st.csv], { type: 'text/csv;charset=utf-8' }),
+                       st.name + '.csv');
         }
         dl.open = false;
       });
@@ -189,6 +194,158 @@
     }, 0);
   }
 
+  /* ------------------------------------------------ operating atlas */
+
+  var atlasBuilt = false;
+  function csvOf(rows, columns) {
+    var quote = function (v) {
+      var s = v == null ? '' : String(v);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    var keys = columns.map(function (c) {
+      return typeof c === 'string' ? c : c[0];
+    });
+    var labels = columns.map(function (c) {
+      return typeof c === 'string' ? c : c[1];
+    });
+    return labels.join(',') + '\n' + rows.map(function (q) {
+      return keys.map(function (k) { return quote(q[k]); }).join(',');
+    }).join('\n') + '\n';
+  }
+
+  function logPoint(lo, hi, i, n, centred) {
+    var f = centred ? (i + 0.5) / n : i / (n - 1);
+    return Math.exp(Math.log(lo) + (Math.log(hi) - Math.log(lo)) * f);
+  }
+
+  function currentRatio(T_C) {
+    var pt = TB.feedPoint(T_C);
+    if (!pt || !(pt.y_CO2 > 0) || !(pt.y_CO2 < 1)) {
+      return { ratio: 1, literal: true, fallback: true };
+    }
+    return { ratio: (1 - pt.y_CO2) / pt.y_CO2,
+             literal: pt.literal, fallback: false };
+  }
+
+  function drawAtlas() {
+    var t0 = (window.performance || Date).now();
+    var T_LO = 400, T_HI = 1500, R_LO = 0.1, R_HI = 1e7;
+    var NT = 44, NR = 36, i, j, T_C, ratio, one;
+    var cells = [], boundary = [];
+    for (i = 0; i < NT; i++) {
+      T_C = T_LO + (T_HI - T_LO) * (i + 0.5) / NT;
+      var cellBoundary = TB.boundaryAt(T_C);
+      var cellBoundaryRatio = cellBoundary && cellBoundary.y_CO2 > 0
+        && cellBoundary.y_CO2 < 1
+        ? (1 - cellBoundary.y_CO2) / cellBoundary.y_CO2 : null;
+      for (j = 0; j < NR; j++) {
+        ratio = logPoint(R_LO, R_HI, j, NR, true);
+        one = TB.gasOnlyAt(T_C, ratio);
+        cells.push({ T_C: T_C, ratio: ratio,
+                     conv_pct: one.CO2_conversion_pct,
+                     reduction_boundary_ratio: cellBoundaryRatio,
+                     TiO2_state: cellBoundaryRatio !== null
+                       && ratio > cellBoundaryRatio
+                       ? 'reduction favoured' : 'rutile stable' });
+      }
+    }
+    for (i = 0; i < 181; i++) {
+      T_C = T_LO + (T_HI - T_LO) * i / 180;
+      var b = TB.boundaryAt(T_C);
+      if (b && b.y_CO2 > 0 && b.y_CO2 < 1) {
+        boundary.push({ T_C: T_C, ratio: (1 - b.y_CO2) / b.y_CO2,
+                        phase: b.phase });
+      }
+    }
+    var hereT = TB.T_C(), picked = currentRatio(hereT);
+    var exact = TB.gasOnlyAt(hereT, picked.ratio);
+    var map = {
+      T_lo: T_LO, T_hi: T_HI, ratio_lo: R_LO, ratio_hi: R_HI,
+      nT: NT, nR: NR, cells: cells, boundary: boundary, host: TB.host(),
+      current: { T_C: hereT, ratio: picked.ratio,
+                 conv_pct: exact.CO2_conversion_pct,
+                 literal: picked.literal }
+    };
+    mountFigure('figOperatingMap', 'rwgs-operating-window',
+                FIG.operatingMap({ operatingMap: map }),
+                csvOf(cells, [
+                  ['T_C', 'temperature_C'],
+                  ['ratio', 'H2_CO2_ratio'],
+                  ['conv_pct', 'gas_only_CO2_conversion_pct'],
+                  ['reduction_boundary_ratio',
+                   'TiO2_reduction_boundary_H2_CO2_ratio'],
+                  'TiO2_state'
+                ]));
+
+    var trade = [], NTRADE = 121;
+    for (i = 0; i < NTRADE; i++) {
+      ratio = logPoint(0.1, 10, i, NTRADE, false);
+      one = TB.gasOnlyAt(hereT, ratio);
+      trade.push({ ratio: ratio, co2: one.CO2_conversion_pct,
+                   h2: one.H2_utilization_pct,
+                   co: one.CO_yield_per_mol_feed_pct });
+    }
+    var tradeCurrent = picked.ratio >= 0.1 && picked.ratio <= 10
+      ? { ratio: picked.ratio, co2: exact.CO2_conversion_pct } : null;
+    mountFigure('figRatioTradeoff', 'rwgs-feed-ratio-tradeoff',
+      FIG.ratioTradeoff({ ratioTradeoff: {
+        T_C: hereT, ratio_lo: 0.1, ratio_hi: 10,
+        rows: trade, current: tradeCurrent
+      } }), csvOf(trade, [
+        ['ratio', 'H2_CO2_ratio'], ['co2', 'CO2_conversion_pct'],
+        ['h2', 'H2_utilization_pct'],
+        ['co', 'CO_per_total_fresh_gas_pct']
+      ]));
+
+    var coupled = [], NCOUPLE = 49;
+    for (i = 0; i < NCOUPLE; i++) {
+      ratio = logPoint(R_LO, R_HI, i, NCOUPLE, false);
+      var gas = TB.gasOnlyAt(hereT, ratio);
+      var both = TB.solveFeedAt(hereT, { CO2: 1, H2: ratio });
+      coupled.push({ ratio: ratio, gas_only: gas.CO2_conversion_pct,
+                     gas_solid: both.conversion_CO2_pct,
+                     reduced_pct: both.reduced_pct,
+                     phases: both.active_condensed_phases.join('+') });
+    }
+    var at = TB.boundaryAt(hereT);
+    var br = at && at.y_CO2 > 0 && at.y_CO2 < 1
+      ? (1 - at.y_CO2) / at.y_CO2 : R_HI;
+    mountFigure('figSolidCoupling', 'rwgs-gas-solid-coupling',
+      FIG.solidCoupling({ solidCoupling: {
+        T_C: hereT, ratio_lo: R_LO, ratio_hi: R_HI, rows: coupled,
+        boundary_ratio: br, host: TB.host()
+      } }), csvOf(coupled, [
+        ['ratio', 'H2_CO2_ratio'],
+        ['gas_only', 'gas_only_CO2_conversion_pct'],
+        ['gas_solid', 'gas_solid_CO2_conversion_pct'],
+        ['reduced_pct', 'Ti3_fraction_pct'], 'phases'
+      ]));
+
+    var dt = (window.performance || Date).now() - t0;
+    atlasBuilt = true;
+    atlasNote.textContent = (NT * NR).toLocaleString()
+      + ' gas-phase states + ' + NCOUPLE + ' gas–solid equilibria · '
+      + dt.toFixed(0) + ' ms · temperature ' + Math.round(hereT) + ' °C'
+      + (picked.fallback ? ' · 1:1 feed used because this gas has no RWGS ratio' : '');
+  }
+
+  function buildAtlas() {
+    if (!hasAtlas) return;
+    atlasBtn.disabled = true;
+    atlasBtn.textContent = 'calculating…';
+    window.setTimeout(function () {
+      try { drawAtlas(); }
+      catch (e) {
+        figFail('figOperatingMap', 'figure failed: ' + e.message);
+        atlasNote.textContent = 'Atlas calculation failed: ' + e.message;
+      }
+      atlasBtn.disabled = false;
+      atlasBtn.textContent = 'Recalculate atlas';
+    }, 0);
+  }
+
+  if (hasAtlas) atlasBtn.addEventListener('click', buildAtlas);
+
   btn.addEventListener('click', sweep);
   TB.onSolve(function (R) {
     drawOptimality(R);
@@ -197,10 +354,15 @@
       catch (e) { figFail('figBoundary', 'figure failed: ' + e.message); }
     }
     if (swept) { try { drawSwept(); } catch (e) { swept = false; } }
+    if (hasAtlas && atlasBuilt) {
+      atlasNote.textContent = 'Conditions changed · recalculate the atlas to update the gas–solid comparison.';
+      atlasBtn.textContent = 'Recalculate atlas';
+    }
   });
   drawOptimality(TB.last());
   if (hasNew) {
     try { drawBoundary(); }
     catch (e) { figFail('figBoundary', 'figure failed: ' + e.message); }
   }
+  if (hasAtlas) window.setTimeout(buildAtlas, 80);
 }());

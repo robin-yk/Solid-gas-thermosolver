@@ -1,11 +1,13 @@
-# Solid–gas thermosolver
+# TitaniaModels
+
+Gas–solid equilibrium and oxygen-vacancy models for reduced titania.
 
 Two calculations used in the accompanying manuscript: gas–solid equilibrium for
 the C–H–O–N / Ti–O system, and the isolated surface-vacancy population that sets
 the CO formation rate across the reduction series.
 
 The interactive version is at
-[robin-yk.github.io/Solid-gas-thermosolver](https://robin-yk.github.io/Solid-gas-thermosolver/).
+[robin-yk.github.io/TitaniaModels](https://robin-yk.github.io/TitaniaModels/).
 
 ## What it computes
 
@@ -21,6 +23,13 @@ closed form.
 
 Gas data are NIST-JANAF; the titanium oxides through Ti2O3 are the Waldner and
 Eriksson CALPHAD assessment.
+
+The equilibrium workspace also carries a thermodynamic operating atlas.  It
+first solves fresh-feed RWGS without a solid to show the gas-phase conversion
+ceiling across temperature and H2:CO2 ratio.  It then overlays the TiO2
+reduction boundary and repeats a ratio sweep with the finite oxide charge.  The
+two calculations are kept separate so gas reaction equilibrium is not confused
+with oxygen supplied by the solid.
 
 ### Vacancy population model
 
@@ -50,25 +59,28 @@ byte.
 Three implementations must agree before a number is quoted: the Python package,
 an mpmath oracle at 80 significant digits in `scripts/oracle_tio.py` that shares
 only the raw coefficient tables and never imports the solver, and the browser
-mirror. The page solves rather than displaying a precomputed grid, because a
-grid cannot answer a composition or a parameter set the user actually has — and every
-browser engine is paired with a parity gate that holds it to its Python
-original: `web/activeset.js` to 4 ulp (the difference between glibc's `exp` and
+mirror. The page calculates results for the entered composition and parameters.
+Parity tests compare each browser engine with its Python implementation:
+`web/activeset.js` to 4 ulp (the difference between glibc's `exp` and
 V8's), `web/population.js` to a relative 1e-6, the difference between two
 integrators of the same equation.
 
-The values the manuscript quotes are not recomputed in the page. They ride along
-as committed JSON, so what a reader types and what the paper says cannot drift.
+The fresh-feed gas-only RWGS relation has its own smaller 80-digit oracle in
+`scripts/oracle_rwgs.py`.  Its temperature-ratio map is evaluated in the browser
+from the coefficient tables.
 
-`scripts/check_page.py` loads the built page in a real browser and holds every
-number it displays against a fresh calculation.
+The page loads manuscript reference values from committed JSON and keeps them
+separate from calculations using user inputs.
+
+`scripts/check_page.py` loads the built page in a browser and compares its
+displayed numbers with fresh calculations.
 
 ## Layout
 
 ```
 solidgas/       activeset · vacancy_population · species · shomate · waldner
 analysis/       dielectric_correlation — an empirical regression, not thermodynamics
-scripts/        reproduce_paper · build_site · oracle_tio · check_page
+scripts/        reproduce_paper · build_site · oracle_tio · oracle_rwgs · check_page
 data/           thermodynamic tables, the reduction series, the 80-digit reference
 paper_outputs/  every computed number in the manuscript, as committed CSV
 web/            the browser mirrors, a drawing kit, figure modules, one page

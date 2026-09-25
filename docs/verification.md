@@ -14,6 +14,14 @@ The committed reference is `data/reference_results_high_precision.json`. It cove
 
 Trace solid amounts down to about 1e-41 mol are compared in logarithmic form.
 
+## Gas-only RWGS oracle
+
+`scripts/oracle_rwgs.py` independently evaluates the NIST Shomate polynomials
+with 80-digit arithmetic and solves the fresh-feed RWGS reaction extent by
+bisection. The committed `data/reference_rwgs_gas_only.json` covers seven
+temperatures and eight H2:CO2 ratios. Both `solidgas.activeset.rwgs_gas_only`
+and `web/activeset.js` must reproduce every value.
+
 ## The population model
 
 The browser mirror `web/population.js` integrates the same scalar equation as
@@ -43,6 +51,7 @@ Generated reference files should be updated only by their commands:
 
 ```bash
 python3 scripts/oracle_tio.py
+python3 scripts/oracle_rwgs.py
 python3 scripts/reproduce_paper.py
 python3 scripts/build_site.py
 ```
