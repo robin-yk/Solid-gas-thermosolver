@@ -1,9 +1,6 @@
-/* The figure the one-model calculation exists to produce: the apparent CO
-   turnover frequency of each sample, as the range it spans over every
-   parameter point with a countable site denominator, against the single
-   value the supplement's fixed denominator gives. The scenario chosen on
-   the page is one filled marker per sample, so the reader sees where one
-   set of assumptions falls inside the range. */
+/* Apparent CO TOF by sample: range over the parameter points with
+   N_react above threshold, median, TOF at N_react = 2.31 umol/g
+   (SI Note 2a), and the selected parameters. */
 
 (function (root, factory) {
   'use strict';
@@ -50,18 +47,18 @@
         K.marker(f, 'circle', x, inside(q.cur), K.MARK, C.surface, !q.curBelow);
       }
       if (q.nBelow) {
-        f.text(X(i), p.y1 - 8, q.nBelow + ' below threshold',
+        f.text(X(i), p.y1 - 8, String(q.nBelow),
                { size: T.note, anchor: 'middle', fill: C.extended });
       }
     });
     K.axisX(f, X, p.y1, D.points.map(function (_, i) { return i; }),
-            'reduction treatment', function (i) { return D.points[i].sample; });
+            'sample', function (i) { return D.points[i].sample; });
     K.axisY(f, Y, p.x0, K.decades(Y.d0, Y.d1),
-            'apparent TOF (s⁻¹)', K.powLabel);
+            'TOF (s⁻¹)', K.powLabel);
     K.legend(f, p.x1 - 250, p.y0 + 17, [
-      { col: C.ink, text: 'range over ' + D.nPoints + ' parameter points' },
-      { col: C.surface, marker: 'circle', filled: true, text: 'scenario chosen on the page' },
-      { col: C.extended, marker: 'square', text: 'fixed ' + D.fixed + ' µmol g⁻¹ (SI 2a)' }
+      { col: C.ink, text: 'range, ' + D.nPoints + ' parameter points' },
+      { col: C.surface, marker: 'circle', filled: true, text: 'selected parameters' },
+      { col: C.extended, marker: 'square', text: 'N = ' + D.fixed + ' µmol g⁻¹ (SI Note 2a)' }
     ]);
     return f.done();
   }

@@ -27,7 +27,7 @@ ax.set_ylim(288, 0)
 ax.axis('off')
 ax.text(20.4, 33.8, 'b', fontsize=15, fontweight='bold', color=INK)
 ax.text(180, 33.8, 'Vacancy distribution', fontsize=15, ha='center', color=INK)
-ax.text(180, 67.0, 'One inventory, every pool', fontsize=12, ha='center', color=INK)
+ax.text(180, 67.0, 'O-vacancy sites in a rutile particle', fontsize=12, ha='center', color=INK)
 
 # particle: bulk interior, a (110) band drawn thick, bulk-like arcs left bare
 cx, cy, R = 118, 176, 64

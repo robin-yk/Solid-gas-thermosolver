@@ -731,7 +731,7 @@ z
     <text style="fill: #222222; font: 15px 'Helvetica'; text-anchor: middle" x="180" y="33.8" transform="rotate(-0 180 33.8)">Vacancy distribution</text>
    </g>
    <g id="text_3">
-    <text style="fill: #222222; font: 12px 'Helvetica'; text-anchor: middle" x="180" y="67" transform="rotate(-0 180 67)">One inventory, every pool</text>
+    <text style="fill: #222222; font: 12px 'Helvetica'; text-anchor: middle" x="180" y="67" transform="rotate(-0 180 67)">O-vacancy sites in a rutile particle</text>
    </g>
    <g id="text_4">
     <text style="fill: #0072b2; font: 10px 'Helvetica'; text-anchor: middle" x="272" y="110" transform="rotate(-0 272 110)">Reactive site</text>

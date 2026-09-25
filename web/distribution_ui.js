@@ -13,13 +13,13 @@
   var NPTS = AX.energy_map.length * AX.cutoff_nm.length * AX.dG_eV.length * AX.f110.length * AX.eps.length;
   var START = { sample: 'R600', map: 'PAB', cutoff: 0.34, dG: 0, f110: 0.75, eps: 'a_axis', reactive: 'BRI' };
   var REACT = {
-    BRI: 'Every bridging vacancy',
-    ISO_z2: 'Isolated bridging, 2 intact neighbours',
-    ISO_z4: 'Isolated bridging, 4 intact neighbours',
-    ISO_z8: 'Isolated bridging, 8 intact neighbours',
-    'BRI+BASAL': 'Bridging plus layer-1 in-plane'
+    BRI: 'All BRI vacancies',
+    ISO_z2: 'BRI vacancies, z = 2 intact neighbours',
+    ISO_z4: 'BRI vacancies, z = 4 intact neighbours',
+    ISO_z8: 'BRI vacancies, z = 8 intact neighbours',
+    'BRI+BASAL': 'BRI + layer-1 IPL vacancies'
   };
-  var MAPS = { PAB: 'PAB', HAM: 'HAM', LI_SBR1: 'LI, sub-bridging layer 1', LI_L2: 'LI, layer 2' };
+  var MAPS = { PAB: 'PAB', HAM: 'HAM', LI_SBR1: 'LI_SBR1', LI_L2: 'LI_L2' };
 
   function sig(v, d) {
     if (v == null || !isFinite(v)) return '—';
@@ -135,40 +135,31 @@
     var sm = smp.summary;
     var strong = smp.treatment_T_C >= D.strong_reduction_C;
 
-    $('vdSampleNote').innerHTML = 'Inventory ' + sig(inv) + ' µmol-O g⁻¹ · r<sub>CO</sub> '
-      + sig(smp.rate_co_umol_g_s) + ' µmol g⁻¹ s⁻¹ · treated at ' + smp.treatment_T_C + ' °C';
-    $('vdReactiveNote').textContent = s.reactive.indexOf('ISO') === 0
-      ? 'N = cθ(1−θ)^z over the bridging sites, z = ' + s.reactive.slice(5) + '.'
-      : s.reactive === 'BRI' ? 'N = cθ over the bridging sites.' : 'Bridging plus first-layer in-plane vacancies.';
+    $('vdSampleNote').innerHTML = 'Measured: inventory ' + sig(inv, 4) + ' µmol O g⁻¹, r<sub>CO</sub> '
+      + sig(smp.rate_co_umol_g_s) + ' µmol g⁻¹ s⁻¹. Treatment ' + smp.treatment_T_C + ' °C.';
+    $('vdReactiveNote').innerHTML = s.reactive.indexOf('ISO') === 0
+      ? 'N<sub>react</sub> = cθ(1−θ)<sup>' + s.reactive.slice(5) + '</sup>'
+      : s.reactive === 'BRI' ? 'N<sub>react</sub> = cθ' : 'N<sub>react</sub> = cθ + N<sub>IPL,1</sub>';
 
     $('vdBasis').innerHTML = kv([
-      ['Measured inventory', sig(inv, 4) + ' µmol-O g⁻¹'],
-      ['Bulk', sig(pools.bulk) + ' µmol g⁻¹ (' + pct(pools.bulk / inv) + ')'],
-      ['Subsurface', sig(sub) + ' µmol g⁻¹'],
-      ['Surface', sig(surf) + ' µmol g⁻¹'],
-      ['Bridging coverage θ', sig(c.theta)],
-      ['Reconstructed cells', pct(c.f_rec)]
+      ['Inventory, measured', sig(inv, 4) + ' µmol O g⁻¹'],
+      ['Bulk, calculated', sig(pools.bulk) + ' µmol O g⁻¹ (' + pct(pools.bulk / inv) + ' of inventory)'],
+      ['Subsurface (SBR layer 1, layers 2–4)', sig(sub) + ' µmol O g⁻¹'],
+      ['Surface (BRI, reconstructed, IPL layer 1)', sig(surf) + ' µmol O g⁻¹'],
+      ['θ, vacant fraction of BRI sites', sig(c.theta)],
+      ['Reconstructed fraction of (1×2) cells', pct(c.f_rec)]
     ]);
-    var ratio = c.tof / num(sm.fixed_TOF_SI2a_s_1);
-    var verdict;
-    if (c.below) {
-      verdict = '<div class="verdict red">At this scenario ' + s.sample + ' has <b>'
-        + sig(c.sites) + ' µmol g⁻¹</b> reactive sites, below the counting threshold. '
-        + 'Its TOF is kept in the results but left out of the range.</div>';
-    } else {
-      verdict = '<div class="verdict">At this scenario ' + s.sample + ' turns over <b>'
-        + sig(c.tof) + ' s⁻¹</b> on ' + sig(c.sites) + ' µmol g⁻¹ of reactive sites, '
-        + sig(ratio, 2) + '× the fixed-denominator value.</div>';
-    }
-    $('vdVerdict').innerHTML = verdict;
+    $('vdVerdict').innerHTML = c.below
+      ? '<div class="verdict red">N<sub>react</sub> below threshold (&lt; 0.01 µmol g⁻¹ or &lt; 1% of BRI sites); '
+        + 'case excluded from the TOF range.</div>' : '';
     $('vdKpis').innerHTML = kv([
-      ['Reactive sites', sig(c.sites) + ' µmol g⁻¹'],
-      ['TOF, this scenario', sig(c.tof) + ' s⁻¹'],
-      ['TOF / TOF(R600)', ref.below ? '— (R600 below threshold)' : sig(c.tof / ref.tof)],
-      ['Range, ' + sm.n_ok + ' of ' + sm.n_cases + ' cases', sig(num(sm.TOF_min_s_1)) + ' to ' + sig(num(sm.TOF_max_s_1)) + ' s⁻¹'],
-      ['Fixed 2.31 µmol g⁻¹', sig(num(sm.fixed_TOF_SI2a_s_1)) + ' s⁻¹']
-    ].concat(strong ? [['Flag', 'treated above ' + D.strong_reduction_C + ' °C (Ti₂O₃-(1×2) expected)']] : []));
-    $('vdStatus').textContent = 'Parameter point ' + (p + 1) + ' of ' + NPTS + '.';
+      ['N<sub>react</sub>, calculated', sig(c.sites) + ' µmol g⁻¹'],
+      ['TOF = r<sub>CO</sub>/N<sub>react</sub>', sig(c.tof) + ' s⁻¹'],
+      ['TOF/TOF(R600), same parameters', ref.below ? '— (R600 below threshold)' : sig(c.tof / ref.tof)],
+      ['TOF range, ' + sm.n_ok + ' of ' + sm.n_cases + ' cases', sig(num(sm.TOF_min_s_1)) + ' to ' + sig(num(sm.TOF_max_s_1)) + ' s⁻¹'],
+      ['TOF, N<sub>react</sub> = 2.31 µmol g⁻¹', sig(num(sm.fixed_TOF_SI2a_s_1)) + ' s⁻¹']
+    ].concat(strong ? [['Treatment ≥ ' + D.strong_reduction_C + ' °C', 'Ti₂O₃-(1×2) regime (Yuan 2024)']] : []));
+    $('vdStatus').textContent = 'Parameter point ' + (p + 1) + ' of ' + NPTS;
 
     /* figure 3 */
     var pts = SAMPLES.map(function (q) {
@@ -199,25 +190,26 @@
       P3.set({ f110: s.f110, pools: pools, animate: animate });
       var shown = P3.want;
       var r = D.explicit_depth_nm, d = D.diameters_nm;
-      $('vdParticleCaption').innerHTML = 'One bead is ' + P3.dotUmol + ' µmol g⁻¹ of vacancies: '
-        + Math.round(shown.bulk) + ' bulk (purple), ' + Math.round(shown.subsurface) + ' subsurface (orange), '
-        + Math.round(shown.surface) + ' surface (blue) beads, less the cut octant. Blue tiles are the '
-        + Math.round(100 * s.f110) + '% (110) share. The surface band holds the ' + r
-        + ' nm of explicit trilayers and is drawn about ' + Math.round(0.05 / (2 * r / d[0]))
-        + ' to ' + Math.round(0.05 / (2 * r / d[d.length - 1])) + ' times thicker than scale. Drag to turn.';
+      $('vdParticleCaption').innerHTML = '1 bead = ' + P3.dotUmol + ' µmol O g⁻¹ (calculated). Purple: bulk, '
+        + Math.round(shown.bulk) + ' beads; orange: subsurface, ' + Math.round(shown.subsurface)
+        + '; blue: surface, ' + Math.round(shown.surface) + '; beads in the removed octant not drawn. '
+        + 'Blue tiles: (110), ' + Math.round(100 * s.f110) + '% of the area. Surface band ('
+        + r + ' nm) drawn ' + Math.round(0.05 / (2 * r / d[0])) + '–'
+        + Math.round(0.05 / (2 * r / d[d.length - 1])) + '× thicker than scale for '
+        + d[0] + '–' + d[d.length - 1] + ' nm particles.';
     }
     if (S3) {
       S3.set({ theta: c.theta, f_rec: c.f_rec, reactive: s.reactive,
                x_basal: pools.basal_L1 / cap.basal_L1, x_sbr: pools.L1_subbridging / cap.L1_subbridging,
                x_l24: pools.subsurface_L2_4 / cap.subsurface_L2_4 });
       var n = S3.counts, P = V.PATCH;
-      $('vdSlabCaption').innerHTML = P.NX + ' × ' + P.NY + ' surface cells (' + (P.NX * 0.6497).toFixed(1)
-        + ' × ' + (P.NY * 0.2959).toFixed(1) + ' nm), four trilayers. Each site is missing when its fixed random '
-        + 'rank is below the computed fraction: here ' + n.BRI + ' bridging (θ = ' + sig(c.theta) + '), '
-        + n.IPL + ' in-plane, ' + n.SBR + ' sub-bridging and ' + n.L24 + ' deeper; '
-        + n.reactive + ' pulse as reactive under "' + (REACT[s.reactive] || s.reactive).toLowerCase() + '". '
-        + n.cells + ' of ' + (P.NX / 2 * P.NY) + ' (1×2) cells carry an added row (light blue, schematic). '
-        + 'Unrelaxed bulk positions.';
+      $('vdSlabCaption').innerHTML = P.NX + ' × ' + P.NY + ' (1×1) cells, ' + (P.NX * 0.6497).toFixed(1)
+        + ' × ' + (P.NY * 0.2959).toFixed(1) + ' nm; unrelaxed bulk positions (a = 0.4594 nm, c = 0.2959 nm, '
+        + 'u = 0.305). Vacant sites at the calculated site fractions: BRI ' + n.BRI + ' (θ = ' + sig(c.theta)
+        + '), IPL layer 1 ' + n.IPL + ', SBR layer 1 ' + n.SBR + ', layers 2–4 ' + n.L24
+        + '. Blue: surface vacancy; orange: subsurface vacancy; pulsing: counted in N<sub>react</sub> ('
+        + (REACT[s.reactive] || s.reactive) + '), ' + n.reactive + '. Light blue: (1×2) added rows, '
+        + n.cells + ' of ' + (P.NX / 2 * P.NY) + ' cells, schematic positions.';
     }
   }
 
@@ -245,21 +237,20 @@
   });
 
   var grid = [
-    ['Vacancy energy map', AX.energy_map.join(', ')],
-    ['Aggregate cutoff', AX.cutoff_nm.join(', ') + ' nm'],
-    ['Reconstruction ΔG', AX.dG_eV.map(function (v) { return (v > 0 ? '+' : '') + v; }).join(', ') + ' eV'],
-    ['(110) share', AX.f110.join(', ')],
-    ['Dielectric constant', AX.eps.map(function (e) { return e.value; }).join(', ')],
+    ['Vacancy formation-energy set', AX.energy_map.join(', ')],
+    ['Aggregate cutoff distance', AX.cutoff_nm.join(', ') + ' nm'],
+    ['(1×2) reconstruction ΔG', AX.dG_eV.map(function (v) { return (v > 0 ? '+' : '') + v; }).join(', ') + ' eV per cell'],
+    ['(110) area fraction', AX.f110.join(', ')],
+    ['Static dielectric constant ε', AX.eps.map(function (e) { return e.value; }).join(', ')],
     ['Parameter points', String(NPTS)],
     ['Reactive-site definitions', String(D.reactive.length)],
-    ['Diameters averaged', D.diameters_nm.join(', ') + ' nm']
+    ['Particle diameters', D.diameters_nm.join(', ') + ' nm, equal mass']
   ];
   $('vdGrid').innerHTML = kv(grid);
   $('vdChecks').innerHTML = kv([
     ['Cases per sample', String(NPTS * D.reactive.length)],
-    ['Site threshold', D.site_threshold.min_sites_umol_g + ' µmol g⁻¹ and '
-      + Math.round(100 * D.site_threshold.min_fraction_of_bridging) + '% of bridging sites'],
-    ['Model tests', 'pilot/titania-super-multiscale/tests']
+    ['N<sub>react</sub> threshold', D.site_threshold.min_sites_umol_g + ' µmol g⁻¹ and '
+      + Math.round(100 * D.site_threshold.min_fraction_of_bridging) + '% of BRI sites']
   ]);
 
   setState(START);

@@ -7,13 +7,13 @@ vacancy can occupy; the unknowns of that model are its parameters, and the
 model is solved at every combination of them. The range of rate / reactive
 sites over those solutions is the apparent TOF range.
 
-## Result (`outputs/sample_tof_range.csv`)
+## Apparent TOF by sample (`outputs/sample_tof_range.csv`)
 
 720 parameter points x 5 reactive-site definitions = 3600 cases per sample.
 The range is over the cases whose reactive-site count is countable (at least
 0.01 umol/g and 1% of the bridging capacity).
 
-| Sample | Inventory (umol/g) | Fixed TOF, SI 2a (s⁻¹) | TOF min | TOF median | TOF max | Countable |
+| Sample | Inventory, measured (umol O/g) | TOF, N = 2.31 umol/g (s⁻¹) | TOF min (s⁻¹) | TOF median (s⁻¹) | TOF max (s⁻¹) | Cases above threshold |
 |---|---:|---:|---:|---:|---:|---:|
 | A600 | 13.4 | 0.978 | 1.2 | 5.71 | 33.3 | 1670 / 3600 |
 | R500 | 36.9 | 1.63 | 1.37 | 8.58 | 54.3 | 1744 / 3600 |
@@ -22,7 +22,7 @@ The range is over the cases whose reactive-site count is countable (at least
 | R1000 | 781 | 0.0197 | 0.00518 | 0.101 | 0.662 | 1900 / 3600 |
 | R1100 | 1.34e+03 | 0.0105 | 0.00234 | 0.0489 | 0.35 | 1766 / 3600 |
 
-| Sample | Q min | Q max | Bridging vacancies, median (umol/g) | Bulk vacancies, median (umol/g) |
+| Sample | Q min | Q max | BRI vacancies, calculated median (umol/g) | Bulk vacancies, calculated median (umol/g) |
 |---|---:|---:|---:|---:|
 | A600 | 0.132 | 1.23 | 0.0613 | 13.4 |
 | R500 | 0.321 | 1.4 | 0.0776 | 36.7 |
@@ -31,7 +31,7 @@ The range is over the cases whose reactive-site count is countable (at least
 | R1000 | 0.00296 | 0.0748 | 0.158 | 781 |
 | R1100 | 0.00117 | 0.0534 | 0.145 | 1.34e+03 |
 
-Q = TOF / TOF(R600) at the same parameter point and definition.
+Q = TOF/TOF(R600) at the same parameter point and reactive-site definition. TOF per reactive site; rate measured, N_react calculated.
 
 - The bulk holds almost the whole inventory: median share 99.4% (A600),
   99.8% (R600), 99.9% (R1100) of the vacancies. The surface holds about
@@ -49,7 +49,7 @@ Q = TOF / TOF(R600) at the same parameter point and definition.
   read off the figure; the known points read back within 3%. Treatment 5% H2,
   1100 °C, 1 h (Fig. 2 and Fig. S5 captions).
 
-## The model (`tofrange/model.py`)
+## Model (`tofrange/model.py`)
 
 Every part below is on at once, at equilibrium at 873.15 K with the
 measured inventory fixed.
@@ -79,7 +79,7 @@ measured inventory fixed.
 
 The measured CO rate enters only at the end: TOF = r_CO / N_react.
 
-## Parameters solved over
+## Parameter grid
 
 | Unknown | Values |
 |---|---|
@@ -105,7 +105,7 @@ The measured CO rate enters only at the end: TOF = r_CO / N_react.
 - Q equals the TOF ratio to R600 at the same point.
 - Saved rows regenerate for two parameter points.
 
-## Assumptions that stand in for missing values
+## Assumed inputs
 
 Each is an input in `specification/parameter_registry.csv`.
 

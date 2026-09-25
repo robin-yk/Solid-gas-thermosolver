@@ -37,7 +37,7 @@
     <button class="card" data-ws="ws-distribution" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true"><path d="M10 8 V68 H110" fill="none" stroke="#777"/><path d="M12 12 C20 12 22 60 45 62 L108 62" fill="none" stroke="#0072B2" stroke-width="2"/></svg>
       <span class="cname">Vacancy distribution</span>
-      <span class="cdesc">Distribute each measured inventory over surface, subsurface and bulk sites, and bound the apparent turnover frequency.</span>
+      <span class="cdesc">Equilibrium O-vacancy distribution in rutile particles and apparent CO turnover frequency per reactive site.</span>
     </button>
     <button class="card" data-ws="ws-population" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -57,46 +57,46 @@
 </section>
 
 <section id="ws-distribution" class="ws" style="display:none">
-  <div class="wshead"><h2>Vacancy distribution</h2><p class="sub">Distribute each sample&rsquo;s measured vacancy inventory over surface, subsurface and bulk sites with one model, and bound its apparent CO turnover frequency.</p></div>
+  <div class="wshead"><h2>Vacancy distribution</h2><p class="sub">Equilibrium distribution of the measured oxygen-vacancy inventory over surface, subsurface and bulk sites of rutile at 600&nbsp;&deg;C, and the apparent CO turnover frequency per reactive site.</p></div>
   <div class="wsgrid">
     <aside class="population-sheet" aria-labelledby="vd-controls-title">
-      <img class="workspace-scheme" src="SCHEME:vacancy-distribution" alt="A particle whose bulk holds most vacancies while a thin (110) surface band holds the reactive bridging-oxygen vacancies and a few subsurface ones. Conceptual geometry, not to scale.">
+      <img class="workspace-scheme" src="SCHEME:vacancy-distribution" alt="Rutile particle cross-section: bulk vacancies in the interior, a (110) surface band with bridging-oxygen and subsurface vacancies. Surface band not to scale.">
       <header class="population-sheet-head">
-        <h3 id="vd-controls-title">Model scenario</h3>
-        <p>Each input picks one value of an unknown the model is solved over. Every combination was solved in advance; the page reads the result.</p>
+        <h3 id="vd-controls-title">Model parameters</h3>
+        <p>All 720 combinations are precomputed; the inputs select one.</p>
       </header>
       <div class="population-parameters">
         <div class="population-field"><label for="vdSample">Sample</label><select id="vdSample"></select>
           <div class="readout" id="vdSampleNote"></div></div>
-        <div class="population-field"><label for="vdMap">Vacancy energy map</label><select id="vdMap"></select>
-          <div class="readout">Layer-resolved formation energies from four literature sets.</div></div>
-        <div class="population-field"><label for="vdCutoff">Aggregate cutoff</label><select id="vdCutoff"></select>
-          <div class="readout">nm · vacancies closer than this count as one bulk aggregate.</div></div>
-        <div class="population-field"><label for="vdDG">Reconstruction free energy &Delta;G</label><select id="vdDG"></select>
-          <div class="readout">eV per (1&times;2) cell, relative to its unreconstructed vacancies.</div></div>
-        <div class="population-field"><label for="vdF110">(110) share of the surface</label><select id="vdF110"></select>
-          <div class="readout">The rest is bulk-like surface with no reactive sites.</div></div>
-        <div class="population-field"><label for="vdEps">Dielectric constant</label><select id="vdEps"></select>
-          <div class="readout">Rutile static &epsilon; along a or c.</div></div>
+        <div class="population-field"><label for="vdMap">Vacancy formation-energy set</label><select id="vdMap"></select>
+          <div class="readout">Layer-resolved O-vacancy formation energies.</div></div>
+        <div class="population-field"><label for="vdCutoff">Aggregate cutoff distance</label><select id="vdCutoff"></select>
+          <div class="readout">nm · bulk vacancy pairs within this distance interact (ZHA2017 pair energy).</div></div>
+        <div class="population-field"><label for="vdDG">(1&times;2) reconstruction free energy &Delta;G</label><select id="vdDG"></select>
+          <div class="readout">eV per (1&times;2) cell, relative to the cell with one bridging O vacant.</div></div>
+        <div class="population-field"><label for="vdF110">(110) area fraction</label><select id="vdF110"></select>
+          <div class="readout">Fraction of particle surface area; the remainder has no reactive sites.</div></div>
+        <div class="population-field"><label for="vdEps">Static dielectric constant &epsilon;</label><select id="vdEps"></select>
+          <div class="readout">Rutile at 873&nbsp;K, a or c axis (Parker 1961).</div></div>
         <div class="population-field"><label for="vdReactive">Reactive-site definition</label><select id="vdReactive"></select>
           <div class="readout" id="vdReactiveNote"></div></div>
       </div>
       <div class="population-sheet-foot">
         <div class="population-status" id="vdStatus" aria-live="polite"></div>
         <div class="population-actions">
-          <button type="button" class="population-reset" id="vdReset">Starting scenario</button>
-          <button type="button" class="population-fit" id="vdPlay">Play the series</button>
+          <button type="button" class="population-reset" id="vdReset">Reset parameters</button>
+          <button type="button" class="population-fit" id="vdPlay">Step through samples</button>
         </div>
       </div>
     </aside>
 <div class="wsmain">
 <div class="kvrow">
   <div class="kvblock">
-    <h3>Where the inventory sits</h3>
+    <h3>Vacancy inventory by site class</h3>
     <table class="kv" id="vdBasis"></table>
   </div>
   <div class="kvblock">
-    <h3>Apparent turnover frequency</h3>
+    <h3>Reactive-site concentration and apparent TOF</h3>
     <div id="vdVerdict"></div>
     <table class="kv" id="vdKpis"></table>
   </div>
@@ -104,37 +104,36 @@
 
 <div class="figgrid">
   <figure class="pubfig" id="figParticle">
-    <h3>One particle, every pool</h3>
-    <div class="figbox v3d" role="img" aria-label="Rotating rutile particle with one octant cut away. Beads mark vacancies: purple in the bulk, orange below the surface, blue at the surface under the (110) tiles."></div>
+    <h3>Particle cross-section</h3>
+    <div class="figbox v3d" role="img" aria-label="Rutile particle with one octant removed; beads mark bulk, subsurface and surface oxygen vacancies"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="png">PNG</button>
     </details>
     <figcaption id="vdParticleCaption"></figcaption>
   </figure>
   <figure class="pubfig" id="figSlab">
-    <h3>The (110) surface the TOF counts</h3>
-    <div class="figbox v3d" role="img" aria-label="Rutile (110) surface patch of four trilayers. Missing bridging oxygens glow blue; pulsing ones are counted as reactive sites. Orange marks vacancies below the surface; light blue rows are (1x2) reconstructed cells."></div>
+    <h3>Rutile (110) surface, four trilayers</h3>
+    <div class="figbox v3d" role="img" aria-label="Rutile (110) slab with vacant oxygen sites marked"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="png">PNG</button>
     </details>
     <figcaption id="vdSlabCaption"></figcaption>
   </figure>
   <figure class="pubfig wide" id="figTofRange">
-    <h3>Apparent TOF range of each sample</h3>
-    <div class="figbox" role="img" aria-label="Apparent CO turnover frequency range for each sample over all parameter points, with the fixed-denominator value and the chosen scenario"></div>
+    <h3>Apparent CO TOF by sample</h3>
+    <div class="figbox" role="img" aria-label="Apparent CO turnover frequency per reactive site for each sample: range over parameter points, value with 2.31 umol per gram sites, and the selected parameters"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
       <button type="button" data-fmt="csv">CSV data</button>
     </details>
-    <figcaption>Each bar spans the apparent TOF, the measured CO rate divided by the
-    reactive-site count, over every parameter point whose count is at least
-    0.01&nbsp;&micro;mol&nbsp;g&#8315;&sup1; and 1% of the bridging sites; the thick
-    tick is its median. Points below that threshold are kept in the results and
-    counted under the bar. The open square is the rate over the fixed
-    2.31&nbsp;&micro;mol&nbsp;g&#8315;&sup1; of Supplementary Note 2a. The filled
-    circle is the scenario chosen on the left; hollow when its count is below
-    threshold, pinned to the frame when off scale.</figcaption>
+    <figcaption>TOF = r<sub>CO</sub>/N<sub>react</sub>; r<sub>CO</sub> measured at
+    600&nbsp;&deg;C, N<sub>react</sub> calculated. Bar: range over parameter points with
+    N<sub>react</sub> &ge; 0.01&nbsp;&micro;mol&nbsp;g&#8315;&sup1; and &ge; 1% of bridging-O
+    sites; tick: median. Number above the axis: cases below that threshold, of 3600.
+    Open square: N<sub>react</sub> = 2.31&nbsp;&micro;mol&nbsp;g&#8315;&sup1; (SI Note 2a).
+    Filled circle: selected parameters; open circle: selected case below threshold;
+    on the frame: outside the axis range.</figcaption>
   </figure>
 </div>
 
@@ -145,66 +144,66 @@
 </div>
 
 <div class="panel pad page active" id="vd-res">
-  <h2>Samples</h2>
+  <h2>Apparent TOF by sample</h2>
   <div class="tablewrap"><table class="vdt">
-    <thead><tr><th>Sample</th><th>Treatment</th><th class="n">Inventory</th><th class="n">r<sub>CO</sub></th>
-      <th class="n">TOF, this scenario</th><th class="n">TOF min</th><th class="n">median</th><th class="n">max</th>
-      <th class="n">TOF, fixed 2.31</th><th class="n">below threshold</th></tr></thead>
+    <thead><tr><th>Sample</th><th>Treatment T (&deg;C)</th><th class="n">Inventory, measured (µmol O g⁻¹)</th><th class="n">r<sub>CO</sub>, measured (µmol g⁻¹ s⁻¹)</th>
+      <th class="n">TOF, selected (s⁻¹)</th><th class="n">TOF min (s⁻¹)</th><th class="n">TOF median (s⁻¹)</th><th class="n">TOF max (s⁻¹)</th>
+      <th class="n">TOF, N = 2.31 (s⁻¹)</th><th class="n">Cases below threshold</th></tr></thead>
     <tbody id="vdTable"></tbody>
   </table></div>
-  <p class="sub">Inventories in µmol-O g⁻¹; rates in µmol g⁻¹ s⁻¹; TOF in s⁻¹. Range over the parameter points with a countable site denominator.</p>
+  <p class="sub">TOF per reactive site. Min, median and max over cases with N<sub>react</sub> above threshold. * selected case below threshold.</p>
 </div>
 
 <div class="panel pad page" id="vd-how">
   <h2>Method</h2>
-  <p>One model distributes a sample&rsquo;s measured oxygen removal over every site a
-  vacancy can occupy in a rutile particle, at equilibrium at the 600&nbsp;&deg;C
-  reaction temperature. All of its parts are on at once; what is not known is a
-  parameter of that one model, and the model is solved at every combination of them.</p>
-  <h3>What the model contains</h3>
-  <p><b>Surface.</b> A share f<sub>110</sub> of the surface is (110), resolved as four
-  explicit O&ndash;Ti<sub>2</sub>O<sub>2</sub>&ndash;O trilayers (1.30&nbsp;nm) with bridging,
-  in-plane and sub-bridging oxygen in each. The rest of the surface is bulk-like and
-  has no reactive sites.</p>
-  <p><b>Reconstruction.</b> Bridging rows are grouped into (1&times;2) cells that own
-  their four first-layer Ti. A cell is intact, has one or both bridging oxygens missing
-  with zero to four Ti<sup>3+</sup>, or is reconstructed, at a free energy &Delta;G
-  above its two-vacancy state.</p>
-  <p><b>Bulk.</b> Below 1.30&nbsp;nm, vacancies are counted in Monte Carlo boxes of 700
-  oxygen sites, so vacancies closer than the aggregate cutoff are one aggregate with
-  its own free energy.</p>
-  <p><b>Charge.</b> Each vacancy leaves two electrons as Ti<sup>3+</sup>. Their
-  distribution between layers is solved with the Poisson equation across the
-  shells, with the static dielectric constant of rutile, rather than by making each
-  layer neutral.</p>
-  <p><b>Particles.</b> An equal-mass mixture of 900 to 1600&nbsp;nm diameters,
-  averaged at four sizes.</p>
-  <h3>Unknowns solved over</h3>
+  <p>The measured O removal of each sample is distributed over all O sites of a rutile
+  particle at equilibrium at 873.15&nbsp;K with the inventory held fixed. Unknown inputs
+  are parameters; the model is solved at every combination.</p>
+  <h3>Model components</h3>
+  <p><b>Surface.</b> A fraction f<sub>110</sub> of the surface area is (110), resolved as
+  four O&ndash;Ti<sub>2</sub>O<sub>2</sub>&ndash;O trilayers (1.30&nbsp;nm) with bridging (BRI),
+  in-plane (IPL) and sub-bridging (SBR) O sites. The remaining area has bulk site energies
+  and no reactive sites.</p>
+  <p><b>Reconstruction.</b> Bridging rows form (1&times;2) cells, each owning four layer-1 Ti.
+  Cell states: intact; one or both BRI O vacant, with 0&ndash;4 Ti<sup>3+</sup>; reconstructed,
+  one vacancy with two Ti<sup>3+</sup> in the row and up to two more, at &Delta;G relative to
+  the one-vacancy state.</p>
+  <p><b>Bulk.</b> O sites below 1.30&nbsp;nm are grouped into boxes of 700 sites. The free
+  energy of a box with N vacancies, &minus;k<sub>B</sub>T&nbsp;ln&nbsp;Q(N), is from canonical
+  Monte Carlo with the ZHA2017 pair energy up to the cutoff distance.</p>
+  <p><b>Charge.</b> Each vacancy gives two Ti<sup>3+</sup>. Every atomic plane is a charged
+  shell; the Poisson equation couples the shells with the static &epsilon; of rutile. Only the
+  particle as a whole is neutral. Layer-1 Ti<sup>3+</sup> is 0.2&nbsp;eV above the subsurface
+  site (RET2018).</p>
+  <p><b>Particle size.</b> Equal-mass mixture of 900&ndash;1600&nbsp;nm diameters, evaluated
+  at four diameters.</p>
+  <h3>Parameter grid</h3>
   <table class="kv" id="vdGrid"></table>
-  <h3>Apparent turnover frequency</h3>
+  <h3>Apparent TOF</h3>
   <div class="eq">TOF = r<sub>CO</sub> / N<sub>react</sub></div>
-  <p>N<sub>react</sub> is the reactive-site count in µmol g⁻¹ under the chosen
-  definition: every bridging vacancy; a bridging vacancy with 2, 4 or 8 intact
-  bridging neighbours, N&nbsp;=&nbsp;c&theta;(1&minus;&theta;)<sup>z</sup>; or bridging plus
-  first-layer in-plane vacancies. A count below 0.01&nbsp;µmol&nbsp;g⁻¹ or below 1% of
-  the bridging sites is flagged and reported apart; it is not removed.
-  Q&nbsp;=&nbsp;TOF/TOF(R600) at the same parameter point compares samples without
-  the absolute scale.</p>
-  <div class="note calm"><b>Scope.</b> The model assumes equilibrium at
-    600&nbsp;&deg;C and treats transport as complete; no kinetics of the pretreatment
-    is included. Samples treated at 900&nbsp;&deg;C and above are flagged as strongly
-    reduced. The 3D figures draw the computed pool sizes and site fractions; the
-    atom positions are unrelaxed bulk positions and the added rows are schematic.</div>
+  <p>r<sub>CO</sub>: measured initial CO formation rate (µmol g⁻¹ s⁻¹). N<sub>react</sub>:
+  calculated reactive-site concentration (µmol g⁻¹) under one of three definitions: all
+  BRI vacancies, N&nbsp;=&nbsp;c&theta;; BRI vacancies with z intact BRI neighbours,
+  N&nbsp;=&nbsp;c&theta;(1&minus;&theta;)<sup>z</sup>, z = 2, 4, 8; BRI plus layer-1 IPL vacancies.
+  c: BRI site concentration (µmol g⁻¹); &theta;: vacant fraction of unreconstructed BRI sites.
+  Cases with N<sub>react</sub> &lt; 0.01&nbsp;µmol&nbsp;g⁻¹ or &lt; 1% of c are counted apart.
+  Q&nbsp;=&nbsp;TOF/TOF(R600) at the same parameters.</p>
+  <h3>Limits</h3>
+  <p>Equilibrium at 600&nbsp;&deg;C with complete transport; pretreatment kinetics and
+  cooling are not modelled. Samples treated at &ge; 900&nbsp;&deg;C (R1000, R1100) are in the
+  regime where Ti<sub>2</sub>O<sub>3</sub>-(1&times;2) is reported (Yuan 2024). Aggregates of
+  three or more vacancies use additive pair energies. 3D surface patch: unrelaxed bulk atom
+  positions; added-row positions schematic.</p>
 </div>
 
 <div class="panel pad page" id="vd-val">
   <h2>Validation</h2>
-  <p>The model&rsquo;s own tests: every oxygen and titanium site is counted once;
-  the Monte Carlo aggregate free energy is exact for one and two vacancies and
-  independent of the random seed; the Poisson solution conserves the inventory and
-  charge; its gradient and Hessian agree with finite differences; at large
-  &epsilon; it approaches the scalar-chemical-potential limit as 1/&epsilon;; the
-  reconstruction vanishes at &Delta;G&nbsp;=&nbsp;5&nbsp;eV; and saved results regenerate.</p>
+  <p>Model tests (pilot/titania-super-multiscale/tests): each O and Ti site counted once;
+  Monte Carlo box free energy exact for N = 1, 2 and seed-independent at N = 170
+  (0.05&nbsp;eV per vacancy); inventory, charge neutrality and Poisson residuals; analytic
+  gradient and Hessian against finite differences; scalar &mu;, &mu;<sub>e</sub> limit at large
+  &epsilon;, deviation &prop; 1/&epsilon;; Debye&ndash;H&uuml;ckel screening length; reconstruction
+  fraction &rarr; 0 at &Delta;G = 5&nbsp;eV; stored results regenerate.</p>
   <table class="kv" id="vdChecks"></table>
 </div>
 
@@ -275,11 +274,11 @@
 <div class="wsmain">
 <div class="kvrow">
   <div class="kvblock">
-    <h3>Operating basis</h3>
+    <h3>Input conditions</h3>
     <table class="kv" id="basis"></table>
   </div>
   <div class="kvblock">
-    <h3>Equilibrium result</h3>
+    <h3>Equilibrium phases and conversion</h3>
     <div id="verdict"></div>
     <table class="kv" id="kpis"></table>
   </div>
@@ -289,25 +288,23 @@
   <div class="atlas-head">
     <div>
       <h2 id="atlasTitle">RWGS equilibrium and TiO<sub>2</sub> stability</h2>
-      <p class="sub">The gas-phase calculation gives the equilibrium ceiling. The
-      gas&ndash;solid calculation then shows what changes when that gas contacts the finite
-      oxide charge specified on the left.</p>
+      <p class="sub">Gas-phase RWGS equilibrium, and gas&ndash;solid equilibrium with the
+      oxide charge set on the left.</p>
     </div>
     <button type="button" class="atlas-run" id="atlasRun">Generate atlas</button>
   </div>
   <div class="atlas-readout" id="atlasNote">Gas phase and gas&ndash;solid contact are calculated separately.</div>
   <div class="atlasfiggrid">
     <figure class="pubfig wide" id="figOperatingMap">
-      <h3>Gas-phase conversion ceiling with the TiO<sub>2</sub> reduction boundary</h3>
+      <h3>Gas-phase RWGS equilibrium conversion and TiO<sub>2</sub> reduction boundary</h3>
       <div class="figbox" role="img" aria-label="RWGS equilibrium conversion across temperature and hydrogen to carbon dioxide feed ratio, with the titanium dioxide reduction boundary"></div>
       <details class="figdl"><summary>Download figure</summary>
         <button type="button" data-fmt="svg">SVG</button>
         <button type="button" data-fmt="png">PNG, 600 dpi</button>
         <button type="button" data-fmt="csv">CSV data</button>
       </details>
-      <figcaption>Colour is the gas-only RWGS equilibrium limit. The orange line is where
-      rutile first gives way to a reduced Ti&ndash;O phase. It is a thermodynamic operating
-      window, not a kinetic reactor prediction.</figcaption>
+      <figcaption>Colour: gas-phase RWGS equilibrium CO<sub>2</sub> conversion. Orange line:
+      feed composition at which rutile and the first reduced Ti&ndash;O phase coexist.</figcaption>
     </figure>
     <figure class="pubfig" id="figRatioTradeoff">
       <h3>CO<sub>2</sub> conversion and H<sub>2</sub> utilisation</h3>
@@ -317,8 +314,7 @@
         <button type="button" data-fmt="png">PNG, 600 dpi</button>
         <button type="button" data-fmt="csv">CSV data</button>
       </details>
-      <figcaption>More H<sub>2</sub> raises CO<sub>2</sub> conversion but lowers H<sub>2</sub>
-      utilisation. CO yield is reported per mole of total fresh gas.</figcaption>
+      <figcaption>Gas-phase RWGS equilibrium. CO yield per mole of total fresh gas.</figcaption>
     </figure>
     <figure class="pubfig" id="figSolidCoupling">
       <h3>Gas&ndash;solid equilibrium CO<sub>2</sub> conversion</h3>
@@ -328,9 +324,8 @@
         <button type="button" data-fmt="png">PNG, 600 dpi</button>
         <button type="button" data-fmt="csv">CSV data</button>
       </details>
-      <figcaption>The grey curve is gas-only RWGS. The blue curve includes the finite
-      oxide charge. Their separation begins when oxygen exchange with the solid becomes
-      part of the equilibrium answer.</figcaption>
+      <figcaption>Grey: gas-phase RWGS. Blue: gas&ndash;solid equilibrium with the oxide
+      charge set on the left.</figcaption>
     </figure>
   </div>
 </section>
@@ -363,8 +358,7 @@
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
     </details>
     <figcaption><span id="sweepNote">121 solves at this charge, about half a second.</span>
-    A zero reduction margin marks a phase transition. The band identifies the
-    stable equilibrium assemblage at each temperature.</figcaption>
+    Zero reduction margin: phase boundary. Band: stable assemblage at each temperature.</figcaption>
   </figure>
   <figure class="pubfig" id="figConversion">
     <h3>Equilibrium CO<sub>2</sub> conversion across temperature</h3>
@@ -373,8 +367,8 @@
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
     </details>
-    <figcaption>The curve reports net CO<sub>2</sub> conversion relative to the feed.
-    The result includes gas equilibration and oxygen exchange with the solid.</figcaption>
+    <figcaption>Net CO<sub>2</sub> conversion relative to the feed, gas&ndash;solid
+    equilibrium including O exchange with the solid.</figcaption>
   </figure>
 </div>
 
@@ -507,8 +501,8 @@
 
 <div class="wshead">
   <h2>Vacancy kinetics</h2>
-  <p class="sub">Fit the isolated surface-vacancy population that sets the CO formation
-  rate across the reduction series.</p>
+  <p class="sub">Isolated surface-vacancy concentration after each reduction treatment,
+  fitted to the measured CO formation rates.</p>
 </div>
 
 <div class="wsgrid">
@@ -516,7 +510,7 @@
   <img class="workspace-scheme" src="SCHEME:vacancy-kinetics" alt="Vacancy supply feeds isolated accessible sites and the region below. Isolated vacancies associate near the surface. Blue, orange and gray distinguish the three populations. Counts and geometry are illustrative.">
   <header class="population-sheet-head">
     <h3 id="population-controls-title">Vacancy-loss model</h3>
-    <p>Fit three physical parameters to the measured CO formation rates.</p>
+    <p>Three parameters fitted to five measured CO formation rates.</p>
   </header>
   <div class="population-parameters">
     <div class="population-field">
@@ -557,11 +551,11 @@
 <div class="wsmain">
 <div class="kvrow">
   <div class="kvblock">
-    <h3>Operating basis</h3>
+    <h3>Fit parameters</h3>
     <table class="kv" id="pnBasis"></table>
   </div>
   <div class="kvblock">
-    <h3>Population result</h3>
+    <h3>Isolated-vacancy concentration</h3>
     <div id="pnVerdict"></div>
     <table class="kv" id="pnKpis"></table>
   </div>
@@ -569,21 +563,16 @@
 
 <div class="figgrid">
   <figure class="pubfig">
-    <h3>Partition of the measured inventory</h3>
+    <h3>Vacancy inventory by population</h3>
     <div class="figbox" id="figPopulation"></div>
-    <figcaption>Each sample&rsquo;s total oxygen removal on the horizontal axis and the
-    model assignment on the vertical: isolated vacancies in the active region,
-    associated deficiency in the same region, and inventory below it. Both axes
-    are logarithmic. The isolated population turns over near
-    100&nbsp;&micro;mol&nbsp;g&#8315;&sup1; while the total keeps rising.</figcaption>
+    <figcaption>x: measured total O removal. y: calculated isolated (circle), associated
+    (square) and below-active-region (triangle) vacancies. Log&ndash;log axes.</figcaption>
   </figure>
   <figure class="pubfig">
     <h3>Measured and fitted CO formation rate</h3>
     <div class="figbox" id="figRates"></div>
-    <figcaption>Initial CO formation rate at a common 600&nbsp;&deg;C reaction
-    temperature against the reduction treatment. The fitted rate is proportional
-    to the isolated population with one coefficient for all samples, normalised
-    to R600. Five rates, three parameters.</figcaption>
+    <figcaption>Initial CO formation rate at 600&nbsp;&deg;C. Grey: measured. Blue:
+    fitted, r<sub>CO</sub> &prop; n<sub>iso</sub> with one coefficient, normalised to R600.</figcaption>
   </figure>
 </div>
 
@@ -594,7 +583,7 @@
 </div>
 
 <div class="panel pad page active" id="pp-res">
-  <h2>Populations</h2>
+  <h2>Vacancy populations by sample</h2>
   <div class="tablewrap"><table>
     <thead><tr><th>Sample</th><th>Treatment</th><th class="k2">n<sub>V,tot</sub></th>
       <th class="k2">r<sub>CO</sub></th><th class="k2">r<sub>CO</sub> fitted</th>
