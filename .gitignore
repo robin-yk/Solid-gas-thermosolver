@@ -12,3 +12,6 @@ Ti4O7_RWGS.png
 docs/figures/*.png
 scratch-*.png
 scratch-*.js
+
+# 3D view build dependencies
+web/3d/node_modules/

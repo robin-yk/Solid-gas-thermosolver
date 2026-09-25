@@ -27,8 +27,12 @@ FEED = {'CO2': 10, 'H2': 10, 'N2': 80}
 SCRIPT = r'''
 const P = require(process.env.PW + '/node_modules/playwright');
 (async () => {
-  const b = await P.chromium.launch();
+  const b = await P.chromium.launch({ args: ['--use-angle=swiftshader',
+    '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const pg = await b.newPage();
+  /* the 3D figures render once per change instead of every frame, so a
+     software renderer keeps up */
+  await pg.addInitScript(() => { window.V3D_STILL = 1; });
   const errs = [];
   pg.on('pageerror', e => errs.push(String(e)));
   pg.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
@@ -98,6 +102,34 @@ const P = require(process.env.PW + '/node_modules/playwright');
   out.popKpis = await txt('pnKpis');
   out.popFit = await txt('pnIdent');
 
+  /* the distribution workspace: the figure, the two 3D canvases, and the
+     numbers it prints for the starting scenario and after a change */
+  await pg.click('.wstab[data-ws="ws-distribution"]');
+  await pg.waitForTimeout(6000);
+  out.drew.figTofRange = await pg.evaluate(() =>
+    document.querySelector('#figTofRange svg') ? 1 : 0);
+  out.tofMarks = await pg.evaluate(() => {
+    const s = document.querySelector('#figTofRange svg');
+    return { fixed: s.querySelectorAll('rect[stroke="#777777"]').length,
+             chosen: s.querySelectorAll('circle[stroke="#0072B2"]').length };
+  });
+  out.canvasInk = await pg.evaluate(() =>
+    Array.from(document.querySelectorAll('#ws-distribution canvas.v3d-canvas')).map(c => {
+      const t = document.createElement('canvas'); t.width = c.width; t.height = c.height;
+      const g = t.getContext('2d'); g.drawImage(c, 0, 0);
+      const d = g.getImageData(0, 0, t.width, t.height).data; let n = 0;
+      for (let i = 0; i < d.length; i += 4) if (d[i] < 235 || d[i + 1] < 235 || d[i + 2] < 235) n++;
+      return n;
+    }));
+  out.vdKpis = await txt('vdKpis');
+  out.vdState = await pg.evaluate(() => window.VacancyDistribution.state());
+  await pg.selectOption('#vdSample', 'R1000');
+  await pg.selectOption('#vdReactive', 'ISO_z4');
+  await pg.waitForTimeout(3000);
+  out.vdKpis2 = await txt('vdKpis');
+  out.vdState2 = await pg.evaluate(() => window.VacancyDistribution.state());
+  out.slabCounts = await pg.evaluate(() => window.VacancyDistribution.three().slab.counts);
+
   out.scope = await pg.evaluate(() =>
     document.body.textContent.indexOf('must not be reused as a turnover-frequency denominator') >= 0);
   console.log(JSON.stringify(out));
@@ -125,7 +157,7 @@ def check(out):
     ok('the swept figures wait for the button',
        out['beforeSweep'] == {'margin': 0, 'conversion': 0}, out['beforeSweep'])
     ok('the page opens on the home screen',
-       out['home'] == {'cards': 2, 'thermo': 'none', 'topbar': 'none'}, out['home'])
+       out['home'] == {'cards': 3, 'thermo': 'none', 'topbar': 'none'}, out['home'])
     ok('a card opens its workspace under its hash', out['hash'] == '#equilibrium', out['hash'])
     ok('the workspace switch works',
        out['tabSwitch']['population'] == '' and out['tabSwitch']['equilibrium'] == 'none',
@@ -158,6 +190,29 @@ def check(out):
     ok('pure H2 at 1200 C reduces, and the page says so',
        'Ti10O19' in out['pure_h2'].replace('₁', '1').replace('₀', '0')
        .replace('₉', '9').replace('Ti10O19', 'Ti10O19'), out['pure_h2'])
+
+    tof = json.load(open(os.path.join(ROOT, 'paper_outputs', 'tof_range.json')))
+    n = len(tof['samples']) + 1                  # one of each in the legend
+    ok('the TOF figure marks every sample twice',
+       out['tofMarks'] == {'fixed': n, 'chosen': n},
+       out['tofMarks'])
+    ok('both 3D figures drew', len(out['canvasInk']) == 2
+       and min(out['canvasInk']) > 5000, out['canvasInk'])
+    for key, state in (('vdKpis', out['vdState']), ('vdKpis2', out['vdState2'])):
+        ax = tof['axes']
+        i = ax['energy_map'].index(state['map'])
+        i = i * len(ax['cutoff_nm']) + ax['cutoff_nm'].index(state['cutoff'])
+        i = i * len(ax['dG_eV']) + ax['dG_eV'].index(state['dG'])
+        i = i * len(ax['f110']) + ax['f110'].index(state['f110'])
+        i = i * len(ax['eps']) + [e['key'] for e in ax['eps']].index(state['eps'])
+        smp = [q for q in tof['samples'] if q['sample'] == state['sample']][0]
+        n = smp['cases']['sites'][i][tof['reactive'].index(state['reactive'])]
+        want = float('%.3g' % (smp['rate_co_umol_g_s'] / n))
+        ok('%s %s: the page prints the stored TOF' % (state['sample'], state['reactive']),
+           ('%g' % want) in out[key], (want, out[key]))
+    ok('the surface patch removes sites for the new scenario',
+       sum(out['slabCounts'][k] for k in ('BRI', 'IPL', 'SBR', 'L24')) >= 0
+       and out['slabCounts']['reactive'] <= out['slabCounts']['BRI'], out['slabCounts'])
 
     return fails
 

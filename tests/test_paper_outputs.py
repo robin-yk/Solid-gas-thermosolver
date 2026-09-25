@@ -113,17 +113,17 @@ def test_the_browser_engines_are_mirrors_under_a_parity_gate():
     every browser engine has to be paired with a gate that holds it to the
     Python module it mirrors."""
     engines = {'activeset.js': 'test_activeset_port.py',
-               'population.js': 'test_population_port.py',
-               'distribution.js': 'test_vacancy_distribution.py'}
+               'population.js': 'test_population_port.py'}
     for js, gate in engines.items():
         assert (ROOT / 'web' / js).exists(), js
         assert (ROOT / 'tests' / gate).exists(), \
             '%s has no parity gate; %s must exist' % (js, gate)
     inlined = sorted(p.name for p in (ROOT / 'web').iterdir()
                      if p.suffix == '.js')
-    assert inlined == ['activeset.js', 'distribution.js', 'distribution_ui.js', 'figkit.js', 'figures_population.js',
+    assert inlined == ['activeset.js', 'distribution_ui.js', 'figkit.js',
+                       'figures_distribution.js', 'figures_population.js',
                        'figures_thermo.js', 'population.js', 'site_ui.js',
-                       'thermo_ui.js', 'ti_solver_page.js'], inlined
+                       'thermo_ui.js', 'ti_solver_page.js', 'vacancy3d.js'], inlined
 
 
 def test_the_manuscript_values_are_read_not_recomputed(site):

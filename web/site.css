@@ -29,12 +29,7 @@ h3{margin:20px 0 8px;color:var(--navy);font-size:17px;line-height:1.25}
 #home{padding:clamp(30px,6vh,70px) 0 40px;max-width:1180px;margin:auto}
 .lede{max-width:640px;margin:14px 0 34px;color:var(--muted);font-size:18px;line-height:1.45}
 .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;max-width:1200px}
-.vd-inputs label{margin-top:18px;text-transform:none;letter-spacing:0;font-weight:500}
-.vd-inputs details{margin-top:20px}
-.vd-figure{max-width:640px}
-.vd-figure svg{width:100%;height:auto}
 .workspace-scheme{display:block;width:100%;height:auto;margin:0 0 22px;background:#fff}
-#vdError{color:#c53a3a}
 .card{display:flex;flex-direction:column;align-items:stretch;text-align:left;gap:10px;
       padding:0 0 22px;background:var(--panel);border:1px solid var(--line);border-radius:16px;
       cursor:pointer;color:var(--ink);transition:border-color .12s,box-shadow .12s}
@@ -205,7 +200,6 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 .switch{background:#fff;border:0;border-radius:0}
 .wstab{border-radius:0;font-weight:500}
 .wstab.active{background:#fff;color:var(--blue);border:0;border-bottom:2px solid var(--blue)}
-#vdResults{margin:0 0 20px;font-size:15px}
 @media(max-width:980px){.wsgrid>aside{padding:0}.workspace-scheme{max-width:380px;margin-left:auto;margin-right:auto}}
 
 @media (max-width:820px){
@@ -227,3 +221,17 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 @media (max-width:620px){.topbar{gap:12px}.wstab{padding:7px 9px;font-size:12px}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{min-height:96px;padding:14px}
   .crow{grid-template-columns:1fr}}
+
+/* the two 3D figures of the distribution workspace: a square canvas the
+   width of the figure column, turned by dragging */
+.pubfig .figbox.v3d{max-width:520px;aspect-ratio:1/1;background:#fff}
+.v3d-canvas{display:block;width:100%!important;height:auto!important;cursor:grab;touch-action:none}
+.v3d-canvas:active{cursor:grabbing}
+#vdTable tr.hl td{background:var(--soft);font-weight:700}
+.vdt{border-collapse:collapse;font-size:13px}
+.vdt th{font-size:11px;color:var(--muted);font-weight:700;text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.vdt td{padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.vdt .n{text-align:right;font-variant-numeric:tabular-nums}
+.figgrid .wide{grid-column:1/-1}
+.figgrid .wide .figbox svg{max-width:1040px}
+.figgrid .wide figcaption,.figgrid .wide .figdl{max-width:1040px}

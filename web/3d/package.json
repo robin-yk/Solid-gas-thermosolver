@@ -1,0 +1,12 @@
+{
+  "name": "vacancy3d",
+  "private": true,
+  "description": "Source of web/vacancy3d.js, the inlined 3D view of the vacancy-distribution workspace.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "three": "0.186.1"
+  }
+}

@@ -23,6 +23,7 @@ WEB = os.path.join(ROOT, 'web')
 DATA = os.path.join(ROOT, 'data')
 OUT = os.path.join(ROOT, 'docs', 'index.html')
 SITE = os.path.join(ROOT, 'paper_outputs', 'site_data.json')
+TOF = os.path.join(ROOT, 'paper_outputs', 'tof_range.json')
 
 CASES_FEEDS = {
     'rwgs_1_1': {'CO2': 1, 'H2': 1},
@@ -34,7 +35,8 @@ CASES_FEEDS = {
 }
 
 PARTS = [
-    ('/*DISTENGINE*/', os.path.join(WEB, 'distribution.js')),
+    ('/*V3D*/', os.path.join(WEB, 'vacancy3d.js')),
+    ('/*DISTFIG*/', os.path.join(WEB, 'figures_distribution.js')),
     ('/*DISTUI*/', os.path.join(WEB, 'distribution_ui.js')),
     ('/*CSS*/', os.path.join(WEB, 'site.css')),
     ('/*FIGKIT*/', os.path.join(WEB, 'figkit.js')),
@@ -101,10 +103,12 @@ def build():
     html = html.replace('/*DATA*/',
                         json.dumps(json.loads(read(SITE)),
                                    separators=(',', ':')))
+    html = html.replace('/*TOFDATA*/',
+                        json.dumps(json.loads(read(TOF)), separators=(',', ':')))
     for token, path in PARTS:
         html = html.replace(token, read(path))
     for token, _ in PARTS + [('/*DATA*/', None), ('/*ASDATA*/', None),
-                             ('/*REFDATA*/', None)]:
+                             ('/*REFDATA*/', None), ('/*TOFDATA*/', None)]:
         if token in html:
             raise SystemExit('unsubstituted token left in the page: ' + token)
     if '<script src=' in html or 'href="http' in html.replace(

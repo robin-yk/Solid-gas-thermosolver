@@ -37,7 +37,7 @@
     <button class="card" data-ws="ws-distribution" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true"><path d="M10 8 V68 H110" fill="none" stroke="#777"/><path d="M12 12 C20 12 22 60 45 62 L108 62" fill="none" stroke="#0072B2" stroke-width="2"/></svg>
       <span class="cname">Vacancy distribution</span>
-      <span class="cdesc">Distribute a measured vacancy inventory between the surface and particle interior at equilibrium.</span>
+      <span class="cdesc">Distribute each measured inventory over surface, subsurface and bulk sites, and bound the apparent turnover frequency.</span>
     </button>
     <button class="card" data-ws="ws-population" type="button">
       <svg class="thumb" viewBox="0 0 120 80" aria-hidden="true">
@@ -57,52 +57,158 @@
 </section>
 
 <section id="ws-distribution" class="ws" style="display:none">
-  <div class="wshead"><h2>Vacancy distribution</h2><p class="sub">Calculate the surface enrichment of a measured oxygen-vacancy inventory in a rutile particle.</p></div>
+  <div class="wshead"><h2>Vacancy distribution</h2><p class="sub">Distribute each sample&rsquo;s measured vacancy inventory over surface, subsurface and bulk sites with one model, and bound its apparent CO turnover frequency.</p></div>
   <div class="wsgrid">
-    <aside class="vd-inputs">
-      <img class="workspace-scheme" src="SCHEME:vacancy-distribution" alt="A particle section with vacancies enriched near the surface and fewer in the interior. Total vacancy inventory is fixed. Conceptual geometry, not to scale.">
-      <label for="vdSample">Measured inventory</label><select id="vdSample"><option value="">Custom</option><option value="13.45">A600</option><option value="36.85">R500</option><option value="94" selected>R600</option><option value="193.1">R800</option><option value="781.2">R1000</option></select>
-      <label for="vdInventory">Oxygen removed (µmol O g⁻¹)</label><input id="vdInventory" type="number" value="94" min="0" step="any">
-      <label for="vdRadius">Particle radius (nm)</label><input id="vdRadius" type="number" value="450" min="0" step="any">
-      <label for="vdTemperature">Distribution temperature (°C)</label><input id="vdTemperature" type="number" value="600" min="-273.14" step="any">
-      <p class="readout">Sample presets change the measured inventory only. All samples start at the same reference temperature of 600 °C.</p>
-      <details><summary>Surface-energy assumptions</summary>
-        <label for="vdA">Surface stabilization (eV)</label><input id="vdA" type="number" value="1.31" min="0" step="any">
-        <label for="vdXi">Decay length (nm)</label><input id="vdXi" type="number" value="0.5" min="0" step="any">
-        <p class="readout">The 1.31 eV stabilization is the difference between bulk and bridging-surface vacancy energies (5.70 and 4.39 eV). The 0.5 nm decay length is assumed.</p>
-      </details>
-      <p id="vdError" role="alert"></p>
+    <aside class="population-sheet" aria-labelledby="vd-controls-title">
+      <img class="workspace-scheme" src="SCHEME:vacancy-distribution" alt="A particle whose bulk holds most vacancies while a thin (110) surface band holds the reactive bridging-oxygen vacancies and a few subsurface ones. Conceptual geometry, not to scale.">
+      <header class="population-sheet-head">
+        <h3 id="vd-controls-title">Model scenario</h3>
+        <p>Each input picks one value of an unknown the model is solved over. Every combination was solved in advance; the page reads the result.</p>
+      </header>
+      <div class="population-parameters">
+        <div class="population-field"><label for="vdSample">Sample</label><select id="vdSample"></select>
+          <div class="readout" id="vdSampleNote"></div></div>
+        <div class="population-field"><label for="vdMap">Vacancy energy map</label><select id="vdMap"></select>
+          <div class="readout">Layer-resolved formation energies from four literature sets.</div></div>
+        <div class="population-field"><label for="vdCutoff">Aggregate cutoff</label><select id="vdCutoff"></select>
+          <div class="readout">nm · vacancies closer than this count as one bulk aggregate.</div></div>
+        <div class="population-field"><label for="vdDG">Reconstruction free energy &Delta;G</label><select id="vdDG"></select>
+          <div class="readout">eV per (1&times;2) cell, relative to its unreconstructed vacancies.</div></div>
+        <div class="population-field"><label for="vdF110">(110) share of the surface</label><select id="vdF110"></select>
+          <div class="readout">The rest is bulk-like surface with no reactive sites.</div></div>
+        <div class="population-field"><label for="vdEps">Dielectric constant</label><select id="vdEps"></select>
+          <div class="readout">Rutile static &epsilon; along a or c.</div></div>
+        <div class="population-field"><label for="vdReactive">Reactive-site definition</label><select id="vdReactive"></select>
+          <div class="readout" id="vdReactiveNote"></div></div>
+      </div>
+      <div class="population-sheet-foot">
+        <div class="population-status" id="vdStatus" aria-live="polite"></div>
+        <div class="population-actions">
+          <button type="button" class="population-reset" id="vdReset">Starting scenario</button>
+          <button type="button" class="population-fit" id="vdPlay">Play the series</button>
+        </div>
+      </div>
     </aside>
-    <div>
-      <div id="vdFigure" class="vd-figure"></div>
-      <button id="vdSvg" class="mini" type="button">Download SVG</button>
-      <p id="vdResults" aria-live="polite"></p>
-      <p class="sub">The dashed line distributes the same inventory uniformly. The profile resolves the near-surface region; the interior value is evaluated at the particle centre. Here x is the fraction of oxygen sites vacant; the oxygen deficit in TiO₂₋δ is δ = 2x.</p>
-      <details><summary>Model and inventory check</summary>
-        <p>Supplementary Note 2b fixes the total vacancy inventory and minimizes the free energy of a spherical particle. Local charge compensation gives a Ti³⁺ fraction \(y=4x\); the oxygen deficit in TiO₂₋δ is \(\delta=2x\).</p>
-        <h3>Surface stabilization</h3>
-        <div class="eq">Gₙ(r) = −A exp[−(R − r)/ξ]</div>
-        <p>A is the surface stabilization energy and ξ is its decay length. The vacancy energy approaches its bulk reference with increasing depth R − r.</p>
-        <h3>Free energy per oxygen site</h3>
-        <div class="eq">f(r) = Gₙ(r)x + kBT [h(x) + ½h(4x)]<br>h(u) = u ln u + (1 − u) ln(1 − u)</div>
-        <p>x is the fraction of vacant oxygen sites. The two mixing terms count vacancies and compensating Ti³⁺; there is one titanium site for every two oxygen sites.</p>
-        <h3>Fixed inventory</h3>
-        <div class="eq">x̄ = (3/R³) ∫₀ᴿ x(r) r² dr = nᵥ M / 2 × 10⁻⁶</div>
-        <p>nᵥ is the measured oxygen removal in µmol O g⁻¹ of initial oxide and M = 79.866 g mol⁻¹. This constraint keeps the total number of vacancies fixed while their spatial distribution changes.</p>
-        <h3>Equilibrium profile</h3>
-        <p>For a uniform density of oxygen sites, minimizing the volume-averaged free energy at fixed inventory is equivalent to making the following functional stationary:</p>
-        \[\mathcal{L}=\frac{3}{R^3}\int_0^R[f(r)-\lambda x(r)]r^2\,dr+\lambda\bar{x};;h'(u)=\ln\frac{u}{1-u};;\frac{\partial f}{\partial x}=\lambda\]
-        <div class="eq">Gₙ(r) + kBT [ln(x/(1 − x)) + 2 ln(4x/(1 − 4x))] = λ</div>
-        <p>The calculation adjusts λ to conserve the measured inventory. R is particle radius, r is radial position, T is absolute temperature and kB is Boltzmann’s constant. The mean vacancy fraction is the oxygen removal in µmol O g⁻¹ multiplied by 79.866 × 10⁻⁶ / 2.</p>
-        <p>At each radial position the left-hand side increases monotonically with vacancy fraction. This gives a unique local occupation for each trial chemical potential:</p>
-        \[\frac{\partial^2 f}{\partial x^2}=k_{\mathrm B}T\left[\frac{3}{x}+\frac{1}{1-x}+\frac{8}{1-4x}\right]>0,\quad 0<x<\frac14\]
-        <p>The outer-shell fraction counts vacancies within a depth \(d\), relative to all vacancies in the particle:</p>
-        \[F_d=\frac{\int_{\max(0,R-d)}^R x(r)r^2\,dr}{\int_0^R x(r)r^2\,dr}\]
-        <p>Lengths use nm; energies use eV per oxygen site; \(k_{\mathrm B}=8.617333262\times10^{-5}\,\mathrm{eV\,K^{-1}}\). Temperature is in K. The displayed shell fraction uses \(d=2\,\mathrm{nm}\).</p>
-        <p>Ideal mixing and local charge compensation limit x to 0.25. The model extrapolates dilute-defect energies at dense surface occupations and omits vacancy interactions and reconstruction. The measured inventory is supplied independently of the gas–solid equilibrium and kinetic models.</p>
-        <p id="vdCheck"></p>
-      </details>
-    </div>
+<div class="wsmain">
+<div class="kvrow">
+  <div class="kvblock">
+    <h3>Where the inventory sits</h3>
+    <table class="kv" id="vdBasis"></table>
+  </div>
+  <div class="kvblock">
+    <h3>Apparent turnover frequency</h3>
+    <div id="vdVerdict"></div>
+    <table class="kv" id="vdKpis"></table>
+  </div>
+</div>
+
+<div class="figgrid">
+  <figure class="pubfig" id="figParticle">
+    <h3>One particle, every pool</h3>
+    <div class="figbox v3d" role="img" aria-label="Rotating rutile particle with one octant cut away. Beads mark vacancies: purple in the bulk, orange below the surface, blue at the surface under the (110) tiles."></div>
+    <details class="figdl"><summary>Download figure</summary>
+      <button type="button" data-fmt="png">PNG</button>
+    </details>
+    <figcaption id="vdParticleCaption"></figcaption>
+  </figure>
+  <figure class="pubfig" id="figSlab">
+    <h3>The (110) surface the TOF counts</h3>
+    <div class="figbox v3d" role="img" aria-label="Rutile (110) surface patch of four trilayers. Missing bridging oxygens glow blue; pulsing ones are counted as reactive sites. Orange marks vacancies below the surface; light blue rows are (1x2) reconstructed cells."></div>
+    <details class="figdl"><summary>Download figure</summary>
+      <button type="button" data-fmt="png">PNG</button>
+    </details>
+    <figcaption id="vdSlabCaption"></figcaption>
+  </figure>
+  <figure class="pubfig wide" id="figTofRange">
+    <h3>Apparent TOF range of each sample</h3>
+    <div class="figbox" role="img" aria-label="Apparent CO turnover frequency range for each sample over all parameter points, with the fixed-denominator value and the chosen scenario"></div>
+    <details class="figdl"><summary>Download figure</summary>
+      <button type="button" data-fmt="svg">SVG</button>
+      <button type="button" data-fmt="png">PNG, 600 dpi</button>
+      <button type="button" data-fmt="csv">CSV data</button>
+    </details>
+    <figcaption>Each bar spans the apparent TOF, the measured CO rate divided by the
+    reactive-site count, over every parameter point whose count is at least
+    0.01&nbsp;&micro;mol&nbsp;g&#8315;&sup1; and 1% of the bridging sites; the thick
+    tick is its median. Points below that threshold are kept in the results and
+    counted under the bar. The open square is the rate over the fixed
+    2.31&nbsp;&micro;mol&nbsp;g&#8315;&sup1; of Supplementary Note 2a. The filled
+    circle is the scenario chosen on the left; hollow when its count is below
+    threshold, pinned to the frame when off scale.</figcaption>
+  </figure>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-page="vd-res" type="button">Results</button>
+  <button class="tab" data-page="vd-how" type="button">Method</button>
+  <button class="tab" data-page="vd-val" type="button">Validation</button>
+</div>
+
+<div class="panel pad page active" id="vd-res">
+  <h2>Samples</h2>
+  <div class="tablewrap"><table class="vdt">
+    <thead><tr><th>Sample</th><th>Treatment</th><th class="n">Inventory</th><th class="n">r<sub>CO</sub></th>
+      <th class="n">TOF, this scenario</th><th class="n">TOF min</th><th class="n">median</th><th class="n">max</th>
+      <th class="n">TOF, fixed 2.31</th><th class="n">below threshold</th></tr></thead>
+    <tbody id="vdTable"></tbody>
+  </table></div>
+  <p class="sub">Inventories in µmol-O g⁻¹; rates in µmol g⁻¹ s⁻¹; TOF in s⁻¹. Range over the parameter points with a countable site denominator.</p>
+</div>
+
+<div class="panel pad page" id="vd-how">
+  <h2>Method</h2>
+  <p>One model distributes a sample&rsquo;s measured oxygen removal over every site a
+  vacancy can occupy in a rutile particle, at equilibrium at the 600&nbsp;&deg;C
+  reaction temperature. All of its parts are on at once; what is not known is a
+  parameter of that one model, and the model is solved at every combination of them.</p>
+  <h3>What the model contains</h3>
+  <p><b>Surface.</b> A share f<sub>110</sub> of the surface is (110), resolved as four
+  explicit O&ndash;Ti<sub>2</sub>O<sub>2</sub>&ndash;O trilayers (1.30&nbsp;nm) with bridging,
+  in-plane and sub-bridging oxygen in each. The rest of the surface is bulk-like and
+  has no reactive sites.</p>
+  <p><b>Reconstruction.</b> Bridging rows are grouped into (1&times;2) cells that own
+  their four first-layer Ti. A cell is intact, has one or both bridging oxygens missing
+  with zero to four Ti<sup>3+</sup>, or is reconstructed, at a free energy &Delta;G
+  above its two-vacancy state.</p>
+  <p><b>Bulk.</b> Below 1.30&nbsp;nm, vacancies are counted in Monte Carlo boxes of 700
+  oxygen sites, so vacancies closer than the aggregate cutoff are one aggregate with
+  its own free energy.</p>
+  <p><b>Charge.</b> Each vacancy leaves two electrons as Ti<sup>3+</sup>. Their
+  distribution between layers is solved with the Poisson equation across the
+  shells, with the static dielectric constant of rutile, rather than by making each
+  layer neutral.</p>
+  <p><b>Particles.</b> An equal-mass mixture of 900 to 1600&nbsp;nm diameters,
+  averaged at four sizes.</p>
+  <h3>Unknowns solved over</h3>
+  <table class="kv" id="vdGrid"></table>
+  <h3>Apparent turnover frequency</h3>
+  <div class="eq">TOF = r<sub>CO</sub> / N<sub>react</sub></div>
+  <p>N<sub>react</sub> is the reactive-site count in µmol g⁻¹ under the chosen
+  definition: every bridging vacancy; a bridging vacancy with 2, 4 or 8 intact
+  bridging neighbours, N&nbsp;=&nbsp;c&theta;(1&minus;&theta;)<sup>z</sup>; or bridging plus
+  first-layer in-plane vacancies. A count below 0.01&nbsp;µmol&nbsp;g⁻¹ or below 1% of
+  the bridging sites is flagged and reported apart; it is not removed.
+  Q&nbsp;=&nbsp;TOF/TOF(R600) at the same parameter point compares samples without
+  the absolute scale.</p>
+  <div class="note calm"><b>Scope.</b> The model assumes equilibrium at
+    600&nbsp;&deg;C and treats transport as complete; no kinetics of the pretreatment
+    is included. Samples treated at 900&nbsp;&deg;C and above are flagged as strongly
+    reduced. The 3D figures draw the computed pool sizes and site fractions; the
+    atom positions are unrelaxed bulk positions and the added rows are schematic.</div>
+</div>
+
+<div class="panel pad page" id="vd-val">
+  <h2>Validation</h2>
+  <p>The model&rsquo;s own tests: every oxygen and titanium site is counted once;
+  the Monte Carlo aggregate free energy is exact for one and two vacancies and
+  independent of the random seed; the Poisson solution conserves the inventory and
+  charge; its gradient and Hessian agree with finite differences; at large
+  &epsilon; it approaches the scalar-chemical-potential limit as 1/&epsilon;; the
+  reconstruction vanishes at &Delta;G&nbsp;=&nbsp;5&nbsp;eV; and saved results regenerate.</p>
+  <table class="kv" id="vdChecks"></table>
+</div>
+
+</div>
   </div>
 </section>
 
@@ -577,5 +683,7 @@
 <script>/*PAGE*/</script>
 <script>/*THERMOUI*/</script>
 <script>/*UI*/</script>
-<script>/*DISTENGINE*/</script>
+<script id="tof-data" type="application/json">/*TOFDATA*/</script>
+<script>/*V3D*/</script>
+<script>/*DISTFIG*/</script>
 <script>/*DISTUI*/</script>

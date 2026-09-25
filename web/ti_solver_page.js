@@ -35,22 +35,7 @@
   }
   organize('ws-thermo', 'p-res', 'p-how', ['p-kkt','p-bal','p-val']);
   organize('ws-population', 'pp-res', 'pp-how', ['pp-val']);
-  var dm = document.querySelector('#ws-distribution .wsgrid > div');
-  dm.className = 'wsmain';
-  var explanation = dm.querySelector('details'), model = document.createElement('div');
-  model.id = 'vd-model'; model.className = 'page workspace-model';
-  explanation.querySelector('summary').remove();
-  model.innerHTML = '<h2>Model</h2>';
-  while (explanation.firstChild) model.appendChild(explanation.firstChild);
-  explanation.remove();
-  var check = document.createElement('details');
-  check.innerHTML = '<summary>Inventory check</summary>'; check.appendChild(model.querySelector('#vdCheck')); model.appendChild(check);
-  var dr = document.createElement('div'); dr.id = 'vd-res'; dr.className = 'page active workspace-results';
-  while(dm.firstChild) dr.appendChild(dm.firstChild);
-  dr.insertBefore(dr.querySelector('#vdResults'), dr.firstChild);
-  var db = document.createElement('div'); db.className = 'tabs';
-  db.innerHTML = '<button class="tab active" data-page="vd-res" type="button">Results</button><button class="tab" data-page="vd-model" type="button">Model</button>';
-  dm.appendChild(db); dm.appendChild(dr); dm.appendChild(model);
+  organize('ws-distribution', 'vd-res', 'vd-how', ['vd-val']);
   var D = JSON.parse($('activeset-data').textContent);
   var REF = JSON.parse($('reference-data').textContent);
   var solver = new ActiveSet.Solver(D);

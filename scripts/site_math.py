@@ -3,10 +3,7 @@ import re
 from latex2mathml.converter import convert
 
 EQUATIONS = [
- [r'G_{\mathrm n}(r)=-A\exp\left[-\frac{R-r}{\xi}\right]'],
- [r'f(r)=G_{\mathrm n}(r)x+k_{\mathrm B}T\left[h(x)+\frac12h(4x)\right]', r'h(u)=u\ln u+(1-u)\ln(1-u)'],
- [r'\bar{x}=\frac{3}{R^3}\int_0^R x(r)r^2\,dr=\frac{n_{\mathrm V}M}{2}\times10^{-6}'],
- [r'G_{\mathrm n}(r)+k_{\mathrm B}T\left[\ln\frac{x}{1-x}+2\ln\frac{4x}{1-4x}\right]=\lambda'],
+ [r'\mathrm{TOF}=\frac{r_{\mathrm{CO}}}{N_{\mathrm{react}}}'],
  [r'\mathrm{CO_2}+\mathrm{H_2}\rightleftharpoons\mathrm{CO}+\mathrm{H_2O}'],
  [r'G=\sum_{i\in\mathrm{gas}}n_i\mu_i+\sum_{j\in\mathrm{solid}}m_j\mu_j^\circ(T)',r'\mu_i=\mu_i^\circ(T)+RT\ln\left(\frac{y_iP}{P^\circ}\right)'],
  [r'\mu_i=\sum_e a_{ie}\lambda_e\quad(i\in\mathrm{gas})',r'\mu_j^\circ=t_j\lambda_{\mathrm{Ti}}+o_j\lambda_{\mathrm O}\quad(j\in\mathrm{active\ solids})'],
