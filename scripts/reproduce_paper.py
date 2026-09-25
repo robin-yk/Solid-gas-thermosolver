@@ -92,7 +92,24 @@ def _rows_dielectric():
     }]
 
 
+# Stored at 10 significant digits. Solver results differ between machines in
+# the last one or two digits (libm and BLAS builds); 10 digits keeps the
+# byte gate independent of the machine that regenerates the outputs.
+SIG = 10
+
+
+def _sig(obj):
+    if isinstance(obj, float):
+        return float('%.*g' % (SIG, obj))
+    if isinstance(obj, dict):
+        return {k: _sig(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_sig(v) for v in obj]
+    return obj
+
+
 def _write(name, rows):
+    rows = _sig(rows)
     path = os.path.join(OUT, name)
     with open(path, 'w', newline='') as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
@@ -152,10 +169,6 @@ def main():
         b = A.reduction_boundary(T_C + 273.15)
         boundary.append({'T_C': T_C, 'y_CO2': b['y_CO2'], 'phase': b.get('phase')})
 
-    # The supplement does not record which residual it minimised and the
-    # rates span 86-fold, so every one is reported.
-    pop_fit = {k: VP.fit(pop_series, kind=k, iters=250) for k in VP.RESIDUALS}
-
     site = {
         'generated_by': 'scripts/reproduce_paper.py',
         'feed': {'label': FEED_LABEL, 'sccm': FEED},
@@ -179,8 +192,11 @@ def main():
                          'log10_nu_eff': VP.REPORTED['log10_nu'],
                          'nu_eff_s1': 10.0 ** VP.REPORTED['log10_nu']},
             'residual_kinds': list(VP.RESIDUALS),
-            'rows': pop_rows,
-            'fit': pop_fit,
+            # Residuals are fitted minus measured rate: they lose digits to
+            # cancellation and follow from the two stored rates, so they are
+            # not stored.
+            'rows': [{k: v for k, v in q.items() if not k.startswith('residual')}
+                     for q in pop_rows],
         },
         'dielectric': D.stored(),
         'scope': ('This repository computes gas-solid equilibrium and an '
@@ -190,7 +206,7 @@ def main():
     }
     path = os.path.join(OUT, 'site_data.json')
     with open(path, 'w') as fh:
-        json.dump(site, fh, indent=1, sort_keys=True)
+        json.dump(_sig(site), fh, indent=1, sort_keys=True)
         fh.write('\n')
     print('%-34s %4d kB' % ('site_data.json', os.path.getsize(path) // 1024))
 
