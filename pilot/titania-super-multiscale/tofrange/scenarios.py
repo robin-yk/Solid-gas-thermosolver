@@ -25,7 +25,11 @@ SENSITIVITY families change one thing at a time on every PRIMARY model:
                   frozen; everything else re-equilibrates at 600 C
     basal         alpha = 1: layer-1 in-plane vacancies also count (discrete maps)
     inventory     R600 at the Origin alternative, 94.6 umol/g
-Surface limit (every family except recon_fixed and recon_state)
+COMBINED family (several changes at once, so their interaction is computed):
+    combined      aggregates (cutoff 0.34, 0.40 nm) + (1x2) reconstruction state
+                  (dG -0.2, 0, +0.2 eV) + equal-mass 900-1600 nm mixture,
+                  discrete maps, NEUTRAL and LOCAL
+Surface limit (every family except recon_fixed, recon_state and combined)
     An unreconstructed (110) surface holds at most 17 % bridging vacancies
     (BIR2024; manuscript Note 2a, 0.17 ML). Above it the coverage used for
     reactive sites is capped at 0.17 and the case is flagged RECON_CAP. This is
@@ -38,7 +42,10 @@ Boundary flags (class BOUNDARY, value is a lower bound on TOF)
     PAIRS_BEYOND_DILUTE    more than half the eligible bulk vacancies paired:
                            larger clusters expected, which only lower the
                            surface population further
-INVALID: fewer than 0.01 umol/g or 1 % of the bridging capacity reactive.
+BELOW_SITE_THRESHOLD: fewer than 0.01 umol/g or 1 % of the bridging capacity
+reactive. This is a reporting threshold of this pilot. The TOF (rate / sites)
+and Q are still computed and kept; such cases only stay out of the summary
+range, which they would otherwise set by near-zero denominators.
 """
 import csv
 from pathlib import Path
@@ -64,7 +71,9 @@ RECON_DG = (-0.4, -0.2, 0.0, 0.2, 0.4)
 MC_CUTOFFS = (0.28, 0.34, 0.40, 0.45, 0.6, 1.0)
 FACET_110 = (0.75, 0.5)
 MATSUNAGA = 0.11
-EXPLICIT_RECON = ('recon_fixed', 'recon_state')
+EXPLICIT_RECON = ('recon_fixed', 'recon_state', 'combined')
+COMBINED_CUTOFFS = (0.34, 0.40)
+COMBINED_DG = (-0.2, 0.0, 0.2)
 
 
 def samples():
@@ -154,7 +163,7 @@ def evaluate(sol, lay, sample, family, label, spec, pf=0.0, theta=None, counts=N
         if pf > PAIR_BOUNDARY:
             flags.append('PAIRS_BEYOND_DILUTE')
         if not valid_count(n, lay.c_bri):
-            cls = 'INVALID'
+            cls = 'BELOW_SITE_THRESHOLD'
         elif 'YUAN_STRONG_REDUCTION' in flags or 'PAIRS_BEYOND_DILUTE' in flags:
             cls = 'BOUNDARY'
         else:
@@ -175,23 +184,37 @@ def evaluate(sol, lay, sample, family, label, spec, pf=0.0, theta=None, counts=N
     return rows
 
 
-def size_mixture(measured):
-    """Equal mass at each diameter in SIZE_MIX; reactive sites add by mass."""
+def size_mixture(measured, family='size_mix', label='equal mass, 900-1600 nm', maps=MAPS, **extra):
+    """Equal mass at each diameter in SIZE_MIX; reactive sites add by mass.
+    extra: further build options applied at every diameter (combined family)."""
     rows = []
-    for m in MAPS:
+    for m in maps:
         for c in CLOSURES:
             per = []
             for d in SIZE_MIX:
-                model, lay = build(m, c, d)
-                per.append([(site_counts(model.solve(float(s['inventory_umol_g']), T_EQ), lay, 'size_mix'), lay)
-                            for s in measured])
+                model, lay = build(m, c, d, **extra)
+                per.append([(site_counts(model.solve(float(s['inventory_umol_g']), T_EQ, fixed=lay.fixed),
+                                         lay, family), lay) for s in measured])
             lay900 = per[0][0][1]
             for k, s in enumerate(measured):
                 sites = {r: tuple(np.mean([p[k][0][0][r][i] for p in per]) for i in (0, 1)) for r in REACTIVE}
                 th = float(np.mean([p[k][0][1] for p in per]))
+                f_rec = float(np.mean([p[k][0][2] for p in per]))
                 spec = dict(name=m, closure=c, d_nm=None)
-                rows += evaluate(None, lay900, s, 'size_mix', 'equal mass, 900-1600 nm', spec,
-                                 counts=(sites, th, 0.0))
+                rows += evaluate(None, lay900, s, family, label, spec, counts=(sites, th, f_rec))
+    return rows
+
+
+def combined(measured):
+    """Aggregates, the (1x2) reconstruction state and the 900-1600 nm mass
+    mixture switched on together (discrete maps: the state needs explicit
+    bridging sites)."""
+    rows = []
+    for cut in COMBINED_CUTOFFS:
+        for dG in COMBINED_DG:
+            rows += size_mixture(measured, 'combined', f'MC cutoff {cut:g} nm, dG {dG:+g} eV, 900-1600 nm',
+                                 maps=[m for m in MAPS if m != 'LI_CONT'],
+                                 aggregates=cut, recon=('state', dG))
     return rows
 
 
@@ -219,6 +242,7 @@ def run_all(progress=None):
         if progress:
             progress(family, label, spec)
     rows += size_mixture(measured)
+    rows += combined(measured)
     return S, rows
 
 

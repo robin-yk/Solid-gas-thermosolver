@@ -103,6 +103,30 @@ def pair_states(eps_site, T):
     return dict(E=E, v=[0] + [2] * (len(E) - 1), g=g)
 
 
+def _recon_cell(C_bri, E, dG, ti_cap, eT):
+    """States of one 1x2 surface cell: two bridging sites (00, one, both
+    vacant) or the reconstructed row (one vacancy equivalent, energy E + dG).
+
+    LOCAL (ti_cap given): the cell also owns its layer-1 Ti, four per cell,
+    each empty or holding one Ti3+ electron (energy eT). The reconstructed row
+    keeps two of them for its own two electrons, so only two stay free. The
+    number of cells is set by the Ti plane (ti_cap / 4); the bridging O left
+    over (the Ti plane lies slightly deeper, so its area is 3e-4 smaller) stay
+    plain bridging sites. Returns (cells, state dict, O-state of each state).
+    """
+    o_states = [(0.0, 0, 0, 1, 4), (E, 1, 0, 2, 4), (2 * E, 2, 0, 1, 4), (E + dG, 1, 2, 1, 2)]
+    if ti_cap is None:
+        return C_bri / 2, dict(E=[s[0] for s in o_states], v=[s[1] for s in o_states],
+                               e=[s[2] for s in o_states], g=[s[3] for s in o_states]), [0, 1, 2, 3]
+    cells = min(C_bri / 2, ti_cap / 4)
+    Es, vs, es, gs, os_ = [], [], [], [], []
+    for o, (Eo, v, e_int, g, n_free) in enumerate(o_states):
+        for n in range(n_free + 1):
+            Es.append(Eo + n * eT); vs.append(v); es.append(e_int + n)
+            gs.append(g * math.comb(n_free, n)); os_.append(o)
+    return cells, dict(E=Es, v=vs, e=es, g=gs), os_
+
+
 def _two_state(C, E, tag, region, shell, electron=False):
     d = dict(C=C, E=[0.0, E], tag=tag, region=region, shell=shell)
     d.update(v=[0, 0], e=[0, 1]) if electron else d.update(v=[0, 1])
@@ -195,14 +219,26 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
         o_sites, ti_layers = pt.layer_sites(d_nm, K_EXPL)
         o_sites = [(k, site, C * f110, z) for k, site, C, z in o_sites]
         ti_layers = [C * f110 for C in ti_layers]
+        ti_rec, ti_explicit = ti_layers[0], sum(ti_layers)
         bri = basal = None
+        cell_o, bri_rest = None, None
+        if recon and recon[0] == 'state' and closure == 'GLOBAL':
+            raise ValueError('reconstruction states are built for NEUTRAL and LOCAL only')
+        if recon and recon[0] == 'fixed' and charged:
+            # The Ti2O3 rows hold their own Ti3+ (two per row vacancy): those Ti
+            # leave the free layer-1 Ti pool.
+            ti_layers[0] -= 2 * RECON_ROW_VACANCIES * recon[1] * pt.bridging_capacity(d_nm) * f110
         for k, site, C, z in o_sites:
             E = emap.get((k, site), 0.0)
             if (k, site) == (1, 'BRI') and recon and recon[0] == 'state':
-                dG = recon[1]
-                cell = dict(C=C / 2, E=[0.0, E, 2 * E, E + dG], v=[0, 1, 2, 1], e=[0, 0, 0, 2],
-                            g=[1, 2, 1, 1], tag=(k, site), region=k, shell=(k, PLANES[site]))
-                bri = add(cell, z, eps=E)
+                cells, states, cell_o = _recon_cell(C, E, recon[1], ti_layers[0] if charged else None,
+                                                    s0 if charged else 0.0)
+                bri = add(dict(C=cells, tag=(k, site), region=k, shell=(k, PLANES[site]), **states),
+                          z, eps=E)
+                if C - 2 * cells > 0:
+                    bri_rest = add(_two_state(C - 2 * cells, E, (k, site), k, (k, PLANES[site])), z, eps=E)
+                if charged:
+                    ti_layers[0] = 0.0          # every layer-1 Ti now sits in a cell
                 continue
             if (k, site) == (1, 'BRI') and recon and recon[0] == 'fixed':
                 C = C * (1 - recon[1])
@@ -213,6 +249,9 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
                 basal = i
         if charged:
             for k, C in enumerate(ti_layers, 1):
+                if C <= 0:
+                    ti_cap[k] = (bri, ti_rec)
+                    continue
                 eT = s0 if k == 1 else 0.0
                 i = add(_two_state(C, eT, 'Ti', k, (k, 1), electron=True),
                         (k - 1) * pt.D110 + pt.H_BRI)
@@ -221,7 +260,7 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
         edges = top + np.concatenate([[0.0], np.geomspace(Z0_BULK, R - top, n_bulk)])
         edges[-1] = R
         o_rem = pt.O_TOTAL - sum(c for _, _, c, _ in o_sites)
-        ti_rem = pt.TI_TOTAL - sum(ti_layers)
+        ti_rem = pt.TI_TOTAL - ti_explicit     # layer Ti moved into cells or reserved stay in layer 1
         whole = pt.shell_fraction(R, top, R)
         for j in range(n_bulk):
             lo, hi = edges[j], edges[j + 1]
@@ -232,7 +271,7 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
                 i = add(_two_state(ti_rem * f, 0.0, 'Ti', reg, sh, electron=True), zc)
                 ti_cap[reg] = (i, ti_rem * f)
             add_pairs(o_rem * f, 0.0, reg, sh, zc, lo)
-        lay = dict(kind='discrete', bri=bri, basal=basal, edges=edges)
+        lay = dict(kind='discrete', bri=bri, basal=basal, edges=edges, cell_o=cell_o, bri_rest=bri_rest)
     es = None
     if closure == 'GLOBAL':
         es = dict(radii=radii, eps=eps_r, mass_g=pt.particle_mass(d_nm))
@@ -271,10 +310,14 @@ def surface_coverage(sol, lay):
 def surface_state(sol, lay):
     """(theta on unreconstructed bridging sites, their capacity, reconstructed fraction)."""
     if lay.recon and lay.recon[0] == 'state':
-        x = sol.x[lay.bri]
+        o = np.asarray(lay.cell_o)
+        x = np.bincount(o, sol.x[lay.bri][:len(o)], 4)
         cells = sol.model.C[lay.bri]
-        f_rec = x[3] / cells
-        theta = (x[1] + 2 * x[2]) / (2 * (cells - x[3])) if cells > x[3] else 0.0
+        vac, sites = x[1] + 2 * x[2], 2 * (cells - x[3])
+        if lay.bri_rest is not None:
+            vac += float(sol.x[lay.bri_rest][1]); sites += sol.model.C[lay.bri_rest]
+        f_rec = 2 * x[3] / (2 * cells + (sol.model.C[lay.bri_rest] if lay.bri_rest is not None else 0.0))
+        theta = vac / sites if sites > 0 else 0.0
         return theta, lay.c_bri * (1 - f_rec), f_rec
     return surface_coverage(sol, lay), lay.c_bri * (1 - lay.f_fixed), lay.f_fixed
 

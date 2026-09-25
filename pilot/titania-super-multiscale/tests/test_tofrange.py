@@ -318,8 +318,9 @@ def test_classification_and_bounds():
     assert [float(r['N_react_umol_g']) for r in bri] == pytest.approx([0.17 * pt.bridging_capacity(900)] * len(bri), rel=1e-5)
     a600 = by(sample='A600', family='PRIMARY', energy_map='LI_CONT xi 0.5', closure='LOCAL', reactive='BRI')[0]
     assert a600['flags'] == '' and float(a600['theta_bri']) == pytest.approx(0.1013, abs=1e-4)
-    assert all(r['cls'] in ('BOUNDARY', 'INVALID') for r in by(sample='R1000'))
-    assert not by(sample='R1100')
+    for s in ('R1000', 'R1100'):
+        assert len(by(sample=s, family='PRIMARY')) == 40
+        assert all(r['cls'] in ('BOUNDARY', 'BELOW_SITE_THRESHOLD') for r in by(sample=s))
     # Explicit reconstruction is never capped.
     assert not any('RECON_CAP' in r['flags'] for r in rows if r['family'].startswith('recon_'))
 
@@ -345,9 +346,10 @@ def test_monte_carlo_is_reproducible_across_seeds():
     assert -KT * a[170] / 170 == pytest.approx(-KT * b[170] / 170, abs=0.05)
 
 
-def test_aggregates_empty_the_surface():
-    """Pairwise-additive clusters bind each vacancy by eV, far below any
-    surface site energy, so the bridging row empties."""
+def test_pairwise_additive_aggregates_at_1nm_take_the_surface_vacancies():
+    """With ZHA2017 pairs summed over every pair within 1 nm (a model
+    assumption), clusters bind each vacancy by eV, far below any surface site
+    energy, so the bridging row empties. A result of that assumption only."""
     m, lay = bd.build('PAB', 'LOCAL', 900.0, aggregates=1.0)
     s = m.solve(94.0, T)
     assert bd.surface_state(s, lay)[0] < 1e-3
@@ -376,6 +378,26 @@ def test_reconstruction_state_is_monotone_in_its_energy():
         bd.surface_state(m0.solve(94.0, T), l0)[0], rel=1e-9)
 
 
+def test_reconstruction_does_not_reuse_layer1_ti():
+    """The Ti2O3 row keeps two of its cell's four layer-1 Ti for its own
+    electrons; no Ti holds two electrons, and none sits in two pools."""
+    for dG in (-3.0, 0.0):
+        m, lay = bd.build('PAB', 'LOCAL', 900.0, recon=('state', dG))
+        s = m.solve(94.0, T)
+        i, c_ti = lay.ti[1]
+        assert i == lay.bri and not any(t == 'Ti' and m.region[k] == m.region[i]
+                                        for k, t in enumerate(m.tags))
+        o = np.asarray(lay.cell_o)
+        free = m.e[i][:len(o)] - np.where(o == 3, 2, 0)
+        assert free.max() == 4 and free[o == 3].max() == 2 and free.min() == 0
+        assert 4 * m.C[i] == pytest.approx(c_ti, rel=1e-12)
+        assert float(s.x[i] @ m.e[i]) <= c_ti
+    assert bd.surface_state(s, lay)[2] < 1
+    m, lay = bd.build('PAB', 'LOCAL', 900.0, recon=('fixed', 0.5))
+    m0, lay0 = bd.build('PAB', 'LOCAL', 900.0)
+    assert lay0.ti[1][1] - lay.ti[1][1] == pytest.approx(2 * lay.fixed['v'], rel=1e-12)
+
+
 def test_size_mixture_is_the_mass_average():
     rows = cases()
     mix = [r for r in rows if r['family'] == 'size_mix' and r['sample'] == 'R600'
@@ -399,7 +421,7 @@ def test_facet_share_scales_the_surface_only():
 def test_q_is_the_ratio_to_r600_in_the_same_scenario():
     rows = cases()
     key = lambda r: (r['family'], r['variant'], r['diameter_nm'], r['energy_map'], r['closure'], r['reactive'])  # noqa: E731
-    ref = {key(r): float(r['TOF_s_1']) for r in rows if r['sample'] == 'R600' and r['cls'] != 'INVALID'
+    ref = {key(r): float(r['TOF_s_1']) for r in rows if r['sample'] == 'R600' and r['TOF_s_1'] != 'inf'
            and r['variant'] != 'R600 94.6'}
     for r in rows:
         if r['Q_vs_R600']:

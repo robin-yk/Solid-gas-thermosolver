@@ -43,7 +43,8 @@ def base_key(r):
 def summary(S, rows):
     """Per sample. core = the 40 PRIMARY-family cases (900 nm, sourced maps,
     NEUTRAL/LOCAL, four reactive definitions); all = every family except
-    INVALID cases. Flags say which values are lower bounds."""
+    BELOW_SITE_THRESHOLD cases, whose TOF and Q range is reported apart.
+    Flags say which values are lower bounds."""
     out = []
     for s in S:
         rate = float(s['rate_co_umol_g_s'])
@@ -54,7 +55,7 @@ def summary(S, rows):
             out.append(dict(rec, status='MISSING_INPUT: inventory'))
             continue
         rec['status'] = 'CALCULATED'
-        valid = [r for r in mine if r['cls'] != 'INVALID']
+        valid = [r for r in mine if r['cls'] != 'BELOW_SITE_THRESHOLD']
         for tag, sel in (('core', [r for r in valid if r['family'] == 'PRIMARY']), ('all', valid)):
             sel = sorted(sel, key=lambda r: float(r['TOF_s_1']))
             v = [float(r['TOF_s_1']) for r in sel]
@@ -62,7 +63,7 @@ def summary(S, rows):
             rec[f'{tag}_TOF_min_s_1'] = fmt(v[0])
             rec[f'{tag}_TOF_median_s_1'] = fmt(statistics.median(v))
             rec[f'{tag}_TOF_max_s_1'] = fmt(v[-1])
-            q = sorted(float(r['Q_vs_R600']) for r in sel if r['Q_vs_R600'])
+            q = sorted(float(r['Q_vs_R600']) for r in sel if r['Q_vs_R600'] and not r['Q_ref_below_threshold'])
             if q:
                 rec[f'{tag}_Q_min'] = fmt(q[0])
                 rec[f'{tag}_Q_max'] = fmt(q[-1])
@@ -77,34 +78,40 @@ def summary(S, rows):
         raw = sorted(float(r['TOF_uncapped_s_1']) for r in core if r['TOF_uncapped_s_1'])
         rec['core_uncapped_TOF_min_s_1'] = fmt(raw[0])
         rec['core_uncapped_TOF_max_s_1'] = fmt(raw[-1])
-        rec['invalid_n'] = len(mine) - len(valid)
+        below = [r for r in mine if r['cls'] == 'BELOW_SITE_THRESHOLD']
+        rec['below_threshold_n'] = len(below)
+        v = sorted(float(r['TOF_s_1']) for r in below if r['TOF_s_1'] != 'inf')
+        q = sorted(float(r['Q_vs_R600']) for r in below if r['Q_vs_R600'])
+        if v:
+            rec['below_threshold_TOF_min_s_1'], rec['below_threshold_TOF_max_s_1'] = fmt(v[0]), fmt(v[-1])
+        if q:
+            rec['below_threshold_Q_min'], rec['below_threshold_Q_max'] = fmt(q[0]), fmt(q[-1])
         inv = {}
-        for r in mine:
-            if r['cls'] == 'INVALID':
-                inv[r['family']] = inv.get(r['family'], 0) + 1
-        rec['invalid_by_family'] = ' '.join(f'{f}:{n}' for f, n in sorted(inv.items()))
+        for r in below:
+            inv[r['family']] = inv.get(r['family'], 0) + 1
+        rec['below_threshold_by_family'] = ' '.join(f'{f}:{n}' for f, n in sorted(inv.items()))
         out.append(rec)
     return out
 
 
 def effects(rows):
-    """Change against the matched core case, in decades. INVALID cases have no
-    TOF (too few reactive sites) and are counted instead."""
+    """Change against the matched core case, in decades. BELOW_SITE_THRESHOLD
+    cases are counted instead (their near-zero denominators would set the range)."""
     prim = {base_key(r): float(r['TOF_s_1']) for r in rows if r['family'] == 'PRIMARY'}
     groups = {}
     for r in rows:
         if r['family'] == 'PRIMARY':
             continue
-        g = groups.setdefault((r['sample'], r['family'], r['variant']), dict(d=[], invalid=0))
+        g = groups.setdefault((r['sample'], r['family'], r['variant']), dict(d=[], below=0))
         k = base_key(r)
-        if r['cls'] == 'INVALID':
-            g['invalid'] += 1
+        if r['cls'] == 'BELOW_SITE_THRESHOLD':
+            g['below'] += 1
         elif k in prim:
             g['d'].append(math.log10(float(r['TOF_s_1']) / prim[k]))
     out = []
     for (s, f, v), g in sorted(groups.items()):
         d = g['d']
-        out.append(dict(sample=s, family=f, variant=v, n=len(d), invalid=g['invalid'],
+        out.append(dict(sample=s, family=f, variant=v, n=len(d), below_threshold=g['below'],
                         median_log10_change=f'{statistics.median(d):+.3f}' if d else '',
                         min_log10_change=f'{min(d):+.3f}' if d else '',
                         max_log10_change=f'{max(d):+.3f}' if d else ''))
@@ -151,11 +158,14 @@ def transport_gate(S):
 def add_q(rows):
     """Q = TOF / TOF(R600) within the same scenario (Note 11.2), R600 at 94.0."""
     key = lambda r: (r['family'], r['variant'], r['diameter_nm'], r['energy_map'], r['closure'], r['reactive'])  # noqa: E731
-    ref = {key(r): float(r['TOF_s_1']) for r in rows
-           if r['sample'] == 'R600' and r['cls'] != 'INVALID' and r['variant'] != 'R600 94.6'}
+    ok = lambda r: r['TOF_s_1'] != 'inf'                                   # noqa: E731
+    R600 = [r for r in rows if r['sample'] == 'R600' and ok(r) and r['variant'] != 'R600 94.6']
+    ref = {key(r): float(r['TOF_s_1']) for r in R600}
+    ref_below = {key(r) for r in R600 if r['cls'] == 'BELOW_SITE_THRESHOLD'}
     for r in rows:
         k = key(r)
-        r['Q_vs_R600'] = fmt(float(r['TOF_s_1']) / ref[k]) if r['cls'] != 'INVALID' and k in ref else ''
+        r['Q_vs_R600'] = fmt(float(r['TOF_s_1']) / ref[k]) if ok(r) and k in ref else ''
+        r['Q_ref_below_threshold'] = 'yes' if r['Q_vs_R600'] and k in ref_below else ''
 
 
 def main():

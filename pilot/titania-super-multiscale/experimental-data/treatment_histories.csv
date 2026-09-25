@@ -4,4 +4,4 @@ R500,H2,500,1800,,600,,data/reduction_series.csv (repository); cooling rate and 
 R600,H2,600,1800,,600,,data/reduction_series.csv (repository); cooling rate and observation time not recorded
 R800,H2,800,1800,,600,,data/reduction_series.csv (repository); cooling rate and observation time not recorded
 R1000,H2,1000,3600,,600,,data/reduction_series.csv (repository); cooling rate and observation time not recorded
-R1100,,1100,,,600,,treatment temperature from the sample name only; atmosphere and time not recorded
+R1100,H2,1100,3600,,600,,manuscript 092426: Fig. S5 caption (1100 C for 1 h) and Fig. 2 caption (5% H2 in He); cooling rate and observation time not recorded

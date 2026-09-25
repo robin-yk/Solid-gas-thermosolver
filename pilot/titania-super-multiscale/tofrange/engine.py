@@ -126,6 +126,7 @@ class Model:
         R, inr = self.nreg, self.region >= 0
         ri, C = self.region[inr], self.C[inr]
         lo, hi = np.full(R, -BOUND), np.full(R, BOUND)
+        dx_old = np.full(R, 2 * BOUND)
         for _ in range(MAX_ITER):
             p = self._p(y_mu, chi, beta)[inr]
             mq = (p * self.q[inr]).sum(1)
@@ -135,7 +136,12 @@ class Model:
                 break
             hi = np.where(h > 0, chi, hi); lo = np.where(h > 0, lo, chi)
             step = chi - h / np.maximum(dh, 1e-300)
-            chi = np.where((step > lo) & (step < hi), step, 0.5 * (lo + hi))
+            # Newton only while it lands inside the bracket and at least halves
+            # the step before last; otherwise bisect (a sharp sigmoid can make
+            # Newton bounce between the two bracket ends).
+            newton = (step > lo) & (step < hi) & (np.abs(chi - step) < 0.5 * dx_old)
+            nxt = np.where(newton, step, 0.5 * (lo + hi))
+            dx_old, chi = np.abs(nxt - chi), nxt
         else:
             raise RuntimeError('local neutrality did not converge')
         mv = (p * self.v[inr]).sum(1)
@@ -151,6 +157,7 @@ class Model:
         if not 0 < Nf < float(np.sum(self.C * self.v.max(axis=1))):
             raise ValueError('inventory outside the represented capacity')
         y, chi, lo, hi = 0.0, np.zeros(self.nreg), -BOUND, BOUND
+        dx_old = 2 * BOUND
         for it in range(1, MAX_ITER + 1):
             schur = 0.0
             if self.nreg:
@@ -164,7 +171,8 @@ class Model:
             dg = float(self.C @ ((p * self.v ** 2).sum(1) - mv ** 2)) - schur
             hi, lo = (y, lo) if g > 0 else (hi, y)
             step = y - g / max(dg, 1e-300)
-            y = step if lo < step < hi else 0.5 * (lo + hi)
+            nxt = step if lo < step < hi and abs(y - step) < 0.5 * dx_old else 0.5 * (lo + hi)
+            dx_old, y = abs(nxt - y), nxt
         else:
             raise RuntimeError('equilibrium did not converge')
         x = self.C[:, None] * p
