@@ -8,7 +8,7 @@ avogadro,6.02214076e23,1/mol,constant,CODATA
 boltzmann_eV_K,8.617333262e-5,eV/K,constant,CODATA
 planck_eV_s,4.135667696e-15,eV s,kT/h prefactor,CODATA
 diameter_baseline_nm,900,nm,particle size,Model assumptions Q1
-diameter_sensitivity_nm,300;600,nm,particle size sensitivity,Model assumptions Q1
+diameter_sensitivity_nm,1250;1600,nm,particle size sensitivity,user: sample particle size range 900-1600 nm (conversation 2026-09-25)
 equilibrium_T_K,873.15,K,common equilibrium temperature,Sample inputs v12
 alpha_basal_baseline,0,1,basal reactivity factor,Sample inputs v12
 alpha_basal_sensitivity,0.5;1.0,1,basal reactivity sensitivity,Sample inputs v12 (sensitivity may span 0-1)
@@ -39,3 +39,9 @@ permittivity_873K_c_axis,107,1,GLOBAL permittivity sensitivity,Parker 1961 Phys.
 s0_polaron_penalty_eV,0.2,eV,surface-trilayer Ti3+ above the subsurface optimum (GLOBAL),RET2018 Sec. 3 (Numeric clipping; about 200 meV)
 zha2017_range_nm,1.0,nm,bulk pair interaction range,ZHA2017 abstract/conclusion (Numeric clipping; about 10 A)
 pair_dilute_boundary,0.5,1,BOUNDARY when more than this share of eligible bulk vacancies is paired,declared (second-virial truncation; B2*theta of order 1)
+size_mixture_nm,900;1600;8,nm,"equal-mass diameters, min;max;count",declared (shape of the 900-1600 nm distribution not given)
+recon_fixed_fraction,0.25;0.5;0.75,1,fixed Ti2O3-(1x2) area fraction,declared grid (user chose fixed-area and state-energy reconstruction)
+recon_row_vacancies_per_1x1,0.5,1,vacancy equivalents held by the reconstructed surface,Ti2O3 stoichiometry of the (1x2) row named in Yuan 2024 (one O short per 1x2 cell)
+recon_dG_scan_eV,-0.4;-0.2;0;0.2;0.4,eV,reconstructed 1x2 cell energy relative to one bridging vacancy,declared scan (no sourced reconstruction energy)
+mc_box_cells,5;5;7,1,aggregate Monte Carlo box (700 O sites),declared (smallest box with half-width above the 1 nm cutoff)
+mc_cutoff_nm,1.0;0.6,nm,pairwise-additive aggregate energy cutoff,1.0: ZHA2017 interaction range; 0.6: declared sensitivity

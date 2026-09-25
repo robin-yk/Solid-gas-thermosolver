@@ -17,6 +17,20 @@ Closures
              the surface trilayer carries the RET2018 S0 penalty, 0.2 eV above
              the subsurface optimum. All other Ti are equal (declared).
 
+Bulk aggregates of any size (aggregates=cutoff_nm)
+    Bulk O below the four explicit trilayers is grouped into periodic boxes of
+    aggregates.BOX sites. A box with N vacancies has free energy -kT ln Q(N)
+    from transition-matrix Monte Carlo (pairwise-additive ZHA2017 energy
+    within the cutoff; two Ti3+ per vacancy on its own Ti neighbours).
+Reconstruction
+    ('fixed', f): a fraction f of the surface is Ti2O3-(1x2). It holds 0.5
+        vacancy equivalents per 1x1 cell (one per Ti2O3 row unit, i.e. per
+        1x2 cell) with its own Ti3+, and no reactive bridging sites.
+    ('state', dG): each 1x2 surface cell is either two bridging sites
+        (4 occupancy states) or reconstructed, with one vacancy equivalent,
+        internal Ti3+ and energy eps_BRI + dG. The reconstructed fraction is
+        then an equilibrium output. Discrete maps only.
+
 Bulk vacancy pairs (pairs=True)
     Bulk O below the four explicit trilayers (1.30 nm) can hold vacancy pairs.
     The pair energy is the ZHA2017 bulk potential E(r) = A/r - B/r^2 - C/r^6,
@@ -44,6 +58,7 @@ ZHA = (0.753, 11.83, -383.45)
 PAIR_RMAX = 1.0
 PAIR_DEPTH = K_EXPL * pt.D110
 PLANES = {'BRI': 0, 'IPL': 1, 'SBR': 2}
+RECON_ROW_VACANCIES = 0.5          # per 1x1 cell: one O short per Ti2O3 row unit (1x2 cell)
 
 
 def energy_sets():
@@ -102,7 +117,10 @@ class Layout:
 
 
 def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
-          n_cont=N_CONT, n_bulk=N_BULK, z0_cont=Z0_CONT, s0=None, amp=A_LI):
+          n_cont=N_CONT, n_bulk=N_BULK, z0_cont=Z0_CONT, s0=None, amp=A_LI,
+          aggregates=None, recon=None):
+    """aggregates: MC cutoff in nm (bulk boxes replace bulk O sites), or None.
+    recon: None, ('fixed', f) or ('state', dG_eV); see the module docstring."""
     if closure not in ('NEUTRAL', 'LOCAL', 'GLOBAL'):
         raise ValueError(closure)
     if (closure == 'GLOBAL') != (eps_r is not None):
@@ -121,8 +139,24 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
             radii[dom['shell']] = R - depth
         idx = len(doms) - 1
         if eps is not None:
-            o_list.append(dict(idx=idx, z=depth, eps=eps, C=dom['C'], region=dom['region']))
+            o_list.append(dict(idx=idx, z=depth, eps=eps, C=dom['C'] * dom.get('box', 1),
+                               region=dom['region'], box=dom.get('box', 1)))
         return idx
+
+    lnq = None
+    if aggregates is not None:
+        from .aggregates import BOX, ln_q
+        lnq = ln_q(T, aggregates)
+        box_sites = BOX[0] * BOX[1] * BOX[2] * 4
+        kT = pt.KB * T
+
+    def o_domain(C, E, tag, region, shell, lo):
+        """Two-state O sites, or aggregate boxes below the explicit trilayers."""
+        if lnq is None or lo < PAIR_DEPTH - 1e-12:
+            return _two_state(C, E, tag, region, shell)
+        n = np.arange(len(lnq))
+        return dict(C=C / box_sites, E=(-kT * lnq + n * E).tolist(), v=n.tolist(),
+                    tag=tag, region=region, shell=shell, box=box_sites)
 
     def add_pairs(C, eps_site, region, shell, zc, lo):
         # Pairs only in shells that lie wholly below the explicit trilayers.
@@ -132,6 +166,8 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
                 pair_idx.append(add(dict(C=C, tag='pair', region=region, shell=shell,
                                          **pair_states(eps_site, T)), zc))
 
+    if recon and recon[0] == 'state' and name == 'LI_CONT':
+        raise ValueError('reconstruction states need explicit bridging sites (discrete maps)')
     if name == 'LI_CONT':
         edges = np.concatenate([[0.0], np.geomspace(z0_cont, R, n_cont)])
         for j in range(n_cont):
@@ -139,7 +175,7 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
             zc = 0.5 * (lo + hi)
             C = pt.O_TOTAL * pt.shell_fraction(R, lo, hi)
             E = -amp * math.exp(-zc / xi)
-            add(_two_state(C, E, 'shell', j, j), zc, eps=E)
+            add(o_domain(C, E, 'shell', j, j, lo), zc, eps=E)
             if charged:
                 eT = s0 if zc < pt.D110 else 0.0
                 i = add(_two_state(C / 2, eT, 'Ti', j, j, electron=True), zc)
@@ -152,6 +188,14 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
         bri = basal = None
         for k, site, C, z in o_sites:
             E = emap.get((k, site), 0.0)
+            if (k, site) == (1, 'BRI') and recon and recon[0] == 'state':
+                dG = recon[1]
+                cell = dict(C=C / 2, E=[0.0, E, 2 * E, E + dG], v=[0, 1, 2, 1], e=[0, 0, 0, 2],
+                            g=[1, 2, 1, 1], tag=(k, site), region=k, shell=(k, PLANES[site]))
+                bri = add(cell, z, eps=E)
+                continue
+            if (k, site) == (1, 'BRI') and recon and recon[0] == 'fixed':
+                C = C * (1 - recon[1])
             i = add(_two_state(C, E, (k, site), k, (k, PLANES[site])), z, eps=E)
             if (k, site) == (1, 'BRI'):
                 bri = i
@@ -173,7 +217,7 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
             lo, hi = edges[j], edges[j + 1]
             f = pt.shell_fraction(R, lo, hi) / whole
             zc, reg, sh = 0.5 * (lo + hi), K_EXPL + 1 + j, ('bulk', j)
-            add(_two_state(o_rem * f, 0.0, 'bulk', reg, sh), zc, eps=0.0)
+            add(o_domain(o_rem * f, 0.0, 'bulk', reg, sh, lo), zc, eps=0.0)
             if charged:
                 i = add(_two_state(ti_rem * f, 0.0, 'Ti', reg, sh, electron=True), zc)
                 ti_cap[reg] = (i, ti_rem * f)
@@ -183,9 +227,12 @@ def build(name, closure, d_nm, *, xi=0.5, eps_r=None, pairs=False, T=873.15,
     if closure == 'GLOBAL':
         es = dict(radii=radii, eps=eps_r, mass_g=pt.particle_mass(d_nm))
     model = Model(doms, electrostatics=es)
+    c_bri = pt.bridging_capacity(d_nm)
+    f_fix = recon[1] if recon and recon[0] == 'fixed' else 0.0
     return model, Layout(name=name, closure=closure, d_nm=d_nm, R=R, T=T, pairs=pairs,
-                         c_bri=pt.bridging_capacity(d_nm), o=o_list, ti=ti_cap,
-                         pair_idx=pair_idx, **lay)
+                         c_bri=c_bri, o=o_list, ti=ti_cap, pair_idx=pair_idx, recon=recon,
+                         aggregates=aggregates, f_fixed=f_fix,
+                         fixed=dict(v=RECON_ROW_VACANCIES * f_fix * c_bri) if f_fix else {}, **lay)
 
 
 def surface_coverage(sol, lay):
@@ -209,6 +256,17 @@ def surface_coverage(sol, lay):
         f = G0 + kT * (math.log(x / (1 - x)) + 2 * math.log(4 * x / (1 - 4 * x))) - sol.mu_eV
         lo, hi = (lo, x) if f > 0 else (x, hi)
     return 0.5 * (lo + hi)
+
+
+def surface_state(sol, lay):
+    """(theta on unreconstructed bridging sites, their capacity, reconstructed fraction)."""
+    if lay.recon and lay.recon[0] == 'state':
+        x = sol.x[lay.bri]
+        cells = sol.model.C[lay.bri]
+        f_rec = x[3] / cells
+        theta = (x[1] + 2 * x[2]) / (2 * (cells - x[3])) if cells > x[3] else 0.0
+        return theta, lay.c_bri * (1 - f_rec), f_rec
+    return surface_coverage(sol, lay), lay.c_bri * (1 - lay.f_fixed), lay.f_fixed
 
 
 def pair_fraction(sol, lay):

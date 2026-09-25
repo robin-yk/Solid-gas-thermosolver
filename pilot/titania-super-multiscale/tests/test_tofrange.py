@@ -54,8 +54,16 @@ def test_constants_match_the_registry():
                                                float(r['denominator_capacity_fraction_threshold']))
     import run
     assert run.T_OBS == floats(r['observation_time_grid_s'])
-    diam = sorted({s[2]['d_nm'] for s in sc.model_specs()}, reverse=True)
-    assert diam == [float(r['diameter_baseline_nm'])] + sorted(floats(r['diameter_sensitivity_nm']), reverse=True)
+    diam = {s[2]['d_nm'] for s in sc.model_specs()}
+    assert diam == {float(r['diameter_baseline_nm'])} | set(floats(r['diameter_sensitivity_nm']))
+    lo, hi, n = floats(r['size_mixture_nm'])
+    assert sc.SIZE_MIX == pytest.approx(tuple(np.linspace(lo, hi, int(n))))
+    assert sc.RECON_F == floats(r['recon_fixed_fraction'])
+    assert sc.RECON_DG == floats(r['recon_dG_scan_eV'])
+    assert bd.RECON_ROW_VACANCIES == float(r['recon_row_vacancies_per_1x1'])
+    from tofrange import aggregates as ag
+    assert ag.BOX == tuple(int(x) for x in floats(r['mc_box_cells']))
+    assert sc.MC_CUTOFFS == floats(r['mc_cutoff_nm'])
 
 
 def test_transport_edges_come_from_the_table():
@@ -293,8 +301,13 @@ def test_free_energy_falls_along_the_trajectory():
 
 
 # ---------------------------------------------------------- classification
+def cases():
+    with open(HERE / 'outputs' / 'cases.csv') as f:
+        return list(csv.DictReader(f))
+
+
 def test_classification_and_bounds():
-    _, rows = sc.run_all()
+    rows = cases()
     by = lambda **k: [r for r in rows if all(r[a] == b for a, b in k.items())]           # noqa: E731
     core = by(sample='R600', family='PRIMARY')
     assert len(core) == 40 and all('RECON_CAP' in r['flags'] for r in core)
@@ -303,8 +316,73 @@ def test_classification_and_bounds():
     assert [float(r['N_react_umol_g']) for r in bri] == pytest.approx([0.17 * pt.bridging_capacity(900)] * len(bri), rel=1e-5)
     a600 = by(sample='A600', family='PRIMARY', energy_map='LI_CONT xi 0.5', closure='LOCAL', reactive='BRI')[0]
     assert a600['flags'] == '' and float(a600['theta_bri']) == pytest.approx(0.1013, abs=1e-4)
-    assert all(r['cls'] == 'BOUNDARY' for r in by(sample='R1000'))
+    assert all(r['cls'] in ('BOUNDARY', 'INVALID') for r in by(sample='R1000'))
     assert not by(sample='R1100')
+    # Explicit reconstruction is never capped.
+    assert not any('RECON_CAP' in r['flags'] for r in rows if r['family'].startswith('recon_'))
+
+
+# ------------------------------------------------------ aggregates (MC)
+def test_monte_carlo_is_exact_for_one_and_two_vacancies():
+    from tofrange import aggregates as ag
+    beta = 1 / KT
+    lat = ag.lattice((4, 4, 6), 0.6)
+    n, J, st, idx = lat['nO'], lat['J'], lat['start'], lat['idx']
+    q2 = sum(math.exp(-beta * J[p]) for i in range(n) for p in range(st[i], st[i + 1]) if idx[p] > i)
+    q2 += n * (n - 1) / 2 - len(idx) / 2
+    lnq = ag.ln_q(T, 0.6, (4, 4, 6), moves_per_n=2000)
+    assert lnq[1] == pytest.approx(math.log(n), abs=1e-9)
+    assert lnq[2] == pytest.approx(math.log(q2), abs=1e-9)
+
+
+def test_monte_carlo_is_reproducible_across_seeds():
+    from tofrange import aggregates as ag
+    # The last vacancy (N = 175, a perfect Ti matching) is not always placed.
+    a, b = ag.ln_q(T, 1.0, seed=1), ag.ln_q(T, 1.0, seed=2)
+    assert min(len(a), len(b)) >= 175
+    assert -KT * a[170] / 170 == pytest.approx(-KT * b[170] / 170, abs=0.05)
+
+
+def test_aggregates_empty_the_surface():
+    """Pairwise-additive clusters bind each vacancy by eV, far below any
+    surface site energy, so the bridging row empties."""
+    m, lay = bd.build('PAB', 'LOCAL', 900.0, aggregates=1.0)
+    s = m.solve(94.0, T)
+    assert bd.surface_state(s, lay)[0] < 1e-3
+    assert abs(s.inventory_residual) < 1e-8
+
+
+# -------------------------------------------------------- reconstruction
+def test_fixed_reconstruction_bookkeeping():
+    m, lay = bd.build('PAB', 'LOCAL', 900.0, recon=('fixed', 0.5))
+    s = m.solve(94.0, T, fixed=lay.fixed)
+    free = sum(float(s.x[i] @ m.v[i]) for i in range(len(m.C)))
+    assert free + lay.fixed['v'] == pytest.approx(94.0, rel=1e-12)
+    assert lay.fixed['v'] == pytest.approx(0.5 * 0.5 * pt.bridging_capacity(900))
+    assert bd.surface_state(s, lay)[1] == pytest.approx(0.5 * pt.bridging_capacity(900))
+
+
+def test_reconstruction_state_is_monotone_in_its_energy():
+    f = []
+    for dG in (-0.4, -0.2, 0.0, 0.2, 0.4, 5.0):
+        m, lay = bd.build('PAB', 'LOCAL', 900.0, recon=('state', dG))
+        f.append(bd.surface_state(m.solve(94.0, T), lay)[2])
+    assert all(a >= b for a, b in zip(f, f[1:])) and f[-1] < 1e-20
+    m0, l0 = bd.build('PAB', 'LOCAL', 900.0)
+    m5, l5 = bd.build('PAB', 'LOCAL', 900.0, recon=('state', 5.0))
+    assert bd.surface_state(m5.solve(94.0, T), l5)[0] == pytest.approx(
+        bd.surface_state(m0.solve(94.0, T), l0)[0], rel=1e-9)
+
+
+def test_size_mixture_is_the_mass_average():
+    rows = cases()
+    mix = [r for r in rows if r['family'] == 'size_mix' and r['sample'] == 'R600'
+           and r['energy_map'] == 'HAM' and r['closure'] == 'LOCAL' and r['reactive'] == 'BRI'][0]
+    n = []
+    for d in sc.SIZE_MIX:
+        m, lay = bd.build('HAM', 'LOCAL', d)
+        n.append(sc.site_counts(m.solve(94.0, T), lay, 'size_mix')[0]['BRI'][0])
+    assert float(mix['N_react_umol_g']) == pytest.approx(np.mean(n), rel=1e-5)
 
 
 def test_outputs_regenerate_byte_for_byte(tmp_path):

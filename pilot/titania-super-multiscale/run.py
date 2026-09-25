@@ -74,24 +74,37 @@ def summary(S, rows):
         rec['core_uncapped_TOF_min_s_1'] = fmt(raw[0])
         rec['core_uncapped_TOF_max_s_1'] = fmt(raw[-1])
         rec['invalid_n'] = len(mine) - len(valid)
+        inv = {}
+        for r in mine:
+            if r['cls'] == 'INVALID':
+                inv[r['family']] = inv.get(r['family'], 0) + 1
+        rec['invalid_by_family'] = ' '.join(f'{f}:{n}' for f, n in sorted(inv.items()))
         out.append(rec)
     return out
 
 
 def effects(rows):
+    """Change against the matched core case, in decades. INVALID cases have no
+    TOF (too few reactive sites) and are counted instead."""
     prim = {base_key(r): float(r['TOF_s_1']) for r in rows if r['family'] == 'PRIMARY'}
     groups = {}
     for r in rows:
         if r['family'] == 'PRIMARY':
             continue
+        g = groups.setdefault((r['sample'], r['family'], r['variant']), dict(d=[], invalid=0))
         k = base_key(r)
-        if k in prim:
-            d = math.log10(float(r['TOF_s_1']) / prim[k])
-            groups.setdefault((r['sample'], r['family'], r['variant']), []).append(d)
-    return [dict(sample=s, family=f, variant=v, n=len(d),
-                 median_log10_change=f'{statistics.median(d):+.3f}',
-                 min_log10_change=f'{min(d):+.3f}', max_log10_change=f'{max(d):+.3f}')
-            for (s, f, v), d in sorted(groups.items())]
+        if r['cls'] == 'INVALID':
+            g['invalid'] += 1
+        elif k in prim:
+            g['d'].append(math.log10(float(r['TOF_s_1']) / prim[k]))
+    out = []
+    for (s, f, v), g in sorted(groups.items()):
+        d = g['d']
+        out.append(dict(sample=s, family=f, variant=v, n=len(d), invalid=g['invalid'],
+                        median_log10_change=f'{statistics.median(d):+.3f}' if d else '',
+                        min_log10_change=f'{min(d):+.3f}' if d else '',
+                        max_log10_change=f'{max(d):+.3f}' if d else ''))
+    return out
 
 
 def transport_gate(S):

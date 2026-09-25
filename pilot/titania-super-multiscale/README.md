@@ -2,28 +2,35 @@
 
 SI Note 2a divides every sample's initial CO rate by one fixed site count,
 2.31 umol/g (0.17 ML of 13.6 umol/g bridging O). This pilot replaces that
-single number with the range of apparent TOF allowed by the published site
-energies, the measured vacancy inventory, charge compensation, bulk vacancy
-pairing, the surface-reconstruction limit and vacancy transport.
+single number with the range of apparent TOF allowed by:
+
+- the published site energies and the measured vacancy inventory;
+- charge compensation;
+- bulk aggregates of every size;
+- explicit surface reconstruction;
+- particle size;
+- vacancy transport.
 
 ## Result (`outputs/sample_tof_range.csv`)
 
 Core = 40 cases per sample: 900 nm sphere, five sourced energy maps, NEUTRAL
 and LOCAL charge closures, four reactive-site definitions.
 
-| Sample | Fixed TOF, SI 2a (s⁻¹) | Core min | Core median | Core max | With all sensitivities |
-|---|---:|---:|---:|---:|---:|
-| A600 | 0.978 | 0.981 | 2.07 | 5.75 | 0.327–7.35 |
-| R500 | 1.63 | 1.64 | 3.41 | 7.26 | 0.545–7.60 |
-| R600 | 1.70 | 1.70 | 3.03 | 7.55 | 0.567–7.55 |
-| R800 | 0.870 | 0.872 | 1.55 | 3.87 | 0.291–3.87 |
-| R1000 | 0.0197 | 0.0197 | 0.0350 | 0.0875 | 0.0066–0.0875 |
-| R1100 | 0.0105 | not calculated | | | |
+| Sample | Fixed TOF, SI 2a (s⁻¹) | Core min | Core median | Core max |
+|---|---:|---:|---:|---:|
+| A600 | 0.978 | 0.981 | 2.07 | 5.75 |
+| R500 | 1.63 | 1.64 | 3.41 | 7.26 |
+| R600 | 1.70 | 1.70 | 3.03 | 7.55 |
+| R800 | 0.870 | 0.872 | 1.55 | 3.87 |
+| R1000 | 0.0197 | 0.0197 | 0.0350 | 0.0875 |
+| R1100 | 0.0105 | not calculated | | |
 
 - In every core case for R600, R800 and R1000, and in 36 of 40 for R500 and
   32 of 40 for A600, the equilibrium bridging coverage exceeds 17%. An
   unreconstructed (110) surface cannot hold that much (BIR2024; Note 2a), so
-  the reactive count is capped at 0.17 ML.
+  the core caps the reactive coverage at 0.17 ML.
+  - This cap is a rule. It does not compute a reconstructed population; the
+    two reconstruction families below do.
   - With all bridging vacancies counted, the cap gives the SI 2a denominator:
     2.305 against 2.31 umol/g. The difference is the bridging capacity,
     13.558 here against 13.6 in the manuscript.
@@ -31,27 +38,43 @@ and LOCAL charge closures, four reactive-site definitions.
 - The width of the core range comes from the reactive-site definition. Isolated
   vacancies with z = 2, 4, 8 at the cap give 1.45, 2.1 and 4.4 times the SI 2a
   value.
-- Particle size is the largest lever in the other direction. At 300 nm every
-  TOF is 3 times lower (−0.48 decades). No sample size distribution was
-  measured.
 - R1000 values are lower bounds. The sample was treated at 1000 °C, and Yuan
   2024 finds Ti2O3-(1×2) above 900 °C, which removes bridging rows.
 - R1100 has no inventory with a source; the v12 workbook marks it BLOCKED.
 
-`outputs/sensitivity_effects.csv` gives each change's effect in decades,
-matched case by case to its core counterpart:
+### Every family (`outputs/cases.csv`)
 
-| Change | Median | Largest |
-|---|---:|---:|
-| 600 nm / 300 nm sphere | −0.18 / −0.48 | −0.52 |
-| GLOBAL closure, eps 64 / 107 | 0 | +0.26 |
-| ZHA2017 bulk pairs, 600 °C or frozen at treatment | 0 | +0.23 |
-| Note 2b decay length 0.25 / 1 nm | 0 | ±0.05 |
-| Basal (in-plane) vacancies also reactive | 0 | −0.13 |
-| R600 inventory 94.6 instead of 94.0 | 0 | 0 |
+TOF range over the valid cases (s⁻¹), with valid/total cases. A case is
+INVALID when fewer than 0.01 umol/g, or fewer than 1% of the bridging
+capacity, are reactive; its TOF is then undefined.
 
-Most medians are zero because the capped cases do not move. The largest
-shifts occur where a change pulls the coverage below 17%.
+| Family | A600 | R500 | R600 | R800 | R1000 |
+|---|---|---|---|---|---|
+| Core | 0.981–5.75 (40/40) | 1.64–7.26 (40/40) | 1.70–7.55 (40/40) | 0.872–3.87 (40/40) | 0.0197–0.0875 (40/40) |
+| Diameter 1250, 1600 nm | 1.36–10.1 | 2.27–12.9 | 2.36–13.4 | 1.21–6.88 | 0.0274–0.155 |
+| Equal mass, 900–1600 nm | 1.31–7.65 | 2.19–9.74 | 2.28–10.1 | 1.17–5.19 | 0.0264–0.117 |
+| Reconstruction, fixed area 0.25/0.5/0.75 | 0.223–16.0 (71/120) | 0.371–27.2 (56/120) | 0.386–24.4 (48/120) | 0.198–11.2 (43/120) | 0.00446–0.266 (40/120) |
+| Reconstruction, (1×2) state, dG −0.4…+0.4 eV | 0.171–12.6 (102/160) | 0.278–24.1 (78/160) | 0.289–27.9 (64/160) | 0.148–14.7 (54/160) | 0.00335–0.264 (44/160) |
+| Aggregates, MC, cutoff 1 or 0.6 nm | none (0/80) | none (0/80) | none (0/80) | none (0/80) | none (0/80) |
+| GLOBAL, eps 64 / 107 | 0.981–5.37 | 1.64–7.26 | 1.70–7.55 | 0.872–3.87 | 0.0197–0.0875 |
+| Bulk pairs (dilute), 600 °C or frozen | 0.981–7.35 | 1.64–7.60 | 1.70–7.55 | 0.872–3.87 | 0.0197–0.0875 |
+
+- **Size.** The samples span 900–1600 nm. Every TOF rises with diameter,
+  because bridging capacity scales as 1/D: 1.39× at 1250 nm, 1.78× at
+  1600 nm, 1.34× for equal mass over the range.
+- **Reconstruction, explicit.** No 17% cap is applied here.
+  - Without the cap, saturated surfaces leave almost no isolated vacancies.
+    Most INVALID cases are isolated-site definitions on such surfaces.
+  - The computed reconstructed fraction at R600 (LOCAL, discrete maps) is
+    0.02–0.27 at dG = 0 and 0.60–0.73 at dG = −0.4 eV. At R1000 it is
+    0.12–0.55 at dG = 0.
+- **Aggregates.** With pairwise-additive ZHA2017 energies, a vacancy in a
+  dense bulk aggregate has a free energy of −4.3 eV (cutoff 1 nm) or −2.3 eV
+  (0.6 nm), relative to an isolated bulk vacancy. Surface sites sit at −0.8
+  to −1.3 eV. The aggregates therefore take nearly every vacancy: bridging
+  coverage falls below 0.0014, and all 400 aggregate cases are INVALID.
+  - Under this assumption the reactive-site count, and so the CO rate, would
+    be about zero. The measured rates are not zero.
 
 ## What is solved
 
@@ -86,6 +109,18 @@ One free energy over a finite state table, with the measured inventory fixed:
   - Pairs hold more than half of the eligible bulk vacancies in most cases.
     Those cases are BOUNDARY: larger clusters would lower the surface
     population further, so the TOF is a lower bound.
+- **Bulk aggregates**: bulk O below 1.30 nm is grouped into boxes of 700
+  sites.
+  - A box holding N vacancies has free energy −kT ln Q(N). Q(N) comes from
+    Monte Carlo with Widom insertion summed over every site, and the chain
+    grows one vacancy at a time.
+  - The box is then one state table in the same free energy, so clusters of
+    every size are in the equilibrium.
+- **Reconstruction**:
+  - Fixed area: a fraction f of the surface is Ti2O3-(1×2). That area holds
+    its vacancies and its own Ti³⁺, and has no reactive sites.
+  - Explicit state: each 1×2 cell is either two bridging sites or
+    reconstructed. The reconstructed fraction is then computed.
 - **Transport**: every link carries J = Λ(F, R)(μ_i − μ_j)/kT.
   - F and R are the forward and backward site-exclusion hop fluxes, with
     barriers from `specification/transport_edges.csv` and prefactor kT/h.
@@ -117,7 +152,7 @@ coverage is above the cap, so the TOF does not change. The 600 °C equilibrium i
 therefore the state at the rate measurement for every hop-connected
 population.
 
-## Checks (`python3 -m pytest tests -q`, 27 tests)
+## Checks (`python3 -m pytest tests -q`, 33 tests)
 
 - Every O and Ti site is counted once.
 - NEUTRAL agrees with an independent bisection. LOCAL satisfies its
@@ -136,24 +171,33 @@ population.
 - Transport ends at the equilibrium solver (1e-9) and conserves mass.
 - Its slowest radial mode matches exact sphere diffusion, D k₁², including
   the LOCAL ambipolar factor. The free energy falls along every trajectory.
+- Aggregate Monte Carlo equals exact enumeration for one and two vacancies,
+  and two seeds agree within 0.05 eV per vacancy.
+- Fixed reconstruction conserves the inventory. The reconstructed fraction
+  falls monotonically with dG and vanishes as dG → ∞, recovering the
+  unreconstructed result.
+- The size mixture equals the mass average of its diameters.
 - Regenerating the outputs is byte-identical.
 
-## Not in this model
+## Assumptions that stand in for missing values
 
-- Surface vacancy–vacancy energies: none with a source (ZHA2017 is bulk;
-  BIR2024 gives pattern statistics, not energies).
-- Reconstruction energies: the 0.17 ML cap and the Yuan 900 °C rule are
-  limits, not free energies. Reconstructed area is taken as zero, so upper
-  TOF values would rise if it is not.
-- Cooling rate and exact observation time: not recorded. The v12 grid of
-  1–600 s is used.
-- Particle size distribution and facet fractions: not measured.
-- Kinetics of pair formation: not sourced. Pairs are either equilibrated at
-  600 °C or frozen at the treatment temperature.
-- Registry rows kept as evidence but unused: Matsunaga, V8 (−0.665,
-  M10 code only), the 0.271 eV pairing (Note 2c, bulk, no geometry), aggregate
-  capacity fractions (M10 convention), cooling-rate grid, unmatched BET areas.
+Each is an explicit input in `specification/parameter_registry.csv`.
+
+| Item | Assumption | Why |
+|---|---|---|
+| Aggregates of 3+ | Pair energies add (no many-body term); cutoff 1 nm (ZHA2017 range) or 0.6 nm | only pair energies are sourced |
+| Aggregate Ti3+ | two Ti3+ per vacancy on its own three Ti; one electron per Ti | caps local vacancy fraction at 1/4 |
+| Aggregate box | 700 O sites, boxes independent | smallest box wider than twice the cutoff |
+| Reconstruction, fixed | area fraction 0.25, 0.5, 0.75; 0.5 vacancy per 1×1 cell; no reactive sites; own Ti3+ | Ti2O3 row stoichiometry |
+| Reconstruction, state | 1×2 cell energy eps_BRI + dG, dG from −0.4 to +0.4 eV | no sourced energy; the fraction is an output |
+| Size | 900–1600 nm (user); equal mass at 8 diameters; same inventory per gram | distribution shape not given |
+| Surface pairs | none | no sourced surface energy (ZHA2017 is bulk) |
+| Observation time | 1–600 s grid | not recorded |
+
+Registry rows kept as evidence but unused: Matsunaga, V8 (−0.665, M10 code
+only), the 0.271 eV pairing (Note 2c, bulk, no geometry), aggregate capacity
+fractions (M10 convention), cooling-rate grid, unmatched BET areas.
 
 ```
-python3 run.py      # about 1 minute
+python3 run.py      # about 3 minutes; aggregate Monte Carlo is cached in outputs/mc
 ```
