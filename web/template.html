@@ -162,41 +162,90 @@
   <p>The measured O removal of each sample is distributed over all O sites of a rutile
   particle at equilibrium at 873.15&nbsp;K with the inventory held fixed. Unknown inputs
   are parameters; the model is solved at every combination.</p>
-  <h3>Model components</h3>
-  <p><b>Surface.</b> A fraction f<sub>110</sub> of the surface area is (110), resolved as
-  four O&ndash;Ti<sub>2</sub>O<sub>2</sub>&ndash;O trilayers (1.30&nbsp;nm) with bridging (BRI),
-  in-plane (IPL) and sub-bridging (SBR) O sites. The remaining area has bulk site energies
-  and no reactive sites.</p>
-  <p><b>Reconstruction.</b> Bridging rows form (1&times;2) cells, each owning four layer-1 Ti.
-  Cell states: intact; one or both BRI O vacant, with 0&ndash;4 Ti<sup>3+</sup>; reconstructed,
-  one vacancy with two Ti<sup>3+</sup> in the row and up to two more, at &Delta;G relative to
-  the one-vacancy state.</p>
-  <p><b>Bulk.</b> O sites below 1.30&nbsp;nm are grouped into boxes of 700 sites. The free
-  energy of a box with N vacancies, &minus;k<sub>B</sub>T&nbsp;ln&nbsp;Q(N), is from canonical
-  Monte Carlo with the ZHA2017 pair energy up to the cutoff distance.</p>
-  <p><b>Charge.</b> Each vacancy gives two Ti<sup>3+</sup>. Every atomic plane is a charged
-  shell; the Poisson equation couples the shells with the static &epsilon; of rutile. Only the
-  particle as a whole is neutral. Layer-1 Ti<sup>3+</sup> is 0.2&nbsp;eV above the subsurface
-  site (RET2018).</p>
-  <p><b>Particle size.</b> Equal-mass mixture of 900&ndash;1600&nbsp;nm diameters, evaluated
-  at four diameters.</p>
+  <h3>Site capacities</h3>
+  <p>Smooth sphere of diameter D, density &rho; = 4.2487&nbsp;g&nbsp;cm⁻³, M = 79.866&nbsp;g&nbsp;mol⁻¹.
+  Capacities in µmol per gram of initial TiO<sub>2</sub>.</p>
+  \[A_m=\frac{6}{\rho D},\qquad A_{110}=\sqrt{2}\,ac,\qquad c_{\mathrm{BRI}}=\frac{A_m}{A_{110}N_{\mathrm A}};;C_{k,i}=f_{110}\,m_i\,c_{\mathrm{BRI}}\left(1-\frac{z_{k,i}}{R}\right)^2,\qquad m_{\mathrm{BRI}}=1,\;m_{\mathrm{IPL}}=2,\;m_{\mathrm{SBR}}=1,\;m_{\mathrm{Ti}}=2;;C_{\mathrm{O,tot}}=\frac{2\times10^6}{M},\qquad C_{\mathrm{Ti,tot}}=\frac{10^6}{M}\]
+  <p>k = 1&ndash;4 is the trilayer, z<sub>k,i</sub> the depth of site i (a = 0.4594&nbsp;nm,
+  c = 0.2958&nbsp;nm, O parameter u = 0.30479). O and Ti below the trilayers are the
+  remainder of C<sub>O,tot</sub> and C<sub>Ti,tot</sub>, split over 240 bulk shells by volume.
+  Each site is counted once.</p>
+
+  <h3>State table and free energy</h3>
+  <p>Domain d holds C<sub>d</sub> cells (µmol&nbsp;g⁻¹). A cell is in state a with energy
+  E<sub>da</sub>, degeneracy g<sub>da</sub>, v<sub>da</sub> O vacancies and e<sub>da</sub> Ti<sup>3+</sup>.
+  Populations x<sub>da</sub> = C<sub>d</sub>p<sub>da</sub> minimise</p>
+  \[\mathcal F=\sum_{d,a}x_{da}E_{da}+k_{\mathrm B}T\sum_{d,a}x_{da}\ln\frac{x_{da}}{C_d\,g_{da}}+\frac12\sum_{\ell,m}q_\ell H_{\ell m}q_m\]
+  <p>at T = 873.15&nbsp;K, subject to</p>
+  \[\sum_a x_{da}=C_d,\qquad\sum_{d,a}v_{da}x_{da}=N_{\mathrm V},\qquad\sum_{d,a}e_{da}x_{da}=2N_{\mathrm V}\]
+  <p>N<sub>V</sub>: measured O removal of the sample (µmol O g⁻¹).</p>
+
+  <h3>Site energies</h3>
+  <p>Single-vacancy energies relative to bulk, &epsilon;<sub>k,i</sub> = E<sub>f,k,i</sub> &minus;
+  E<sub>f,bulk</sub>, from one energy map (PAB, HAM, LI_SBR1, LI_L2). Sites a map does not name
+  are at 0. For the Li maps, &epsilon;<sub>1,IPL</sub> = &epsilon;<sub>1,BRI</sub> + 0.11&nbsp;eV
+  (Matsunaga). Plain sites have two states:</p>
+  \[E\in\{0,\;\varepsilon_{k,i}\},\qquad v\in\{0,1\}\]
+
+  <h3>(1&times;2) cell and reconstruction</h3>
+  <p>Two bridging O and the four layer-1 Ti under them form one cell, C<sub>cell</sub> =
+  C<sub>Ti,1</sub>/4. O states with n Ti<sup>3+</sup> on the free Ti, each at s<sub>0</sub> =
+  0.2&nbsp;eV (RET2018):</p>
+  \[E=E_o+n\,s_0,\qquad g=g_o\binom{n_{\mathrm{free}}}{n},\qquad e=e_o+n;;\begin{array}{lcccc}o&E_o&v&e_o&g_o\ (n_{\mathrm{free}})\\ \mathrm{intact}&0&0&0&1\ (4)\\ \mathrm{one\ vacant}&\varepsilon_{1,\mathrm{BRI}}&1&0&2\ (4)\\ \mathrm{both\ vacant}&2\varepsilon_{1,\mathrm{BRI}}&2&0&1\ (4)\\ \mathrm{reconstructed}&\varepsilon_{1,\mathrm{BRI}}+\Delta G&1&2&1\ (2)\end{array}\]
+  <p>&Delta;G is relative to the one-vacancy state. Reconstructed fraction of bridging sites
+  and vacant fraction of the unreconstructed ones:</p>
+  \[f_{\mathrm{rec}}=\frac{2x_{\mathrm{rec}}}{C_{\mathrm{BRI}}},\qquad\theta=\frac{N_{\mathrm{V,BRI}}}{C_{\mathrm{BRI}}-2x_{\mathrm{rec}}}\]
+
+  <h3>Bulk aggregates</h3>
+  <p>Below 1.30&nbsp;nm, O sits in periodic boxes of 700 sites (5&times;5&times;7 cells). A box
+  with N vacancies is one state:</p>
+  \[E_N=-k_{\mathrm B}T\ln Q(N),\qquad v_N=N,\qquad 0\le N\le 175;;Q(N)=\sum_{\sigma\in\Omega_N}\exp\!\left(-\frac{1}{k_{\mathrm B}T}\sum_{i<j,\;r_{ij}\le r_c}J(r_{ij})\,\sigma_i\sigma_j\right);;J(r)=\frac{A}{r}-\frac{B}{r^2}-\frac{C}{r^6},\qquad A=0.753,\;B=11.83,\;C=-383.45\]
+  <p>J: ZHA2017 bulk pair energy (r in &Aring;, J in eV). r<sub>c</sub>: cutoff. Clusters of any size are pair
+  sums. &Omega;<sub>N</sub>: vacancy sets with N vacancies in which every vacancy holds two
+  Ti<sup>3+</sup> among its three Ti neighbours, one electron per Ti. Q(N) is computed by Monte Carlo with Widom insertion summed over all empty sites:</p>
+  \[\frac{Q(N+1)}{Q(N)}=\frac{\langle W\rangle_N}{N+1},\qquad W=\sum_{i\ \mathrm{empty}}\exp\!\left(-\frac{h_i}{k_{\mathrm B}T}\right)\]
+  <p>h<sub>i</sub>: pair energy of site i with the present vacancies. Boxes do not interact.</p>
+
+  <h3>Charge</h3>
+  <p>State charge z = 2v &minus; e (elementary charges). Each atomic plane is a spherical
+  shell &ell; of radius r<sub>&ell;</sub> with charge q<sub>&ell;</sub>; only the particle is neutral.</p>
+  \[q_\ell=\sum_{(d,a)\in\ell}z_{da}x_{da},\qquad\sum_\ell q_\ell=0;;\phi_\ell=\sum_m H_{\ell m}q_m,\qquad H_{\ell m}=\frac{\kappa}{\varepsilon_r\max(r_\ell,r_m)}\,m_pN_{\mathrm A}10^{-6},\qquad\kappa=1.43996\ \mathrm{eV\,nm}\]
+  <p>&epsilon;<sub>r</sub> = 64 (a axis) or 107 (c axis), rutile at 873&nbsp;K (Parker 1961).
+  m<sub>p</sub>: particle mass (g).</p>
+
+  <h3>Equilibrium populations</h3>
+  <p>The minimum has Gibbs form, with multipliers &mu;<sub>V</sub> (vacancy), &mu;<sub>e</sub>
+  (electron) and the shell potentials &phi;<sub>&ell;</sub>:</p>
+  \[p_{da}=\frac{g_{da}}{Z_d}\exp\!\left[-\frac{E_{da}+z_{da}\phi_{\ell(d)}-\mu_{\mathrm V}v_{da}-\mu_e e_{da}}{k_{\mathrm B}T}\right],\qquad Z_d=\sum_a(\cdots)\]
+  <p>The multipliers minimise the convex dual (&beta; = 1/k<sub>B</sub>T, u = &beta;&phi;,
+  f<sub>da</sub> = (v, e, &minus;z)):</p>
+  \[\Psi(\mathbf y)=\sum_d C_d\ln Z_d(\mathbf y)-\mathbf b^{\mathsf T}\mathbf y+\frac12\mathbf u^{\mathsf T}(\beta\mathbf H)^{-1}\mathbf u;;\nabla^2\Psi=\sum_d C_d\left[\langle\mathbf f\mathbf f^{\mathsf T}\rangle_d-\langle\mathbf f\rangle_d\langle\mathbf f\rangle_d^{\mathsf T}\right]+\mathrm{blkdiag}\!\left(0,\,(\beta\mathbf H)^{-1}\right)\]
+  <p>by damped Newton steps. (&beta;H)<sup>&minus;1</sup> is tridiagonal (nested spherical
+  capacitors), so a step costs O(shells). The start is the solution with every trilayer and
+  bulk shell neutral, the &epsilon;<sub>r</sub>&nbsp;&rarr;&nbsp;0 limit.</p>
+
+  <h3>Particle size</h3>
+  <p>Equal-mass mixture over D = 900, 1133, 1367, 1600&nbsp;nm, each at the same N<sub>V</sub>
+  per gram:</p>
+  \[N_{\mathrm{react}}=\frac14\sum_{k=1}^{4}N_{\mathrm{react}}(D_k)\]
+
   <h3>Parameter grid</h3>
   <table class="kv" id="vdGrid"></table>
   <h3>Apparent TOF</h3>
   <div class="eq">TOF = r<sub>CO</sub> / N<sub>react</sub></div>
   <p>r<sub>CO</sub>: measured initial CO formation rate (µmol g⁻¹ s⁻¹). N<sub>react</sub>:
-  calculated reactive-site concentration (µmol g⁻¹) under one of three definitions: all
-  BRI vacancies, N&nbsp;=&nbsp;c&theta;; BRI vacancies with z intact BRI neighbours,
-  N&nbsp;=&nbsp;c&theta;(1&minus;&theta;)<sup>z</sup>, z = 2, 4, 8; BRI plus layer-1 IPL vacancies.
-  c: BRI site concentration (µmol g⁻¹); &theta;: vacant fraction of unreconstructed BRI sites.
-  Cases with N<sub>react</sub> &lt; 0.01&nbsp;µmol&nbsp;g⁻¹ or &lt; 1% of c are counted apart.
-  Q&nbsp;=&nbsp;TOF/TOF(R600) at the same parameters.</p>
+  calculated reactive-site concentration (µmol g⁻¹), with c = c<sub>BRI</sub>f<sub>110</sub>(1 &minus; f<sub>rec</sub>):</p>
+  \[N_{\mathrm{react}}=c\,\theta\qquad(\mathrm{BRI});;N_{\mathrm{react}}=c\,\theta(1-\theta)^z,\quad z=2,4,8\qquad(\mathrm{ISO}_z);;N_{\mathrm{react}}=c\,\theta+N_{\mathrm{V,IPL,1}}\qquad(\mathrm{BRI+BASAL})\]
+  <p>Cases are counted apart when</p>
+  \[N_{\mathrm{react}}<0.01\ \mu\mathrm{mol\,g^{-1}}\quad\mathrm{or}\quad N_{\mathrm{react}}<0.01\,c_{\mathrm{BRI}}(900\ \mathrm{nm})\,f_{110}\]
+  <p>Same-parameter ratio to R600, and the reported range over the parameter set &#8499;:</p>
+  \[Q_{s,m}=\frac{\mathrm{TOF}_{s,m}}{\mathrm{TOF}_{\mathrm{R600},m}},\qquad\mathrm{TOF}_s^{\min}=\min_{m\in\mathcal M}\mathrm{TOF}_{s,m},\qquad\mathrm{TOF}_s^{\max}=\max_{m\in\mathcal M}\mathrm{TOF}_{s,m}\]
   <h3>Limits</h3>
   <p>Equilibrium at 600&nbsp;&deg;C with complete transport; pretreatment kinetics and
   cooling are not modelled. Samples treated at &ge; 900&nbsp;&deg;C (R1000, R1100) are in the
   regime where Ti<sub>2</sub>O<sub>3</sub>-(1&times;2) is reported (Yuan 2024). Aggregates of
-  three or more vacancies use additive pair energies. 3D surface patch: unrelaxed bulk atom
-  positions; added-row positions schematic.</p>
+  three or more vacancies use additive pair energies. Surface render: unrelaxed bulk
+  positions from the rutile CIF; Ti<sup>3+</sup> drawn on the two Ti nearest each vacancy.</p>
 </div>
 
 <div class="panel pad page" id="vd-val">
