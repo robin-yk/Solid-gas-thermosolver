@@ -128,11 +128,11 @@
   <figure class="pubfig wide" id="figTofRange">
     <h3>Apparent CO TOF by sample</h3>
     <div class="figbox" role="img" aria-label="Apparent CO turnover frequency for six samples under five vacancy-distribution scenarios, S1 to S5"></div>
-    <details class="figdl"><summary>Download figure</summary>
+    <div class="vd-figure-actions"><details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
       <button type="button" data-fmt="csv">CSV data</button>
-    </details>
+    </details><button type="button" id="vdTableToggle" aria-expanded="false" aria-controls="vdTablePanel">Show table</button></div>
     <figcaption>TOF = r<sub>CO</sub>/N<sub>react</sub>; r<sub>CO</sub> measured at
     600&nbsp;&deg;C. Each sample has five points, ordered S1–S5 from left to right.
     S1–S5 are ordered by decreasing total surface vacancy concentration,
@@ -145,13 +145,7 @@
   </figure>
 </div>
 
-<div class="tabs">
-  <button class="tab active" data-page="vd-res" type="button">Results</button>
-  <button class="tab" data-page="vd-how" type="button">Method</button>
-  <button class="tab" data-page="vd-val" type="button">Validation</button>
-</div>
-
-<div class="panel pad page active" id="vd-res">
+<div class="panel pad" id="vdTablePanel" hidden>
   <h2>Apparent CO TOF by sample</h2>
   <div class="tablewrap"><table class="vdt">
     <thead><tr><th>Sample</th><th>Treatment T (&deg;C)</th><th class="n">Inventory, measured (µmol O g⁻¹)</th><th class="n">r<sub>CO</sub>, measured (µmol g⁻¹ s⁻¹)</th>
@@ -161,7 +155,24 @@
   <p class="sub">The five scenarios shown in the figure. * N<sub>react</sub> below the site-concentration threshold.</p>
 </div>
 
-<div class="panel pad page" id="vd-how">
+<div class="figgrid">
+  <figure class="pubfig wide" id="figVacancyProfile">
+    <h3>Vacancy depth profile <span id="vdProfileSample"></span></h3>
+    <div class="figbox" role="img" aria-label="Depth-resolved oxygen vacancy fractions for five scenarios"></div>
+    <details class="figdl"><summary>Download figure</summary>
+      <button type="button" data-fmt="svg">SVG</button>
+      <button type="button" data-fmt="png">PNG, 600 dpi</button>
+      <button type="button" data-fmt="csv">CSV data</button>
+    </details>
+    <figcaption>Vacant oxygen sites (%) at each depth for a 900&nbsp;nm particle at 600&nbsp;°C. Left: the outer four trilayers, with points at individual oxygen planes. Right: 240 shells extending to the particle centre, on a logarithmic depth axis. Lines join calculated positions. S1–S5 use the TOF scenarios; the TOF figure averages four particle sizes.</figcaption>
+  </figure>
+</div>
+<div class="tabs">
+  <button class="tab active" data-page="vd-how" type="button">Method</button>
+  <button class="tab" data-page="vd-val" type="button">Validation</button>
+</div>
+<div class="page active" id="vd-res"></div>
+<div class="panel pad page active" id="vd-how">
   <h2>Method</h2>
   <p>The measured oxygen removal sets the total vacancy concentration in each sample.
   The model distributes these vacancies and their associated electrons among rutile sites
@@ -766,6 +777,7 @@
 <script>/*THERMOUI*/</script>
 <script>/*UI*/</script>
 <script id="tof-data" type="application/json">/*TOFDATA*/</script>
+<script id="depth-data" type="application/json">/*DEPTHDATA*/</script>
 <script id="render-data" type="application/json">/*RENDERDATA*/</script>
 <script>/*DISTFIG*/</script>
 <script>/*SLAB*/</script>

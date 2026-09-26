@@ -111,6 +111,24 @@
     };
     im.src = RD.mask;
   })();
+  // Anchor the magnification lines to the actual ring and frame, including after resize.
+  function alignMagnification() {
+    var hero = document.querySelector('.vd-hero'), svg = hero.querySelector('.vd-zoom');
+    var h = hero.getBoundingClientRect(), ring = hero.querySelector('.vd-ring').getBoundingClientRect();
+    var frame = $('vdSlabStage').getBoundingClientRect();
+    if (!h.width || !h.height) return;
+    svg.setAttribute('viewBox', '0 0 ' + h.width + ' ' + h.height);
+    var cx = ring.left + ring.width / 2 - h.left, cy = ring.top + ring.height / 2 - h.top;
+    var radius = ring.width / 2;
+    Array.from(svg.querySelectorAll('line')).forEach(function (line, i) {
+      var x = frame.left - h.left + .5, y = (i ? frame.bottom - .5 : frame.top + .5) - h.top;
+      var angle = Math.atan2(y - cy, x - cx);
+      line.setAttribute('x1', cx + radius * Math.cos(angle));
+      line.setAttribute('y1', cy + radius * Math.sin(angle));
+      line.setAttribute('x2', x); line.setAttribute('y2', y);
+    });
+  }
+  new ResizeObserver(alignMagnification).observe(document.querySelector('.vd-hero'));
   var defaultParticle = $('vdParticleImg').src;
   function layerAt(ev) {
     if (!mask) return null;
@@ -179,6 +197,13 @@
     });
   }
   wireDownload('figTofRange');
+  wireDownload('figVacancyProfile');
+  $('vdTableToggle').addEventListener('click', function () {
+    var open = $('vdTableToggle').getAttribute('aria-expanded') !== 'true';
+    $('vdTableToggle').setAttribute('aria-expanded', String(open));
+    $('vdTableToggle').textContent = open ? 'Hide table' : 'Show table';
+    $('vdTablePanel').hidden = !open;
+  });
 
   function num(x) { return +x; }
   function draw(animate) {
@@ -234,6 +259,15 @@
           var sc = SCENARIOS[j];
           return [q.sample,sc.id,sc.map,sc.cutoff,sc.dG,0.75,64,'BRI',cc.sites,cc.tof,cc.below].join(',');
         }).join('\n'); }).join('\n') + '\n' };
+
+    var profile = JSON.parse($('depth-data').textContent).samples[s.sample];
+    var profileSvg = F.vacancyProfile({scenarios:profile});
+    $('figVacancyProfile').querySelector('.figbox').innerHTML = profileSvg;
+    $('vdProfileSample').textContent = '(' + s.sample + ')';
+    figState.figVacancyProfile = {svg:profileSvg, name:'vacancy-fractions-' + s.sample,
+      csv:'sample,scenario,depth_nm,vacancies_umol_g,original_oxygen_sites_umol_g,vacancy_percent\n' + profile.map(function(sc) {
+        return sc.points.map(function(r) {return [s.sample,sc.id,r.depth_nm,r.vacancies,r.capacity,r.percent].join(',');}).join('\n');
+      }).join('\n') + '\n'};
 
     /* samples table */
     $('vdTable').innerHTML = SAMPLES.map(function (q, i) {

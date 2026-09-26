@@ -121,6 +121,20 @@ const P = require(process.env.PW + '/node_modules/playwright');
   if (await pg.inputValue('#vdScenario') !== 'custom') throw new Error('Custom parameters not recognised');
   await pg.click('#vdReset');
   if (await pg.inputValue('#vdScenario') !== 'S1') throw new Error('Reset must restore S1');
+  if (await pg.locator('#vdTablePanel').isVisible()) throw new Error('TOF table must start collapsed');
+  await pg.click('#vdTableToggle');
+  if (!await pg.locator('#vdTablePanel').isVisible()) throw new Error('TOF table did not open');
+  await pg.click('#vdTableToggle');
+  for (const sampleName of ['A600', 'R500', 'R600', 'R800', 'R1000', 'R1100']) {
+    await pg.selectOption('#vdSample', sampleName);
+    const valid = await pg.evaluate((name) => {
+      const marks = [...document.querySelectorAll('#figVacancyProfile g[data-percent]')];
+      return marks.length === 1260 && marks.every(m => Number(m.dataset.percent) > 0 && Number(m.dataset.percent) <= 100 && Number(m.dataset.depth) >= 0)
+        && document.getElementById('vdProfileSample').textContent.includes(name);
+    }, sampleName);
+    if (!valid) throw new Error('Invalid regional vacancy figure: ' + sampleName);
+  }
+  await pg.click('#vdReset');
   await pg.locator('#vdSlabCanvas').scrollIntoViewIfNeeded();
   await pg.waitForTimeout(700);
   out.drew.figTofRange = await pg.evaluate(() =>

@@ -117,7 +117,7 @@
       var dpr = size(), W = canvas.width, H = canvas.height;
       var yaw = reduced ? 0 : SWAY * Math.sin(2 * Math.PI * t / PERIOD);
       var cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(TILT), st = Math.sin(TILT);
-      var sc = W / 58, ox = W / 2, oy = H * 0.56, vib = reduced ? 0 : VIB;
+      var sc = W / 68, ox = W / 2, oy = H * 0.48, vib = reduced ? 0 : VIB;
       g.clearRect(0, 0, W, H);
       for (i = 0; i < n; i++) {
         var a = doc.xyz[i], x = a[0], y = a[1], z = a[2] - zc;
@@ -157,7 +157,7 @@
         i = order[m];
         if (doc.el[i] !== 'O' || vac[i] < 0.01) continue;
         var surf = doc.layer[i] === 1 && (doc.site[i] === 'BRI' || doc.site[i] === 'IPL');
-        var R = (surf ? 1.55 : 1.2) * RAD.O * sc * P[4 * i + 3], cx = P[4 * i], cyy = P[4 * i + 1];
+        var R = (surf ? 1.25 : 1.1) * RAD.O * sc * P[4 * i + 3], cx = P[4 * i], cyy = P[4 * i + 1];
         var pulse = reduced ? 1 : 0.75 + 0.25 * Math.sin(t * 2.4 + ph[i][0]);
         var col = surf ? RING.surface : RING.subsurface, w = vac[i] * dim[i] * (surf ? 1 : 0.75);
         var gl = g.createRadialGradient(cx, cyy, 0, cx, cyy, R * 1.25);
@@ -168,7 +168,7 @@
         g.beginPath(); g.ellipse(cx, cyy, R * 1.25, R * 1.25 * ct, 0, 0, 2 * Math.PI); g.fill();
         g.setLineDash([5 * dpr, 3.5 * dpr]);
         g.lineDashOffset = reduced ? 0 : -t * 6 * dpr;
-        g.lineWidth = (surf ? 2.6 : 2) * dpr;
+        g.lineWidth = (surf ? 1.6 : 1.3) * dpr;
         g.strokeStyle = col;
         g.beginPath(); g.ellipse(cx, cyy, R, R * ct, 0, 0, 2 * Math.PI); g.stroke();
         g.setLineDash([]);

@@ -128,6 +128,7 @@ def render():
                         json.dumps(json.loads(read(SITE)),
                                    separators=(',', ':')))
     html = inline_renders(html)
+    html = html.replace('/*DEPTHDATA*/', read(os.path.join(ROOT, 'web', 'depth_profiles.json')))
     html = html.replace('/*TOFDATA*/',
                         json.dumps(json.loads(read(TOF)), separators=(',', ':')))
     for token, path in PARTS:
