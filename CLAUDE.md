@@ -20,7 +20,7 @@
 
 ## What this repo is
 
-Ti–O 고체–기체 열역학. 논문에 실제로 쓰이는 **계산 두 개**와, 그걸 보여주는
+Ti–O 고체–기체 열역학. 논문에 실제로 쓰이는 **계산 세 개**와, 그걸 보여주는
 웹페이지 하나. 표면 용량 부등식은 제거했다 — 페이지에서도, 레포에서도.
 
 ### 1. Gas–solid equilibrium (`solidgas/activeset.py`)
@@ -42,6 +42,14 @@ q = n_iso + n_assoc 로 두면 loss 항이 합에서 상쇄돼서 q 와 n_below 
 **잔차 정의를 반드시 같이 보고한다.** 측정 속도가 86배 차이나서 raw least squares
 는 한 시료가 지배한다. log/relative 는 논문 값을 되찾고, raw 는 prefactor 가 두 자리
 어긋난다. 논문 SI 에 어느 걸 썼는지가 안 적혀 있다.
+
+### 3. Vacancy distribution and TOF range (`pilot/titania-super-multiscale/`)
+
+SI 2a 는 모든 시료의 CO 속도를 반응 자리 2.31 umol/g 하나로 나눈다. 이 모델은 그
+숫자를 범위로 바꾼다. 측정 총량을 873.15 K 평형에서 입자 안의 모든 자리((110)
+삼중층, (1×2) 재구성 셀, 벌크 응집체)에 나눠 담는다. 문헌 출처가 없는 값은
+파라미터로 두고 720개 점 × 반응 자리 정의 5개를 다 푼다. 실행은 4코어로 약 40분.
+페이지는 `paper_outputs/tof_range.json` 을 읽기만 하고 다시 계산하지 않는다.
 
 ## Rules
 

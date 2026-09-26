@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Added the vacancy-distribution workspace: the apparent TOF range of each
+  sample over 720 parameter points of the pilot site-distribution model in
+  pilot/titania-super-multiscale, rendered grains, a live (110) surface and
+  a Method tab with the equations and references. It replaced the Note 2b
+  continuum model, which is removed. Regenerated outputs are stored at 10
+  significant digits, because solver results differed between machines by
+  up to 2.2e-12 relative in the last digits. README and the working notes
+  now describe three calculations.
 - Added a GitHub Actions workflow that runs the test suite, the pilot tests
   and the browser check on every push and pull request, and fails on any
   skipped or xfailed test. The gates had run only by hand.

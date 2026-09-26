@@ -2,9 +2,11 @@
 
 Gas–solid equilibrium and oxygen-vacancy models for reduced titania.
 
-Two calculations used in the accompanying manuscript: gas–solid equilibrium for
-the C–H–O–N / Ti–O system, and the isolated surface-vacancy population that sets
-the CO formation rate across the reduction series.
+Three calculations used in the accompanying manuscript: gas–solid equilibrium
+for the C–H–O–N / Ti–O system, the distribution of each sample's vacancy
+inventory over the sites of a rutile particle, which turns the apparent CO
+turnover frequency into a range, and the isolated surface-vacancy population
+that sets the CO formation rate across the reduction series.
 
 The interactive version is at
 [robin-yk.github.io/TitaniaModels](https://robin-yk.github.io/TitaniaModels/).
@@ -30,6 +32,25 @@ ceiling across temperature and H2:CO2 ratio.  It then overlays the TiO2
 reduction boundary and repeats a ratio sweep with the finite oxide charge.  The
 two calculations are kept separate so gas reaction equilibrium is not confused
 with oxygen supplied by the solid.
+
+### Vacancy distribution and apparent TOF
+
+The supplement divides every sample's initial CO rate by one fixed
+reactive-site count, 2.31 umol/g. The pilot model in
+`pilot/titania-super-multiscale/` replaces that number with a range. At
+equilibrium at 873.15 K with the measured inventory fixed, it places each
+sample's vacancies over every site a vacancy can occupy: explicit (110)
+trilayers with bridging, in-plane and sub-bridging oxygen, (1×2)
+reconstruction cells, Monte Carlo aggregate boxes in the bulk, and shell
+electrostatics with only the whole particle neutral, over an equal-mass
+900–1600 nm size mixture. Values without a literature source are the model's
+parameters. The model is solved at 720 parameter points under five
+reactive-site definitions, and the rate divided by the reactive-site count
+over the countable cases (at least 0.01 umol/g and 1% of the bridging
+capacity) is the apparent TOF range; the other cases are kept and reported
+apart. The run takes about 40 minutes on four cores.
+`scripts/export_tof_range.py` packs it into `paper_outputs/tof_range.json`,
+and the page displays that file without recomputing it.
 
 ### Vacancy population model
 
@@ -73,6 +94,10 @@ from the coefficient tables.
 The page loads manuscript reference values from committed JSON and keeps them
 separate from calculations using user inputs.
 
+The TOF range has no browser engine. Gates hold `paper_outputs/tof_range.json`
+to the pilot outputs byte for byte and the page to that JSON, and the browser
+check reads each printed TOF back against the stored site count.
+
 `scripts/check_page.py` loads the built page in a browser and compares its
 displayed numbers with fresh calculations.
 
@@ -90,6 +115,7 @@ data/           thermodynamic tables, the reduction series, the 80-digit referen
 paper_outputs/  every computed number in the manuscript, as committed CSV
 web/            the browser mirrors, a drawing kit, figure modules, one page
 docs/           the built page and the method notes
+pilot/          titania-super-multiscale, the site-distribution model behind the TOF range
 ```
 
 See [docs/equilibrium-method.md](docs/equilibrium-method.md) and
