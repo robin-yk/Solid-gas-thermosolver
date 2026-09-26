@@ -86,3 +86,7 @@ PW_DIR=<dir with node_modules/playwright> python3 scripts/check_page.py
 `paper_outputs/` 는 커밋되어 있고, 재생성 시 한 바이트라도 달라지면 게이트가
 떨어진다. `docs/index.html` 도 같다. 수식 MathML 이 latex2mathml 버전에 따라
 달라지므로 `requirements.txt` 가 버전을 고정한다.
+
+푸시마다 GitHub Actions (`.github/workflows/gates.yml`) 가 위 게이트, pilot 테스트,
+브라우저 검사를 돌린다. skip 이나 xfail 이 하나라도 있으면 떨어진다. main 은 브랜치의
+초록불을 확인한 뒤에 올린다.

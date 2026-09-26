@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added a GitHub Actions workflow that runs the test suite, the pilot tests
+  and the browser check on every push and pull request, and fails on any
+  skipped or xfailed test. The gates had run only by hand.
 - Pinned latex2mathml to 3.81.1, the version the committed page was built
   with. Under the old 3.78.1 pin the multiplication sign in
   C_O,tot = 2x10^6/M came out as an identifier instead of an operator, so a

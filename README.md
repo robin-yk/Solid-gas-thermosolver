@@ -76,6 +76,10 @@ separate from calculations using user inputs.
 `scripts/check_page.py` loads the built page in a browser and compares its
 displayed numbers with fresh calculations.
 
+GitHub Actions (`.github/workflows/gates.yml`) runs the test suite, the pilot
+tests and the browser check on every push and pull request, and fails on any
+skipped or xfailed test.
+
 ## Layout
 
 ```
