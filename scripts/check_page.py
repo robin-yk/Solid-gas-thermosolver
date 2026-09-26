@@ -103,6 +103,7 @@ const P = require(process.env.PW + '/node_modules/playwright');
      numbers it prints for the starting scenario and after a change */
   await pg.click('.wstab[data-ws="ws-distribution"]');
   await pg.waitForTimeout(6000);
+  if (await pg.inputValue('#vdScenario') !== 'S1') throw new Error('Distribution must open on S1');
   for (const id of ['S1', 'S2', 'S3', 'S4', 'S5']) {
     await pg.selectOption('#vdSample', 'A600');
     await pg.selectOption('#vdScenario', id);
@@ -119,6 +120,7 @@ const P = require(process.env.PW + '/node_modules/playwright');
   await pg.selectOption('#vdDG', '-0.4');
   if (await pg.inputValue('#vdScenario') !== 'custom') throw new Error('Custom parameters not recognised');
   await pg.click('#vdReset');
+  if (await pg.inputValue('#vdScenario') !== 'S1') throw new Error('Reset must restore S1');
   await pg.locator('#vdSlabCanvas').scrollIntoViewIfNeeded();
   await pg.waitForTimeout(700);
   out.drew.figTofRange = await pg.evaluate(() =>
