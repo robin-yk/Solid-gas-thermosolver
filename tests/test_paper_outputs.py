@@ -100,6 +100,17 @@ def test_the_page_shows_exactly_what_the_script_produced(site):
         'the page is stale - run scripts/build_site.py'
 
 
+def test_the_page_rebuilds_byte_for_byte():
+    """The committed page is what build_site.py writes from the committed
+    sources, template text included. The MathML depends on the latex2mathml
+    version, so requirements.txt pins the one the page was built with."""
+    sys.path.insert(0, str(ROOT / 'scripts'))
+    import build_site
+    assert build_site.render() == PAGE.read_text(), \
+        ('docs/index.html does not rebuild byte for byte - run '
+         'scripts/build_site.py with the pinned requirements and commit')
+
+
 def test_the_page_makes_no_external_request():
     html = PAGE.read_text()
     assert '<script src=' not in html

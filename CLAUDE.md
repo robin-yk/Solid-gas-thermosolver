@@ -84,4 +84,5 @@ PW_DIR=<dir with node_modules/playwright> python3 scripts/check_page.py
 ```
 
 `paper_outputs/` 는 커밋되어 있고, 재생성 시 한 바이트라도 달라지면 게이트가
-떨어진다.
+떨어진다. `docs/index.html` 도 같다. 수식 MathML 이 latex2mathml 버전에 따라
+달라지므로 `requirements.txt` 가 버전을 고정한다.

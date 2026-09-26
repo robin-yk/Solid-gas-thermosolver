@@ -100,7 +100,8 @@ def inline_renders(html):
     return html.replace('/*RENDERDATA*/', json.dumps(doc, separators=(',', ':')))
 
 
-def build():
+def render():
+    """The page as a string; build() writes it and a gate compares it."""
     if not os.path.exists(SITE):
         raise SystemExit('run scripts/reproduce_paper.py first')
     html = typeset(read(os.path.join(WEB, 'template.html')))
@@ -141,6 +142,11 @@ def build():
     if '<script src=' in html or 'href="http' in html.replace(
             'href="https://github.com', '').replace('href="https://doi.org/', ''):
         raise SystemExit('the page must not reach outside itself')
+    return html
+
+
+def build():
+    html = render()
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, 'w') as fh:
         fh.write(html)

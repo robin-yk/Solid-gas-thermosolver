@@ -52,7 +52,8 @@ python3 -m pytest tests/ -q
 ```
 
 `paper_outputs/` is committed, and a gate fails if regenerating it changes a
-byte.
+byte. The same gate holds `docs/index.html`; its MathML depends on the
+latex2mathml version, which `requirements.txt` pins.
 
 ## Verification
 

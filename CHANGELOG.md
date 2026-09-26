@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Pinned latex2mathml to 3.81.1, the version the committed page was built
+  with. Under the old 3.78.1 pin the multiplication sign in
+  C_O,tot = 2x10^6/M came out as an identifier instead of an operator, so a
+  clean checkout rebuilt a different page. A new gate holds the rebuilt page
+  to docs/index.html byte for byte; it also fails when the template text
+  changes without a rebuild, which no gate caught before.
+- The page title and its source link still carried the old repository name
+  and now read TitaniaModels. GitHub forwards the old repository address but
+  not the old Pages address, robin-yk.github.io/Solid-gas-thermosolver, which
+  returns 404.
 - Added a thermodynamic operating atlas to the equilibrium workspace. A wide
   temperature–H2:CO2 map places the fresh-feed RWGS conversion ceiling and the
   rutile reduction boundary on the same axes; two companion figures expose the
