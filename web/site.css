@@ -73,6 +73,9 @@ button.mini{width:auto;padding:8px 12px;font-size:12px;cursor:pointer}
 table.kv{width:auto;font-size:14px}
 table.kv th{text-align:left;font-weight:400;color:var(--muted);padding:5px 22px 5px 0;white-space:nowrap;font-size:13px;letter-spacing:0;text-transform:none}
 table.kv td{text-align:left;padding:5px 0;color:var(--navy);font-weight:700}
+#ws-distribution .kvrow table.kv{width:100%;table-layout:fixed}
+#ws-distribution .kvrow table.kv th{width:62%;white-space:normal;padding-right:14px}
+#ws-distribution .kvrow table.kv td{width:38%;font-variant-numeric:tabular-nums}
 .verdict{border-left:3px solid var(--green);padding:2px 0 2px 12px;margin:0 0 12px;font-size:15px}
 .verdict.red{border-left-color:var(--orange)}
 .verdict b{color:var(--navy)}

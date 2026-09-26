@@ -78,6 +78,9 @@ button.mini{width:auto;padding:8px 12px;font-size:12px;cursor:pointer}
 table.kv{width:auto;font-size:14px}
 table.kv th{text-align:left;font-weight:400;color:var(--muted);padding:5px 22px 5px 0;white-space:nowrap;font-size:13px;letter-spacing:0;text-transform:none}
 table.kv td{text-align:left;padding:5px 0;color:var(--navy);font-weight:700}
+#ws-distribution .kvrow table.kv{width:100%;table-layout:fixed}
+#ws-distribution .kvrow table.kv th{width:62%;white-space:normal;padding-right:14px}
+#ws-distribution .kvrow table.kv td{width:38%;font-variant-numeric:tabular-nums}
 .verdict{border-left:3px solid var(--green);padding:2px 0 2px 12px;margin:0 0 12px;font-size:15px}
 .verdict.red{border-left-color:var(--orange)}
 .verdict b{color:var(--navy)}
@@ -312,7 +315,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 </section>
 
 <section id="ws-distribution" class="ws" style="display:none">
-  <div class="wshead"><h2>Vacancy distribution</h2><p class="sub">Equilibrium distribution of the measured oxygen-vacancy inventory over surface, subsurface and bulk sites of rutile at 600&nbsp;&deg;C, and the apparent CO turnover frequency per reactive site.</p></div>
+  <div class="wshead"><h2>Vacancy distribution</h2><p class="sub">Calculate the equilibrium distribution of a measured oxygen-vacancy concentration among surface, subsurface and bulk sites in rutile at 600&nbsp;&deg;C. Use the calculated reactive-site concentration to estimate the apparent CO turnover frequency (TOF).</p></div>
   <div class="vd-hero">
     <figure class="vd-panel" id="vdParticle">
       <div class="vd-stage" id="vdParticleStage">
@@ -320,9 +323,10 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
         <div class="vd-ring" aria-hidden="true"></div>
         <div class="vd-tip" id="vdTip" hidden></div>
       </div>
-      <figcaption><b>Rutile grains, cross-section.</b> Shape after TEM (Fig. S10d). Blue: surface
-      band, four (110) trilayers, 1.30&nbsp;nm; orange: subsurface; purple: bulk. Band
-      thickness not to scale. Hover a layer for its calculated vacancy amount.</figcaption>
+      <figcaption><b>Rutile particle cross-section.</b> Particle shapes approximate the TEM image (Fig. S10d).
+      Blue: surface sites; orange: subsurface sites; purple: bulk below the four (110)
+      trilayers (1.30&nbsp;nm). Layer thicknesses are exaggerated for visibility.
+      Hover or tap a region to see its calculated vacancy concentration.</figcaption>
     </figure>
     <svg class="vd-zoom" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="34" y1="36" x2="52" y2="0"/><line x1="34" y1="44" x2="52" y2="100"/></svg>
     <figure class="vd-panel" id="vdSurface">
@@ -337,19 +341,21 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
     <aside class="population-sheet" aria-labelledby="vd-controls-title">
       <header class="population-sheet-head">
         <h3 id="vd-controls-title">Model parameters</h3>
-        <p>All 720 combinations are precomputed; the inputs select one.</p>
+        <p>Select one of 720 calculated parameter combinations.</p>
       </header>
       <div class="population-parameters">
+        <div class="population-field"><label for="vdScenario">Assumption set</label><select id="vdScenario"></select>
+          <div class="readout">S1–S5 compare segregation energies, interaction cutoff and reconstruction cost. Each uses 75% (110) area, ε = 64 and all unreconstructed bridging vacancies as sites.</div></div>
         <div class="population-field"><label for="vdSample">Sample</label><select id="vdSample"></select>
           <div class="readout" id="vdSampleNote"></div></div>
-        <div class="population-field"><label for="vdMap">Vacancy formation-energy set</label><select id="vdMap"></select>
-          <div class="readout">Layer-resolved O-vacancy formation energies.</div></div>
-        <div class="population-field"><label for="vdCutoff">Aggregate cutoff distance</label><select id="vdCutoff"></select>
-          <div class="readout">nm · bulk vacancy pairs within this distance interact (Zhao et al. 2017 pair energy).</div></div>
+        <div class="population-field"><label for="vdMap">Vacancy segregation energies</label><select id="vdMap"></select>
+          <div class="readout">E<sub>f,site</sub> − E<sub>f,bulk</sub>. Negative values favour that site over bulk.</div></div>
+        <div class="population-field"><label for="vdCutoff">Vacancy–vacancy interaction cutoff</label><select id="vdCutoff"></select>
+          <div class="readout">Bulk vacancy pairs interact up to this distance, using the pair energy of Zhao et al. (2017).</div></div>
         <div class="population-field"><label for="vdDG">(1&times;2) reconstruction free energy &Delta;G</label><select id="vdDG"></select>
-          <div class="readout">eV per (1&times;2) cell, relative to the cell with one bridging O vacant.</div></div>
+          <div class="readout">eV per (1&times;2) cell, relative to a cell with one bridging-oxygen vacancy.</div></div>
         <div class="population-field"><label for="vdF110">(110) area fraction</label><select id="vdF110"></select>
-          <div class="readout">Fraction of particle surface area; the remainder has no reactive sites.</div></div>
+          <div class="readout">Fraction of the particle surface assigned to (110) facets. Reactive sites are counted on these facets.</div></div>
         <div class="population-field"><label for="vdEps">Static dielectric constant &epsilon;</label><select id="vdEps"></select>
           <div class="readout">Rutile at 873&nbsp;K, a or c axis (Parker 1961).</div></div>
         <div class="population-field"><label for="vdReactive">Reactive-site definition</label><select id="vdReactive"></select>
@@ -366,11 +372,11 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 <div class="wsmain">
 <div class="kvrow">
   <div class="kvblock">
-    <h3>Vacancy inventory by site class</h3>
+    <h3>Oxygen-vacancy concentration by region</h3>
     <table class="kv" id="vdBasis"></table>
   </div>
   <div class="kvblock">
-    <h3>Reactive-site concentration and apparent TOF</h3>
+    <h3>Site concentration and apparent CO TOF</h3>
     <div id="vdVerdict"></div>
     <table class="kv" id="vdKpis"></table>
   </div>
@@ -386,7 +392,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
       <button type="button" data-fmt="csv">CSV data</button>
     </details>
     <figcaption>TOF = r<sub>CO</sub>/N<sub>react</sub>; r<sub>CO</sub> measured at
-    600&nbsp;&deg;C, N<sub>react</sub> calculated. Bar: range over parameter points with
+    600&nbsp;&deg;C, N<sub>react</sub> calculated under the selected site definition. Bar: full-grid range over all 720 parameter points and five site definitions with
     N<sub>react</sub> &ge; 0.01&nbsp;&micro;mol&nbsp;g&#8315;&sup1; and &ge; 1% of bridging-O
     sites; tick: median. Number above the axis: cases below that threshold, of 3600.
     Open square: N<sub>react</sub> = 2.31&nbsp;&micro;mol&nbsp;g&#8315;&sup1; (SI Note 2a).
@@ -402,7 +408,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 </div>
 
 <div class="panel pad page active" id="vd-res">
-  <h2>Apparent TOF by sample</h2>
+  <h2>Apparent CO TOF by sample</h2>
   <div class="tablewrap"><table class="vdt">
     <thead><tr><th>Sample</th><th>Treatment T (&deg;C)</th><th class="n">Inventory, measured (µmol O g⁻¹)</th><th class="n">r<sub>CO</sub>, measured (µmol g⁻¹ s⁻¹)</th>
       <th class="n">TOF, selected (s⁻¹)</th><th class="n">TOF min (s⁻¹)</th><th class="n">TOF median (s⁻¹)</th><th class="n">TOF max (s⁻¹)</th>
@@ -414,12 +420,15 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 
 <div class="panel pad page" id="vd-how">
   <h2>Method</h2>
-  <p>The measured O removal of each sample is distributed over all O sites of a rutile
-  particle at equilibrium at 873.15&nbsp;K with the inventory held fixed. Unknown inputs
-  are parameters; the model is solved at every combination.</p>
+  <p>The measured oxygen removal sets the total vacancy concentration in each sample.
+  The model distributes these vacancies and their associated electrons among rutile sites
+  by minimising the free energy at 873.15&nbsp;K (600&nbsp;&deg;C). The total vacancy
+  concentration remains fixed. Calculations cover 720 parameter combinations and five
+  definitions of a reactive site.</p>
   <h3>Site capacities</h3>
-  <p>Smooth sphere of diameter D, density &rho; = 4.2487&nbsp;g&nbsp;cm⁻³, M = 79.866&nbsp;g&nbsp;mol⁻¹.
-  Capacities in µmol per gram of initial TiO<sub>2</sub>.</p>
+  <p>Particles are represented as smooth spheres of diameter D, with density
+  &rho; = 4.2487&nbsp;g&nbsp;cm⁻³ and molar mass M = 79.866&nbsp;g&nbsp;mol⁻¹.
+  Site capacities are expressed in µmol per gram of initial TiO<sub>2</sub>.</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>A</mi><mi>m</mi></msub><mo>&#x0003D;</mo><mfrac><mrow><mn>6</mn></mrow><mrow><mi>&#x003C1;</mi><mi>D</mi></mrow></mfrac><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>A</mi><mrow><mn>110</mn></mrow></msub><mo>&#x0003D;</mo><msqrt><mrow><mn>2</mn></mrow></msqrt><mspace width="0.167em" /><mi>a</mi><mi>c</mi><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>c</mi><mrow><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>A</mi><mi>m</mi></msub></mrow><mrow><msub><mi>A</mi><mrow><mn>110</mn></mrow></msub><msub><mi>N</mi><mrow><mi mathvariant="normal">A</mi></mrow></msub></mrow></mfrac></mrow></math><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>C</mi><mrow><mi>k</mi><mo>&#x0002C;</mo><mi>i</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>f</mi><mrow><mn>110</mn></mrow></msub><mspace width="0.167em" /><msub><mi>m</mi><mi>i</mi></msub><mspace width="0.167em" /><msub><mi>c</mi><mrow><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub><msup><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mfrac><mrow><msub><mi>z</mi><mrow><mi>k</mi><mo>&#x0002C;</mo><mi>i</mi></mrow></msub></mrow><mrow><mi>R</mi></mrow></mfrac><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow><mn>2</mn></msup><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>m</mi><mrow><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mn>1</mn><mo>&#x0002C;</mo><mspace width="0.278em" /><msub><mi>m</mi><mrow><mrow><mi mathvariant="normal">I</mi><mi mathvariant="normal">P</mi><mi mathvariant="normal">L</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mn>2</mn><mo>&#x0002C;</mo><mspace width="0.278em" /><msub><mi>m</mi><mrow><mrow><mi mathvariant="normal">S</mi><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mn>1</mn><mo>&#x0002C;</mo><mspace width="0.278em" /><msub><mi>m</mi><mrow><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">i</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mn>2</mn></mrow></math><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>C</mi><mrow><mrow><mi mathvariant="normal">O</mi><mo>&#x0002C;</mo><mi mathvariant="normal">t</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mfrac><mrow><mn>2</mn><mo>&#x000D7;</mo><msup><mn>10</mn><mn>6</mn></msup></mrow><mrow><mi>M</mi></mrow></mfrac><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>C</mi><mrow><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">i</mi><mo>&#x0002C;</mo><mi mathvariant="normal">t</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mfrac><mrow><msup><mn>10</mn><mn>6</mn></msup></mrow><mrow><mi>M</mi></mrow></mfrac></mrow></math></div>
   <p>k = 1&ndash;4 is the trilayer, z<sub>k,i</sub> the depth of site i (a = 0.4594&nbsp;nm,
   c = 0.2958&nbsp;nm, O parameter u = 0.30479). O and Ti below the trilayers are the
@@ -427,7 +436,7 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   Each site is counted once.</p>
 
   <h3>State table and free energy</h3>
-  <p>Domain d holds C<sub>d</sub> cells (µmol&nbsp;g⁻¹). A cell is in state a with energy
+  <p>Each group of equivalent cells, d, has a concentration C<sub>d</sub> (µmol&nbsp;g⁻¹). A cell in state a has energy
   E<sub>da</sub>, degeneracy g<sub>da</sub>, v<sub>da</sub> O vacancies and e<sub>da</sub> Ti<sup>3+</sup>.
   Populations x<sub>da</sub> = C<sub>d</sub>p<sub>da</sub> minimise</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi mathvariant="script">F</mi><mo>&#x0003D;</mo><munder><mo>&#x02211;</mo><mrow><mi>d</mi><mo>&#x0002C;</mo><mi>a</mi></mrow></munder><msub><mi>x</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><msub><mi>E</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><mo>&#x0002B;</mo><msub><mi>k</mi><mrow><mi mathvariant="normal">B</mi></mrow></msub><mi>T</mi><munder><mo>&#x02211;</mo><mrow><mi>d</mi><mo>&#x0002C;</mo><mi>a</mi></mrow></munder><msub><mi>x</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><mi>ln</mi><mfrac><mrow><msub><mi>x</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub></mrow><mrow><msub><mi>C</mi><mi>d</mi></msub><mspace width="0.167em" /><msub><mi>g</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub></mrow></mfrac><mo>&#x0002B;</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><munder><mo>&#x02211;</mo><mrow><mi>&#x02113;</mi><mo>&#x0002C;</mo><mi>m</mi></mrow></munder><msub><mi>q</mi><mi>&#x02113;</mi></msub><msub><mi>H</mi><mrow><mi>&#x02113;</mi><mi>m</mi></mrow></msub><msub><mi>q</mi><mi>m</mi></msub></mrow></math></div>
@@ -435,41 +444,52 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><munder><mo>&#x02211;</mo><mi>a</mi></munder><msub><mi>x</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>C</mi><mi>d</mi></msub><mo>&#x0002C;</mo><mspace width="2em" /><munder><mo>&#x02211;</mo><mrow><mi>d</mi><mo>&#x0002C;</mo><mi>a</mi></mrow></munder><msub><mi>v</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><msub><mi>x</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>N</mi><mrow><mi mathvariant="normal">V</mi></mrow></msub><mo>&#x0002C;</mo><mspace width="2em" /><munder><mo>&#x02211;</mo><mrow><mi>d</mi><mo>&#x0002C;</mo><mi>a</mi></mrow></munder><msub><mi>e</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><msub><mi>x</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><mo>&#x0003D;</mo><mn>2</mn><msub><mi>N</mi><mrow><mi mathvariant="normal">V</mi></mrow></msub></mrow></math></div>
   <p>N<sub>V</sub>: measured O removal of the sample (µmol O g⁻¹).</p>
 
-  <h3>Site energies</h3>
-  <p>Single-vacancy energies relative to bulk, &epsilon;<sub>k,i</sub> = E<sub>f,k,i</sub> &minus;
-  E<sub>f,bulk</sub>, from one energy map: PAB<sup>1</sup>, HAM<sup>2</sup>, LI_SBR1 or LI_L2<sup>3</sup>. Sites a map does not name
-  are at 0. For the Li maps, &epsilon;<sub>1,IPL</sub> = &epsilon;<sub>1,BRI</sub> + 0.11&nbsp;eV
-  <sup>4</sup>. Plain sites have two states:</p>
+  <h3>Vacancy segregation energies</h3>
+  <p>BRI denotes bridging oxygen, IPL in-plane oxygen, and SBR subbridging oxygen.</p>
+  <p>Single-vacancy formation energies are expressed relative to bulk,
+  &epsilon;<sub>k,i</sub> = E<sub>f,k,i</sub> &minus; E<sub>f,bulk</sub>, using one of four
+  energy sets: Pabisiak and Kiejna (2007, GGA; PAB)<sup>1</sup>,
+  Hameeuw et al. (2006, LDA; HAM)<sup>2</sup>, or Li et al. (2015, screened-exchange; LI_SBR1 and LI_L2)<sup>3</sup>.
+  LI_SBR1 assigns the Li subsurface energy to layer-1 subbridging sites; LI_L2 assigns it to all layer-2 oxygen sites.
+  Sites not specified in the selected energy set are assigned the bulk value (&epsilon; = 0).
+  For the Li sets, &epsilon;<sub>1,IPL</sub> = &epsilon;<sub>1,BRI</sub> + 0.11&nbsp;eV
+  <sup>4</sup>. Individual oxygen sites have occupied and vacant states:</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>E</mi><mo>&#x02208;</mo><mo stretchy="false">&#x0007B;</mo><mn>0</mn><mo>&#x0002C;</mo><mspace width="0.278em" /><msub><mi>&#x003B5;</mi><mrow><mi>k</mi><mo>&#x0002C;</mo><mi>i</mi></mrow></msub><mo stretchy="false">&#x0007D;</mo><mo>&#x0002C;</mo><mspace width="2em" /><mi>v</mi><mo>&#x02208;</mo><mo stretchy="false">&#x0007B;</mo><mn>0</mn><mo>&#x0002C;</mo><mn>1</mn><mo stretchy="false">&#x0007D;</mo></mrow></math></div>
 
   <h3>(1&times;2) cell and reconstruction</h3>
-  <p>Two bridging O and the four layer-1 Ti under them form one cell, C<sub>cell</sub> =
-  C<sub>Ti,1</sub>/4. O states with n Ti<sup>3+</sup> on the free Ti, each at s<sub>0</sub> =
-  0.2&nbsp;eV<sup>5</sup>:</p>
+  <p>Each cell contains two bridging oxygen sites and the four Ti sites beneath them
+  in layer 1, giving C<sub>cell</sub> = C<sub>Ti,1</sub>/4. For each oxygen configuration,
+  n electrons can occupy the remaining Ti sites as Ti<sup>3+</sup> polarons, at an energy
+  s<sub>0</sub> = 0.2&nbsp;eV per electron<sup>5</sup>:</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>E</mi><mo>&#x0003D;</mo><msub><mi>E</mi><mi>o</mi></msub><mo>&#x0002B;</mo><mi>n</mi><mspace width="0.167em" /><msub><mi>s</mi><mn>0</mn></msub><mo>&#x0002C;</mo><mspace width="2em" /><mi>g</mi><mo>&#x0003D;</mo><msub><mi>g</mi><mi>o</mi></msub><mo minsize="2.047em" maxsize="2.047em">&#x00028;</mo><mfrac linethickness="0"><mrow><msub><mi>n</mi><mrow><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></mrow></msub></mrow><mrow><mi>n</mi></mrow></mfrac><mo minsize="2.047em" maxsize="2.047em">&#x00029;</mo><mo>&#x0002C;</mo><mspace width="2em" /><mi>e</mi><mo>&#x0003D;</mo><msub><mi>e</mi><mi>o</mi></msub><mo>&#x0002B;</mo><mi>n</mi></mrow></math><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mtable><mtr><mtd columnalign="left"><mi>o</mi></mtd><mtd columnalign="center"><msub><mi>E</mi><mi>o</mi></msub></mtd><mtd columnalign="center"><mi>v</mi></mtd><mtd columnalign="center"><msub><mi>e</mi><mi>o</mi></msub></mtd><mtd columnalign="center"><msub><mi>g</mi><mi>o</mi></msub><mtext>&#x000A0;</mtext><mo stretchy="false">&#x00028;</mo><msub><mi>n</mi><mrow><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></mrow></msub><mo stretchy="false">&#x00029;</mo></mtd></mtr><mtr><mtd columnalign="left"><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">t</mi></mrow></mtd><mtd columnalign="center"><mn>0</mn></mtd><mtd columnalign="center"><mn>0</mn></mtd><mtd columnalign="center"><mn>0</mn></mtd><mtd columnalign="center"><mn>1</mn><mtext>&#x000A0;</mtext><mo stretchy="false">&#x00028;</mo><mn>4</mn><mo stretchy="false">&#x00029;</mo></mtd></mtr><mtr><mtd columnalign="left"><mrow><mi mathvariant="normal">o</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">e</mi><mtext>&#x000A0;</mtext><mi mathvariant="normal">v</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi></mrow></mtd><mtd columnalign="center"><msub><mi>&#x003B5;</mi><mrow><mn>1</mn><mo>&#x0002C;</mo><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub></mtd><mtd columnalign="center"><mn>1</mn></mtd><mtd columnalign="center"><mn>0</mn></mtd><mtd columnalign="center"><mn>2</mn><mtext>&#x000A0;</mtext><mo stretchy="false">&#x00028;</mo><mn>4</mn><mo stretchy="false">&#x00029;</mo></mtd></mtr><mtr><mtd columnalign="left"><mrow><mi mathvariant="normal">b</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">h</mi><mtext>&#x000A0;</mtext><mi mathvariant="normal">v</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi></mrow></mtd><mtd columnalign="center"><mn>2</mn><msub><mi>&#x003B5;</mi><mrow><mn>1</mn><mo>&#x0002C;</mo><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub></mtd><mtd columnalign="center"><mn>2</mn></mtd><mtd columnalign="center"><mn>0</mn></mtd><mtd columnalign="center"><mn>1</mn><mtext>&#x000A0;</mtext><mo stretchy="false">&#x00028;</mo><mn>4</mn><mo stretchy="false">&#x00029;</mo></mtd></mtr><mtr><mtd columnalign="left"><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">d</mi></mrow></mtd><mtd columnalign="center"><msub><mi>&#x003B5;</mi><mrow><mn>1</mn><mo>&#x0002C;</mo><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub><mo>&#x0002B;</mo><mi>&#x00394;</mi><mi>G</mi></mtd><mtd columnalign="center"><mn>1</mn></mtd><mtd columnalign="center"><mn>2</mn></mtd><mtd columnalign="center"><mn>1</mn><mtext>&#x000A0;</mtext><mo stretchy="false">&#x00028;</mo><mn>2</mn><mo stretchy="false">&#x00029;</mo></mtd></mtr></mtable></mrow></math></div>
   <p>&Delta;G is relative to the one-vacancy state. Reconstructed fraction of bridging sites
   and vacant fraction of the unreconstructed ones:</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>f</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">c</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mfrac><mrow><mn>2</mn><msub><mi>x</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">c</mi></mrow></mrow></msub></mrow><mrow><msub><mi>C</mi><mrow><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub></mrow></mfrac><mo>&#x0002C;</mo><mspace width="2em" /><mi>&#x003B8;</mi><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>N</mi><mrow><mrow><mi mathvariant="normal">V</mi><mo>&#x0002C;</mo><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub></mrow><mrow><msub><mi>C</mi><mrow><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub><mo>&#x02212;</mo><mn>2</mn><msub><mi>x</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">c</mi></mrow></mrow></msub></mrow></mfrac></mrow></math></div>
 
   <h3>Bulk aggregates</h3>
-  <p>Below 1.30&nbsp;nm, O sits in periodic boxes of 700 sites (5&times;5&times;7 cells). A box
-  with N vacancies is one state:</p>
+  <p>Bulk oxygen sites below 1.30&nbsp;nm are represented by periodic boxes containing
+  700 sites (5&times;5&times;7 cells). Configurations with N vacancies contribute to the
+  partition function Q(N), which gives the free energy E<sub>N</sub>:</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>E</mi><mi>N</mi></msub><mo>&#x0003D;</mo><mo>&#x02212;</mo><msub><mi>k</mi><mrow><mi mathvariant="normal">B</mi></mrow></msub><mi>T</mi><mi>ln</mi><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>N</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>v</mi><mi>N</mi></msub><mo>&#x0003D;</mo><mi>N</mi><mo>&#x0002C;</mo><mspace width="2em" /><mn>0</mn><mo>&#x02264;</mo><mi>N</mi><mo>&#x02264;</mo><mn>175</mn></mrow></math><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>N</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><munder><mo>&#x02211;</mo><mrow><mi>&#x003C3;</mi><mo>&#x02208;</mo><msub><mi>&#x003A9;</mi><mi>N</mi></msub></mrow></munder><mi>exp</mi><mspace width="negativethinmathspace" /><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mo>&#x02212;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><msub><mi>k</mi><mrow><mi mathvariant="normal">B</mi></mrow></msub><mi>T</mi></mrow></mfrac><msub><mo>&#x02211;</mo><mrow><mi>i</mi><mo>&#x0003C;</mo><mi>j</mi><mo>&#x0002C;</mo><mspace width="0.278em" /><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>&#x02264;</mo><msub><mi>r</mi><mi>c</mi></msub></mrow></msub><mi>J</mi><mo stretchy="false">&#x00028;</mo><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><msub><mi>&#x003C3;</mi><mi>i</mi></msub><msub><mi>&#x003C3;</mi><mi>j</mi></msub><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow></mrow></math><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>J</mi><mo stretchy="false">&#x00028;</mo><mi>r</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mfrac><mrow><mi>A</mi></mrow><mrow><mi>r</mi></mrow></mfrac><mo>&#x02212;</mo><mfrac><mrow><mi>B</mi></mrow><mrow><msup><mi>r</mi><mn>2</mn></msup></mrow></mfrac><mo>&#x02212;</mo><mfrac><mrow><mi>C</mi></mrow><mrow><msup><mi>r</mi><mn>6</mn></msup></mrow></mfrac><mo>&#x0002C;</mo><mspace width="2em" /><mi>A</mi><mo>&#x0003D;</mo><mn>0.753</mn><mo>&#x0002C;</mo><mspace width="0.278em" /><mi>B</mi><mo>&#x0003D;</mo><mn>11.83</mn><mo>&#x0002C;</mo><mspace width="0.278em" /><mi>C</mi><mo>&#x0003D;</mo><mo>&#x02212;</mo><mn>383.45</mn></mrow></math></div>
-  <p>J: bulk pair energy<sup>6</sup> (r in &Aring;, J in eV). r<sub>c</sub>: cutoff. Clusters of any size are pair
-  sums. &Omega;<sub>N</sub>: vacancy sets with N vacancies in which every vacancy holds two
-  Ti<sup>3+</sup> among its three Ti neighbours, one electron per Ti<sup>7</sup>. Q(N) is computed by Monte Carlo with Widom insertion summed over all empty sites:</p>
+  <p>J is the bulk vacancy-pair interaction energy<sup>6</sup> (r in &Aring;, J in eV),
+  and r<sub>c</sub> is the cutoff distance. Cluster interaction energies are calculated
+  as sums of pair energies. &Omega;<sub>N</sub> contains configurations with N vacancies,
+  each associated with two Ti<sup>3+</sup> among its three Ti neighbours, with at most
+  one electron per Ti<sup>7</sup>. Q(N) is calculated by Monte Carlo sampling and Widom
+  insertion over all sites available for vacancy insertion:</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mfrac><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>N</mi><mo>&#x0002B;</mo><mn>1</mn><mo stretchy="false">&#x00029;</mo></mrow><mrow><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>N</mi><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mo>&#x0003D;</mo><mfrac><mrow><mi>&#x027E8;</mi><mi>W</mi><msub><mi>&#x027E9;</mi><mi>N</mi></msub></mrow><mrow><mi>N</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></mfrac><mo>&#x0002C;</mo><mspace width="2em" /><mi>W</mi><mo>&#x0003D;</mo><munder><mo>&#x02211;</mo><mrow><mi>i</mi><mtext>&#x000A0;</mtext><mrow><mi mathvariant="normal">e</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">y</mi></mrow></mrow></munder><mi>exp</mi><mspace width="negativethinmathspace" /><mrow><mo stretchy="true" fence="true" form="prefix">&#x00028;</mo><mo>&#x02212;</mo><mfrac><mrow><msub><mi>h</mi><mi>i</mi></msub></mrow><mrow><msub><mi>k</mi><mrow><mi mathvariant="normal">B</mi></mrow></msub><mi>T</mi></mrow></mfrac><mo stretchy="true" fence="true" form="postfix">&#x00029;</mo></mrow></mrow></math></div>
   <p>h<sub>i</sub>: pair energy of site i with the present vacancies. Boxes do not interact.</p>
 
   <h3>Charge</h3>
   <p>State charge z = 2v &minus; e (elementary charges). Each atomic plane is a spherical
-  shell &ell; of radius r<sub>&ell;</sub> with charge q<sub>&ell;</sub>; only the particle is neutral.</p>
+  shell &ell; of radius r<sub>&ell;</sub> with charge q<sub>&ell;</sub>. Shells can carry
+  charge while the total particle charge remains zero.</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>q</mi><mi>&#x02113;</mi></msub><mo>&#x0003D;</mo><munder><mo>&#x02211;</mo><mrow><mo stretchy="false">&#x00028;</mo><mi>d</mi><mo>&#x0002C;</mo><mi>a</mi><mo stretchy="false">&#x00029;</mo><mo>&#x02208;</mo><mi>&#x02113;</mi></mrow></munder><msub><mi>z</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><msub><mi>x</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><mo>&#x0002C;</mo><mspace width="2em" /><munder><mo>&#x02211;</mo><mi>&#x02113;</mi></munder><msub><mi>q</mi><mi>&#x02113;</mi></msub><mo>&#x0003D;</mo><mn>0</mn></mrow></math><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>&#x003D5;</mi><mi>&#x02113;</mi></msub><mo>&#x0003D;</mo><munder><mo>&#x02211;</mo><mi>m</mi></munder><msub><mi>H</mi><mrow><mi>&#x02113;</mi><mi>m</mi></mrow></msub><msub><mi>q</mi><mi>m</mi></msub><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>H</mi><mrow><mi>&#x02113;</mi><mi>m</mi></mrow></msub><mo>&#x0003D;</mo><mfrac><mrow><mi>&#x003BA;</mi></mrow><mrow><msub><mi>&#x003B5;</mi><mi>r</mi></msub><mo>max</mo><mo stretchy="false">&#x00028;</mo><msub><mi>r</mi><mi>&#x02113;</mi></msub><mo>&#x0002C;</mo><msub><mi>r</mi><mi>m</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></mfrac><mspace width="0.167em" /><msub><mi>m</mi><mi>p</mi></msub><msub><mi>N</mi><mrow><mi mathvariant="normal">A</mi></mrow></msub><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>6</mn></mrow></msup><mo>&#x0002C;</mo><mspace width="2em" /><mi>&#x003BA;</mi><mo>&#x0003D;</mo><mn>1.43996</mn><mtext>&#x000A0;</mtext><mrow><mi mathvariant="normal">e</mi><mi mathvariant="normal">V</mi><mspace width="0.167em" /><mi mathvariant="normal">n</mi><mi mathvariant="normal">m</mi></mrow></mrow></math></div>
   <p>&epsilon;<sub>r</sub> = 64 (a axis) or 107 (c axis), rutile at 873&nbsp;K<sup>8</sup>.
   m<sub>p</sub>: particle mass (g).</p>
 
   <h3>Equilibrium populations</h3>
-  <p>The minimum has Gibbs form, with multipliers &mu;<sub>V</sub> (vacancy), &mu;<sub>e</sub>
+  <p>The equilibrium state probabilities have the Gibbs form, with multipliers &mu;<sub>V</sub> (vacancy), &mu;<sub>e</sub>
   (electron) and the shell potentials &phi;<sub>&ell;</sub>:</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>p</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>g</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub></mrow><mrow><msub><mi>Z</mi><mi>d</mi></msub></mrow></mfrac><mi>exp</mi><mspace width="negativethinmathspace" /><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><mo>&#x02212;</mo><mfrac><mrow><msub><mi>E</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><mo>&#x0002B;</mo><msub><mi>z</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><msub><mi>&#x003D5;</mi><mrow><mi>&#x02113;</mi><mo stretchy="false">&#x00028;</mo><mi>d</mi><mo stretchy="false">&#x00029;</mo></mrow></msub><mo>&#x02212;</mo><msub><mi>&#x003BC;</mi><mrow><mi mathvariant="normal">V</mi></mrow></msub><msub><mi>v</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub><mo>&#x02212;</mo><msub><mi>&#x003BC;</mi><mi>e</mi></msub><msub><mi>e</mi><mrow><mi>d</mi><mi>a</mi></mrow></msub></mrow><mrow><msub><mi>k</mi><mrow><mi mathvariant="normal">B</mi></mrow></msub><mi>T</mi></mrow></mfrac><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>Z</mi><mi>d</mi></msub><mo>&#x0003D;</mo><munder><mo>&#x02211;</mo><mi>a</mi></munder><mo stretchy="false">&#x00028;</mo><mo>&#x022EF;</mo><mo stretchy="false">&#x00029;</mo></mrow></math></div>
   <p>The multipliers minimise the convex dual (&beta; = 1/k<sub>B</sub>T, u = &beta;&phi;,
@@ -486,21 +506,23 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 
   <h3>Parameter grid</h3>
   <table class="kv" id="vdGrid"></table>
-  <h3>Apparent TOF</h3>
+  <h3>Apparent CO TOF</h3>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">F</mi></mrow><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>r</mi><mrow><mrow><mi mathvariant="normal">C</mi><mi mathvariant="normal">O</mi></mrow></mrow></msub></mrow><mrow><msub><mi>N</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub></mrow></mfrac></mrow></math></div>
   <p>r<sub>CO</sub>: measured initial CO formation rate (µmol g⁻¹ s⁻¹). N<sub>react</sub>:
-  calculated reactive-site concentration (µmol g⁻¹), with c = c<sub>BRI</sub>f<sub>110</sub>(1 &minus; f<sub>rec</sub>):</p>
+  site concentration under the selected definition (µmol g⁻¹), with c = c<sub>BRI</sub>f<sub>110</sub>(1 &minus; f<sub>rec</sub>).
+  θ is the vacancy fraction among unreconstructed bridging-oxygen sites. BRI counts all these vacancies as reactive sites.
+  ISO estimates isolated vacancies assuming independent site occupancy: (1 − θ)<sup>z</sup> is the probability that z neighbouring sites remain occupied.</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>N</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mi>c</mi><mspace width="0.167em" /><mi>&#x003B8;</mi><mspace width="2em" /><mo stretchy="false">&#x00028;</mo><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow><mo stretchy="false">&#x00029;</mo></mrow></math><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>N</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mi>c</mi><mspace width="0.167em" /><mi>&#x003B8;</mi><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B8;</mi><msup><mo stretchy="false">&#x00029;</mo><mi>z</mi></msup><mo>&#x0002C;</mo><mspace width="1em" /><mi>z</mi><mo>&#x0003D;</mo><mn>2</mn><mo>&#x0002C;</mo><mn>4</mn><mo>&#x0002C;</mo><mn>8</mn><mspace width="2em" /><mo stretchy="false">&#x00028;</mo><msub><mrow><mi mathvariant="normal">I</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">O</mi></mrow><mi>z</mi></msub><mo stretchy="false">&#x00029;</mo></mrow></math><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>N</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>&#x0003D;</mo><mi>c</mi><mspace width="0.167em" /><mi>&#x003B8;</mi><mo>&#x0002B;</mo><msub><mi>N</mi><mrow><mrow><mi mathvariant="normal">V</mi><mo>&#x0002C;</mo><mi mathvariant="normal">I</mi><mi mathvariant="normal">P</mi><mi mathvariant="normal">L</mi><mo>&#x0002C;</mo><mn>1</mn></mrow></mrow></msub><mspace width="2em" /><mo stretchy="false">&#x00028;</mo><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi><mo>&#x0002B;</mo><mi mathvariant="normal">B</mi><mi mathvariant="normal">A</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">A</mi><mi mathvariant="normal">L</mi></mrow><mo stretchy="false">&#x00029;</mo></mrow></math></div>
-  <p>Cases are counted apart when</p>
+  <p>Cases with reactive-site concentrations below either threshold are counted separately
+  and excluded from the reported TOF range:</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>N</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>&#x0003C;</mo><mn>0.01</mn><mtext>&#x000A0;</mtext><mi>&#x003BC;</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">l</mi><mspace width="0.167em" /><msup><mi mathvariant="normal">g</mi><mrow><mo>&#x02212;</mo><mn>1</mn></mrow></msup></mrow><mspace width="1em" /><mrow><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi></mrow><mspace width="1em" /><msub><mi>N</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>&#x0003C;</mo><mn>0.01</mn><mspace width="0.167em" /><msub><mi>c</mi><mrow><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">I</mi></mrow></mrow></msub><mo stretchy="false">&#x00028;</mo><mn>900</mn><mtext>&#x000A0;</mtext><mrow><mi mathvariant="normal">n</mi><mi mathvariant="normal">m</mi></mrow><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><msub><mi>f</mi><mrow><mn>110</mn></mrow></msub></mrow></math></div>
-  <p>Same-parameter ratio to R600, and the reported range over the parameter set &#8499;:</p>
+  <p>TOFs are compared with R600 at the same parameters. The reported range spans
+  the parameter cases &#8499; that meet both thresholds:</p>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>Q</mi><mrow><mi>s</mi><mo>&#x0002C;</mo><mi>m</mi></mrow></msub><mo>&#x0003D;</mo><mfrac><mrow><msub><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">F</mi></mrow><mrow><mi>s</mi><mo>&#x0002C;</mo><mi>m</mi></mrow></msub></mrow><mrow><msub><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">F</mi></mrow><mrow><mrow><mi mathvariant="normal">R</mi><mn>600</mn></mrow><mo>&#x0002C;</mo><mi>m</mi></mrow></msub></mrow></mfrac><mo>&#x0002C;</mo><mspace width="2em" /><msubsup><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">F</mi></mrow><mi>s</mi><mrow><mo>min</mo></mrow></msubsup><mo>&#x0003D;</mo><msub><mo>min</mo><mrow><mi>m</mi><mo>&#x02208;</mo><mi mathvariant="script">M</mi></mrow></msub><msub><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">F</mi></mrow><mrow><mi>s</mi><mo>&#x0002C;</mo><mi>m</mi></mrow></msub><mo>&#x0002C;</mo><mspace width="2em" /><msubsup><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">F</mi></mrow><mi>s</mi><mrow><mo>max</mo></mrow></msubsup><mo>&#x0003D;</mo><msub><mo>max</mo><mrow><mi>m</mi><mo>&#x02208;</mo><mi mathvariant="script">M</mi></mrow></msub><msub><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">F</mi></mrow><mrow><mi>s</mi><mo>&#x0002C;</mo><mi>m</mi></mrow></msub></mrow></math></div>
   <h3>Limits</h3>
   <p>Equilibrium at 600&nbsp;&deg;C with complete transport; pretreatment kinetics and
   cooling are not modelled. Samples treated at &ge; 900&nbsp;&deg;C (R1000, R1100) are in the
-  regime where Ti<sub>2</sub>O<sub>3</sub>-(1&times;2) is reported<sup>9</sup>. Aggregates of
-  three or more vacancies use additive pair energies. Surface render: unrelaxed bulk
-  positions from the rutile CIF; Ti<sup>3+</sup> drawn on the two Ti nearest each vacancy.</p>
+  regime where Ti<sub>2</sub>O<sub>3</sub>-(1&times;2) is reported<sup>9</sup>.</p>
   <h3>References</h3>
   <ol class="refs">
     <li>Pabisiak, T. &amp; Kiejna, A. Energetics of oxygen vacancies at rutile TiO<sub>2</sub>(110) surface. <i>Solid State Commun.</i> <b>144</b>, 324&ndash;328 (2007). <a href="https://doi.org/10.1016/j.ssc.2007.08.043">https://doi.org/10.1016/j.ssc.2007.08.043</a></li>
@@ -5272,13 +5294,22 @@ root.Solver = Solver;
   var NPTS = AX.energy_map.length * AX.cutoff_nm.length * AX.dG_eV.length * AX.f110.length * AX.eps.length;
   var START = { sample: 'R600', map: 'PAB', cutoff: 0.34, dG: 0, f110: 0.75, eps: 'a_axis', reactive: 'BRI' };
   var REACT = {
-    BRI: 'All BRI vacancies',
-    ISO_z2: 'BRI vacancies, z = 2 intact neighbours',
-    ISO_z4: 'BRI vacancies, z = 4 intact neighbours',
-    ISO_z8: 'BRI vacancies, z = 8 intact neighbours',
-    'BRI+BASAL': 'BRI + layer-1 IPL vacancies'
+    BRI: 'All bridging-oxygen vacancies',
+    ISO_z2: 'Bridging vacancies with 2 intact neighbours',
+    ISO_z4: 'Bridging vacancies with 4 intact neighbours',
+    ISO_z8: 'Bridging vacancies with 8 intact neighbours',
+    'BRI+BASAL': 'Bridging + layer-1 in-plane vacancies'
   };
-  var MAPS = { PAB: 'PAB', HAM: 'HAM', LI_SBR1: 'LI_SBR1', LI_L2: 'LI_L2' };
+  var MAPS = { PAB: 'Pabisiak 2007 · GGA', HAM: 'Hameeuw 2006 · LDA',
+    LI_SBR1: 'Li 2015 · sX · subsurface → SBR layer 1',
+    LI_L2: 'Li 2015 · sX · subsurface → layer 2' };
+  var SCENARIOS = [
+    {id:'S1', map:'PAB', cutoff:0.34, dG:0, label:'Pabisiak segregation energies'},
+    {id:'S2', map:'HAM', cutoff:0.34, dG:0, label:'Hameeuw segregation energies'},
+    {id:'S3', map:'HAM', cutoff:0.28, dG:0, label:'Hameeuw, shorter interaction cutoff'},
+    {id:'S4', map:'LI_SBR1', cutoff:0.28, dG:0, label:'Li, subsurface energy assigned to SBR layer 1'},
+    {id:'S5', map:'LI_SBR1', cutoff:0.28, dG:0.4, label:'Li, reconstruction cost +0.4 eV per cell'}
+  ];
 
   function sig(v, d) {
     if (v == null || !isFinite(v)) return '—';
@@ -5303,6 +5334,9 @@ root.Solver = Solver;
   }
 
   opt($('vdSample'), SAMPLES.map(function (s) { return s.sample; }));
+  opt($('vdScenario'), ['custom'].concat(SCENARIOS.map(function(q) { return q.id; })), function(id) {
+    return id === 'custom' ? 'Custom parameters' : id + ': ' + SCENARIOS.filter(function(q) { return q.id === id; })[0].label;
+  });
   opt($('vdMap'), AX.energy_map, function (v) { return MAPS[v] || v; });
   opt($('vdCutoff'), AX.cutoff_nm, function (v) { return v + ' nm'; });
   opt($('vdDG'), AX.dG_eV, function (v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + ' eV'; });
@@ -5430,6 +5464,10 @@ root.Solver = Solver;
   function num(x) { return +x; }
   function draw(animate) {
     var s = state(), p = point(s), smp = sampleOf(s.sample), c = caseOf(smp, p, s.reactive);
+    var preset = SCENARIOS.filter(function(q) {
+      return q.map === s.map && q.cutoff === s.cutoff && q.dG === s.dG && s.f110 === 0.75 && s.eps === 'a_axis' && s.reactive === 'BRI';
+    })[0];
+    $('vdScenario').value = preset ? preset.id : 'custom';
     var ref = caseOf(sampleOf('R600'), p, s.reactive);
     var cap = D.capacity_umol_g[String(s.f110)];
     var pools = c.pools, inv = smp.inventory_umol_g;
@@ -5438,28 +5476,28 @@ root.Solver = Solver;
     var sm = smp.summary;
     var strong = smp.treatment_T_C >= D.strong_reduction_C;
 
-    $('vdSampleNote').innerHTML = 'Measured: inventory ' + sig(inv, 4) + ' µmol O g⁻¹, r<sub>CO</sub> '
+    $('vdSampleNote').innerHTML = 'Measured oxygen removal: ' + sig(inv, 4) + ' µmol O g⁻¹; CO formation rate: '
       + sig(smp.rate_co_umol_g_s) + ' µmol g⁻¹ s⁻¹. Treatment ' + smp.treatment_T_C + ' °C.';
     $('vdReactiveNote').innerHTML = s.reactive.indexOf('ISO') === 0
-      ? 'N<sub>react</sub> = cθ(1−θ)<sup>' + s.reactive.slice(5) + '</sup>'
-      : s.reactive === 'BRI' ? 'N<sub>react</sub> = cθ' : 'N<sub>react</sub> = cθ + N<sub>IPL,1</sub>';
+      ? 'N<sub>react</sub> = cθ(1−θ)<sup>' + s.reactive.slice(5) + '</sup>. Isolated-vacancy estimate with independent site occupancy.'
+      : s.reactive === 'BRI' ? 'N<sub>react</sub> = cθ. All unreconstructed bridging-oxygen vacancies are counted as reactive sites.' : 'N<sub>react</sub> = cθ + N<sub>IPL,1</sub>';
 
     $('vdBasis').innerHTML = kv([
-      ['Inventory, measured', sig(inv, 4) + ' µmol O g⁻¹'],
+      ['Total oxygen removal, measured', sig(inv, 4) + ' µmol O g⁻¹'],
       ['Bulk, calculated', sig(pools.bulk) + ' µmol O g⁻¹ (' + pct(pools.bulk / inv) + ' of inventory)'],
       ['Subsurface (SBR layer 1, layers 2–4)', sig(sub) + ' µmol O g⁻¹'],
       ['Surface (BRI, reconstructed, IPL layer 1)', sig(surf) + ' µmol O g⁻¹'],
-      ['θ, vacant fraction of BRI sites', sig(c.theta)],
+      ['Bridging-oxygen vacancy fraction θ (unreconstructed sites)', sig(c.theta)],
       ['Reconstructed fraction of (1×2) cells', pct(c.f_rec)]
     ]);
     $('vdVerdict').innerHTML = c.below
       ? '<div class="verdict red">N<sub>react</sub> below threshold (&lt; 0.01 µmol g⁻¹ or &lt; 1% of BRI sites); '
         + 'case excluded from the TOF range.</div>' : '';
     $('vdKpis').innerHTML = kv([
-      ['N<sub>react</sub>, calculated', sig(c.sites) + ' µmol g⁻¹'],
-      ['TOF = r<sub>CO</sub>/N<sub>react</sub>', sig(c.tof) + ' s⁻¹'],
+      ['Site concentration under selected definition', sig(c.sites) + ' µmol g⁻¹'],
+      ['Apparent CO TOF = r<sub>CO</sub>/N<sub>react</sub>', sig(c.tof) + ' s⁻¹'],
       ['TOF/TOF(R600), same parameters', ref.below ? '— (R600 below threshold)' : sig(c.tof / ref.tof)],
-      ['TOF range, ' + sm.n_ok + ' of ' + sm.n_cases + ' cases', sig(num(sm.TOF_min_s_1)) + ' to ' + sig(num(sm.TOF_max_s_1)) + ' s⁻¹'],
+      ['Full-grid apparent CO TOF range, ' + sm.n_ok + ' of ' + sm.n_cases + ' cases', sig(num(sm.TOF_min_s_1)) + ' to ' + sig(num(sm.TOF_max_s_1)) + ' s⁻¹'],
       ['TOF, N<sub>react</sub> = 2.31 µmol g⁻¹', sig(num(sm.fixed_TOF_SI2a_s_1)) + ' s⁻¹']
     ].concat(strong ? [['Treatment ≥ ' + D.strong_reduction_C + ' °C', 'Ti₂O₃-(1×2) regime (Yuan et al. 2024)']] : []));
     $('vdStatus').textContent = 'Parameter point ' + (p + 1) + ' of ' + NPTS;
@@ -5494,20 +5532,27 @@ root.Solver = Solver;
     slabShown = s.sample;
     $('vdSlabCaption').innerHTML = '<b>Rutile (110), ' + s.sample + ', selected parameters.</b> ' + cells[0]
       + ' × ' + cells[1] + ' cells, four trilayers; atoms from the rutile CIF (P4₂/mnm, a = 0.4594 nm, '
-      + 'c = 0.2959 nm, x(O) = 0.3048), unrelaxed. O sites vacant at the calculated site fractions: '
+      + 'c = 0.2959 nm, x(O) = 0.3048), unrelaxed. Vacancies shown at the calculated site fractions: '
       + (nv.BRI + nv.IPL) + ' in the top layer (blue rings), ' + (nv.SBR + nv.L24) + ' below it (orange). '
-      + 'Pink: Ti³⁺ on the two Ti nearest each vacancy; the model resolves Ti³⁺ by layer. '
-      + 'View sway and atomic vibration are for display; amplitude not to scale.';
+      + 'Pink: Ti³⁺, placed on the two Ti nearest each vacancy for illustration. The calculation gives Ti³⁺ populations by layer. '
+      + 'Rotation and atomic motion are visual effects.';
   }
 
   ['vdSample', 'vdMap', 'vdCutoff', 'vdDG', 'vdF110', 'vdEps', 'vdReactive'].forEach(function (id) {
     $(id).addEventListener('change', function () { stopPlay(); draw(true); });
   });
+  $('vdScenario').addEventListener('change', function() {
+    var q = SCENARIOS.filter(function(q) { return q.id === $('vdScenario').value; })[0];
+    if (!q) return;
+    stopPlay();
+    setState({sample:state().sample, map:q.map, cutoff:q.cutoff, dG:q.dG, f110:0.75, eps:'a_axis', reactive:'BRI'});
+    draw(true);
+  });
   $('vdReset').addEventListener('click', function () { stopPlay(); setState(START); draw(true); });
 
   var timer = null;
   function stopPlay() {
-    if (timer) { clearInterval(timer); timer = null; $('vdPlay').textContent = 'Play the series'; }
+    if (timer) { clearInterval(timer); timer = null; $('vdPlay').textContent = 'Step through samples'; }
   }
   $('vdPlay').addEventListener('click', function () {
     if (timer) { stopPlay(); return; }
@@ -5524,8 +5569,8 @@ root.Solver = Solver;
   });
 
   var grid = [
-    ['Vacancy formation-energy set', AX.energy_map.join(', ')],
-    ['Aggregate cutoff distance', AX.cutoff_nm.join(', ') + ' nm'],
+    ['Vacancy segregation energies', AX.energy_map.map(function(k) { return MAPS[k]; }).join('; ')],
+    ['Vacancy–vacancy interaction cutoff', AX.cutoff_nm.join(', ') + ' nm'],
     ['(1×2) reconstruction ΔG', AX.dG_eV.map(function (v) { return (v > 0 ? '+' : '') + v; }).join(', ') + ' eV per cell'],
     ['(110) area fraction', AX.f110.join(', ')],
     ['Static dielectric constant ε', AX.eps.map(function (e) { return e.value; }).join(', ')],
@@ -5543,6 +5588,6 @@ root.Solver = Solver;
   setState(START);
   draw(false);
   window.VacancyDistribution = { draw: draw, state: state, setState: setState, caseOf: caseOf, point: point,
-    renders: RD, layerAt: layerAt, slab: slab, slabShown: function () { return slabShown; } };
+    scenarios: SCENARIOS, renders: RD, layerAt: layerAt, slab: slab, slabShown: function () { return slabShown; } };
 })();
 </script>

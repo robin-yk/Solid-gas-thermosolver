@@ -13,13 +13,22 @@
   var NPTS = AX.energy_map.length * AX.cutoff_nm.length * AX.dG_eV.length * AX.f110.length * AX.eps.length;
   var START = { sample: 'R600', map: 'PAB', cutoff: 0.34, dG: 0, f110: 0.75, eps: 'a_axis', reactive: 'BRI' };
   var REACT = {
-    BRI: 'All BRI vacancies',
-    ISO_z2: 'BRI vacancies, z = 2 intact neighbours',
-    ISO_z4: 'BRI vacancies, z = 4 intact neighbours',
-    ISO_z8: 'BRI vacancies, z = 8 intact neighbours',
-    'BRI+BASAL': 'BRI + layer-1 IPL vacancies'
+    BRI: 'All bridging-oxygen vacancies',
+    ISO_z2: 'Bridging vacancies with 2 intact neighbours',
+    ISO_z4: 'Bridging vacancies with 4 intact neighbours',
+    ISO_z8: 'Bridging vacancies with 8 intact neighbours',
+    'BRI+BASAL': 'Bridging + layer-1 in-plane vacancies'
   };
-  var MAPS = { PAB: 'PAB', HAM: 'HAM', LI_SBR1: 'LI_SBR1', LI_L2: 'LI_L2' };
+  var MAPS = { PAB: 'Pabisiak 2007 · GGA', HAM: 'Hameeuw 2006 · LDA',
+    LI_SBR1: 'Li 2015 · sX · subsurface → SBR layer 1',
+    LI_L2: 'Li 2015 · sX · subsurface → layer 2' };
+  var SCENARIOS = [
+    {id:'S1', map:'PAB', cutoff:0.34, dG:0, label:'Pabisiak segregation energies'},
+    {id:'S2', map:'HAM', cutoff:0.34, dG:0, label:'Hameeuw segregation energies'},
+    {id:'S3', map:'HAM', cutoff:0.28, dG:0, label:'Hameeuw, shorter interaction cutoff'},
+    {id:'S4', map:'LI_SBR1', cutoff:0.28, dG:0, label:'Li, subsurface energy assigned to SBR layer 1'},
+    {id:'S5', map:'LI_SBR1', cutoff:0.28, dG:0.4, label:'Li, reconstruction cost +0.4 eV per cell'}
+  ];
 
   function sig(v, d) {
     if (v == null || !isFinite(v)) return '—';
@@ -44,6 +53,9 @@
   }
 
   opt($('vdSample'), SAMPLES.map(function (s) { return s.sample; }));
+  opt($('vdScenario'), ['custom'].concat(SCENARIOS.map(function(q) { return q.id; })), function(id) {
+    return id === 'custom' ? 'Custom parameters' : id + ': ' + SCENARIOS.filter(function(q) { return q.id === id; })[0].label;
+  });
   opt($('vdMap'), AX.energy_map, function (v) { return MAPS[v] || v; });
   opt($('vdCutoff'), AX.cutoff_nm, function (v) { return v + ' nm'; });
   opt($('vdDG'), AX.dG_eV, function (v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + ' eV'; });
@@ -171,6 +183,10 @@
   function num(x) { return +x; }
   function draw(animate) {
     var s = state(), p = point(s), smp = sampleOf(s.sample), c = caseOf(smp, p, s.reactive);
+    var preset = SCENARIOS.filter(function(q) {
+      return q.map === s.map && q.cutoff === s.cutoff && q.dG === s.dG && s.f110 === 0.75 && s.eps === 'a_axis' && s.reactive === 'BRI';
+    })[0];
+    $('vdScenario').value = preset ? preset.id : 'custom';
     var ref = caseOf(sampleOf('R600'), p, s.reactive);
     var cap = D.capacity_umol_g[String(s.f110)];
     var pools = c.pools, inv = smp.inventory_umol_g;
@@ -179,28 +195,28 @@
     var sm = smp.summary;
     var strong = smp.treatment_T_C >= D.strong_reduction_C;
 
-    $('vdSampleNote').innerHTML = 'Measured: inventory ' + sig(inv, 4) + ' µmol O g⁻¹, r<sub>CO</sub> '
+    $('vdSampleNote').innerHTML = 'Measured oxygen removal: ' + sig(inv, 4) + ' µmol O g⁻¹; CO formation rate: '
       + sig(smp.rate_co_umol_g_s) + ' µmol g⁻¹ s⁻¹. Treatment ' + smp.treatment_T_C + ' °C.';
     $('vdReactiveNote').innerHTML = s.reactive.indexOf('ISO') === 0
-      ? 'N<sub>react</sub> = cθ(1−θ)<sup>' + s.reactive.slice(5) + '</sup>'
-      : s.reactive === 'BRI' ? 'N<sub>react</sub> = cθ' : 'N<sub>react</sub> = cθ + N<sub>IPL,1</sub>';
+      ? 'N<sub>react</sub> = cθ(1−θ)<sup>' + s.reactive.slice(5) + '</sup>. Isolated-vacancy estimate with independent site occupancy.'
+      : s.reactive === 'BRI' ? 'N<sub>react</sub> = cθ. All unreconstructed bridging-oxygen vacancies are counted as reactive sites.' : 'N<sub>react</sub> = cθ + N<sub>IPL,1</sub>';
 
     $('vdBasis').innerHTML = kv([
-      ['Inventory, measured', sig(inv, 4) + ' µmol O g⁻¹'],
+      ['Total oxygen removal, measured', sig(inv, 4) + ' µmol O g⁻¹'],
       ['Bulk, calculated', sig(pools.bulk) + ' µmol O g⁻¹ (' + pct(pools.bulk / inv) + ' of inventory)'],
       ['Subsurface (SBR layer 1, layers 2–4)', sig(sub) + ' µmol O g⁻¹'],
       ['Surface (BRI, reconstructed, IPL layer 1)', sig(surf) + ' µmol O g⁻¹'],
-      ['θ, vacant fraction of BRI sites', sig(c.theta)],
+      ['Bridging-oxygen vacancy fraction θ (unreconstructed sites)', sig(c.theta)],
       ['Reconstructed fraction of (1×2) cells', pct(c.f_rec)]
     ]);
     $('vdVerdict').innerHTML = c.below
       ? '<div class="verdict red">N<sub>react</sub> below threshold (&lt; 0.01 µmol g⁻¹ or &lt; 1% of BRI sites); '
         + 'case excluded from the TOF range.</div>' : '';
     $('vdKpis').innerHTML = kv([
-      ['N<sub>react</sub>, calculated', sig(c.sites) + ' µmol g⁻¹'],
-      ['TOF = r<sub>CO</sub>/N<sub>react</sub>', sig(c.tof) + ' s⁻¹'],
+      ['Site concentration under selected definition', sig(c.sites) + ' µmol g⁻¹'],
+      ['Apparent CO TOF = r<sub>CO</sub>/N<sub>react</sub>', sig(c.tof) + ' s⁻¹'],
       ['TOF/TOF(R600), same parameters', ref.below ? '— (R600 below threshold)' : sig(c.tof / ref.tof)],
-      ['TOF range, ' + sm.n_ok + ' of ' + sm.n_cases + ' cases', sig(num(sm.TOF_min_s_1)) + ' to ' + sig(num(sm.TOF_max_s_1)) + ' s⁻¹'],
+      ['Full-grid apparent CO TOF range, ' + sm.n_ok + ' of ' + sm.n_cases + ' cases', sig(num(sm.TOF_min_s_1)) + ' to ' + sig(num(sm.TOF_max_s_1)) + ' s⁻¹'],
       ['TOF, N<sub>react</sub> = 2.31 µmol g⁻¹', sig(num(sm.fixed_TOF_SI2a_s_1)) + ' s⁻¹']
     ].concat(strong ? [['Treatment ≥ ' + D.strong_reduction_C + ' °C', 'Ti₂O₃-(1×2) regime (Yuan et al. 2024)']] : []));
     $('vdStatus').textContent = 'Parameter point ' + (p + 1) + ' of ' + NPTS;
@@ -235,20 +251,27 @@
     slabShown = s.sample;
     $('vdSlabCaption').innerHTML = '<b>Rutile (110), ' + s.sample + ', selected parameters.</b> ' + cells[0]
       + ' × ' + cells[1] + ' cells, four trilayers; atoms from the rutile CIF (P4₂/mnm, a = 0.4594 nm, '
-      + 'c = 0.2959 nm, x(O) = 0.3048), unrelaxed. O sites vacant at the calculated site fractions: '
+      + 'c = 0.2959 nm, x(O) = 0.3048), unrelaxed. Vacancies shown at the calculated site fractions: '
       + (nv.BRI + nv.IPL) + ' in the top layer (blue rings), ' + (nv.SBR + nv.L24) + ' below it (orange). '
-      + 'Pink: Ti³⁺ on the two Ti nearest each vacancy; the model resolves Ti³⁺ by layer. '
-      + 'View sway and atomic vibration are for display; amplitude not to scale.';
+      + 'Pink: Ti³⁺, placed on the two Ti nearest each vacancy for illustration. The calculation gives Ti³⁺ populations by layer. '
+      + 'Rotation and atomic motion are visual effects.';
   }
 
   ['vdSample', 'vdMap', 'vdCutoff', 'vdDG', 'vdF110', 'vdEps', 'vdReactive'].forEach(function (id) {
     $(id).addEventListener('change', function () { stopPlay(); draw(true); });
   });
+  $('vdScenario').addEventListener('change', function() {
+    var q = SCENARIOS.filter(function(q) { return q.id === $('vdScenario').value; })[0];
+    if (!q) return;
+    stopPlay();
+    setState({sample:state().sample, map:q.map, cutoff:q.cutoff, dG:q.dG, f110:0.75, eps:'a_axis', reactive:'BRI'});
+    draw(true);
+  });
   $('vdReset').addEventListener('click', function () { stopPlay(); setState(START); draw(true); });
 
   var timer = null;
   function stopPlay() {
-    if (timer) { clearInterval(timer); timer = null; $('vdPlay').textContent = 'Play the series'; }
+    if (timer) { clearInterval(timer); timer = null; $('vdPlay').textContent = 'Step through samples'; }
   }
   $('vdPlay').addEventListener('click', function () {
     if (timer) { stopPlay(); return; }
@@ -265,8 +288,8 @@
   });
 
   var grid = [
-    ['Vacancy formation-energy set', AX.energy_map.join(', ')],
-    ['Aggregate cutoff distance', AX.cutoff_nm.join(', ') + ' nm'],
+    ['Vacancy segregation energies', AX.energy_map.map(function(k) { return MAPS[k]; }).join('; ')],
+    ['Vacancy–vacancy interaction cutoff', AX.cutoff_nm.join(', ') + ' nm'],
     ['(1×2) reconstruction ΔG', AX.dG_eV.map(function (v) { return (v > 0 ? '+' : '') + v; }).join(', ') + ' eV per cell'],
     ['(110) area fraction', AX.f110.join(', ')],
     ['Static dielectric constant ε', AX.eps.map(function (e) { return e.value; }).join(', ')],
@@ -284,5 +307,5 @@
   setState(START);
   draw(false);
   window.VacancyDistribution = { draw: draw, state: state, setState: setState, caseOf: caseOf, point: point,
-    renders: RD, layerAt: layerAt, slab: slab, slabShown: function () { return slabShown; } };
+    scenarios: SCENARIOS, renders: RD, layerAt: layerAt, slab: slab, slabShown: function () { return slabShown; } };
 })();

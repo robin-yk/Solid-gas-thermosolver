@@ -103,6 +103,24 @@ const P = require(process.env.PW + '/node_modules/playwright');
      numbers it prints for the starting scenario and after a change */
   await pg.click('.wstab[data-ws="ws-distribution"]');
   await pg.waitForTimeout(6000);
+  for (const id of ['S1', 'S2', 'S3', 'S4', 'S5']) {
+    await pg.selectOption('#vdSample', 'A600');
+    await pg.selectOption('#vdScenario', id);
+    const ok = await pg.evaluate((id) => {
+      const v = window.VacancyDistribution, s = v.state();
+      const q = v.scenarios.find(q => q.id === id);
+      const data = JSON.parse(document.getElementById('tof-data').textContent);
+      return s.sample === 'A600' && s.map === q.map && s.cutoff === q.cutoff && s.dG === q.dG
+        && s.f110 === 0.75 && s.eps === 'a_axis' && s.reactive === 'BRI'
+        && data.samples.every(sample => Number.isFinite(v.caseOf(sample, v.point(s), s.reactive).tof));
+    }, id);
+    if (!ok) throw new Error('Invalid assumption set: ' + id);
+  }
+  await pg.selectOption('#vdDG', '-0.4');
+  if (await pg.inputValue('#vdScenario') !== 'custom') throw new Error('Custom parameters not recognised');
+  await pg.click('#vdReset');
+  await pg.locator('#vdSlabCanvas').scrollIntoViewIfNeeded();
+  await pg.waitForTimeout(700);
   out.drew.figTofRange = await pg.evaluate(() =>
     document.querySelector('#figTofRange svg') ? 1 : 0);
   out.tofMarks = await pg.evaluate(() => {
@@ -145,6 +163,7 @@ const P = require(process.env.PW + '/node_modules/playwright');
     return found;
   });
   if (out.hover.bulk) {
+    await pg.locator('#vdParticleStage').scrollIntoViewIfNeeded();
     const box = await pg.locator('#vdParticleStage').boundingBox();
     await pg.mouse.move(box.x + out.hover.bulk[0] * box.width, box.y + out.hover.bulk[1] * box.height);
     await pg.waitForTimeout(200);
@@ -228,8 +247,11 @@ def check(out):
     ok('the grain render decoded', out['renders'] >= 1000, out['renders'])
     ok('the surface canvas is drawn', out['slab1']['ink'] > 0.15, out['slab1'])
     ok('the surface canvas moves', out['slab1']['h'] != out['slab2']['h'], (out['slab1'], out['slab2']))
+    import re
+    counts = re.search(r'(\d+) in the top layer.*?, (\d+) below', out['slabCaption'])
     ok('the surface caption counts the vacancies drawn',
-       out['slabVacant'] > 0 and 'vacant' in out['slabCaption'], (out['slabVacant'], out['slabCaption']))
+       bool(counts) and sum(map(int, counts.groups())) == out['slabVacant'],
+       (out['slabVacant'], out['slabCaption']))
     ok('hover finds all three layers in the mask',
        set(out['hover']) == {'surface', 'subsurface', 'bulk'}, out['hover'])
     ok('hover on the bulk shows its calculated amount',
