@@ -127,19 +127,23 @@
 <div class="figgrid">
   <figure class="pubfig wide" id="figTofRange">
     <h3>Apparent CO TOF by sample</h3>
-    <div class="figbox" role="img" aria-label="Apparent CO turnover frequency per reactive site for each sample: range over parameter points, value with 2.31 umol per gram sites, and the selected parameters"></div>
+    <div class="figbox" role="img" aria-label="Apparent CO turnover frequency for six samples under five vacancy-distribution scenarios, S1 to S5"></div>
     <details class="figdl"><summary>Download figure</summary>
       <button type="button" data-fmt="svg">SVG</button>
       <button type="button" data-fmt="png">PNG, 600 dpi</button>
       <button type="button" data-fmt="csv">CSV data</button>
     </details>
     <figcaption>TOF = r<sub>CO</sub>/N<sub>react</sub>; r<sub>CO</sub> measured at
-    600&nbsp;&deg;C, N<sub>react</sub> calculated under the selected site definition. Bar: full-grid range over all 720 parameter points and five site definitions with
-    N<sub>react</sub> &ge; 0.01&nbsp;&micro;mol&nbsp;g&#8315;&sup1; and &ge; 1% of bridging-O
-    sites; tick: median. Number above the axis: cases below that threshold, of 3600.
-    Open square: N<sub>react</sub> = 2.31&nbsp;&micro;mol&nbsp;g&#8315;&sup1; (SI Note 2a).
-    Filled circle: selected parameters; open circle: selected case below threshold;
-    on the frame: outside the axis range.</figcaption>
+    600&nbsp;&deg;C. Each sample has five points, ordered S1–S5 from left to right.
+    S1: Pabisiak segregation energies; S2: Hameeuw segregation energies;
+    S3: Hameeuw with a shorter interaction cutoff (0.28&nbsp;nm);
+    S4: Li subsurface energy assigned to SBR layer 1, cutoff 0.28&nbsp;nm;
+    S5: S4 with reconstruction cost increased by 0.4&nbsp;eV per cell.
+    S1 and S2 use a 0.34&nbsp;nm cutoff. All five use a (110) area fraction of 0.75,
+    &epsilon; = 64 and unreconstructed bridging-oxygen vacancies as reactive sites.
+    These five scenarios remain fixed when the controls above change.
+    Open symbols mark N<sub>react</sub> below 0.01&nbsp;&micro;mol&nbsp;g&#8315;&sup1;
+    or below 1% of bridging-O sites.</figcaption>
   </figure>
 </div>
 
@@ -153,11 +157,10 @@
   <h2>Apparent CO TOF by sample</h2>
   <div class="tablewrap"><table class="vdt">
     <thead><tr><th>Sample</th><th>Treatment T (&deg;C)</th><th class="n">Inventory, measured (µmol O g⁻¹)</th><th class="n">r<sub>CO</sub>, measured (µmol g⁻¹ s⁻¹)</th>
-      <th class="n">TOF, selected (s⁻¹)</th><th class="n">TOF min (s⁻¹)</th><th class="n">TOF median (s⁻¹)</th><th class="n">TOF max (s⁻¹)</th>
-      <th class="n">TOF, N = 2.31 (s⁻¹)</th><th class="n">Cases below threshold</th></tr></thead>
+      <th class="n">S1 TOF (s⁻¹)</th><th class="n">S2 TOF (s⁻¹)</th><th class="n">S3 TOF (s⁻¹)</th><th class="n">S4 TOF (s⁻¹)</th><th class="n">S5 TOF (s⁻¹)</th></tr></thead>
     <tbody id="vdTable"></tbody>
   </table></div>
-  <p class="sub">TOF per reactive site. Min, median and max over cases with N<sub>react</sub> above threshold. * selected case below threshold.</p>
+  <p class="sub">The five scenarios shown in the figure. * N<sub>react</sub> below the site-concentration threshold.</p>
 </div>
 
 <div class="panel pad page" id="vd-how">
@@ -256,7 +259,7 @@
   ISO estimates isolated vacancies assuming independent site occupancy: (1 − θ)<sup>z</sup> is the probability that z neighbouring sites remain occupied.</p>
   \[N_{\mathrm{react}}=c\,\theta\qquad(\mathrm{BRI});;N_{\mathrm{react}}=c\,\theta(1-\theta)^z,\quad z=2,4,8\qquad(\mathrm{ISO}_z);;N_{\mathrm{react}}=c\,\theta+N_{\mathrm{V,IPL,1}}\qquad(\mathrm{BRI+BASAL})\]
   <p>Cases with reactive-site concentrations below either threshold are counted separately
-  and excluded from the reported TOF range:</p>
+  and shown with open symbols in the five-scenario figure:</p>
   \[N_{\mathrm{react}}<0.01\ \mu\mathrm{mol\,g^{-1}}\quad\mathrm{or}\quad N_{\mathrm{react}}<0.01\,c_{\mathrm{BRI}}(900\ \mathrm{nm})\,f_{110}\]
   <p>TOFs are compared with R600 at the same parameters. The reported range spans
   the parameter cases &#8499; that meet both thresholds:</p>

@@ -125,8 +125,18 @@ const P = require(process.env.PW + '/node_modules/playwright');
     document.querySelector('#figTofRange svg') ? 1 : 0);
   out.tofMarks = await pg.evaluate(() => {
     const s = document.querySelector('#figTofRange svg');
-    return { fixed: s.querySelectorAll('rect[stroke="#777777"]').length,
-             chosen: s.querySelectorAll('circle[stroke="#0072B2"]').length };
+    const V = window.VacancyDistribution;
+    const data = JSON.parse(document.getElementById('tof-data').textContent);
+    const marks = [...s.querySelectorAll('g[data-scenario]')];
+    return { count: marks.length,
+      perScenario: V.scenarios.map(sc => marks.filter(m => m.dataset.scenario === sc.id).length),
+      exact: marks.every(m => {
+        const sc = V.scenarios.find(q => q.id === m.dataset.scenario);
+        const sample = data.samples.find(q => q.sample === m.dataset.sample);
+        const p = V.point({...sc, f110:0.75, eps:'a_axis'});
+        return Number(m.dataset.tof) === V.caseOf(sample, p, 'BRI').tof;
+      }),
+      oldBaseline: s.textContent.includes('SI Note 2a') };
   });
   /* the rendered panels: both images decoded, and a hover over the cut
      face finds a layer in the mask and shows its amount */
@@ -240,9 +250,9 @@ def check(out):
        .replace('₉', '9').replace('Ti10O19', 'Ti10O19'), out['pure_h2'])
 
     tof = json.load(open(os.path.join(ROOT, 'paper_outputs', 'tof_range.json')))
-    n = len(tof['samples']) + 1                  # one of each in the legend
-    ok('the TOF figure marks every sample twice',
-       out['tofMarks'] == {'fixed': n, 'chosen': n},
+    n = len(tof['samples'])
+    ok('the TOF figure shows five saved scenarios for every sample',
+       out['tofMarks'] == {'count': 5*n, 'perScenario': [n]*5, 'exact': True, 'oldBaseline': False},
        out['tofMarks'])
     ok('the grain render decoded', out['renders'] >= 1000, out['renders'])
     ok('the surface canvas is drawn', out['slab1']['ink'] > 0.15, out['slab1'])

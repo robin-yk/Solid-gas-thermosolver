@@ -192,7 +192,6 @@
     var pools = c.pools, inv = smp.inventory_umol_g;
     var surf = pools.bridging + pools.reconstructed_row + pools.basal_L1;
     var sub = pools.L1_subbridging + pools.subsurface_L2_4;
-    var sm = smp.summary;
     var strong = smp.treatment_T_C >= D.strong_reduction_C;
 
     $('vdSampleNote').innerHTML = 'Measured oxygen removal: ' + sig(inv, 4) + ' µmol O g⁻¹; CO formation rate: '
@@ -211,38 +210,39 @@
     ]);
     $('vdVerdict').innerHTML = c.below
       ? '<div class="verdict red">N<sub>react</sub> below threshold (&lt; 0.01 µmol g⁻¹ or &lt; 1% of BRI sites); '
-        + 'case excluded from the TOF range.</div>' : '';
+        + 'TOF uses a small calculated site concentration.</div>' : '';
     $('vdKpis').innerHTML = kv([
       ['Site concentration under selected definition', sig(c.sites) + ' µmol g⁻¹'],
       ['Apparent CO TOF = r<sub>CO</sub>/N<sub>react</sub>', sig(c.tof) + ' s⁻¹'],
-      ['TOF/TOF(R600), same parameters', ref.below ? '— (R600 below threshold)' : sig(c.tof / ref.tof)],
-      ['Full-grid apparent CO TOF range, ' + sm.n_ok + ' of ' + sm.n_cases + ' cases', sig(num(sm.TOF_min_s_1)) + ' to ' + sig(num(sm.TOF_max_s_1)) + ' s⁻¹'],
-      ['TOF, N<sub>react</sub> = 2.31 µmol g⁻¹', sig(num(sm.fixed_TOF_SI2a_s_1)) + ' s⁻¹']
+      ['TOF/TOF(R600), same parameters', ref.below ? '— (R600 below threshold)' : sig(c.tof / ref.tof)]
     ].concat(strong ? [['Treatment ≥ ' + D.strong_reduction_C + ' °C', 'Ti₂O₃-(1×2) regime (Yuan et al. 2024)']] : []));
     $('vdStatus').textContent = 'Parameter point ' + (p + 1) + ' of ' + NPTS;
 
     /* figure 3 */
     var pts = SAMPLES.map(function (q) {
-      var cc = caseOf(q, p, s.reactive), m = q.summary;
-      return { sample: q.sample, min: num(m.TOF_min_s_1), median: num(m.TOF_median_s_1),
-               max: num(m.TOF_max_s_1), fixed: num(m.fixed_TOF_SI2a_s_1),
-               nBelow: num(m.n_below_threshold), cur: cc.tof, curBelow: cc.below };
+      return { sample: q.sample, scenarios: SCENARIOS.map(function (sc) {
+        var ps = Object.assign({}, sc, {f110:0.75, eps:'a_axis', reactive:'BRI'});
+        var cc = caseOf(q, point(ps), 'BRI');
+        return {id:sc.id, tof:cc.tof, sites:cc.sites, below:cc.below};
+      }) };
     });
-    var svg = F.tofRange({ points: pts, nPoints: NPTS, fixed: D.fixed_sites_umol_g });
+    var svg = F.tofRange({ points: pts });
     $('figTofRange').querySelector('.figbox').innerHTML = svg;
-    figState.figTofRange = { svg: svg, name: 'apparent-tof-range',
-      csv: 'sample,TOF_min_s_1,TOF_median_s_1,TOF_max_s_1,TOF_fixed_s_1,below_threshold,TOF_this_scenario_s_1\n'
-        + pts.map(function (q) { return [q.sample, q.min, q.median, q.max, q.fixed, q.nBelow, q.cur].join(','); }).join('\n') + '\n' };
+    figState.figTofRange = { svg: svg, name: 'apparent-tof-five-scenarios',
+      csv: 'sample,scenario,energy_set,cutoff_nm,dG_eV,f110,epsilon,reactive_definition,Nreact_umol_g,TOF_s_1,below_threshold\n'
+        + pts.map(function (q) { return q.scenarios.map(function (cc, j) {
+          var sc = SCENARIOS[j];
+          return [q.sample,sc.id,sc.map,sc.cutoff,sc.dG,0.75,64,'BRI',cc.sites,cc.tof,cc.below].join(',');
+        }).join('\n'); }).join('\n') + '\n' };
 
     /* samples table */
     $('vdTable').innerHTML = SAMPLES.map(function (q, i) {
-      var m = q.summary, x = pts[i];
+      var x = pts[i];
       return '<tr' + (q.sample === s.sample ? ' class="hl"' : '') + '><td>' + q.sample + '</td><td>'
         + q.treatment_T_C + ' °C</td><td class="n">' + sig(q.inventory_umol_g, 4) + '</td><td class="n">'
-        + sig(q.rate_co_umol_g_s) + '</td><td class="n">' + sig(x.cur) + (x.curBelow ? '*' : '')
-        + '</td><td class="n">' + sig(x.min) + '</td><td class="n">' + sig(x.median) + '</td><td class="n">'
-        + sig(x.max) + '</td><td class="n">' + sig(x.fixed) + '</td><td class="n">' + m.n_below_threshold
-        + ' of ' + m.n_cases + '</td></tr>';
+        + sig(q.rate_co_umol_g_s) + '</td>' + x.scenarios.map(function (cc) {
+          return '<td class="n">' + sig(cc.tof) + (cc.below ? '*' : '') + '</td>';
+        }).join('') + '</tr>';
     }).join('');
 
     /* the rendered panels */
