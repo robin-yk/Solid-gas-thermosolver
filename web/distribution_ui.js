@@ -23,11 +23,11 @@
     LI_SBR1: 'Li 2015 · sX · subsurface → SBR layer 1',
     LI_L2: 'Li 2015 · sX · subsurface → layer 2' };
   var SCENARIOS = [
-    {id:'S1', map:'PAB', cutoff:0.34, dG:0, label:'Pabisiak segregation energies'},
-    {id:'S2', map:'HAM', cutoff:0.34, dG:0, label:'Hameeuw segregation energies'},
-    {id:'S3', map:'HAM', cutoff:0.28, dG:0, label:'Hameeuw, shorter interaction cutoff'},
-    {id:'S4', map:'LI_SBR1', cutoff:0.28, dG:0, label:'Li, subsurface energy assigned to SBR layer 1'},
-    {id:'S5', map:'LI_SBR1', cutoff:0.28, dG:0.4, label:'Li, reconstruction cost +0.4 eV per cell'}
+    {id:'S1', map:'LI_SBR1', cutoff:0.28, dG:0, label:'Highest surface enrichment'},
+    {id:'S2', map:'LI_SBR1', cutoff:0.28, dG:0.4, label:'Higher reconstruction cost'},
+    {id:'S3', map:'HAM', cutoff:0.28, dG:0, label:'Intermediate surface enrichment'},
+    {id:'S4', map:'HAM', cutoff:0.34, dG:0, label:'Lower surface enrichment'},
+    {id:'S5', map:'PAB', cutoff:0.34, dG:0, label:'Lowest surface enrichment'}
   ];
 
   function sig(v, d) {
@@ -53,7 +53,7 @@
   }
 
   opt($('vdSample'), SAMPLES.map(function (s) { return s.sample; }));
-  opt($('vdScenario'), ['custom'].concat(SCENARIOS.map(function(q) { return q.id; })), function(id) {
+  opt($('vdScenario'), SCENARIOS.map(function(q) { return q.id; }).concat(['custom']), function(id) {
     return id === 'custom' ? 'Custom parameters' : id + ': ' + SCENARIOS.filter(function(q) { return q.id === id; })[0].label;
   });
   opt($('vdMap'), AX.energy_map, function (v) { return MAPS[v] || v; });

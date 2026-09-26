@@ -344,8 +344,8 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
         <p>Select one of 720 calculated parameter combinations.</p>
       </header>
       <div class="population-parameters">
-        <div class="population-field"><label for="vdScenario">Assumption set</label><select id="vdScenario"></select>
-          <div class="readout">S1–S5 compare segregation energies, interaction cutoff and reconstruction cost. Each uses 75% (110) area, ε = 64 and all unreconstructed bridging vacancies as sites.</div></div>
+        <div class="population-field"><label for="vdScenario">Vacancy distribution scenario</label><select id="vdScenario"></select>
+          <div class="readout">S1–S5 run from highest to lowest total surface vacancy concentration across all six samples. Parameters and sources are listed under Method.</div></div>
         <div class="population-field"><label for="vdSample">Sample</label><select id="vdSample"></select>
           <div class="readout" id="vdSampleNote"></div></div>
         <div class="population-field"><label for="vdMap">Vacancy segregation energies</label><select id="vdMap"></select>
@@ -393,11 +393,9 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
     </details>
     <figcaption>TOF = r<sub>CO</sub>/N<sub>react</sub>; r<sub>CO</sub> measured at
     600&nbsp;&deg;C. Each sample has five points, ordered S1–S5 from left to right.
-    S1: Pabisiak segregation energies; S2: Hameeuw segregation energies;
-    S3: Hameeuw with a shorter interaction cutoff (0.28&nbsp;nm);
-    S4: Li subsurface energy assigned to SBR layer 1, cutoff 0.28&nbsp;nm;
-    S5: S4 with reconstruction cost increased by 0.4&nbsp;eV per cell.
-    S1 and S2 use a 0.34&nbsp;nm cutoff. All five use a (110) area fraction of 0.75,
+    S1–S5 are ordered by decreasing total surface vacancy concentration,
+    including bridging, reconstructed-row and layer-1 in-plane vacancies.
+    All five use a (110) area fraction of 0.75,
     &epsilon; = 64 and unreconstructed bridging-oxygen vacancies as reactive sites.
     These five scenarios remain fixed when the controls above change.
     Open symbols mark N<sub>react</sub> below 0.01&nbsp;&micro;mol&nbsp;g&#8315;&sup1;
@@ -509,6 +507,18 @@ footer{max-width:1480px;margin:0 auto;padding:22px clamp(18px,3vw,36px) 40px;col
 
   <h3>Parameter grid</h3>
   <table class="kv" id="vdGrid"></table>
+  <h3>Five vacancy distribution scenarios</h3>
+  <p>The ordering follows the calculated total surface vacancy concentration in all six samples.</p>
+  <div class="tablewrap"><table class="vdt">
+    <thead><tr><th>Scenario</th><th>Segregation energies</th><th>Interaction cutoff (nm)</th><th>Reconstruction cost (eV per cell)</th></tr></thead>
+    <tbody>
+      <tr><td>S1: Highest surface enrichment</td><td>Li et al.<sup>3</sup>, subsurface energy assigned to SBR layer 1</td><td>0.28</td><td>0</td></tr>
+      <tr><td>S2: Higher reconstruction cost</td><td>Same as S1</td><td>0.28</td><td>+0.4</td></tr>
+      <tr><td>S3: Intermediate surface enrichment</td><td>Hameeuw et al.<sup>2</sup></td><td>0.28</td><td>0</td></tr>
+      <tr><td>S4: Lower surface enrichment</td><td>Hameeuw et al.<sup>2</sup></td><td>0.34</td><td>0</td></tr>
+      <tr><td>S5: Lowest surface enrichment</td><td>Pabisiak &amp; Kiejna<sup>1</sup></td><td>0.34</td><td>0</td></tr>
+    </tbody>
+  </table></div>
   <h3>Apparent CO TOF</h3>
   <div class="eq"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">O</mi><mi mathvariant="normal">F</mi></mrow><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>r</mi><mrow><mrow><mi mathvariant="normal">C</mi><mi mathvariant="normal">O</mi></mrow></mrow></msub></mrow><mrow><msub><mi>N</mi><mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub></mrow></mfrac></mrow></math></div>
   <p>r<sub>CO</sub>: measured initial CO formation rate (µmol g⁻¹ s⁻¹). N<sub>react</sub>:
@@ -5294,11 +5304,11 @@ root.Solver = Solver;
     LI_SBR1: 'Li 2015 · sX · subsurface → SBR layer 1',
     LI_L2: 'Li 2015 · sX · subsurface → layer 2' };
   var SCENARIOS = [
-    {id:'S1', map:'PAB', cutoff:0.34, dG:0, label:'Pabisiak segregation energies'},
-    {id:'S2', map:'HAM', cutoff:0.34, dG:0, label:'Hameeuw segregation energies'},
-    {id:'S3', map:'HAM', cutoff:0.28, dG:0, label:'Hameeuw, shorter interaction cutoff'},
-    {id:'S4', map:'LI_SBR1', cutoff:0.28, dG:0, label:'Li, subsurface energy assigned to SBR layer 1'},
-    {id:'S5', map:'LI_SBR1', cutoff:0.28, dG:0.4, label:'Li, reconstruction cost +0.4 eV per cell'}
+    {id:'S1', map:'LI_SBR1', cutoff:0.28, dG:0, label:'Highest surface enrichment'},
+    {id:'S2', map:'LI_SBR1', cutoff:0.28, dG:0.4, label:'Higher reconstruction cost'},
+    {id:'S3', map:'HAM', cutoff:0.28, dG:0, label:'Intermediate surface enrichment'},
+    {id:'S4', map:'HAM', cutoff:0.34, dG:0, label:'Lower surface enrichment'},
+    {id:'S5', map:'PAB', cutoff:0.34, dG:0, label:'Lowest surface enrichment'}
   ];
 
   function sig(v, d) {
@@ -5324,7 +5334,7 @@ root.Solver = Solver;
   }
 
   opt($('vdSample'), SAMPLES.map(function (s) { return s.sample; }));
-  opt($('vdScenario'), ['custom'].concat(SCENARIOS.map(function(q) { return q.id; })), function(id) {
+  opt($('vdScenario'), SCENARIOS.map(function(q) { return q.id; }).concat(['custom']), function(id) {
     return id === 'custom' ? 'Custom parameters' : id + ': ' + SCENARIOS.filter(function(q) { return q.id === id; })[0].label;
   });
   opt($('vdMap'), AX.energy_map, function (v) { return MAPS[v] || v; });
